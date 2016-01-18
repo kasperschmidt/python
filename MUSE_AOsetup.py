@@ -6,6 +6,7 @@ import sys
 import glob
 import pyfits
 import numpy as np
+import fits2ascii as f2a
 import crossmatch as cm
 import MUSE_AOsetup as mao
 from astropy import units
@@ -275,6 +276,83 @@ def search_CLASHcat(cluster,output='default',search_radius=0.08333,clobber=False
                           ' No file returned'
 
     return outputfile
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def search_ROMANcat(cluster,output='default',search_radius=0.08333,clobber=False,verbose=True):
+    """
+
+    --- INPUT ---
+    cluster        (full) Name of cluster to search
+    output         Name of output to generate
+    search_radius  Radius to return objects in around cluster ra and dec (from clusterinfo())
+    clobber        Overwrite outputfile if it already exists?
+    verbose        Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSE_AOsetup as mao
+    cluster   = 'A2744'
+    outputcat = mao.search_ROMANcat(cluster,verbose=True)
+
+
+    """
+    cluster_short = cluster.split('.')[0].lower()
+
+    if cluster == 'a2744':
+        catfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/A2744/A2744_CLUSTER.cat'
+        outpath = '/Users/kschmidt/work/catalogs/'
+
+        f2a.ascii2fits(catfile,asciinames=True,skip_header=0,outpath=outpath,verbose=True)
+
+        f2acmd = 'fits2ascii.py '+catfile+' --verbose'
+        cmdout = commands.getoutput(f2acmd)
+        print cmdout
+
+        pdb.set_trace()
+    elif cluster == 'macs0416':
+        catfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/M0416/M0416_CLUSTER.cat'
+    elif cluster == 'macs1149':
+        #coordfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/M1149/outcord.1007_HST.dat'
+        #catfile   = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/M1149/outmag.1007_HST.dat'
+        catfile    = '/Users/kschmidt/work/catalogs/ROMANphotocat_M1149combcat.cat'
+    else:
+        print ' WARNING No ROMAN catalog exists for the cluster '+cluster+'. Nothing returned.'
+        return None
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ROMAN_hdu      = pyfits.open(catfile) # Load the FITS hdulist
+    ROMAN_dat      = ROMAN_hdu[1].data
+    ROMAN_IDall    = ROMAN_dat['ID']
+    ROMAN_RAall    = ROMAN_dat['RA']
+    ROMAN_Decall   = ROMAN_dat['DEC']
+    Nobj_ROMAN     = len(ROMAN_IDall)
+    if verbose: print ' - Will find matches to the '+str(Nobj_ROMAN)+' in \n   '+catfile
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ra, dec = mao.clusterinfo()[cluster.upper()]['ra'], mao.clusterinfo()[cluster.upper()]['dec']
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if output== 'default':
+        outputfile = cluster_short.upper()+'_ROMANcatSearchOutput_rsearch'+\
+                     str(search_radius).replace('.','p')+'.fits'
+    else:
+        outputfile = output
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    r_match  = np.sqrt( (np.cos(dec)*(ROMAN_RAall-ra))**2.0 + (ROMAN_Decall-dec)**2.0 )
+
+    goodmatch = np.where(r_match <= search_radius)[0]
+    if len(goodmatch) > 0:
+        if verbose: print ' - Writing output to '+outputfile
+        if (os.path.isfile(outputfile)) & (clobber==False): # check if file already exists
+            if verbose: print '   WARNING: output file already exists. clobber=False so did not overwrite '
+        else:
+            if (os.path.isfile(outputfile)) & (clobber==True) & verbose:
+                print '   Output file already exists but clobber=True so overwriting it'
+
+            pyfits.writeto(outputfile, ROMAN_dat[goodmatch], clobber=clobber)
+    else:
+        if verbose: print ' - WARNING No matches found within search_radius = '+str(search_radius)+\
+                          ' No file returned'
+
+    return outputfile
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_objectDS9reg(filename,ra_name,dec_name,mag_names,mag_limits=[17.5,20.0,20.5],
                         id_name='objID',skip_header=3,star_name=None,verbose=True):
