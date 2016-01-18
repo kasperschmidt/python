@@ -174,75 +174,6 @@ def save_conesearch(conesearch_result,filename='Default',emptystring='NoneKBS',v
         if verbose: print ' - Successfully saved file'
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def create_objectDS9reg(filename,ra_name,dec_name,mag_names,mag_limits=[17.5,20.0,20.5],id_name='objID',
-                        verbose=True):
-    """
-    Generate DS9 region files for star (object) catalog with color coding according to magnitude
-
-    --- INPUT ---
-    filename         ascii file with object information. E.g., output from save_conesearch
-                     Can also take fits binary table input. Checks for '.fit' in filename
-    ra_col           column of RA in data
-    dec_col          column of Dec in data
-    mag_col          column of Mags in data
-    verbose          toggle vebosity
-
-    --- EXAMPLE OF USE ---
-    import MUSE_AOsetup as mao
-    mao.create_objectDS9reg('testfilename_test160113.reg','ra','dec',['RMag','RMag','VMag'])
-
-    mao.create_objectDS9reg('MACS1149test.fits','RAJ2000','DEJ2000',['Rmag','Rmag','Vmag'],id_name='ID')
-
-    """
-    mag_limits   = np.array(mag_limits)
-    if type(mag_names) == str: mag_names = [mag_names]*len(mag_limits)
-    mag_colors   = ['cyan','yellow','green'] # color ref: http://www.eso.org/sci/activities/docs/Call_MUSE_DF.pdf
-    mag_size     = [0.5,0.6,0.7]
-    if verbose: print ' - Will generate DS9 region file for objects brighter than ',mag_limits
-    if verbose: print '   using color coding ',mag_colors
-    if verbose: print '   and sizes          ',mag_size
-
-
-    if verbose: print ' - Loading data and iterating over objects '
-    if '.fits' in filename:
-        hdu  = pyfits.open(filename)
-        data = hdu[1].data
-        reg_filename = filename.replace('.fits','_brightobj.reg')
-    else:
-        data = np.genfromtxt(filename,skip_header=3,names=True,comments='#')
-        reg_filename = filename.replace('.txt','_brightobj.reg')
-
-    fout = open(reg_filename,'w')
-
-    reg_hdr = """# Region file format: DS9 version 4.1
-global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
-fk5
-"""
-
-    fout.write(reg_hdr)
-    for objdat in data:
-        obj_ra  = objdat[ra_name]
-        obj_dec = objdat[dec_name]
-
-        for ii, mag_lim in enumerate(mag_limits):
-            mag_ent = np.where(np.asarray(data.dtype.names) == mag_names[ii])
-            if np.size(mag_ent) == 0:
-                sys.exit(' - Did not find the magnitude column "'+mag_names[ii]+'" --> ABORTING')
-            else:
-                mag_ent = mag_ent[0][0]
-
-            obj_mag  = objdat[mag_ent]
-            obj_text = str(objdat[id_name])+' '+mag_names[ii]+' = '+str("%.2f" % obj_mag)
-            if obj_mag < mag_lim:
-                reg_col   = mag_colors[ii]
-                reg_size  = mag_size[ii]
-                obj_row   = 'circle('+str(obj_ra)+','+str(obj_dec)+','+str(reg_size)+'") # color='+\
-                            str(reg_col)+' width=2 font="times 16 bold roman" text={'+obj_text+'}\n'
-                fout.write(obj_row)
-
-    fout.close()
-    if verbose: print ' - Wrote region file of brigh objects to '+reg_filename
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def search_GSPCv2p4(outputfile,ra,dec,search_radius,clobber=False,verbose=True):
     """
     Searching Guide Star Photometric Catalog V2p4.fits
@@ -288,6 +219,162 @@ def search_GSPCv2p4(outputfile,ra,dec,search_radius,clobber=False,verbose=True):
     else:
         if verbose: print ' - WARNING No matches found within search_radius = '+str(search_radius)+\
                           ' No file returned'
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def search_CLASHcat(cluster,output='default',search_radius=0.08333,clobber=False,verbose=True):
+    """
+
+    --- INPUT ---
+    cluster        (full) Name of cluster to search
+    output         Name of output to generate
+    search_radius  Radius to return objects in around cluster ra and dec (from clusterinfo())
+    clobber        Overwrite outputfile if it already exists?
+    verbose        Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSE_AOsetup as mao
+    cluster   = 'MACS2129.4-0741'
+    outputcat = mao.search_CLASHcat(cluster,verbose=True)
+
+
+    """
+    cluster_short = cluster.split('.')[0].lower()
+    catalog = '/Users/kschmidt/work/catalogs/CLASHcatalogs/hlsp_clash_hst_ir_'+cluster_short+'_cat.txt.FITS'
+    ra, dec = mao.clusterinfo()[cluster.upper()]['ra'], mao.clusterinfo()[cluster.upper()]['dec']
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    CLASH_hdu      = pyfits.open(catalog) # Load the FITS hdulist
+    CLASH_dat      = CLASH_hdu[1].data
+    CLASH_hdr      = CLASH_hdu[1].header
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    CLASH_IDall    = CLASH_dat['id']
+    CLASH_RAall    = CLASH_dat['ra']
+    CLASH_Decall   = CLASH_dat['dec']
+    Nobj_CLASH     = len(CLASH_IDall)
+    if verbose: print ' - Will find matches to the '+str(Nobj_CLASH)+' in \n   '+catalog
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if output== 'default':
+        outputfile = cluster_short.upper()+'_CLASHcatSearchOutput_rsearch'+\
+                     str(search_radius).replace('.','p')+'.fits'
+    else:
+        outputfile = output
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    r_match  = np.sqrt( (np.cos(dec)*(CLASH_RAall-ra))**2.0 + (CLASH_Decall-dec)**2.0 )
+
+    goodmatch = np.where(r_match <= search_radius)[0]
+    if len(goodmatch) > 0:
+        if verbose: print ' - Writing output to '+outputfile
+        if (os.path.isfile(outputfile)) & (clobber==False): # check if file already exists
+            if verbose: print '   WARNING: output file already exists. clobber=False so did not overwrite '
+        else:
+            if (os.path.isfile(outputfile)) & (clobber==True) & verbose:
+                print '   Output file already exists but clobber=True so overwriting it'
+
+            pyfits.writeto(outputfile, CLASH_dat[goodmatch], clobber=clobber)
+    else:
+        if verbose: print ' - WARNING No matches found within search_radius = '+str(search_radius)+\
+                          ' No file returned'
+
+    return outputfile
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def create_objectDS9reg(filename,ra_name,dec_name,mag_names,mag_limits=[17.5,20.0,20.5],
+                        id_name='objID',skip_header=3,star_name=None,verbose=True):
+    """
+    Generate DS9 region files for star (object) catalog with color coding according to magnitude
+
+    --- INPUT ---
+    filename         ascii file with object information. E.g., output from save_conesearch
+                     Can also take fits binary table input. Checks for '.fit' in filename
+    ra_name          Name of righ ascension column
+    dec_name         Name of declination column
+    mag_names        Names of column with manitudes corresponding to the limits in mag_limits
+    mag_limits       Magnitude limits to use
+    id_name          Name of ID column
+    skip_header      Number of header lines to skip if using np.genfromtxt to load ascii file
+    star_name        Name of column containing information about object stellarity
+                     Note that the selection is based on the column name, i.e., 'stel'
+                     assumes a CLASH-like setup.
+    verbose          toggle vebosity
+
+    --- EXAMPLE OF USE ---
+    import MUSE_AOsetup as mao
+    mao.create_objectDS9reg('testfilename_test160113.txt','ra','dec',['RMag','RMag','VMag'])
+
+    mao.create_objectDS9reg('USNOB1p0_objects.txt','ra','dec',['Rmag','Rmag','Vmag'],skip_header=5,id_name='ID',star_name='Gal')
+
+    mao.create_objectDS9reg('MACS1149test.fits','RAJ2000','DEJ2000',['Rmag','Rmag','Vmag'],id_name='ID')
+
+    mao.create_objectDS9reg('MACS2129_CLASHcatSearchOutput_rsearch0p08333.fits','ra','dec',['f606w_mag','f606w_mag','f606w_mag'],id_name='id',star_name='stel')
+
+    """
+    mag_limits   = np.array(mag_limits)
+    if type(mag_names) == str: mag_names = [mag_names]*len(mag_limits)
+    mag_colors   = ['cyan','yellow','green'] # color ref: http://www.eso.org/sci/activities/docs/Call_MUSE_DF.pdf
+    mag_size     = [0.5,0.6,0.7]
+    if verbose: print ' - Will generate DS9 region file for objects brighter than ',mag_limits
+    if verbose: print '   using color coding ',mag_colors
+    if verbose: print '   and sizes          ',mag_size
+
+
+    if verbose: print ' - Loading data and iterating over objects '
+    if '.fits' in filename:
+        hdu  = pyfits.open(filename)
+        data = hdu[1].data
+        reg_filename = filename.replace('.fits','_brightobj.reg')
+    else:
+        data     = np.genfromtxt(filename,skip_header=skip_header,names=True,comments='#')
+        reg_filename = filename.replace('.txt','_brightobj.reg')
+
+    fout = open(reg_filename,'w')
+
+    reg_hdr = """# Region file format: DS9 version 4.1
+global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+fk5
+"""
+
+    fout.write(reg_hdr)
+    for objdat in data:
+        obj_id  = objdat[id_name]
+        obj_ra  = objdat[ra_name]
+        obj_dec = objdat[dec_name]
+
+        for ii, mag_lim in enumerate(mag_limits):
+            mag_ent = np.where(np.asarray(data.dtype.names) == mag_names[ii])
+            if np.size(mag_ent) == 0:
+                sys.exit(' - Did not find the magnitude column "'+mag_names[ii]+'" --> ABORTING')
+            else:
+                mag_ent = mag_ent[0][0]
+
+            ObjIsStar = True
+            if star_name != None: # checking if star flag indicates a galaxy or a star
+                if star_name == 'stel':
+                    obj_star = objdat[star_name]
+                    if obj_star < 0.8: ObjIsStar = False
+                elif star_name == 'Gal':
+                    obj_ent  = np.where(data[id_name] == obj_id)[0]
+                    data_str = np.genfromtxt(filename,skip_header=skip_header,names=True,comments='#',
+                                             dtype='f,40a,f,f,f,f,f,f,f,f,f,f,40a')
+                    obj_star = data_str[obj_ent][star_name]
+                    if obj_star != 'N': ObjIsStar = False
+                else:
+                    print 'WARNING No setup for star_name (stellarity flag) "'+star_name+'";',
+                    print ' Assuming all objects to be stars '
+
+            obj_mag  = objdat[mag_ent]
+            obj_text = str(objdat[id_name])+' '+mag_names[ii]+' = '+str("%.2f" % obj_mag)
+            if obj_mag < mag_lim:
+                reg_col   = mag_colors[ii]
+                reg_size  = mag_size[ii]
+
+                obj_row   = 'circle('+str(obj_ra)+','+str(obj_dec)+','+str(reg_size)+'") # color='+\
+                            str(reg_col)+' width=2 '
+                if ObjIsStar:
+                    obj_row = obj_row+' font="times 16 bold roman" text={'+obj_text+'}\n'
+                else:
+                    obj_row = obj_row+' font="times 16 normal italic" text={'+obj_text+'} dash=1\n'
+
+                fout.write(obj_row)
+    fout.close()
+    if verbose: print ' - Wrote region file of brigh objects to '+reg_filename
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def open_fits_and_regions(cluster='all',printcommand=False,verbose=True):
@@ -400,6 +487,12 @@ def run_all_GLASSclusters(search_radius=0.16666,printcommand=True,catalog=None,v
         mao.search_GSPCv2p4(GSPCsearchfile,cli['ra'],cli['dec'],GSPC_search_radius,clobber=False,verbose=True)
         if os.path.isfile(GSPCsearchfile):
             mao.create_objectDS9reg(GSPCsearchfile,'RAJ2000','DEJ2000',['Rmag','Rmag','Vmag'],id_name='ID')
+
+        # -------------------- SEARCH CLASH --------------------
+        if ('A370' not in key) and ('A2744' not in key):
+            outputcat = mao.search_CLASHcat(key,search_radius=search_radius,verbose=True)
+            mao.create_objectDS9reg(outputcat,'ra','dec',['f606w_mag','f606w_mag','f606w_mag'],
+                                    id_name='id',star_name='stel')
 
 
     if printcommand:
