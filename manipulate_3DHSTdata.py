@@ -52,8 +52,9 @@ def rename_3DHST2GLASS(outputdirectory,id,id_GLASSmock=9999,
         fnbase = fn.split('_'+str(id))[0]
         fnext  = fn.split('_'+str(id))[1]
 
-        field  = fn.split('/')[-4]
-        GLASSnamebase = field.upper().replace('-','3DHST-')+'0-DDDDD_'+str("%.5d" % id_GLASSmock)+'-G141'
+        field, field_no  = fn.split('/')[-4].split('-')
+
+        GLASSnamebase = field.upper()+'3DHST-555-'+str("%.5d" % int(field_no))+'_'+str("%.5d" % id_GLASSmock)+'-G141'
 
         if fnext.endswith('.png'):
             if fn.endswith(str(id)+'.1D.png'):
@@ -106,7 +107,7 @@ def caruanaLAEs(outputdir,verbose=True):
 
 
     for oo, obj in enumerate(ID_skelton):
-        if verbose: print '\n - Copying/renaming data of object '+str(obj)+'/"GLASS"'+\
+        if verbose: print '\n - Copying/renaming data of object '+str(obj)+'/"ID_GLASS"='+\
                           str(ID_GLASSmock[oo])+' (Lya at z = '+str("%.2f" % redshifts[oo])+')'
         obj_files = m3d.rename_3DHST2GLASS(outputdir,ID_skelton[oo],id_GLASSmock=ID_GLASSmock[oo],
                                            testing=False,clobber=True,verbose=verbose)
