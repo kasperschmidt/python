@@ -113,6 +113,47 @@ def caruanaLAEs(outputdir,verbose=True):
                                            testing=False,clobber=True,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def create_ELds9region(lyawave,outname='ds9region_emissionlines.reg',outpath='./',verbose=True):
+    """
+    Region files showing Lya/OII, OIII, CIII and CIV
+
+    --- INPUT ---
+    lyawave    Lya wavelength of object
+    verbose    Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import manipulate_3DHSTdata as m3d
+    m3d.create_ELds9region(9901.0,verbose=True)
+
+    """
+    zobj      = lyawave/1216.-1.
+    zobj_low  = lyawave/3726.-1.
+    if verbose: print ' - Generating region file for object at z='+str("%.2f" % zobj)+\
+                      ' (or z='+str("%.2f" % zobj_low)+')'
+
+    oiiiwave  = 5007.*(zobj_low+1.)
+    civwave   = XX1246.*(zobj+1.)
+    ciiiwave  = 1909.*(zobj+1.)
+
+
+    regtext = """
+# Region file format: DS9 version 4.1
+global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+wcs;
+circle(%s,0.0,200) # color=red width=2 text={Lya @ z~%s (or [OII] @ z~%s)}
+circle(%s,0.0,200) # color=red width=2 text={[OIII] @ z~%s}
+circle(%s,0.0,200) # color=red width=2 text={CIV @ z~%s}
+circle(%s,0.0,200) # color=red width=2 text={CIII] @ z~%s}
+""" % (lyawave,zobj,zobj_low,
+       oiiiwave,zobj_low,
+       civwave,zobj,
+       ciiiwave,zobj)
+
+    fout = open(outpath+outname,'w')
+    fout.write(regtext)
+    fout.close()
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_filenames(id=43386,verbose=True):
     """
     Returning list of files for a given id
