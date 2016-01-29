@@ -3,7 +3,7 @@
 # For command line compatability see fits2ascii_cmdline.py
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import pdb
-#import asciitable
+import asciitable
 import sys
 import pyfits
 import numpy as np
@@ -62,9 +62,11 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,verbose=True
     outpath          Alternative destination for the resulting fits file.
 
     --- EXAMPLE OF USE ---
+    import fits2ascii as f2a
+    outpath = '/Users/kschmidt/work/catalogs/'
+    catfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/A2744/A2744_CLUSTER.cat'
+    outputfile = f2a.ascii2fits(catfile,asciinames=True,skip_header=0,outpath=outpath,verbose=True)
 
-
-    NB! not tested as of 160118... download asciitable
     """
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print ' - Reading ascii file ',asciifile
@@ -86,7 +88,7 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,verbose=True
 
     columndefs = []
     for key in keys:
-        columndefs.append(pyfits.Column(name=key  , format='f', array=datadic[key]))
+        columndefs.append(pyfits.Column(name=key  , format='D', array=datadic[key]))
 
     cols     = pyfits.ColDefs(columndefs)
     tbhdu    = pyfits.new_table(cols)          # creating table header
@@ -95,4 +97,5 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,verbose=True
     thdulist.writeto(outputfile,clobber=True)  # write fits file (clobber=True overwrites excisting file)
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print ' - Wrote the data to: ',outputfile
+    return outputfile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =

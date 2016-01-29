@@ -133,7 +133,7 @@ else:
 
     columndefs = []
     for key in keys:
-        columndefs.append(pyfits.Column(name=key  , format='F', array=datadic[key]))
+        columndefs.append(pyfits.Column(name=key  , format='D', array=datadic[key]))
 
     cols     = pyfits.ColDefs(columndefs)
     tbhdu    = pyfits.new_table(cols)          # creating table header
