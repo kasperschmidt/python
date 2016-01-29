@@ -290,36 +290,28 @@ def search_ROMANcat(cluster,output='default',search_radius=0.08333,clobber=False
 
     --- EXAMPLE OF USE ---
     import MUSE_AOsetup as mao
-    cluster   = 'A2744'
+    cluster   = 'a2744'
     outputcat = mao.search_ROMANcat(cluster,verbose=True)
-
 
     """
     cluster_short = cluster.split('.')[0].lower()
 
-    if cluster == 'a2744':
+    if cluster_short == 'a2744':
         catfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/A2744/A2744_CLUSTER.cat'
-        outpath = '/Users/kschmidt/work/catalogs/'
-
-        f2a.ascii2fits(catfile,asciinames=True,skip_header=0,outpath=outpath,verbose=True)
-
-        f2acmd = 'fits2ascii.py '+catfile+' --verbose'
-        cmdout = commands.getoutput(f2acmd)
-        print cmdout
-
-        pdb.set_trace()
-    elif cluster == 'macs0416':
+    elif cluster_short == 'macs0416':
         catfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/M0416/M0416_CLUSTER.cat'
-    elif cluster == 'macs1149':
+    elif cluster_short == 'macs1149':
         #coordfile = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/M1149/outcord.1007_HST.dat'
         #catfile   = '/Users/kschmidt/work/GitHub/GLASS/ROMAN_CATALOGS/M1149/outmag.1007_HST.dat'
         catfile    = '/Users/kschmidt/work/catalogs/ROMANphotocat_M1149combcat.cat'
     else:
         print ' WARNING No ROMAN catalog exists for the cluster '+cluster+'. Nothing returned.'
         return None
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ROMAN_hdu      = pyfits.open(catfile) # Load the FITS hdulist
+    outpath     = '/Users/kschmidt/work/catalogs/'
+    fitscatalog = f2a.ascii2fits(catfile,asciinames=True,skip_header=0,outpath=outpath,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ROMAN_hdu      = pyfits.open(fitscatalog) # Load the FITS hdulist
     ROMAN_dat      = ROMAN_hdu[1].data
     ROMAN_IDall    = ROMAN_dat['ID']
     ROMAN_RAall    = ROMAN_dat['RA']
@@ -352,10 +344,9 @@ def search_ROMANcat(cluster,output='default',search_radius=0.08333,clobber=False
                           ' No file returned'
 
     return outputfile
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_objectDS9reg(filename,ra_name,dec_name,mag_names,mag_limits=[17.5,20.0,20.5],
-                        id_name='objID',skip_header=3,star_name=None,verbose=True):
+                        id_name='objID',skip_header=3,star_name=None,mag_min=5,verbose=True):
     """
     Generate DS9 region files for star (object) catalog with color coding according to magnitude
 
@@ -371,6 +362,7 @@ def create_objectDS9reg(filename,ra_name,dec_name,mag_names,mag_limits=[17.5,20.
     star_name        Name of column containing information about object stellarity
                      Note that the selection is based on the column name, i.e., 'stel'
                      assumes a CLASH-like setup.
+    mag_min          The brightest magnitude to consider. Avoids spurious magnitude entries like -99
     verbose          toggle vebosity
 
     --- EXAMPLE OF USE ---
@@ -439,7 +431,7 @@ fk5
 
             obj_mag  = objdat[mag_ent]
             obj_text = str(objdat[id_name])+' '+mag_names[ii]+' = '+str("%.2f" % obj_mag)
-            if obj_mag < mag_lim:
+            if (obj_mag < mag_lim) and (obj_mag > mag_min):
                 reg_col   = mag_colors[ii]
                 reg_size  = mag_size[ii]
 
@@ -455,18 +447,23 @@ fk5
     if verbose: print ' - Wrote region file of brigh objects to '+reg_filename
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def open_fits_and_regions(cluster='all',printcommand=False,verbose=True):
+def open_fits_and_regions(cluster='all',printcommand=False,regstring='',verbose=True):
     """
     Open full FOV files in DS9 and overlay the regions to inspect
 
     --- INPUT ---
     cluster        Name of cluster to display. Can use 'all' to open all 10 clusters
     printcommand   Set to True to only print the command so you can open it manually from another terminal
+    regstring      Only open region files with given string in name (string after the cluster name)
     verbose        Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import MUSE_AOsetup as mao
     mao.open_fits_and_regions('MACS1149')
+    mao.open_fits_and_regions('A2744',regstring='EDIT',printcommand=True)
+    mao.open_fits_and_regions('RXJ2248',regstring='EDIT',printcommand=True)
+    mao.open_fits_and_regions('MACS0416',regstring='EDIT',printcommand=True)
+    mao.open_fits_and_regions('MACS1149',regstring='EDIT',printcommand=True)
 
     """
 
@@ -476,43 +473,43 @@ def open_fits_and_regions(cluster='all',printcommand=False,verbose=True):
     ds9cmd = ' ds9 '
 
     if cluster == 'A370' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*A370*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*A370*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_A370-IR_drz.fits -region '+regfiles
 
     if cluster == 'A2744' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*A2744*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*A2744*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_frontier_hst_wfc3-60mas_abell2744_f140w_v1.0_drz.fits -region '+regfiles
 
     if cluster == 'MACS0416' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*MACS0416*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*MACS0416*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_frontier_hst_wfc3-60mas_macs0416_f140w_v1.0_drz.fits -region '+regfiles
 
     if cluster == 'MACS0717' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*MACS0717*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*MACS0717*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_MACS0717-IR_drz.fits -region '+regfiles
 
     if cluster == 'MACS0744' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*MACS0744*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*MACS0744*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_clash_hst_wfc3ir_macs0744_total_v1_drz.fits -region '+regfiles
 
     if cluster == 'MACS1149' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*MACS1149*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*MACS1149*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_clash_hst_wfc3ir_macs1149_total_v1_drz.fits -region '+regfiles
 
     if cluster == 'MACS1423' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*MACS1423*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*MACS1423*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_clash_hst_wfc3ir_macs1423_total_v1_drz.fits -region '+regfiles
 
     if cluster == 'MACS2129' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*MACS2129*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*MACS2129*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_clash_hst_wfc3ir_macs2129_total_v1_drz.fits -region '+regfiles
 
     if cluster == 'RXJ1347' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*RXJ1347*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*RXJ1347*'+regstring+'*.reg'))
         ds9cmd = ds9cmd+' '+imgpath+'refimage_hlsp_clash_hst_wfc3ir_rxj1347_total_v1_drz.fits -region '+regfiles
 
     if cluster == 'RXJ2248' or cluster == 'all':
-        regfiles = ' -region '.join(glob.glob(regpath+'*RXJ2248*.reg'))
+        regfiles = ' -region '.join(glob.glob(regpath+'*RXJ2248*'+regstring+'*.reg'))
         ds9cmd   = ds9cmd+' '+imgpath+'refimage_hlsp_clash_hst_wfc3ir_rxj2248_total_v1_drz.fits -region '+regfiles
 
     ds9cmd = ds9cmd+' '
@@ -572,9 +569,12 @@ def run_all_GLASSclusters(search_radius=0.16666,printcommand=True,catalog=None,v
             mao.create_objectDS9reg(outputcat,'ra','dec',['f606w_mag','f606w_mag','f606w_mag'],
                                     id_name='id',star_name='stel')
 
+        # -------------------- SEARCH ROMAN --------------------
+        outputcat = mao.search_ROMANcat(key,search_radius=search_radius,verbose=True)
+        if outputcat != None:
+            mao.create_objectDS9reg(outputcat,'RA','DEC',['V606','V606','V606'],id_name='ID')
 
     if printcommand:
         if verbose: print '\n\n - To open the fits files use the DS9 command:'
     mao.open_fits_and_regions('all',printcommand=printcommand,verbose=verbose)
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
