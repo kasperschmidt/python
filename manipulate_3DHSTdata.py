@@ -135,7 +135,7 @@ def generateCaruanaLAEregions(verbose=True):
         outputfile    = str("%.3d" % ID_GLASSmock[ll])+'_emissionlines.reg'
         m3d.create_ELds9region(lw, outname=outputfile, outpath=outputpath)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def create_ELds9region(lyawave,outname='ds9region_emissionlines.reg',outpath='./',verbose=True):
+def create_ELds9region(lyawave,outname='ds9region_emissionlines.reg',outpath='./',markersize=200,verbose=True):
     """
     Region files showing Lya/OII, OIII, CIII and CIV
 
@@ -164,20 +164,20 @@ def create_ELds9region(lyawave,outname='ds9region_emissionlines.reg',outpath='./
 # Region file format: DS9 version 4.1
 global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
 wcs;
-circle(%s,0.0,200) # color=green width=2 text={Lya @ z~%s (or [OII] @ z~%s)}
-circle(%s,0.0,200) # color=magenta width=2 text={[OIII] @ z~%s}
-circle(%s,0.0,200) # color=green width=2 text={CIV @ z~%s}
-circle(%s,0.0,200) # color=green width=2 text={CIII] @ z~%s}
-circle(%s,0.0,200) # color=green width=2 text={MgII @ z~%s}
-circle(%s,0.0,200) # color=magenta width=2 text={MgII @ z~%s}
-circle(%s,0.0,200) # color=magenta width=2 text={Halpha @ z~%s}
-""" % (lyawave,  str("%.2f" % zobj),        str("%.2f" % zobj_low),
-       oiiiwave, str("%.2f" % zobj_low),
-       civwave,  str("%.2f" % zobj),
-       ciiiwave, str("%.2f" % zobj),
-       mgiiwaveH, str("%.2f" % zobj),
-       mgiiwaveL, str("%.2f" % zobj_low),
-       halphawave, str("%.2f" % zobj_low)
+circle(%s,0.0,%s) # color=green width=2 text={Lya @ z~%s (or [OII] @ z~%s)}
+circle(%s,0.0,%s) # color=magenta width=2 text={[OIII] @ z~%s}
+circle(%s,0.0,%s) # color=green width=2 text={CIV @ z~%s}
+circle(%s,0.0,%s) # color=green width=2 text={CIII] @ z~%s}
+circle(%s,0.0,%s) # color=green width=2 text={MgII @ z~%s}
+circle(%s,0.0,%s) # color=magenta width=2 text={MgII @ z~%s}
+circle(%s,0.0,%s) # color=magenta width=2 text={Halpha @ z~%s}
+""" % (lyawave, markersize, str("%.2f" % zobj),        str("%.2f" % zobj_low),
+       oiiiwave, markersize, str("%.2f" % zobj_low),
+       civwave,  markersize, str("%.2f" % zobj),
+       ciiiwave, markersize, str("%.2f" % zobj),
+       mgiiwaveH, markersize, str("%.2f" % zobj),
+       mgiiwaveL, markersize, str("%.2f" % zobj_low),
+       halphawave, markersize, str("%.2f" % zobj_low)
        )
 
     fout = open(outpath+outname,'w')
