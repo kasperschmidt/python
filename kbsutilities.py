@@ -240,7 +240,7 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
     EBVvals = []
     for coord in coords_arr:
         cc = SkyCoord(ra=coord[0]*u.degree, dec=coord[1]*u.degree, frame='fk5')
-        print '   Getting A and E(B-V) at (ra, dec) = (',str("%.8f" % cc.ra.deg),',',\
+        if verbose: print '   Getting A and E(B-V) at (ra, dec) = (',str("%.8f" % cc.ra.deg),',',\
             str("%.8f" % cc.dec.deg),')  ',
         Avval, EBVval = kbs.getAv(cc.ra.deg,cc.dec.deg,filter)
         Avvals.append(Avval)
