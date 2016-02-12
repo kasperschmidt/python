@@ -7,6 +7,7 @@ import glob
 import pyfits
 import numpy as np
 import fits2ascii as f2a
+import kbsutilities as kbs
 import crossmatch as cm
 import MUSE_AOsetup as mao
 from astropy import units
@@ -577,4 +578,21 @@ def run_all_GLASSclusters(search_radius=0.16666,printcommand=True,catalog=None,v
     if printcommand:
         if verbose: print '\n\n - To open the fits files use the DS9 command:'
     mao.open_fits_and_regions('all',printcommand=printcommand,verbose=verbose)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_extinctions4GLASSclusters(filter='F125W',valreturn='median',radius=1.7/60.,
+                                  stepsize=[0.4/60.,0.4/60.],verbose=True):
+    """
+
+    Using kbs.getAv_area to get extinction of GLASS clusters
+
+    mao.get_extinctions4GLASSclusters()
+
+    """
+    cldic = mao.clusterinfo()
+
+    for key in cldic.keys():
+        if verbose: print ' ---------------- Get extinction for '+cldic[key]['name']+' ----------------'
+        A, EBV, grid = kbs.getAv_area(cldic[key]['ra'],cldic[key]['dec'],radius,stepsize=stepsize,
+                                      valreturn=valreturn,filter=filter,verbose=verbose)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
