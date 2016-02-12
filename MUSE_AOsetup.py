@@ -592,7 +592,12 @@ def get_extinctions4GLASSclusters(filter='F125W',valreturn='median',radius=1.7/6
 
     for key in cldic.keys():
         if verbose: print ' ---------------- Get extinction for '+cldic[key]['name']+' ----------------'
+        if verbose == 'Full':
+            vb_getAv_area = True
+        else:
+            vb_getAv_area = False
         A, EBV, grid = kbs.getAv_area(cldic[key]['ra'],cldic[key]['dec'],radius,stepsize=stepsize,
-                                      valreturn=valreturn,filter=filter,verbose=verbose)
+                                      valreturn=valreturn,filter=filter,verbose=vb_getAv_area)
+        if verbose: print ' - The results is A, EBV, grid = ',A,',', EBV,',', grid,','
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
