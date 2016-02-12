@@ -245,7 +245,7 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
         Avval, EBVval = kbs.getAv(cc.ra.deg,cc.dec.deg,filter)
         Avvals.append(Avval)
         EBVvals.append(EBVval)
-        print '  A, E(B-V) = ',str("%.2f" % Avval),str("%.2f" % EBVval)
+        if verbose: print '  A, E(B-V) = ',str("%.2f" % Avval),str("%.2f" % EBVval)
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
