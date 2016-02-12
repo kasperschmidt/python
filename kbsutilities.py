@@ -226,6 +226,8 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
 
 
     Ngridpoints = len(grid_coords)
+    if Ngridpoints == 0:
+        sys.exit(' Grid has 0 grid points. Check your radius ('+str(radius)+') and stepsize ('+str(stepsize)+')')
     coords_arr  = np.asarray(grid_coords)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
