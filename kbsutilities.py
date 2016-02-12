@@ -27,6 +27,7 @@
 """
 #-------------------------------------------------------------------------------------------------------------
 # importing modules
+import kbsutilities as kbs
 import fileinput
 import sys
 import math
@@ -43,9 +44,8 @@ import commands
 import time
 import pyfits
 import os
-#-------------------------------------------------------------------------------------------------------------
-__version__ = 1.0 
-__author__ = "K. B. Schmidt"
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 #-------------------------------------------------------------------------------------------------------------
 def test4float(str): 
     """testing whehter a string contains letters (i.e. whether it can be converted to a float)"""
@@ -173,10 +173,11 @@ def getAv(RA,DEC,filter):
         gall = gcoords.l.degrees
         galb = gcoords.b.degrees
 
-    dustmaps    = '/Users/kasperborelloschmidt/work/python/progs/dust_getvalV0p1/fits/SFD_dust_4096_%s.fits'
+    #dustmaps    = '/Users/kasperborelloschmidt/work/python/progs/dust_getvalV0p1/fits/SFD_dust_4096_%s.fits'
+    dustmaps    = '/Users/kschmidt/work/dustmaps/SFD_dust_4096_%s.fits'
     Ebv         = astropysics.obstools.get_SFD_dust(gall,galb,dustmaps,interpolate=True) # redening from Schlegel maps
 
-    av_ebv = {} # ebv2Av values for HST filters from Larry
+    av_ebv = {} # ebv2Av values for HST filters from Larry; CCM reddening curve with R_V = 3.1
     av_ebv['F300X']  = 6.78362003559
     av_ebv['F475X']  = 3.79441819047
     av_ebv['F475W']  = 3.82839055809
@@ -195,6 +196,105 @@ def getAv(RA,DEC,filter):
     Av          = av_ebv[filter] * Ebv
 
     return Av,Ebv
+#-------------------------------------------------------------------------------------------------------------
+def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=[0.5,0.5],verbose=True):
+    """
+    use kbs.getAv to get the dust extinction in a circular aperture of a given radius
+
+    stepsize     Step size in degrees when generating grid to estimate extinction over
+    valreturn    Determines the output. Chose between 'median', 'mean', ...
+                 If 'None' all values will be returned
+
+    A, EBV, grid = kbs.getAv_area(322.35977,-7.6908861,1.7/60.,filter='F125W',valreturn='median',stepsize=[0.5/60.,0.5/60.])
+
+    """
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    center   = SkyCoord(ra=RAcenter*u.degree, dec=DECcenter*u.degree, frame='fk5')
+    ra_grid  = np.arange(RAcenter,RAcenter+2*radius,stepsize[0])-radius
+    dec_grid = np.arange(DECcenter,DECcenter+2*radius,stepsize[0])-radius
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Setting up grid to estimate extinction on'
+    grid_coords = []
+    for rag in ra_grid:
+        for decg in dec_grid:
+            c_check = SkyCoord(ra=rag*u.degree, dec=decg*u.degree, frame='fk5')
+            sep     = center.separation(c_check)  # Differing frames handled correctly
+
+            if sep < radius*u.deg:
+                grid_coords.append([rag,decg])
+
+
+    Ngridpoints = len(grid_coords)
+    coords_arr  = np.asarray(grid_coords)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ds9gridfile = './gridregions.reg'
+    if verbose: print ' - Saving grid to DS9 region file in '+ds9gridfile
+    kbs.create_DS9region(ds9gridfile,coords_arr[:,0],coords_arr[:,1],clobber=True)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Getting extinction for '+str(Ngridpoints)+' gridpoints '
+    Avvals  = []
+    EBVvals = []
+    for coord in coords_arr:
+        cc = SkyCoord(ra=coord[0]*u.degree, dec=coord[1]*u.degree, frame='fk5')
+        print '   Getting A and E(B-V) at (ra, dec) = (',str("%.8f" % cc.ra.deg),',',\
+            str("%.8f" % cc.dec.deg),')  ',
+        Avval, EBVval = kbs.getAv(cc.ra.deg,cc.dec.deg,filter)
+        Avvals.append(Avval)
+        EBVvals.append(EBVval)
+        print '  A, E(B-V) = ',str("%.2f" % Avval),str("%.2f" % EBVval)
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if valreturn == 'median':
+        if verbose: print ' - Returning median value on calculated grid points'
+        Av_final   = np.median(np.asarray(Avvals))
+        EBV_final  = np.median(np.asarray(EBVvals))
+        gridreturn = Ngridpoints
+    elif valreturn == 'mean':
+        if verbose: print ' - Returning mean value on calculated grid points'
+        Av_final   = np.mean(np.asarray(Avvals))
+        EBV_final  = np.mean(np.asarray(EBVvals))
+        gridreturn = Ngridpoints
+    else:
+        if verbose: print ' - Returning all values calculated'
+        Av_final   = np.asarray(Avvals)
+        EBV_final  = np.asarray(EBVvals)
+        gridreturn = coords_arr
+
+    return Av_final, EBV_final, gridreturn
+
+#-------------------------------------------------------------------------------------------------------------
+def create_DS9region(outputfile,ralist,declist,color='red',circlesize=0.5,textlist=None,clobber=False):
+    """
+    Generate a basic DS9 region file with circles around a list of coordinates
+
+    ralist
+    declist
+    color
+    size
+    text
+
+    """
+
+    if not clobber:
+        if os.path.isfile(outputfile):
+            sys.exit('File already exists and clobber = False --> ABORTING')
+    fout = open(outputfile,'w')
+
+    fout.write("# Region file format: DS9 version 4.1 \nfk5\n")
+
+    for rr, ra in enumerate(ralist):
+        string = 'circle('+str(ra)+','+str(declist[rr])+','+str(circlesize)+'") # color='+color+' width=3 '
+
+        if textlist != None:
+            string = string+' font="times 10 bold roman" text={'+textlist[rr]+'}'
+
+        fout.write(string+' \n')
+
+    fout.close()
+
 #-------------------------------------------------------------------------------------------------------------
 def magapp2abs(Mapp,zobj,RA,DEC,Av=-99,band='Jbradley2012',cos='WMAP7BAOH0'):
     """
