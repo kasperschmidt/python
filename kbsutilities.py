@@ -40,6 +40,7 @@ from astropysics import coords
 from astropysics.constants import choose_cosmology
 import types               # for testing types
 import pdb
+import fits2ascii as f2a
 import commands
 import time
 import pyfits
@@ -94,6 +95,10 @@ def DandTstr():
     DandT = str(date1[1])+''.join(date[1:3])+HHMMSS
     return str(DandT)
 
+#-------------------------------------------------------------------------------------------------------------
+def DandTstr2():
+    """Creating a string with date and time on the format %Y-%m-%d %H:%M:%S"""
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 #-------------------------------------------------------------------------------------------------------------
 def divideWith0(numerator,denominator,badval): 
     """Replacing division with 0 in ratios with value instead of crashing"""
@@ -842,6 +847,141 @@ def void2file(npvoid,outputfile,verbose=False,clobber=False):
             f.write("%s\n" % outstr)
 
         f.close()
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def crossmatch(ralist,declist,
+               catalog='skelton_goodss',idcol='id',racol='ra',deccol='dec',catext=1,verbose=True):
+    """
+    Crossmatch a list of coordinates to a catalog and return IDs, ra, dec, and r_match[arcsec]
+
+    --- INPUT ---
+    ralist        List of RA to crossmatch to catalog
+    declist       List of Dec to crossmatch to catalog
+    catalog       Fits catalog to find matches in and return ID, coordinates and r_match
+    idcol         ID column name in fits catalog
+    racol         RA column name in fits catalog
+    deccol        Dec column name in fits catalog
+    catext        Fits extension containing catalog data in fits catalog
+    verbose       Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+
+    id, ra, dec, rmatch = kbs.crossmatch([53.090976],[-27.957849]) # object 12 in skelton catalog
+
+    """
+    if len(ralist) != len(declist):
+        sys.exit('The provided "ralist" and "declist" have different lengths --> ABORTING')
+    else:
+        Nobj = len(ralist)
+        if verbose: print ' - Will return best match to the '+str(Nobj)+' coordinate sets provide '
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading catalog to get IDs'
+    if catalog == 'skelton_goodss':
+        catpath   = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/'
+        catmatch  = catpath+'goodss_3dhst.v4.1.cat.FITS'
+    else:
+        catmatch  = catalog
+
+    catdat = pyfits.open(catmatch)[catext].data
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Finding IDs for provided objects '
+    objids        = np.zeros(Nobj)-99.0
+    ra_objids     = np.zeros(Nobj)-99.0
+    dec_objids    = np.zeros(Nobj)-99.0
+    rmatch_objids = np.zeros(Nobj)-99.0
+    for rr in xrange(Nobj):
+        objra              = ralist[rr]
+        objdec             = declist[rr]
+        if verbose:
+            infostr = '   Finding ID for (ra,dec) = ('+str("%12.8f" % objra)+', '+str("%12.8f" % objdec)+')'
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        rmatch             = np.sqrt( (np.cos(objdec)*(catdat[racol]-objra))**2.0 + (catdat[deccol]-objdec)**2.0 )
+        objent             = np.where(rmatch == np.min(rmatch))[0]
+        objids[rr]         = catdat[idcol][objent]
+        ra_objids[rr]      = catdat[racol][objent]
+        dec_objids[rr]     = catdat[deccol][objent]
+        rmatch_objids[rr]  = rmatch[objent]*3600. # rmatch in arcsec
+
+    if verbose: print '\n   ... done '
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Returning ID, RA, Dec, r_match[arcsec] '
+    return objids, ra_objids, dec_objids, rmatch_objids
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_candels-cdfs_v0.1.fits',
+                   idcol='ID',racol='RA',deccol='DEC',catext=1,
+                   matchcat='skelton_goodss',
+                   m_idcol='id',m_racol='ra',m_deccol='dec',m_catext=1,
+                   writetofile='./kbscrossmatch_defaultname',clobber=False,verbose=True):
+    """
+
+    Generate catlogs of crossmatches to a given fits catalog
+
+    --- INPUT ---
+
+    radeccat      Fits catalog with RA and Dec to crossmatch to matchcat
+    idcol         ID column name in fits radeccat
+    racol         RA column name in fits radeccat
+    deccol        Dec column name in fits radeccat
+    catext        Fits extension containing catalog data in fits radeccat
+    rmatchcat     Fits catalog to extract crossmatches and IDs from
+    m_idcol       ID column name in fits rmatchcat
+    m_racol       RA column name in fits rmatchcat
+    m_deccol      Dec column name in fits rmatchcat
+    m_catext      Fits extension containing catalog data in fits rmatchcat
+    writetofile   Generate ascii and fits output of crossmatches
+                  If writetofile='None' nothing will be written, and the crossmatach will just be returned
+    clobber       Overwrite existing output files?
+    verbose       Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+
+    radeccat = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_candels-cdfs_v0.1.fits'
+    matchcat = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    id, ra, dec, rmacth = kbs.crossmatch2cat(radeccat,matchcat=matchcat,writetofile='./MUSEcdfs_cm2_3DHSTgoods',clobber=False)
+
+    """
+    catdat    = pyfits.open(radeccat)[catext].data
+    objs_id   = catdat[idcol]
+    objs_ra   = catdat[racol]
+    objs_dec  = catdat[deccol]
+
+    id_match, ra_match, dec_match, r_match = kbs.crossmatch(objs_ra,objs_dec,catalog=matchcat,
+                                                            idcol=m_idcol,racol=m_racol,deccol=m_deccol,
+                                                            catext=m_catext,verbose=verbose)
+
+    if writetofile != 'None':
+        asciifile = writetofile+'.txt'
+
+        if os.path.isfile(asciifile) and (clobber == False):
+            if verbose: print ' - WARNING: '+asciifile+' exists and clobber=False so no file generated'
+        else:
+            if verbose: print ' - Generating '+asciifile
+            fout = open(asciifile,'w')
+            fout.write('# crossmatch using kbsutilities.crossmatch2cat() and '
+                       'kbsutilities.crossmatch() on '+kbs.DandTstr2()+' \n')
+            fout.write('# crossmatched objects in '+radeccat+' to '+matchcat+'\n')
+            fout.write('# ID ra dec   ID_match ra_match dec_match r_match_arcsec \n')
+            for ii, objid in enumerate(objs_id):
+                objstr  = str("%20i"   % objid)          +'  '+\
+                          str("%16.8f" % objs_ra[ii])    +'  '+\
+                          str("%16.8f" % objs_dec[ii])   +'  '+\
+                          str("%20i"   % id_match[ii])   +'  '+\
+                          str("%16.8f" % ra_match[ii])   +'  '+\
+                          str("%16.8f" % dec_match[ii])  +'  '+\
+                          str("%16.8f" % r_match[ii])
+                fout.write(objstr+'\n')
+            fout.close()
+
+        fitsfile  = writetofile+'.fits'
+        if os.path.isfile(fitsfile) and (clobber == False):
+            if verbose: print ' - WARNING: '+fitsfile+' exists and clobber=False so no file generated'
+        else:
+            if verbose: print ' - Generating '+fitsfile
+            fitspath   = kbs.pathAname(asciifile)[0]
+            outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=2,outpath=fitspath,verbose=verbose)
+
+    return id_match, ra_match, dec_match, r_match
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
