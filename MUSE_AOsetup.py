@@ -580,7 +580,7 @@ def run_all_GLASSclusters(search_radius=0.16666,printcommand=True,catalog=None,v
     mao.open_fits_and_regions('all',printcommand=printcommand,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_extinctions4GLASSclusters(filter='F125W',valreturn='median',radius=1.7/60.,
-                                  stepsize=[0.4/60.,0.4/60.],verbose=True):
+                                  stepsize=[0.4/60.,0.4/60.],clusters='GLASS',verbose=True):
     """
 
     Using kbs.getAv_area to get extinction of GLASS clusters
@@ -588,7 +588,12 @@ def get_extinctions4GLASSclusters(filter='F125W',valreturn='median',radius=1.7/6
     mao.get_extinctions4GLASSclusters()
 
     """
-    cldic = mao.clusterinfo()
+    if clusters == 'GLASS':
+        cldic = mao.clusterinfo()
+    elif clusters == 'others':
+        cldic = {}
+        cldic['bullet'] = {'ra':104.62958,'dec': -55.94694 , 'name':'Bullet'}
+        cldic['A1689']  = {'ra':197.87292,'dec': -1.33806  , 'name':'A1689'}
 
     for key in cldic.keys():
         if verbose: print ' ---------------- Get extinction for '+cldic[key]['name']+' ----------------'
@@ -599,5 +604,4 @@ def get_extinctions4GLASSclusters(filter='F125W',valreturn='median',radius=1.7/6
         A, EBV, grid = kbs.getAv_area(cldic[key]['ra'],cldic[key]['dec'],radius,stepsize=stepsize,
                                       valreturn=valreturn,filter=filter,verbose=vb_getAv_area)
         if verbose: print ' - The results is A, EBV, grid = ',A,',', EBV,',', grid,','
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
