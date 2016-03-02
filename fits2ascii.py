@@ -51,7 +51,7 @@ def fits2ascii(fitsfile,outpath=None,columns=['all'],verbose=True):
     if verbose: print ' - Wrote data to: ',asciiname
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,verbose=True):
+def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='D',verbose=True):
     """
     Convert ascii file into fits (see fits2ascii for the reverse command)
 
@@ -70,15 +70,23 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,verbose=True
     """
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print ' - Reading ascii file ',asciifile
-    data    = np.genfromtxt(asciifile,names=asciinames,skip_header=skip_header,comments='#')
+    data    = np.genfromtxt(asciifile,names=asciinames,skip_header=skip_header,comments='#',dtype=None)
     keys    = data.dtype.names
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print ' - Initialize and fill dictionary with data'
     datadic = {}
     for kk in keys:
         datadic[kk] = []
-        datadic[kk] = data[kk]
+        try:
+            lenarr = len(np.asarray(data[kk]))
+            datadic[kk] = np.asarray(data[kk])
+        except: # if only one row of data is to be written
+            datadic[kk] = np.asarray([data[kk]])
+
     if verbose: print ' - found the columns '+','.join(keys)
+
+    if len(fitsformat) != len(keys):
+        fitsformat = np.asarray([fitsformat]*len(keys))
     #-------------------------------------------------------------------------------------------------------------
     # writing to fits table
     tail = asciifile.split('.')[-1]# reomove extension
@@ -87,8 +95,13 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,verbose=True
         outputfile = outpath+outputfile.split('/')[-1]
 
     columndefs = []
-    for key in keys:
-        columndefs.append(pyfits.Column(name=key  , format='D', array=datadic[key]))
+    for kk, key in enumerate(keys):
+        try:
+            columndefs.append(pyfits.Column(name=key  , format=fitsformat[kk], array=datadic[key]))
+        except:
+            print ' ----ERROR---- in defining columns for fits file --> stopping with pdb.set_trace() to invest'
+            pdb.set_trace()
+
 
     cols     = pyfits.ColDefs(columndefs)
     tbhdu    = pyfits.new_table(cols)          # creating table header
