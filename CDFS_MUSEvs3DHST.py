@@ -148,14 +148,20 @@ def extract_objectsinfo(MUSEidlist,cmfile='./MUSEcdfs_cm2_3DHSTgoods.fits',
                 objstr     = objstr+'  '+specinfo
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 fout.write(objstr+'\n')
-        fout.close()
+    fout.close()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #if os.path.isfile(fitsfile) and (clobber == False):
-    #    if verbose: print ' - WARNING: '+fitsfile+' exists and clobber=False so no file generated'
-    #else:
-    #    if verbose: print ' - Generating (coverting ascii output file to) '+fitsfile
-    #    fitspath   = kbs.pathAname(asciifile)[0]
-    #    outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=1,outpath=fitspath,verbose=verbose)
+    if os.path.isfile(fitsfile) and (clobber == False):
+        if verbose: print ' - WARNING: '+fitsfile+' exists and clobber=False so no file generated'
+    else:
+        if verbose: print ' - Generating (coverting ascii output file to) '+fitsfile
+        fitspath   = kbs.pathAname(asciifile)[0]
+        asciidat   = np.genfromtxt(asciifile,names=True,skip_header=1,comments='#')
+        keys       = asciidat.dtype.names
+        fitsformat = np.asarray(['D']*(len(keys)),dtype='5a')
+        fitsformat[np.asarray(keys) == 'specinfo'] = '200A'
+        fitsformat[np.asarray(keys) == 'grism_id'] = '25A'
+        outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=1,outpath=fitspath,
+                                    fitsformat=fitsformat,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def objectsinfo_columnlist():
@@ -220,4 +226,54 @@ def objectsinfo_columnlist():
     'ELflux___Ha_EQW',
     'ELflux___Ha_EQW_ERR']
     return columnlist
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def objinfo_CDFSobj(MUSEcat,zcut=[2.9-10.0],output_basename='./objectinfo_output',cmfile=False,crossmatchtol=0.1
+                    ,clobber=False,MUSEcatext=1,verbose=True):
+    """
+
+    Make cut on MUSE redshift and extract 3D-HST info
+
+    --- INPUT ---
+    MUSEcat          MUSE catalog to extract objects from
+    output_basename  Basename to use for output files
+    cmfile           Fits file with crossmatch to 3D-HST catalogs. If None the crossmatch will be performed
+    crossmatchtol    Tolerance for crossmatch. Deafult is to only extract information of r_match <0.1 arc sec
+    clobber          Overwrite files?
+    MUSEcatext       Extension containing data in MUSEcat
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import CDFS_MUSEvs3DHST as cm3
+    MUSEcat = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_candels-cdfs_v0.1.fits'
+    cm3.objinfo_CDFSobj(MUSEcat,zcut=[2.9,10.0],output_basename='./MUSECDFS_z2p9-10p0_cmtol0p1',crossmatchtol=0.1,clobber=True)
+
+    cm3.objinfo_CDFSobj(MUSEcat,zcut=[2.9,10.0],output_basename='./MUSECDFS_z2p9-10p0_cmtol0p5',crossmatchtol=0.5,clobber=True)
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if not cmfile:
+        if verbose: print ' - No crossmatch output provide, so crossmatching input catalog to 3D_HST goodss catalog'
+        cmfile = output_basename+'_crossmatch_3DHST'
+        radeccat = MUSEcat
+        matchcat = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+        cmout = kbs.crossmatch2cat(radeccat,matchcat=matchcat,clobber=clobber,
+                                   writetofile=cmfile.split('.fit')[0],verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading MUSE catalog and extracting ids based on selection'
+    musedat   = pyfits.open(MUSEcat)[MUSEcatext].data
+    goodmask  = (musedat['redshift'] >= zcut[0]) & (musedat['redshift'] <= zcut[1])
+    gooddat   = musedat[goodmask]
+    goodids   = musedat['ID'][goodmask]
+    Ngoodobj  = len(goodids)
+    if verbose: print '   Found '+str(Ngoodobj)+' objects with z = ',zcut
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if Ngoodobj > 0:
+        subcatname = output_basename+'_MUSEsubcat.fits'
+        if verbose: print ' - Saving MUSE sub-catalog to '+subcatname
+        pyfits.writeto(subcatname, gooddat, header=pyfits.open(MUSEcat)[MUSEcatext].header, clobber=clobber)
+
+        if verbose: print ' - Extracting 3D-HST data for the objects'
+        cm3.extract_objectsinfo(goodids,printcolnames=False,clobber=clobber,verbose=verbose,
+                                crossmatchtol=crossmatchtol,output_basename=output_basename+'_3DHSTinfo')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
