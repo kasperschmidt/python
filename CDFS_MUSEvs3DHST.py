@@ -12,6 +12,8 @@ import manipulate_3DHSTdata as m3d
 import CDFS_MUSEvs3DHST as cm3
 import fits2ascii as f2a
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def extract_objectsinfo(MUSEidlist,cmfile='./MUSEcdfs_cm2_3DHSTgoods.fits',
                         crossmatchtol=0.1,output_basename='./objectinfo_output',clobber=False,
@@ -159,6 +161,8 @@ def extract_objectsinfo(MUSEidlist,cmfile='./MUSEcdfs_cm2_3DHSTgoods.fits',
         asciidat   = np.genfromtxt(asciifile,names=True,skip_header=1,comments='#')
         keys       = asciidat.dtype.names
         fitsformat = np.asarray(['D']*(len(keys)),dtype='5a')
+        fitsformat[np.asarray(keys) == 'id_MUSE'] = 'J' #32 bit integer
+        fitsformat[np.asarray(keys) == 'id_3DHST'] = 'J' #32 bit integer
         fitsformat[np.asarray(keys) == 'specinfo'] = '200A'
         fitsformat[np.asarray(keys) == 'grism_id'] = '25A'
         outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=1,outpath=fitspath,
@@ -332,6 +336,29 @@ def extract_3DHSTdata(infofits_3DHST,outputdir=False,verbose=True):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return idM_out, id3_out, spec_out
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_fits2Dfilenames(specinfo,dataparentdir,verbose=True):
+    """
+
+    glob for and return absolute paths for existing fits 2D files
+
+    """
+    filelist = []
+    namelist = specinfo.split('xxx')[0]
+
+    for name in namelist:
+        if name != 'None':
+            filename = glob.glob(dataparentdir+'/'+name[:-11]+'/2D/FITS/'+name+'.2D.fits')
+            Nfiles   = len(filename)
+            if len(filename) == 1:
+                filelist.append(os.path.abspath(filename[0]))
+            elif Nfiles == 0:
+                if verbose: print '   No 2D.fits files found in data sub-directories '
+            else:
+                if verbose: print '   NB! More than one 2D.fits file found; returning path for first file '
+                filelist.append(os.path.abspath(filename[0]))
+
+    return filelist
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_objectinfo_all(catMUSE,cat3DHST,outputdir='./',zrange=[0.0,10.0],dzcut=0.25,verbose=True):
     """
@@ -626,5 +653,236 @@ def plot_objectinfo_zVSline(catMUSE,cat3DHST,outputdir='./',plotline='OII',zrang
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID='all',outputdir='./',plotscale=[1,99],figxsize=13,cmap='gray',
+                           left=0.1, bottom=0.07, right=0.02, top=0.03, wspace=0.02, hspace=0.04,
+                           dataparentdir='/Volumes/DATABCKUP3/GOODSdata/3D-HST/GOODSS_WFC3_V4.1.5/',
+                           catphoto='/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog'
+                                    '/goodss_3dhst.v4.1.cat.FITS',verbose=True):
+    """
+    Plotting the available 3D-HST spectra and the 3D-HST (and MUSE) information
+    for all (or a few) objects in an info-cat generated with, e.g., extract_objectsinfo()
+    or objinfo_CDFSobj()
+
+    --- INPUT ---
+
+    cat3DHST        Output fits catalog from extract_objectsinfo() extraction of 3D-HST info
+    catMUSE         MUSE fits catalog the 3D-HST info extraction was based on
+    plotID          List of MUSE IDs to plot. If 'all' then all objects found in catMUSE are plotted.
+    dataparentdir   Parent dir containing the 3D-HST spectra, e.g., GOODSS_WFC3_V4.1.5, which
+                    contains subdirectories of data from individual pointings in 1D, 2D, BIG,
+                    etc. sub-directories.
+    verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+
+    catMUSE  = 'MUSECDFS_z0p0-10p0_cmtol1p0_MUSEsubcat.fits'
+    cat3DHST = 'MUSECDFS_z0p0-10p0_cmtol1p0_3DHSTinfo.fits'
+    cm3.plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID='all',verbose=True,cmap='coolwarm')
+
+    cm3.plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID=[10611042],verbose=True)
+
+    cm3.plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID=[12341163],verbose=True)
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading data in MUSE and 3DHST catalogs'
+    dat_MUSE  = pyfits.open(catMUSE)[1].data
+    dat_3DHST = pyfits.open(cat3DHST)[1].data
+    dat_photo = pyfits.open(catphoto)[1].data
+
+    id_MUSEcat     = dat_MUSE['ID']
+    id_3DHSTcat    = dat_3DHST['id_MUSE']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if plotID == 'all':
+        plotIDs = np.asarray(id_MUSEcat)
+    else:
+        plotIDs = np.asarray(plotID)
+    Nplots = len(plotIDs)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Generating plots for '+str(Nplots)+' objects to plot'
+    for oo in xrange(Nplots):
+        skipplot   = False            # keep track of whether to generate plot or not
+        objid      = plotIDs[oo]
+        if verbose: print ' - Grabbing data for ID = '+str(objid)
+        ent_muse   = np.where(id_MUSEcat == objid)[0]
+        if len(ent_muse) != 1:
+            if verbose: print '   WARNING - no match in MUSE catalog; no plot generated'
+            skipplot = True
+
+        ent_3dhst  = np.where(id_3DHSTcat == objid)[0]
+
+        if len(ent_3dhst) != 1:
+            if verbose: print '   WARNING - no match in 3DHST catalog; no plot generated'
+            skipplot = True
+
+        if not skipplot:
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print '   Getting 2D fits file names'
+            objdat_MUSE   = dat_MUSE[ent_muse]
+            objdat_3DHST  = dat_3DHST[ent_3dhst]
+
+            try:
+                fits2Dfilenames = cm3.get_fits2Dfilenames(objdat_3DHST['specinfo'],dataparentdir,verbose=verbose)
+            except:
+                pdb.set_trace()
+            N2Dfitsfiles    = len(fits2Dfilenames)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if N2Dfitsfiles == 0:
+                if verbose: print '   WARNING - no 3DHST grism spectra stored in specinfo (all "None" and "xxx")'
+                continue
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plotname = outputdir+'/'+str(objid)+'_3dhstSpecAndInfo.pdf'
+            if verbose: print '   Setting up and generating plot'
+
+            #----------------- Plot setup -----------------
+            Fsize  = 10
+            lwidth = 1
+            Tcolor = 'black'
+            xscale = 1e4
+            g141range = [11100,16500]
+            xvalrange = [1.10,1.67]
+            plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+            plt.rc('font', family='serif',size=Fsize)           # setting text font
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+
+            xs     = figxsize
+            sh     = np.shape(pyfits.open(fits2Dfilenames[0])['SCI'].data)
+            aspect = (N2Dfitsfiles+2)*sh[0]*1./(3*sh[1])
+            lrbt   = np.array([left,right,bottom,top])*5./xs
+            ys     = (1-lrbt[1]-lrbt[0])/(1-lrbt[3]-lrbt[2])*xs*aspect
+            lrbt[[2,3]] /= aspect
+
+            fig = Figure(figsize=(xs,ys))
+            fig.subplots_adjust(left=lrbt[0], bottom=lrbt[2], right=1-lrbt[1], top=1-lrbt[3],
+                                wspace=wspace, hspace=hspace)
+            #fig.subplots_adjust(wspace=0.2, hspace=0.2,left=0.04, right=0.98, bottom=0.13, top=0.89)
+            #plt.title(plotname.split('/')[-1].replace('_','\_'),fontsize=Fsize)
+
+            #----------------- Load Data -----------------
+            plotcounter = 0
+            for row, filetwod in enumerate(fits2Dfilenames):
+                spec_flux          = pyfits.open(filetwod)['SCI'].data
+                spec_contam        = pyfits.open(filetwod)['CONTAM'].data
+                spec_var           = (pyfits.open(filetwod)['WHT'].data)**2
+                spec_flux_nocontam = spec_flux-spec_contam
+                wave               = pyfits.open(filetwod)['WAVE'].data
+
+                # - - - -  setting plotting scale - - - -
+                if verbose: print '   Setting scales for plotting to',
+                # diff = spec_flux_nocontam
+                # if len(plotscale) == 0:
+                #     plotscale = [plotscale, plotscale]
+                #
+                # ok = (spec_var > 0) & (spec_flux != 0) & (spec_flux < 0.01)
+                # if ok.sum() > 1:
+                #     vmin = np.percentile(diff[ok].flatten(), plotscale[0])
+                #     vmax = np.percentile(diff[ok].flatten(), plotscale[1])
+                # else:
+                #     vmin, vmax = -1,1
+
+                scalearr   = spec_flux_nocontam[10:-10,10:-10]
+                scalearr   = scalearr[scalearr != 0.0]
+                if len(scalearr) > 0:
+                    vmaximg    = np.abs(np.max(scalearr)*0.7)
+                    vmin, vmax = vmaximg*1e-10, vmaximg
+                else:
+                    vmin, vmax = 0, 1
+
+                if verbose: print vmin,vmax
+
+                # - - - -  setting xrange and interpolate - - - -
+                xx = np.arange(spec_flux.shape[1])
+                if 'G141' in filetwod:
+                    ltick = np.array([1.1,1.2,1.3,1.4,1.5,1.6,1.7])
+                elif 'G102' in filetwod:
+                    ltick = np.array([0.8,0.9,1.0,1.1])
+                elif 'G800L' in filetwod:
+                    ltick = np.array([0.6,0.7,0.8,0.9,1.0])
+                else:
+                    sys.exit('Grism name (for xticks) not found in filename '+filetwod+' --> using G141')
+
+                scale = 1.e4
+                xtick = np.interp(ltick*scale, wave, xx)
+                # - - - -  display images - - - -
+                imglist  = [spec_flux,spec_contam,spec_flux_nocontam]
+                textlist = ['[SCI]','[CONTAM]','[SCI-CONTAM]']
+                for colno in [0,1,2]:
+                    plotcounter = plotcounter+1
+                    ax = fig.add_subplot(N2Dfitsfiles,3,plotcounter) #row,column,plotnumber
+                    ax.imshow(imglist[colno], interpolation='nearest', vmin=vmin, vmax=vmax, cmap=cmap)
+                    ax.set_xticks(xtick)
+                    ax.set_xticklabels(ltick)
+                    if plotcounter > int(N2Dfitsfiles*3-N2Dfitsfiles):
+                        ax.set_xlabel(r'$\lambda / \mu\mathrm{m}$')
+
+                    if colno == 0:
+                        ax.set_ylabel(r' r [arc sec]')
+                    else:
+                        ax.set_yticklabels([])
+
+                    ax.text(0.95, 0.94, textlist[colno],
+                            backgroundcolor='w',ha='right', va='top',
+                            transform=ax.transAxes, color=Tcolor, size=Fsize)
+
+                    if colno == 1:
+                        ax.text(0.5, 0.94, filetwod.split('/')[-1].replace('_','\_'),#+textlist[colno],
+                                backgroundcolor='w',ha='center', va='top',
+                                transform=ax.transAxes, color=Tcolor, size=Fsize)
+
+            #----------------- Position Legend -----------------
+            # box = ax.get_position()
+            # ax.set_position([box.x0, box.y0, box.width, box.height * 0.83])
+            # ax.plot(0,0,'orange',label='G102 PA=XX',linewidth=lwidth*2)
+            # ax.plot(0,0,'red',label='G141 PA=XX',linewidth=lwidth*2)
+            # ax.plot(0,0,'blue',label='Photo-$z$',linewidth=lwidth*2)
+            # ax.plot(0,0,'k',label='$z$fit model',linewidth=lwidth)
+            # leg = ax.legend(fancybox=True, loc='upper left',numpoints=1,prop={'size':Fsize-3.},
+            #                 ncol=3,bbox_to_anchor=(-0.08, 1.27))
+            # leg.get_frame().set_alpha(0.7)
+
+            #----------------- Title with info -----------------
+            id3dhst   = dat_3DHST['ID_3DHST'][ent_3dhst][0]
+            titletext = 'idMUSE='+str(objid)+', id3dhst='+str(id3dhst)
+            titletext = titletext+', rmatch='+str("%.2f" % dat_3DHST['r_match_arcsec'][ent_3dhst])+"''"
+            titletext = titletext+', log(M/M$\odot$)='+str("%.2f" % dat_3DHST['lmass'][ent_3dhst][0])
+            titletext = titletext+', SFR/[M$\odot$/yr]='+str("%.2f" % (10**dat_3DHST['lsfr'][ent_3dhst][0]))
+            titletext = titletext+', zbest='+str("%.4f" % dat_3DHST['z_best'][ent_3dhst][0])
+
+            fOIII     = dat_3DHST['OIII_FLUX'][ent_3dhst][0]
+            eOIII     = dat_3DHST['OIII_FLUX_ERR'][ent_3dhst][0]
+            if fOIII != -99:
+                titletext = titletext+', f[OIII]='+str("%.2f" % fOIII)+'$\pm$'+str("%.2f" % eOIII)
+                titletext = titletext+', SNR[OIII]='+str("%.2f" % (fOIII/eOIII))
+            else:
+                titletext = titletext+', f[OIII]=None, SNR[OIII]=None'
+
+
+            # - - - - get photo info - - - -
+            photid    = dat_photo['id'][id3dhst-1]
+            f160      = dat_photo['f_f160w'][id3dhst-1]
+            if f160 != -99:
+                mf160w    = -2.5*np.log10(f160)+25.0
+                ef160w    = (2.5/np.log(10)) * dat_photo['e_f160w'][id3dhst-1]/f160
+                titletext = titletext+', m160='+str("%.2f" % mf160w)+'$\pm$'+str("%.2f" % ef160w)
+            else:
+                titletext = titletext+', m160=None'
+
+
+            #titletext = titletext+', photid='+str(photid)
+
+            #ax.text(0.0,1.1, titletext,transform=ax.transAxes, horizontalalignment='center')
+            fig.suptitle(titletext, fontsize=Fsize)
+            #----------------- Write plot to file -----------------
+            if verbose: print '   Saving plot to',plotname
+            canvas = FigureCanvasAgg(fig)
+            canvas.print_figure(plotname, dpi=300, transparent=False)
+
+            # plt.savefig(plotname)
+            # plt.clf()
+            # plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
