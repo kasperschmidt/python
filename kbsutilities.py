@@ -968,7 +968,7 @@ def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catal
             fout.write('# crossmatched objects in '+radeccat+' to '+matchcat+'\n')
             fout.write('# ID ra dec   ID_match ra_match dec_match r_match_arcsec \n')
             for ii, objid in enumerate(objs_id):
-                objstr  = str("%20i"   % objid)          +'  '+\
+                objstr  = str("%20i"   % int(objid))     +'  '+\
                           str("%16.8f" % objs_ra[ii])    +'  '+\
                           str("%16.8f" % objs_dec[ii])   +'  '+\
                           str("%20i"   % id_match[ii])   +'  '+\
