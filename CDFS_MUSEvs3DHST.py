@@ -96,17 +96,23 @@ def extract_objectsinfo(MUSEidlist,cmfile='./MUSEcdfs_cm2_3DHSTgoods.fits',
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Nobj = len(MUSEidlist)
     if verbose: print ' - Looping over the '+str(Nobj)+' objects and extracting information'
-    for MUSEid in MUSEidlist:
-        objent = np.where(cmdat['ID'] == MUSEid)[0]
+    for mm, MUSEid in enumerate(MUSEidlist):
+        if verbose:
+            idno    = mm+1
+            infostr = ' - extract info for '+str(MUSEid)+'   ('+str(idno)+'/'+str(len(MUSEidlist))+')'
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        objent = np.where(cmdat['ID'] == int(MUSEid))[0]
         if len(objent) == 0:
-            if verbose: print '   No match top MUSEid = '+str(MUSEid)
+            if verbose: print '   No match to MUSEid = '+str(MUSEid)
         else:
             if cmdat['r_match_arcsec'][objent] > crossmatchtol:
                 if verbose: print '   r_match ('+str(cmdat['r_match_arcsec'][objent])+\
                                   ') above crossmatch tolerance for MUSEid = '+str(MUSEid)
             else:
                 id_MUSE   = cmdat['id'][objent]
-                if id_MUSE != MUSEid: print ' ERROR ids dont mathc --> stopping ';pdb.set_trace()
+                if id_MUSE != int(MUSEid): print ' ERROR ids dont match --> stopping ';pdb.set_trace()
                 ra_MUSE   = cmdat['ra'][objent]
                 dec_MUSE  = cmdat['dec'][objent]
                 id_3DHST  = cmdat['id_match'][objent]
@@ -161,11 +167,12 @@ def extract_objectsinfo(MUSEidlist,cmfile='./MUSEcdfs_cm2_3DHSTgoods.fits',
         asciidat   = np.genfromtxt(asciifile,names=True,skip_header=1,comments='#')
         keys       = asciidat.dtype.names
         fitsformat = np.asarray(['D']*(len(keys)),dtype='5a')
-        fitsformat[np.asarray(keys) == 'id_MUSE'] = '8A' # 8 character string # 'J' #32 bit integer
+        fitsformat[np.asarray(keys) == 'id_MUSE'] = '10A' # 9 character string # 'J' #32 bit integer
         fitsformat[np.asarray(keys) == 'id_3DHST'] = 'J' #32 bit integer
         fitsformat[np.asarray(keys) == 'specinfo'] = '200A'
         fitsformat[np.asarray(keys) == 'grism_id'] = '25A'
         fitsformat[np.asarray(keys) == 'phot_id'] = 'J'
+
         outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=1,outpath=fitspath,
                                     fitsformat=fitsformat,verbose=verbose)
 
@@ -366,7 +373,8 @@ def objinfo_CDFSobj(MUSEcat,zcut=[2.9-10.0],output_basename='./objectinfo_output
 
         if verbose: print ' - Extracting 3D-HST data for the objects'
         cm3.extract_objectsinfo(goodids,printcolnames=False,clobber=clobber,verbose=verbose,
-                                crossmatchtol=crossmatchtol,output_basename=output_basename+'_3DHSTinfo')
+                                crossmatchtol=crossmatchtol,output_basename=output_basename+'_3DHSTinfo',
+                                cmfile=cmfile+'.fits')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def extract_3DHSTdata(infofits_3DHST,outputdir=False,verbose=True):
@@ -430,11 +438,16 @@ def get_fits2Dfilenames(specinfo,dataparentdir,big=False,verbose=True):
     for name in namelist:
         if name != 'None':
             if big:
-                namestr = '/BIG/2D/'+name.replace('G141','G141-big')
-            else:
-                namestr = '/2D/FITS/'+name
+                namestr  = '/BIG/2D/'+name.replace('G141','G141-big')
+                filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.2D.fits')
 
-            filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.2D.fits')
+                if filename == []: # if no BIG spec found, look for regular spectrum
+                    namestr  = '/2D/FITS/'+name
+                    filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.2D.fits')
+            else:
+                namestr  = '/2D/FITS/'+name
+                filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.2D.fits')
+
             Nfiles   = len(filename)
             if len(filename) == 1:
                 filelist.append(os.path.abspath(filename[0]))
@@ -785,7 +798,6 @@ def plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID='all',outputdir='./',plotscal
 
     id_MUSEcat     = dat_MUSE['ID']
     id_3DHSTcat    = dat_3DHST['id_MUSE']
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plotID == 'all':
         plotIDs = np.asarray(id_MUSEcat)
@@ -797,8 +809,11 @@ def plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID='all',outputdir='./',plotscal
     for oo in xrange(Nplots):
         skipplot   = False            # keep track of whether to generate plot or not
         objid      = plotIDs[oo]
-        if verbose: print ' - Grabbing data for ID = '+str(objid)
+        if verbose: print ' - Grabbing data for ID_MUSE = '+str(objid)+',  ID_3DHST = '
+
         ent_muse   = np.where(id_MUSEcat == objid)[0]
+
+
         if len(ent_muse) != 1:
             if verbose: print '   WARNING - no match in MUSE catalog; no plot generated'
             skipplot = True
@@ -1018,6 +1033,8 @@ def getMissingBigIDs(verbose=True):
     """
     MUSEids = cm3.getMissingBigIDs()
 
+    NB: Depreciated as get_fits2Dfilenames() now automatically returns the normal spectra if BIG is missing
+
     """
     big = np.genfromtxt('./pdf_big160225.txt',dtype='a')
     normal = np.genfromtxt('./pdf_normal160321.txt',dtype='a')
@@ -1056,33 +1073,214 @@ def convert_pdfs2pngs(searchstring='./*.pdf',clobber=False,quality='75',verbose=
 
     if verbose: print ' - Found '+str(len(pdf_files))+' to convert to pngs.'
 
-    for pdff in pdf_files:
-        infostr = '   Converting '+pdff
+    for pp, pdff in enumerate(pdf_files):
+        fileno  = pp+1
+        infostr = '   Converting '+pdff+'   ('+str(fileno)+'/'+str(len(pdf_files))+')'
         sys.stdout.write("%s\r" % infostr)
         sys.stdout.flush()
 
         kbs.convert_pdf2png(pdff,clobber=clobber,quality=quality)
-    if verbose: print '   ... done converting '
+    if verbose: print '\n   ... done converting '
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def generate_datatarball(idlist,outputdir,dataparentdir='/Volumes/DATABCKUP3/GOODSdata/3D-HST/GOODSS_WFC3_V4.1.5/',
-                         verbose=True):
+                         tarup=False,clobber=False,verbose=True):
     """
     Collect all available data for a list of unique 3D-HST ids
 
-    3DHST ids of the object to copy data for; on the format 'goodss-04-G141_08706'
+    3DHST ids of the object to copy data for
 
     """
-    for specid in idlist:
-        infostr = ' - copying '+specid+' data to '+outputdir
-        sys.stdout.write("%s\r" % infostr)
-        sys.stdout.flush()
 
-        objdir = dataparentdir+'/'+specid[:9]+'/'
+    if os.path.isdir(outputdir) and (clobber == False):
+        if verbose: print ' - '+outputdir+' exists and clobber=False so not copying over files'
+    else:
+        if not os.path.isdir(outputdir):
+            if verbose: print ' - '+outputdir+' does not exist; creating it'
+            os.mkdir(outputdir)
 
-        cpcmd = 'cp '+objdir+'*/*/'+specid+'*  '+outputdir
-        cpout = commands.getoutput(cpcmd)
+        if verbose: print ' - Will copy files to '+outputdir
 
-    if verbose: print '   ... done converting '
+        for ii, specid in enumerate(idlist):
+            if verbose:
+                idno    = ii+1
+                infostr = ' - copying '+str(specid)+' data to '+outputdir+'   ('+str(idno)+'/'+str(len(idlist))+')'
+                sys.stdout.write("%s\r" % infostr)
+                sys.stdout.flush()
+
+            objdir = dataparentdir+'/*/'  # search for all spec with ID '+specid[:9]+'/'
+
+            cpcmd = 'cp '+objdir+'*/*/*_'+str("%.5d" % specid)+'*  '+outputdir
+            cpout = commands.getoutput(cpcmd)
+
+        if verbose: print '\n   ... done copying files '
+
+    if tarup:
+        if verbose: print ' - Tarring up '+outputdir
+        tarcmd = 'tar  -zcf '+outputdir.split('/')[-1]+'.tar.gz   '+outputdir
+        tarout = commands.getoutput(tarcmd)
+        if tarout != '': print tarout
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def prep_infofile4wiki(infofile,outputdir,pdfstring,subrange=[0,None],skip_pdfcopy=False,
+                       pngquality='75',verbose=True):
+    """
+    Load info fits file and prepare the outputs to share at the MUSE-Wide wiki
+
+    fitsinfo = 'MUSECDFS_z0p0-10p0_cmtol1p0_3DHSTinfo.fits'
+    cm3.prep_infofile4wiki(fitsinfo,'testprepdir','./spectraplots160325/107*.pdf')
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Will assemble data in '+outputdir+' and create tar-ball thereof '
+    if not os.path.isdir(outputdir):
+        if verbose: print '   '+outputdir+' does not exist; creating it'
+        os.mkdir(outputdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading info fits '+infofile
+    data    = pyfits.open(infofile)[1].data
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if not skip_pdfcopy:
+        if verbose: print ' - Copy over pdfs and generate pngs '
+        pdf_files = glob.glob(pdfstring)
+        for pfile in pdf_files:
+            cpcmd = 'cp '+pfile+' '+outputdir
+            cpout = commands.getoutput(cpcmd)
+            if cpout != '': print cpout
+
+        searchstr = outputdir+'/'+pdfstring.split('/')[-1]
+        cm3.convert_pdfs2pngs(searchstring=searchstr,clobber=True,quality=pngquality,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - generate tarball '
+    id3dhst = data['id_3DHST']
+    id3dhst = id3dhst[subrange[0]:subrange[1]] # select sub range to loop over
+    cm3.generate_datatarball(id3dhst,outputdir,tarup=True,clobber=True,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def create_MUSEcatalog_ECH(catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
+    """
+
+    E. C. Herenz's recipe to generate a MUSE catalog taken from http://musewide.wikidot.com/catalogues
+
+    (modfied to return all objects and not just LAEs and strored it in a fits file)
+
+    """
+    import numpy as np
+    from astropy.io import fits
+    from astropy.table import Table
+
+    output = catpath+'candels_1-24_emline_master_v2p0_extended.fits'
+
+    # read in columns from the master catalogue
+    master_catalogue = fits.getdata(catpath+'candels_1-24_emline_master_v2.0.fits')
+    unique_id = master_catalogue['UNIQUE_ID']
+    field_id = master_catalogue['FIELD_ID']
+    obj_id = master_catalogue['OBJ_ID']
+    rid_strongest = master_catalogue['RID_Strongest']
+    ident_strongest = master_catalogue['IDENT_STRONGEST']
+    redshift = master_catalogue['REDSHIFT']
+
+    # select all LAEs
+    #lae_select = [ident_strongest == 'Lya']
+    lae_select = [obj_id > 0] # mask to select all objects in stead of just LAEs
+
+    # prepare columns for the output table
+    # UNIQUE_ID, FIELD_ID, OBJ_ID, RID_Strongest, RA, DEC, REDSHIFT,
+    # FLUX_3KRON, FLUX_3KRON_ERR, MULTI_LINE_FLAG, CONFIDENCE
+    # Details: RA & DEC we use {RA,DEC}_1MOM,
+    #          MULTI_LINE_FLAG indicates if the object has more than one line detected...
+    #          (AGN, multi peak detectin) - these sources need some care afterwards.
+    # - some columns can be directly copied from the master catalogue
+    unique_id_out = unique_id[lae_select]
+    field_id_out = field_id[lae_select]
+    obj_id_out = obj_id[lae_select]
+    redshift_out = redshift[lae_select]
+    rid_strongest_out = rid_strongest[lae_select]
+    # - the rest needs to be copied from the entries in the original per
+    #   field catalogues
+    ra_out = []
+    dec_out = []
+    flux_3kron_out = []
+    flux_3kron_err_out = []
+    multi_line_flag_out = []
+    confidence_out = []
+
+    # no iterate over the original and cleaned per-field catalogues to
+    # fill those columns
+    for unique_id_lae,field_id_lae,rid_strongest_lae in zip(unique_id_out,
+                                                            field_id_out,
+                                                            rid_strongest_out):
+        field_id_str = str(field_id_lae).zfill(2)
+        orig_filename = catpath+'original_per_field_v2.0/cat_ident_candels-cdfs-'+\
+                        field_id_str+'_rid_fluxes_v2.0.fits'
+        clean_filename = catpath+'cleaned_per_field_v2.0/cat_ident_candels-cdfs-'+\
+                         field_id_str+'_v2.0.fits'
+        original_catalogue = fits.getdata(orig_filename)
+        cleaned_catalogue = fits.getdata(clean_filename)
+
+        unique_id_orig = original_catalogue['UNIQUE_ID']
+        unique_id_cleaned = cleaned_catalogue['UNIQUE_ID']
+        unique_lae_orig_select = unique_id_orig == unique_id_lae
+        unique_lae_clean_select = unique_id_orig == unique_id_lae
+        if np.sum(unique_lae_clean_select) > 1:
+            multi_line_flag_out.append(True)
+        elif np.sum(unique_lae_clean_select) == 1:
+            multi_line_flag_out.append(False)
+        else:
+            # should not happen... but happens for the two not correctly
+            # uniquified LAEs
+            continue
+
+
+
+        # pull the fluxes and coordinates from the original per-field catalogue
+        rid_orig = original_catalogue['I']
+        fluxes = original_catalogue['F_3KRON']
+        errors = original_catalogue['F_3KRON_ERR']
+        ras = original_catalogue['RA_1MOM']
+        decs = original_catalogue['DEC_1MOM']
+        orig_select = rid_orig == rid_strongest_lae
+        flux_3kron_out.append(fluxes[orig_select][0])
+        flux_3kron_err_out.append(errors[orig_select][0])
+        ra_out.append(ras[orig_select][0])
+        dec_out.append(decs[orig_select[0]])
+
+        # pull confidence from the cleaned cats
+        rid_clean = cleaned_catalogue['RID']
+        confs = cleaned_catalogue['CONFIDENCE']
+        clean_select = rid_clean == rid_strongest_lae
+        confidence_out.append(confs[clean_select][0])
+
+    # done... now create table
+    lae_flux_table = Table(names=('ID',
+                                  'FIELD_ID',
+                                  'OBJ_ID',
+                                  'RID_Strongest',
+                                  'RA',
+                                  'DEC',
+                                  'REDSHIFT',
+                                  'F_3KRON',
+                                  'F_3KRON_ERR',
+                                  'MULTI_LINE_FLAG',
+                                  'CONFIDENCE'),
+                           data=(unique_id_out,
+                                 field_id_out,
+                                 obj_id_out,
+                                 rid_strongest_out,
+                                 np.asarray(ra_out),
+                                 np.asarray(dec_out),
+                                 redshift_out,
+                                 np.asarray(flux_3kron_out),
+                                 np.asarray(flux_3kron_err_out),
+                                 np.asarray(multi_line_flag_out,dtype=np.bool),
+                                 np.asarray(confidence_out)))
+
+
+    lae_flux_table.write(output,format='fits')
+    #lae_flux_table.write(output.replace('.fits','.html'),format='ascii.html')
+
+    #pdb.set_trace()
+    #pyfits.writeto(output,lae_flux_table, header=None, clobber=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
