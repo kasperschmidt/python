@@ -916,7 +916,7 @@ def crossmatch(ralist,declist,
 def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_candels-cdfs_v0.2.fits',
                    idcol='ID',racol='RA',deccol='DEC',catext=1,
                    matchcat='skelton_goodss',
-                   m_idcol='id',m_racol='ra',m_deccol='dec',m_catext=1,
+                   m_idcol='id',m_racol='ra',m_deccol='dec',m_catext=1,IDstrings=False,
                    writetofile='./kbscrossmatch_defaultname',clobber=False,verbose=True):
     """
 
@@ -934,6 +934,7 @@ def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catal
     m_racol       RA column name in fits rmatchcat
     m_deccol      Dec column name in fits rmatchcat
     m_catext      Fits extension containing catalog data in fits rmatchcat
+    IDstrings     Save IDs as strings as opposed to the default integers
     writetofile   Generate ascii and fits output of crossmatches
                   If writetofile='None' nothing will be written, and the crossmatach will just be returned
     clobber       Overwrite existing output files?
@@ -968,10 +969,17 @@ def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catal
             fout.write('# crossmatched objects in '+radeccat+' to '+matchcat+'\n')
             fout.write('# ID ra dec   ID_match ra_match dec_match r_match_arcsec \n')
             for ii, objid in enumerate(objs_id):
-                objstr  = str("%20i"   % int(objid))     +'  '+\
+                if IDstrings:
+                    IDoutstring       = str("%20s"   % objid)
+                    IDoutstring_match = str("%20s"   % id_match[ii])
+                else:
+                    IDoutstring       = str("%20i"   % int(objid))
+                    IDoutstring_match = str("%20i"   % int(id_match[ii]))
+
+                objstr  = IDoutstring                    +'  '+\
                           str("%16.8f" % objs_ra[ii])    +'  '+\
                           str("%16.8f" % objs_dec[ii])   +'  '+\
-                          str("%20i"   % id_match[ii])   +'  '+\
+                          IDoutstring_match              +'  '+\
                           str("%16.8f" % ra_match[ii])   +'  '+\
                           str("%16.8f" % dec_match[ii])  +'  '+\
                           str("%16.8f" % r_match[ii])
@@ -984,7 +992,14 @@ def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catal
         else:
             if verbose: print ' - Generating '+fitsfile
             fitspath   = kbs.pathAname(asciifile)[0]
-            outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=2,outpath=fitspath,verbose=verbose)
+
+            if IDstrings:
+                ffmt = ['A20','D','D','A20','D','D','D']
+            else:
+                ffmt = ['J','D','D','J','D','D','D']
+
+            outputfile = f2a.ascii2fits(asciifile,asciinames=True,skip_header=2,outpath=fitspath,
+                                        verbose=verbose,fitsformat=ffmt)
 
     return id_match, ra_match, dec_match, r_match
 
