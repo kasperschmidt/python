@@ -572,7 +572,7 @@ def drawnbinom(n,p,size=1):
     #print 'Took ',time.time()-t0,' sec.'
     return N
 #-------------------------------------------------------------------------------------------------------------
-def appendfitstable(tab1,tab2,newtab='kbs_appendfitstable_results.fits'):
+def appendfitstable(tab1,tab2,newtab='kbs_appendfitstable_results.fits',clobber=False):
     """
     Appending 1 fits table to another.
     It is assumed that the two tables contain the same columns.
@@ -582,9 +582,10 @@ def appendfitstable(tab1,tab2,newtab='kbs_appendfitstable_results.fits'):
 
     Parameters
     ----------
-        tab1 : primariy fits table
-        tab2 : fits table to append to tab1
-        (should contain the same columns)
+        tab1     primariy fits table
+        tab2     fits table to append to tab1
+                 (should contain the same columns as tab1)
+        clobber  overwrite output file if it already exists
 
     Returns
     -------
@@ -611,7 +612,7 @@ def appendfitstable(tab1,tab2,newtab='kbs_appendfitstable_results.fits'):
     for name in t1[1].columns.names:
         hdu.data.field(name)[nrows1:]=t2[1].data.field(name)
 
-    hdu.writeto(newtab,clobber=False)
+    hdu.writeto(newtab,clobber=clobber)
 
     return newtab
 #-------------------------------------------------------------------------------------------------------------
