@@ -433,7 +433,7 @@ def get_fits2Dfilenames(specinfo,dataparentdir,big=False,verbose=True):
 
     """
     filelist = []
-    namelist = specinfo.split('xxx')[0]
+    namelist = specinfo.split('xxx')
 
     for name in namelist:
         if name != 'None':
@@ -786,9 +786,6 @@ def plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID='all',outputdir='./',plotscal
 
     cm3.plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID=[12341163],verbose=True,cmap='coolwarm')
 
-    MUSEids = cm3.getMissingBigIDs()
-    cm3.plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID=MUSEids,verbose=True,cmap='coolwarm',bigspec=False)
-
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Loading data in MUSE and 3DHST catalogs'
@@ -831,9 +828,10 @@ def plot_3dhst_SpecAndInfo(catMUSE,cat3DHST,plotID='all',outputdir='./',plotscal
             objdat_3DHST  = dat_3DHST[ent_3dhst]
 
             try:
-                fits2Dfilenames = cm3.get_fits2Dfilenames(objdat_3DHST['specinfo'],dataparentdir,verbose=verbose,
+                fits2Dfilenames = cm3.get_fits2Dfilenames(objdat_3DHST['specinfo'][0],dataparentdir,verbose=verbose,
                                                           big=bigspec)
             except:
+                print ' ERROR - something went wrong when running cm3.get_fits2Dfilenames(); stopping...'
                 pdb.set_trace()
             N2Dfitsfiles    = len(fits2Dfilenames)
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1158,28 +1156,37 @@ def prep_infofile4wiki(infofile,outputdir,pdfstring,subrange=[0,None],skip_pdfco
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def create_MUSEcatalog_ECH(catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
+def create_MUSEcatalog_ECH(version='2.1',catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
     """
 
     E. C. Herenz's recipe to generate a MUSE catalog taken from http://musewide.wikidot.com/catalogues
 
-    (modfied to return all objects and not just LAEs and strored it in a fits file)
+    KBS Modifications:
+     - Return all objects and not just LAEs
+     - Save to fits file
+     - Version keyword to ease re-runs with new catalogs
+
+    --- EXAMPLE OF USE ---
+    import CDFS_MUSEvs3DHST as cm3
+    cm3.create_MUSEcatalog_ECH(version='2.1')
 
     """
     import numpy as np
     from astropy.io import fits
     from astropy.table import Table
 
-    output = catpath+'candels_1-24_emline_master_v2p0_extended.fits'
+    output = catpath+'candels_1-24_emline_master_v'+version.replace('.','p')+'_extended.fits'
 
     # read in columns from the master catalogue
-    master_catalogue = fits.getdata(catpath+'candels_1-24_emline_master_v2.0.fits')
+    master_catalogue = fits.getdata(catpath+'candels_1-24_emline_master_v'+version+'.fits')
     unique_id = master_catalogue['UNIQUE_ID']
     field_id = master_catalogue['FIELD_ID']
     obj_id = master_catalogue['OBJ_ID']
     rid_strongest = master_catalogue['RID_Strongest']
     ident_strongest = master_catalogue['IDENT_STRONGEST']
     redshift = master_catalogue['REDSHIFT']
+    if version != '2.0':
+        redshifterr = master_catalogue['REDSHIFT_ERR']
 
     # select all LAEs
     #lae_select = [ident_strongest == 'Lya']
@@ -1196,6 +1203,10 @@ def create_MUSEcatalog_ECH(catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
     field_id_out = field_id[lae_select]
     obj_id_out = obj_id[lae_select]
     redshift_out = redshift[lae_select]
+    if version != '2.0':
+        redshifterr_out = redshifterr[lae_select]
+    else:
+        redshifterr_out = np.zeros(len(obj_id_out))-99
     rid_strongest_out = rid_strongest[lae_select]
     # - the rest needs to be copied from the entries in the original per
     #   field catalogues
@@ -1212,10 +1223,10 @@ def create_MUSEcatalog_ECH(catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
                                                             field_id_out,
                                                             rid_strongest_out):
         field_id_str = str(field_id_lae).zfill(2)
-        orig_filename = catpath+'original_per_field_v2.0/cat_ident_candels-cdfs-'+\
-                        field_id_str+'_rid_fluxes_v2.0.fits'
-        clean_filename = catpath+'cleaned_per_field_v2.0/cat_ident_candels-cdfs-'+\
-                         field_id_str+'_v2.0.fits'
+        orig_filename = catpath+'original_per_field_v'+version+'/cat_ident_candels-cdfs-'+\
+                        field_id_str+'_rid_fluxes_v'+version+'.fits'
+        clean_filename = catpath+'cleaned_per_field_v'+version+'/cat_ident_candels-cdfs-'+\
+                         field_id_str+'_v2.1.fits'
         original_catalogue = fits.getdata(orig_filename)
         cleaned_catalogue = fits.getdata(clean_filename)
 
@@ -1260,6 +1271,7 @@ def create_MUSEcatalog_ECH(catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
                                   'RA',
                                   'DEC',
                                   'REDSHIFT',
+                                  'REDSHIFT_ERR',
                                   'F_3KRON',
                                   'F_3KRON_ERR',
                                   'MULTI_LINE_FLAG',
@@ -1271,6 +1283,7 @@ def create_MUSEcatalog_ECH(catpath='/Users/kschmidt/work/catalogs/MUSE_GTO/'):
                                  np.asarray(ra_out),
                                  np.asarray(dec_out),
                                  redshift_out,
+                                 redshifterr_out,
                                  np.asarray(flux_3kron_out),
                                  np.asarray(flux_3kron_err_out),
                                  np.asarray(multi_line_flag_out,dtype=np.bool),
