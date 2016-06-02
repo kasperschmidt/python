@@ -155,6 +155,7 @@ def prep_3DHST_1Dspec4MiG1D(specname,outname='DEFAULT',verbose=True):
     if verbose: print '   o Adjust flux levels to be in cgs/[1e-20] units'
     hdulist[1].data['FLUX']       = hdulist[1].data['FLUX']/hdulist[1].data['SENSITIVITY']    *1.0e3
     hdulist[1].data['FLUXERR']    = hdulist[1].data['FLUXERR']/hdulist[1].data['SENSITIVITY'] *1.0e3
+    hdulist[1].data['CONTAM']     = hdulist[1].data['CONTAM']/hdulist[1].data['SENSITIVITY']  *1.0e3
     hdulist[1].data['TRACE']      = hdulist[1].data['TRACE']/hdulist[1].data['SENSITIVITY']   *1.0e3
     hdulist[1].data['ETRACE']     = hdulist[1].data['ETRACE']/hdulist[1].data['SENSITIVITY']  *1.0e3
 
@@ -181,4 +182,5 @@ def inspect_3DHST_2Dspec(matchcatalog='/Users/kschmidt/work/MUSE/candelsCDFS_3DH
     specdir = '/Users/kschmidt/work/MUSE/candelsCDFS_3DHST/MUSECDFS_z0p0-7p0_cmtol10p0_v2p1/'
     cm3.inspect_G141specs(matchcatalog,specdir=specdir,smooth=smooth,
                           ds9circlename='CIII]',verbose=verbose,oneobj=False)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
