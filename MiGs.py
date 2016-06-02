@@ -64,7 +64,7 @@ def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID
     # setup and launch GUI
     root = Tk()
     root.title("MUSE inspection GUI for 1D spectra (MiG1D)")
-    root.geometry("1000x450") # size of GUI window
+    root.geometry("910x400") # size of GUI window
     app = Application_1D(directory,outfile,master=root,idsearchstr=idsearchstr,idlength=8,col_flux='FLUX',
                          col_fluxerr=col_fluxerr,col_wave=col_wave,fluxunit=fluxunit,
                          objlist=objlist,verbose=verbose,ds9xpa=ds9xpa,openfitsauto=openfitsauto,
@@ -329,7 +329,7 @@ class Application_1D(Frame):
         self.create_widgets()
 
         # -------- SETUP DATAPLOT --------
-        self.dataPlot_init(xsize=1200,ysize=100)
+        self.dataPlot_init(xsize=1200,ysize=600)
         self.dataPlot_loaddata()
         self.dataPlot_plot(refresh=False,newobj=True)
         self.DPxlow_full, self.DPxhigh_full, self.DPylow_full, self.DPyhigh_full = \
@@ -524,12 +524,12 @@ class Application_1D(Frame):
         """
         Dictionary with colors for keys
         """
-        collist = ['orange','red','cyan','magenta','green','white']
+        collist = ['orange','red','cyan','magenta','green','white','gray']
         colors  = {}
-        colors['a'] = collist[4]
-        colors['b'] = collist[4]
-        colors['c'] = collist[4]
-        colors['d'] = collist[4]
+        colors['a'] = collist[6]
+        colors['b'] = collist[6]
+        colors['c'] = collist[6]
+        colors['d'] = collist[6]
         colors['e'] = collist[0]
         colors['f'] = collist[0]
         colors['g'] = collist[0]
@@ -566,7 +566,7 @@ class Application_1D(Frame):
         self.DPFsize  = 16
         self.DPlwidth = 2
         self.DPxscale = 1e4
-        self.DPcolor  = ['blue','cyan','magenta','orange','green','red']
+        self.DPcolor  = ['blue','red','magenta','green','orange','cyan']
         self.DPxrange = [0.4,1.7]
         if self.latex:
             plt.rc('text', usetex=True)                            # enabling LaTex rendering of text
@@ -602,34 +602,34 @@ class Application_1D(Frame):
 
         self.varsliderzqual = DoubleVar()
         self.sliderzqual    = Scale(self, from_=0, to=4.0,label='(q) By-hand redshift quality',
-                                    variable = self.varsliderzqual,orient=HORIZONTAL,background='red',
+                                    variable = self.varsliderzqual,orient=HORIZONTAL,background='gray',
                                     length=200,resolution=1.0)
         self.sliderzqual.grid(row=rowval,column=2,columnspan=1,rowspan=1,sticky=W)
         self.varsliderzqual.set(0) # set intial value of slider
 
 
         # ==== COMMENT FIELD ====
-        self.byhandzlabel = Label(self,text='(u) By-hand redshift:  ',background='red')
+        self.byhandzlabel = Label(self,text='(u) By-hand redshift:  ',background='white')
         self.byhandzlabel.grid(row=rowval,column=3,columnspan=1,sticky=NW)
         self.byhandz = Entry(self)
         self.byhandz.grid(row=rowval,column=3,columnspan=1,sticky=SW)
 
         # ==== CHECK BOX ====
         self.skyboxvar = Variable()
-        self.skybox = Checkbutton(self, text='(o) Show Sky', variable=self.skyboxvar,background='gray')
+        self.skybox = Checkbutton(self, text='(o) Show Sky', variable=self.skyboxvar,background='white')
         self.skybox.grid(row=rowval+1,column=0,columnspan=1,sticky=W)
         self.skybox.deselect()
 
         self.err1Dboxvar = Variable()
         self.err1Dbox    = Checkbutton(self, text='(p) Show 1D errors', variable=self.err1Dboxvar,
-                                       background='gray')
+                                       background='white')
         self.err1Dbox.grid(row=rowval+1,column=1,columnspan=1,sticky=W)
         self.err1Dbox.deselect()
         #if (self.GiGf == None): self.err1Dbox.configure(state='disabled')
 
         self.mzsboxvar = Variable()
         self.mzsbox    = Checkbutton(self, text='(t) Multiple Redshift Solutions', variable=self.mzsboxvar,
-                                     background='red')
+                                     background='white')
         self.mzsbox.grid(row=rowval+1,column=2,columnspan=1,sticky=W)
         self.mzsbox.deselect()
 
