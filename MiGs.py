@@ -566,7 +566,7 @@ class Application_1D(Frame):
         self.DPFsize  = 16
         self.DPlwidth = 2
         self.DPxscale = 1e4
-        self.DPcolor  = ['blue','red','magenta','green','orange','cyan']
+        self.DPcolor  = ['blue','red','purple','magenta','salmon','orange']
         self.DPxrange = [0.4,1.7]
         if self.latex:
             plt.rc('text', usetex=True)                            # enabling LaTex rendering of text
@@ -702,11 +702,16 @@ class Application_1D(Frame):
         self.DP_wave_all     = []
         self.DP_flux_all     = []
         self.DP_fluxerr_all  = []
+        self.DP_contam_all   = []
         for f1D in self.fits1Dfound:
             dat1D   = pyfits.open(f1D)[1].data
             self.DP_wave_all.append(dat1D[self.col_wave])
             self.DP_flux_all.append(dat1D[self.col_flux])
             self.DP_fluxerr_all.append(dat1D[self.col_fluxerr])
+            if 'CONTAM' in dat1D.columns.names:
+                self.DP_contam_all.append(dat1D['CONTAM'])
+            else:
+                self.DP_contam_all.append(dat1D[self.col_flux]*0.0-99.)
 
         objinfo = MiGs.get_objinfo(self.infofile,self.currentobj,self.col_infoid)
         if objinfo != None:
@@ -763,14 +768,16 @@ class Application_1D(Frame):
 
         #----------------- Flambda spec -----------------
         xrangeflam = self.DPxrange
+        contamplotted = False
         ymax   = []
         ymin   = []
 
         for ii in range(len(self.fits1Dfound)):
             color     = self.DPcolor[ii]
             wave1D    = self.DP_wave_all[ii]/self.DPxscale # wavelengths converted from A to micron
-            flux1D    = self.DP_flux_all[ii]    #[goodent]
-            flux1Derr = self.DP_fluxerr_all[ii] #[goodent]
+            flux1D    = self.DP_flux_all[ii]
+            flux1Derr = self.DP_fluxerr_all[ii]
+            contam    = self.DP_contam_all[ii]
 
             if (len(flux1D) >= 1):
                 ymin.append(np.min(flux1D))
@@ -778,8 +785,15 @@ class Application_1D(Frame):
                 labstr = self.fits1Dfound[ii].split('/')[-1]
                 if self.latex:
                     labstr = labstr.replace('_','\_')
+                # - - - - - - - - - - Spectrum itself - - - - - - - - - -
                 self.dataPlot_ax.plot(wave1D, flux1D, color=color,linestyle='-',
                                       linewidth=self.DPlwidth*1.5, alpha=0.40)
+
+                # - - - - - - - - - - Smoothed spectrum - - - - - - - - - -
+                filtersigma   = smoothlevel
+                flux1D_smooth = scipy.ndimage.filters.gaussian_filter1d(flux1D, filtersigma,cval=0.0)
+                self.dataPlot_ax.plot(wave1D, flux1D_smooth, color=color,linestyle='-',
+                                      linewidth=self.DPlwidth*1.5, alpha=1.0,label=labstr)
 
                 # - - - - - Shaded error region around curve if requested - - - - -
                 if (self.err1Dboxvar.get() != '0'):
@@ -790,11 +804,15 @@ class Application_1D(Frame):
                     fillhigh = np.clip(flux1D,ywinmin,ywinmax)+serr
                     plt.fill_between(wave1D,filllow,fillhigh,alpha=0.20,color=color)
 
-                # - - - - - - - - - - Smoothed curves - - - - - - - - - -
-                filtersigma   = smoothlevel
-                flux1D_smooth = scipy.ndimage.filters.gaussian_filter1d(flux1D, filtersigma,cval=0.0)
-                self.dataPlot_ax.plot(wave1D, flux1D_smooth, color=color,linestyle='-',
-                                      linewidth=self.DPlwidth*1.5, alpha=1.0,label=labstr)
+                # - - - - - - - - - - Contam curve is present - - - - - - - - - -
+                if (contam != -99).any():
+                    self.dataPlot_ax.plot(wave1D, contam, color=color,linestyle='--',
+                                          linewidth=self.DPlwidth, alpha=0.40)
+                    contam_smooth = scipy.ndimage.filters.gaussian_filter1d(contam, filtersigma,cval=0.0)
+                    self.dataPlot_ax.plot(wave1D, contam_smooth, color=color,linestyle='--',
+                                          linewidth=self.DPlwidth, alpha=1.0)
+                    contamplotted = True
+
                 # - - - - - - - - - - Sky spectrum - - - - - - - - - -
                 if (self.skyboxvar.get() != '0'):
                     if self.skyspectrum:
@@ -813,7 +831,6 @@ class Application_1D(Frame):
                     plt.fill_between(skywave,skylow,skyhigh,alpha=0.3,color='black')
                     skyhigh_smooth = scipy.ndimage.filters.gaussian_filter1d(skyhigh, filtersigma,cval=0.0)
                     plt.fill_between(skywave,skylow,skyhigh_smooth,alpha=0.8,color='black')
-
 
         # set ranges based on spectra
         if (len(ymin) != 0) & (len(ymax) != 0):
@@ -850,7 +867,7 @@ class Application_1D(Frame):
         for ii in range(len(linelist)):
             self.dataPlot_ax.plot(np.zeros(2)+linelist[ii]/self.DPxscale*(redshift+1.0),
                                   yrangeflam,color='#006600',alpha=0.7,
-                                  linestyle='-',linewidth=self.DPlwidth)
+                                  linestyle='-',linewidth=self.DPlwidth*2)
             textpos = linelist[ii]/self.DPxscale*(redshift+1.0)
 
             if (textpos > xrangeflam[0]) & (textpos < xrangeflam[1]):
@@ -863,6 +880,8 @@ class Application_1D(Frame):
         self.dataPlot_ax.set_position([box.x0, box.y0, box.width, box.height * 0.83])
         if (self.skyboxvar.get() != '0'):
             self.dataPlot_ax.plot(0,0,'black',alpha=0.8,label='Sky spectrum',linewidth=self.DPlwidth*2)
+        if contamplotted:
+            self.dataPlot_ax.plot(0,0,'black',alpha=0.8,label='Contamination',linewidth=self.DPlwidth,ls='--')
         self.dataPlot_ax.plot(0,0,'green',label='Lines at z='+str("%.3f" % redshift),linewidth=self.DPlwidth*2)
         leg = self.dataPlot_ax.legend(fancybox=True, loc='upper center',numpoints=1,prop={'size':self.DPFsize-3.},
                                       ncol=2,bbox_to_anchor=(0.5, 1.27))
