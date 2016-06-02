@@ -402,7 +402,7 @@ class Application_1D(Frame):
         self.commentfield([self.cbpos[0]+5,2,1])
 
         position = [35,0,3]
-        textdisp = " Slider Values:     0) None;     1) tentative;     2) low-S/N;     3) Well-detected"
+        textdisp = " Slider Values:     0) None;     1) tentative;     2) low-S/N;     3) high-S/N"
         label    = StringVar()
         txtlab   = Label(self,textvariable=label)
         label.set(textdisp)
@@ -566,7 +566,7 @@ class Application_1D(Frame):
         self.DPFsize  = 16
         self.DPlwidth = 2
         self.DPxscale = 1e4
-        self.DPcolor  = ['blue','green','red','orange']
+        self.DPcolor  = ['blue','cyan','magenta','orange','green','red']
         self.DPxrange = [0.4,1.7]
         if self.latex:
             plt.rc('text', usetex=True)                            # enabling LaTex rendering of text
@@ -725,16 +725,21 @@ class Application_1D(Frame):
         if fullzoom:
             xlow, xhigh, ylow, yhigh =  self.DPxlow_full, self.DPxhigh_full, self.DPylow_full, self.DPyhigh_full
         #----------------- Define emission line list -----------------
-        #Lines from http://www.sdss.org/dr7/algorithms/linestable.html and
-        # http://adsabs.harvard.edu/abs/2008ApJS..174..282L
-        linelist = np.asarray([1216 ,1335 ,1402  ,1549 ,1909. ,2795. ,3726.03 ,
-                    4101.74   ,4340.47  ,4861.33 ,4959.,5007. ,
-                    6548, 6562.8, 6583.5,
-                    6718,6732,
-                    9071.1,   9533.2])
-        linename = ['Lya','CII','SiIV','CIV','CIII]','MgII',"[OII]" ,
+        # Lines from http://www.sdss.org/dr7/algorithms/linestable.html,
+        # http://adsabs.harvard.edu/abs/2008ApJS..174..282L, and
+        # http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2001AJ....122..549V&link_type=ABSTRACT
+        linelist = np.asarray([1216, 1240, 1335, 1397., 1402. ,
+                               1549 ,1909., 2326., 2795., 3726.03,
+                               4101.74   ,4340.47  ,4861.33 ,4959.,5007. ,
+                               5877, 6302,
+                               6548, 6562.8, 6583.5,
+                               6718,6732,
+                               9071.1,   9533.2])
+        linename = ['Lya','NV','CII','SiIV','OIV]',
+                    'CIV','CIII]','CII]','MgII',"[OII]" ,
                     '$H\delta$','H$\gamma$','H$\\beta$','[OIII]4959','[OIII]5007',
-                    'NII6548'  ,'H$\\alpha$','NII6583.5 '   ,
+                    'HeI','OI',
+                    'NII6548'  ,'H$\\alpha$','NII6583.5 ',
                     'SII6718,' ,'SII6732',
                     '[SIII]9071.1','[SIII]9533.2']
         #----------------- Refreshing plot window-----------------
@@ -767,16 +772,30 @@ class Application_1D(Frame):
             flux1D    = self.DP_flux_all[ii]    #[goodent]
             flux1Derr = self.DP_fluxerr_all[ii] #[goodent]
 
-            if len(flux1D) >= 1:
+            if (len(flux1D) >= 1):
+                ymin.append(np.min(flux1D))
+                ymax.append(np.max(flux1D))
                 labstr = self.fits1Dfound[ii].split('/')[-1]
                 if self.latex:
                     labstr = labstr.replace('_','\_')
                 self.dataPlot_ax.plot(wave1D, flux1D, color=color,linestyle='-',
-                                      linewidth=self.DPlwidth*1.5, alpha=1.0,label=labstr)
+                                      linewidth=self.DPlwidth*1.5, alpha=0.40)
 
+                # - - - - - Shaded error region around curve if requested - - - - -
                 if (self.err1Dboxvar.get() != '0'):
-                    plt.fill_between(wave1D,flux1D-flux1Derr,flux1D+flux1Derr,alpha=0.30,color=color)
+                    xwinmin, xwinmax, ywinmin, ywinmax = self.dataPlot_getwindowinfo()
+                    serr     = flux1Derr
+                    serr[flux1Derr > 1e3] = 1e3 # fix errors to prevent "OverflowError: Allocated too many blocks"
+                    filllow  = np.clip(flux1D,ywinmin,ywinmax)-serr
+                    fillhigh = np.clip(flux1D,ywinmin,ywinmax)+serr
+                    plt.fill_between(wave1D,filllow,fillhigh,alpha=0.20,color=color)
 
+                # - - - - - - - - - - Smoothed curves - - - - - - - - - -
+                filtersigma   = smoothlevel
+                flux1D_smooth = scipy.ndimage.filters.gaussian_filter1d(flux1D, filtersigma,cval=0.0)
+                self.dataPlot_ax.plot(wave1D, flux1D_smooth, color=color,linestyle='-',
+                                      linewidth=self.DPlwidth*1.5, alpha=1.0,label=labstr)
+                # - - - - - - - - - - Sky spectrum - - - - - - - - - -
                 if (self.skyboxvar.get() != '0'):
                     if self.skyspectrum:
                         skywave = self.skydat['lam']
@@ -790,16 +809,11 @@ class Application_1D(Frame):
                         skywave = wave1D
                         skylow  = np.zeros(len(skywave))-100.
                         skyhigh = np.zeros(len(skywave))+100.
-                    plt.fill_between(skywave,skylow,skyhigh,alpha=0.30,color='black')
 
-                ymax.append(np.max(flux1D))
-                ymin.append(np.min(flux1D))
+                    plt.fill_between(skywave,skylow,skyhigh,alpha=0.3,color='black')
+                    skyhigh_smooth = scipy.ndimage.filters.gaussian_filter1d(skyhigh, filtersigma,cval=0.0)
+                    plt.fill_between(skywave,skylow,skyhigh_smooth,alpha=0.8,color='black')
 
-                # Smoothed versions
-                filtersigma   = smoothlevel
-                flux1D_smooth = scipy.ndimage.filters.gaussian_filter1d(flux1D, filtersigma,cval=0.0)
-                self.dataPlot_ax.plot(wave1D, flux1D_smooth, color=color,linestyle='-',
-                                      linewidth=self.DPlwidth*1.5, alpha=0.7)
 
         # set ranges based on spectra
         if (len(ymin) != 0) & (len(ymax) != 0):
@@ -847,10 +861,11 @@ class Application_1D(Frame):
         # === position legend ===
         box = self.dataPlot_ax.get_position()
         self.dataPlot_ax.set_position([box.x0, box.y0, box.width, box.height * 0.83])
-        #self.dataPlot_ax.plot(0,0,'orange',label='dummy label',linewidth=self.DPlwidth*2)
+        if (self.skyboxvar.get() != '0'):
+            self.dataPlot_ax.plot(0,0,'black',alpha=0.8,label='Sky spectrum',linewidth=self.DPlwidth*2)
         self.dataPlot_ax.plot(0,0,'green',label='Lines at z='+str("%.3f" % redshift),linewidth=self.DPlwidth*2)
         leg = self.dataPlot_ax.legend(fancybox=True, loc='upper center',numpoints=1,prop={'size':self.DPFsize-3.},
-                                      ncol=5,bbox_to_anchor=(0.5, 1.27))
+                                      ncol=2,bbox_to_anchor=(0.5, 1.27))
         #leg.get_frame().set_alpha(0.7)
 
         self.dataPlotManager.canvas.draw()
