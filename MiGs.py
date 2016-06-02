@@ -48,7 +48,7 @@ def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID
                  idlength=8,col_flux='FLUX',col_fluxerr='FLUXERR',col_wave='WAVE_AIR',
                  fluxunit='$10^{-20}$erg/s/cm$^2$/\\AA',
                  objlist=None,inspectorname='John Doe',clobber=False,infofile=None,col_infoid='UNIQUE_ID',
-                 ds9xpa=False,openfitsauto=False,check4duplicates=False,skipempty=False,
+                 ds9xpa=False,openfitsauto=False,openfitsext='[0]',check4duplicates=False,skipempty=False,
                  outputcheck=False,latexplotlabel=False,autosaveplot=False,verbose=True,
                  skyspectrum='/Users/kschmidt/work/MUSE/skytable.fits'):
     """
@@ -67,7 +67,7 @@ def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID
     root.geometry("910x400") # size of GUI window
     app = Application_1D(directory,outfile,master=root,idsearchstr=idsearchstr,idlength=8,col_flux='FLUX',
                          col_fluxerr=col_fluxerr,col_wave=col_wave,fluxunit=fluxunit,
-                         objlist=objlist,verbose=verbose,ds9xpa=ds9xpa,openfitsauto=openfitsauto,
+                         objlist=objlist,verbose=verbose,ds9xpa=ds9xpa,openfitsauto=openfitsauto,openfitsext=openfitsext,
                          iname=inspectorname,latexplotlabel=latexplotlabel,clobber=clobber,infofile=infofile,
                          col_infoid=col_infoid,skipempty=skipempty,check4duplicates=check4duplicates,
                          outputcheck=outputcheck,autosaveplot=autosaveplot,skyspectrum=skyspectrum)
@@ -162,7 +162,7 @@ class Application_1D(Frame):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def __init__(self,dir,outfile,master=None,idsearchstr='spectrum_OBJID*.fits',idlength=8,col_flux='FLUX',
                  col_fluxerr='FLUXERR',col_wave='WAVE_AIR',fluxunit='$10^{-20}$erg/s/cm$^2$/\\AA',
-                 objlist=None,verbose=True,ds9xpa=False,openfitsauto=False,
+                 objlist=None,verbose=True,ds9xpa=False,openfitsauto=False,openfitsext='[0]',
                  iname='John Doe',latexplotlabel=False,clobber=False,infofile=None, col_infoid='UNIQUE_ID',
                  skipempty=False,check4duplicates=False,outputcheck=False,
                  autosaveplot=False,skyspectrum=False):
@@ -193,6 +193,7 @@ class Application_1D(Frame):
 
         openfitsauto      Automatically load the fits files into the DS9 window
                           when advancing to next (or previous) object.
+        openfitsext       The fits extention to open when opening the fits files
         iname             Name of inspector to write in output file.
         latexplotlabel    Render plotting lables with latex; requires latex compiler.
         infofile          Fits catalog containing information on objects (linked by info_idcol)
@@ -231,6 +232,7 @@ class Application_1D(Frame):
         self.ds9windowopen = False # set ds9 indicator (used for ds9xpa = True)
         self.xpa           = ds9xpa # check if user indacetd that xpa was available for ds9
         self.fitsauto      = openfitsauto # Open fits files automatically?
+        self.openfitsext   = openfitsext
         if self.xpa:
             #sys.exit(' - XPA DS9 controls not enabled yet; still under construction (use ds9xpa=False)')
             self.ds9windowopen = False
@@ -699,6 +701,7 @@ class Application_1D(Frame):
         """
         self.DPidstr         = str("%.5d" % self.currentobj)
         self.fits1Dfound     = glob.glob(self.dir+'/'+self.idsearchstr.replace('OBJID',str(self.currentobj)))
+        self.fitsallfound    = glob.glob(self.dir+'/*'+str(self.currentobj)+'*.fits')
         self.DP_wave_all     = []
         self.DP_flux_all     = []
         self.DP_fluxerr_all  = []
@@ -982,12 +985,12 @@ class Application_1D(Frame):
             out = commands.getoutput('xpaset -p ds9 tile')
 
         Fstart = 1
-        for ff, filename in enumerate(self.fits1Dfound):
+        for ff, filename in enumerate(self.fitsallfound):
             imgname    = filename.split('/')[-1].replace('.fits','')
             out        = commands.getoutput('xpaset -p ds9 frame '+str(Fstart))
             regionfile = self.regiontemp.replace('.reg',imgname+'file'+str(ff)+'.reg')
             self.ds9textregion(imgname,filename=regionfile)
-            out = commands.getoutput('xpaset -p ds9 file '+filename+'[0]')
+            out = commands.getoutput('xpaset -p ds9 file '+filename+self.openfitsext)
             out = commands.getoutput('xpaset -p ds9 regions '+regionfile)
             Fstart += 1
 
@@ -1001,11 +1004,11 @@ class Application_1D(Frame):
 
         ds9cmd  = 'ds9 -geometry 1200x600 -scale zscale '+lockstr+' -tile grid layout 4 2'
 
-        for ff, filename in enumerate(self.fits1Dfound):
+        for ff, filename in enumerate(self.fitsallfound):
             imgname    = filename.split('/')[-1].replace('.fits','')
             regionfile = self.regiontemp.replace('.reg',imgname+'file'+str(ff)+'.reg')
             self.ds9textregion(imgname,filename=regionfile)
-            ds9cmd = ds9cmd+' "'+filename+'[0]" -region '+regionfile+' '
+            ds9cmd = ds9cmd+' "'+filename+self.openfitsext+'" -region '+regionfile+' '
 
         self.pds9   = subprocess.Popen(ds9cmd,shell=True,executable=os.environ["SHELL"])
         time.sleep(1.1)# sleep to make sure ds9 appear in PIDlist
