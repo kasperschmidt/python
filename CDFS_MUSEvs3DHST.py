@@ -1339,7 +1339,8 @@ def get_candidates(zrange=[4.7,7.9],matchtol=0.5,searchwave_rest=1909.0,
 
     --- EXAMPLE OF USE ---
     import CDFS_MUSEvs3DHST as cm3
-    cm3.get_candidates()
+    cm3.get_candidates(zrange=[4.7,7.9],matchtol=0.5)
+    cm3.get_candidates(zrange=[2.8,3.9],matchtol=0.5)
 
 
     """
@@ -1350,6 +1351,7 @@ def get_candidates(zrange=[4.7,7.9],matchtol=0.5,searchwave_rest=1909.0,
 
     ids_MUSE = data_cM['UNIQUE_ID'][np.where((data_cM['REDSHIFT'] > zrange[0]) &
                                              (data_cM['REDSHIFT'] < zrange[1]))[0]]
+    if verbose: print '   Found '+str(len(ids_MUSE))+' candidate objects in total'
 
     nogoodmatches_id = []
     nogoodmatches_rm = []
