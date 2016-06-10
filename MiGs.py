@@ -46,7 +46,7 @@ from PIL import ImageTk, Image
 #-------------------------------------------------------------------------------------------------------------
 def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID*.fits',
                  idlength=8,col_flux='FLUX',col_fluxerr='FLUXERR',col_wave='WAVE_AIR',
-                 fluxunit='$10^{-20}$erg/s/cm$^2$/\\AA',
+                 fluxunit='$10^{-20}$erg/s/cm$^2$/\\AA',lineuncertainty=False,
                  objlist=None,inspectorname='John Doe',clobber=False,infofile=None,col_infoid='UNIQUE_ID',
                  ds9xpa=False,openfitsauto=False,openfitsext='[0]',check4duplicates=False,skipempty=False,
                  outputcheck=False,latexplotlabel=False,autosaveplot=False,verbose=True,
@@ -70,7 +70,8 @@ def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID
                          objlist=objlist,verbose=verbose,ds9xpa=ds9xpa,openfitsauto=openfitsauto,openfitsext=openfitsext,
                          iname=inspectorname,latexplotlabel=latexplotlabel,clobber=clobber,infofile=infofile,
                          col_infoid=col_infoid,skipempty=skipempty,check4duplicates=check4duplicates,
-                         outputcheck=outputcheck,autosaveplot=autosaveplot,skyspectrum=skyspectrum)
+                         outputcheck=outputcheck,autosaveplot=autosaveplot,skyspectrum=skyspectrum,
+                         lineuncertainty=lineuncertainty)
     app.mainloop()
     root.destroy()
 #-------------------------------------------------------------------------------------------------------------
@@ -165,7 +166,7 @@ class Application_1D(Frame):
                  objlist=None,verbose=True,ds9xpa=False,openfitsauto=False,openfitsext='[0]',
                  iname='John Doe',latexplotlabel=False,clobber=False,infofile=None, col_infoid='UNIQUE_ID',
                  skipempty=False,check4duplicates=False,outputcheck=False,
-                 autosaveplot=False,skyspectrum=False):
+                 autosaveplot=False,skyspectrum=False,lineuncertainty=False):
         """
         Intitialize the GUI
 
@@ -209,6 +210,9 @@ class Application_1D(Frame):
         autosaveplot      Saving of the 1Dspec plot automatically when advancing to next object
         skyspectrum       Name of skyspectrum to plot (fits file with column flux - can be generated
                           with, e.g., http://www.eso.org/observing/etc/bin/simu/skycalc)
+        lineuncertainty   To plot shaded region around emission line indicators, to symbolize line position
+                          uncertainty from redshift or line velocity offsets provide either Delta z or Delta v [km/s]
+                          as uncertainty (lineuncertainty < 1 is treated as Delta z and lineuncertainty > 1 as Delta v)
         """
         self.now           = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.vb            = verbose
@@ -227,6 +231,7 @@ class Application_1D(Frame):
         self.autosaveplot  = autosaveplot
         self.skipempty     = skipempty
         self.skyspectrum   = skyspectrum
+        self.lineuncertainty = lineuncertainty
 
         self.ds9open       = False # set ds9 indicator (used for ds9xpa = False)
         self.ds9windowopen = False # set ds9 indicator (used for ds9xpa = True)
@@ -445,7 +450,7 @@ class Application_1D(Frame):
         # Note that letters in () enables sorting of boxes
         self.keys = {}
         self.keys['(a) CII']   = 0
-        self.keys['(b) SIV' ]  = 0
+        self.keys['(b) SiIV' ]  = 0
         self.keys['(c) CIV']   = 0
         self.keys['(d) CIII']  = 0
 
@@ -700,7 +705,8 @@ class Application_1D(Frame):
 
         """
         self.DPidstr         = str("%.5d" % self.currentobj)
-        self.fits1Dfound     = glob.glob(self.dir+'/'+self.idsearchstr.replace('OBJID',str(self.currentobj)))
+        globresult           = glob.glob(self.dir+'/'+self.idsearchstr.replace('OBJID',str(self.currentobj)))
+        self.fits1Dfound     = [ff for ff in globresult if ('_2D' not in ff)] # ignore *_2D* fits
         self.fitsallfound    = glob.glob(self.dir+'/*'+str(self.currentobj)+'*.fits')
         self.DP_wave_all     = []
         self.DP_flux_all     = []
@@ -737,14 +743,14 @@ class Application_1D(Frame):
         # http://adsabs.harvard.edu/abs/2008ApJS..174..282L, and
         # http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2001AJ....122..549V&link_type=ABSTRACT
         linelist = np.asarray([1216, 1240, 1335, 1397., 1402. ,
-                               1549 ,1909., 2326., 2795., 3726.03,
+                               1549 ,1907.,1909., 2326., 2795., 3726., 3729.,
                                4101.74   ,4340.47  ,4861.33 ,4959.,5007. ,
                                5877, 6302,
                                6548, 6562.8, 6583.5,
                                6718,6732,
                                9071.1,   9533.2])
         linename = ['Lya','NV','CII','SiIV','OIV]',
-                    'CIV','CIII]','CII]','MgII',"[OII]" ,
+                    'CIV','CIII]1907','CIII]1909','CII]','MgII',"[OII]3726" , "[OII]3729" ,
                     '$H\delta$','H$\gamma$','H$\\beta$','[OIII]4959','[OIII]5007',
                     'HeI','OI',
                     'NII6548'  ,'H$\\alpha$','NII6583.5 ',
@@ -868,11 +874,30 @@ class Application_1D(Frame):
 
         # === plot emission lines for scale ===
         for ii in range(len(linelist)):
-            self.dataPlot_ax.plot(np.zeros(2)+linelist[ii]/self.DPxscale*(redshift+1.0),
-                                  yrangeflam,color='#006600',alpha=0.7,
+            lineposition = linelist[ii]/self.DPxscale*(redshift+1.0)
+            self.dataPlot_ax.plot(np.zeros(2)+lineposition,yrangeflam,color='#006600',alpha=0.7,
                                   linestyle='-',linewidth=self.DPlwidth*2)
-            textpos = linelist[ii]/self.DPxscale*(redshift+1.0)
 
+            if self.lineuncertainty:
+                if (self.lineuncertainty <= 1.0) & (self.lineuncertainty > 0.0):   # treat input as Delta z uncertainty
+                    zoffset  = self.lineuncertainty
+                elif self.lineuncertainty > 1.0: # treat input as Delta v uncertainty
+                    zoffset = self.lineuncertainty*(redshift+1.0) / 299792.458
+                else:
+                    if self.vb: print ' WARNING: Invalid value of "lineuncertainty" using dz=0.1'
+                    zoffset  = 0.1
+
+                linexmin = ( (redshift-zoffset) +1) * linelist[ii]/self.DPxscale
+                linexmax = ( (redshift+zoffset) +1) * linelist[ii]/self.DPxscale
+                lineymin = yrangeflam[0]
+                lineymax = yrangeflam[1]
+
+                plt.fill_between(np.asarray([linexmin,linexmax]),np.zeros(2)+lineymin,np.zeros(2)+lineymax,
+                                 alpha=0.2,color='#006600')
+
+                voffset = zoffset * 299792.458 / (redshift+1.0)
+
+            textpos = linelist[ii]/self.DPxscale*(redshift+1.0)
             if (textpos > xrangeflam[0]) & (textpos < xrangeflam[1]):
                 self.dataPlot_ax.text(textpos,yrangeflam[0]+Dyrange*0.05,
                                       linename[ii],color='#006600',size=self.DPFsize-3.,rotation='vertical',
@@ -881,11 +906,18 @@ class Application_1D(Frame):
         # === position legend ===
         box = self.dataPlot_ax.get_position()
         self.dataPlot_ax.set_position([box.x0, box.y0, box.width, box.height * 0.83])
+
+
+
         if (self.skyboxvar.get() != '0'):
             self.dataPlot_ax.plot(0,0,'black',alpha=0.8,label='Sky spectrum',linewidth=self.DPlwidth*2)
         if contamplotted:
             self.dataPlot_ax.plot(0,0,'black',alpha=0.8,label='Contamination',linewidth=self.DPlwidth,ls='--')
-        self.dataPlot_ax.plot(0,0,'green',label='Lines at z='+str("%.3f" % redshift),linewidth=self.DPlwidth*2)
+        self.dataPlot_ax.plot(0,0,'green',label='Lines at $z$ = '+str("%.3f" % redshift),linewidth=self.DPlwidth*2)
+        if self.lineuncertainty:
+            linelab = 'Line uncertainty $z$ +/- '+str("%.4f" % zoffset)+' (+/- '+str("%.f" % voffset)+' km/s)'
+            self.dataPlot_ax.plot(0,0,'#006600',alpha=0.4,label=linelab,linewidth=self.DPlwidth*5)
+
         leg = self.dataPlot_ax.legend(fancybox=True, loc='upper center',numpoints=1,prop={'size':self.DPFsize-3.},
                                       ncol=2,bbox_to_anchor=(0.5, 1.27))
         #leg.get_frame().set_alpha(0.7)
