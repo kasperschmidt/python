@@ -4,6 +4,7 @@ import os
 import commands
 import sys
 import glob
+import MiGs
 import pyfits
 import numpy as np
 import ciiiEmitterCandidates as cec
@@ -314,7 +315,7 @@ def EW_from2Dspec(estimateEW=True,estimateEWlimit=True,Nsigmalimit=1,subtractcon
     mis.print_EWresults(outputdic_f, outputdic_fl, splitstr='spectrum_', verbose=verbose)
     return outputdic_f, outputdic_fl
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_3DHSTmags(id,mags=['f125w','f140w','f160w'],verbose=True):
+def get_3DHSTmags(id3dhst,mags=['f125w','f140w','f160w'],verbose=True):
     """
 
     Get magnitudes of object from 3D-HST catalog
@@ -326,31 +327,127 @@ def get_3DHSTmags(id,mags=['f125w','f140w','f160w'],verbose=True):
     """
     catalog = ' /Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
     datPHOT = pyfits.open(catalog)[1].data
-    objphot = datPHOT[np.where(datPHOT['id'] == id)[0]]
+    objphot = datPHOT[np.where(datPHOT['id'] == id3dhst)[0]]
+    if len(objphot) == 0:
+        magresult = [-99]*len(mags)
+        errresult = [-99]*len(mags)
+    else:
+        magresult = []
+        errresult = []
+        for magstr in mags:
+            try:
+                mag   = 25.0-2.5*np.log10(objphot['f_'+magstr])
+                err   = (2.5/np.log(10)) * objphot['e_'+magstr] / objphot['f_'+magstr]
+            except:
+                sys.exit(' The magnitude value '+magstr+' does not appear to exist in the Skelton 3D-HST catalog. '
+                                                        'Choose from:\n'+', '.join(datPHOT.columns.names))
 
-    magresult = []
-    errresult = []
-    for magstr in mags:
-        try:
-            mag   = 25.0-2.5*np.log10(objphot['f_'+magstr])
-            err   = (2.5/np.log(10)) * objphot['e_'+magstr] / objphot['f_'+magstr]
-        except:
-            sys.exit(' The magnitude value '+magstr+' does not appear to exist in the Skelton 3D-HST catalog. '
-                                                    'Choose from:\n'+', '.join(datPHOT.columns.names))
-
-        magresult.append(mag)
-        errresult.append(err)
-
+            magresult.append(mag[0])
+            errresult.append(err[0])
 
     if verbose:
-        print '  id ',
+        print '  id3dhst ',
         for mag in mags: print mag+'  '+mag+'_err',
         print '  '
-        printstr = ' '+str(id)+'    '
+        printstr = ' '+str(id3dhst)+'    '
         for mm in xrange(len(magresult)):
             printstr = printstr+str("%.2f" % magresult[mm])+' +/- '+str("%.2f" % errresult[mm])+'   '
         print printstr
     return np.asarray(magresult),np.asarray(errresult), objphot
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_MiG1Doutputsample(MiG1Doutput,CIIrange=[0,3],SiIVrange=[0,3],CIVrange=[0,3],CIIIrange=[2,3],
+                          returnmag='f125w',matchtol=0.5,
+                          plot2dir=False,returnall=False,verbose=True):
+    """
+    Get a sample of objects based on selections on a MiG1D inspection output
+
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    MiG1Dfile = './MiG1D_MUSE_CIII_potentialemitters_inspection160609_final.txt'
+    outputarr = cec.get_MiG1Doutputsample(MiG1Dfile,plot2dir=False,verbose=True,CIIrange=[0,3],SiIVrange=[0,3],CIVrange=[0,3],CIIIrange=[2,3])
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading MiG1D output in '+MiG1Doutput
+    MiG_dat, MiG_com, Mig_hdr = MiGs.load_MiGoutput(MiG1Doutput,verbose=False)
+    IDs  = MiG_dat['ID']
+    Nobj = len(IDs)
+    if verbose: print '   Found '+str(Nobj)+' inspections in file '
+    if len(np.unique(IDs)) != Nobj:
+        if verbose: print '   WARNING: There a multiple inspections in file for the following ids: '
+        print '   ',
+        for objid in IDs:
+            if len(np.where(IDs == objid))[0] > 1: print objid,
+        print '   \n'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if returnall:
+        if verbose: print ' - Returning info for all objects as returnall=True'
+    else:
+        if verbose: print ' - Returning info for objects based on requests (0=None; 1=tentative; 2=low-S/N; 3=high-S/N):'
+        if verbose: print '     - CII : ',CIIrange
+        if verbose: print '     - CIII: ',CIIIrange
+        if verbose: print '     - CIV : ',CIVrange
+        if verbose: print '     - SiIV: ',SiIVrange
+        goodent = np.where((MiG_dat['CII']  >= CIIrange[0])  & (MiG_dat['CII']  <= CIIrange[1]) &
+                           (MiG_dat['CIII'] >= CIIIrange[0]) & (MiG_dat['CIII'] <= CIIIrange[1]) &
+                           (MiG_dat['CIV']  >= CIVrange[0])  & (MiG_dat['CIV']  <= CIVrange[1]) &
+                           (MiG_dat['SiIV'] >= SiIVrange[0]) & (MiG_dat['SiIV']  <= SiIVrange[1]) )[0]
+        Ngood = len(goodent)
+        if verbose: print '   Found '+str(Ngood)+' candidates satisfying selection, ',
+
+        if Ngood == 0:
+            if verbose: print ' hence returning "None"s '
+            outputarray = np.column_stack([[None], [None], [None], [None], [None], [None]])
+            return outputarray
+        else:
+            if verbose: print ' hence continuing to collect info. '
+            IDs = MiG_dat['ID'][goodent]
+    IDout = IDs.tolist()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Getting info for objects '
+    infofile    = '/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits'
+    cmatch3dhst = '/Users/kschmidt/work/MUSE/candelsCDFS_3DHST/MUSECDFS_z0p0-7p0_cmtol10p0_v2p1_3DHSTinfo.fits'
+    cmatchdat   = pyfits.open(cmatch3dhst)[1].data
+    redshift    = []
+    redshifterr = []
+    field       = []
+    mag         = []
+    magerr      = []
+    if verbose: print '\n#  MiG1D Object selection: CII='+str(CIIrange)+';  CIII='+str(CIIIrange)+\
+                      ';  CIV='+str(CIVrange)+';  SiIV='+str(SiIVrange)
+    if verbose: print '#  idMUSE   id3dhst   rmatch    '+returnmag+'  '+returnmag+'_err   field  redshift  redshift_err'
+    for objid in IDout:
+        objinfo = MiGs.get_objinfo(infofile,objid,'UNIQUE_ID')
+
+        field.append(objinfo['FIELD_ID'][0])
+        redshift.append(objinfo['REDSHIFT'][0])
+        redshifterr.append(objinfo['REDSHIFT_ERR'][0])
+
+        cmatch_ent = np.where(cmatchdat['id_MUSE'] == str(objid))[0]
+        rmatch     = cmatchdat['r_match_arcsec'][cmatch_ent]
+        if rmatch < matchtol:
+            id3dhst = cmatchdat['id_3DHST'][cmatch_ent]
+        else:
+            id3dhst = [-999]
+        objmag, objmagerr, fullphot = cec.get_3DHSTmags(id3dhst,mags=[returnmag],verbose=False)
+        mag.append(objmag[0])
+        magerr.append(objmagerr[0])
+
+        if verbose:
+            printstr = '   '+str(objid)+'  '+str(id3dhst[0])+'    '+str("%.5f" % rmatch[0])+'   '+\
+                       str("%.2f" % objmag[0])+'  '+str("%.2f" % objmagerr[0])+'         '+\
+                       str("%.2d" % objinfo['FIELD_ID'])+'     '+\
+                       str("%.5f" % objinfo['REDSHIFT'])+'    '+str("%.5f" % objinfo['REDSHIFT_ERR'])
+            print printstr
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if plot2dir:
+        if verbose: print ' - Plotting final object sample. '
+        cec.plot_MUSElya_forsample(IDout,redshift,voffsetlist=300.0,outputdir=plot2dir,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    outputarray = np.column_stack([IDout, field, redshift, redshifterr, mag, magerr])
+    return outputarray
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/',outputdir='./',
                  yrangefull=[-200,300],plotSN=False,
@@ -380,6 +477,8 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
     cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True)
     cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=True,yrangefull=[-3,20])
+
+    cec.plot_MUSElya(11205037,3.05787,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True)
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Plotting figure for id_MUSE = '+str(MUSEid)
@@ -401,7 +500,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         flux_MUSE = flux_MUSE/ferr_MUSE
 
     fileexist_3dhst = False
-    wavecov_3dhst   = None
+    wavecov_3dhst   = [0,0] #dummy wavelength range
     file_3dhst = glob.glob(datadir+'spectrum_'+str(MUSEid)+'_*MiG1Dreformat.fits')
     N3dhst     = len(file_3dhst)
     if N3dhst > 0:
@@ -541,7 +640,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     linename     = 'Ly$\\alpha$'
-    linewave     = 1216.0
+    linewave     = 1215.670
     lineposition = linewave*(redshift+1.0)/wavescale
     plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
     if voffset != 0.0:
@@ -598,7 +697,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -681,7 +780,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -780,7 +879,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -863,7 +962,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -960,7 +1059,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -1045,7 +1144,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -1128,7 +1227,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -1226,7 +1325,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             for f3 in file_3dhst:
                 f3_dat   = pyfits.open(f3)[1].data
                 wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
                 fluxerr  = f3_dat['FLUXERR']
                 if plotSN: flux = flux/fluxerr
                 contam   = f3_dat['CONTAM']
@@ -1303,7 +1402,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         for f3 in file_3dhst:
             f3_dat  = pyfits.open(f3)[1].data
             wave    = f3_dat['WAVE_AIR']
-            flux    = f3_dat['FLUX']
+            flux    = f3_dat['FLUX']-f3_dat['CONTAM']
             fluxerr = f3_dat['FLUXERR']
             if plotSN: flux = flux/fluxerr
             contam  = f3_dat['CONTAM']
@@ -1403,4 +1502,54 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     plt.clf()
     plt.close('all')
     if verbose: print ' - Saved figure to ',specfigure
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./',datadir='./spectra_CIIIcandidates/',
+                           yrangefullflux=[-400,1200],yrangefullSN=[-3,30],verbose=True):
+    """
+    Wrapper to run cec.plot_MUSElya() for a sample of objects by providing a list of ids
+
+    --- INPUT ---
+    MUSEidlist      List of MUSE ids of objects to plot
+    redshiftlist    List of Redshifts to postion emission line markes at
+    voffset         Indicate velocity offset [km/s] wrt. to the emission line markers
+    outputdir       Directory to save figure to
+    datadir         Directory containing spectra to plot
+    yrangefullflux  Yrange of full-spectra overview in flux figure
+    yrangefullSN    Yrange of full-spectra overview in S/N figure
+    verbose       Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    MUSEidlist = [10306046,11931070]
+    zlist      = [3.085,4.836]
+    cec.plot_MUSElya_forsample(MUSEidlist,zlist,voffsetlist=300.0,outputdir='./testplots160615/')
+
+    """
+    MUSEidlist   = np.asarray(MUSEidlist)
+    redshiftlist = np.asarray(redshiftlist)
+    Nobj         = len(MUSEidlist)
+    if verbose: print ' - Plotting spectra of '+str(Nobj)+' objects in "MUSEidlist"'
+
+    if (type(voffsetlist) == float) or (type(voffsetlist) == int):
+        voffsetlist = np.zeros(Nobj) + voffsetlist
+    else:
+        voffsetlist = np.asarray(voffsetlist)
+
+    for oo, objID in enumerate(MUSEidlist):
+        objz = redshiftlist[oo]
+        voff = voffsetlist[oo]
+
+        if verbose:
+            idno    = oo+1
+            infostr = '   Plotting spectra for object '+str(objID)+' at z = '+str(objz)+' indicating voff = '+str(voff)+\
+                      '   ('+str(idno)+'/'+str(Nobj)+')          '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=False,yrangefull=yrangefullflux,outputdir=outputdir,
+                         showsky=True,verbose=False)
+        cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=True,yrangefull=yrangefullSN,outputdir=outputdir,
+                         verbose=False)
+
+    if verbose: print '\n - Done...'
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
