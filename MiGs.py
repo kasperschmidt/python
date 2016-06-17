@@ -75,6 +75,30 @@ def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID
     app.mainloop()
     root.destroy()
 #-------------------------------------------------------------------------------------------------------------
+def load_MiGoutput(MiGoutputfile,migversion='MiG1D',verbose=True):
+    """
+    Loading the output from MiG inspections
+
+    """
+    if migversion == 'MiG1D':
+        if verbose: print ' - Loading \n   '+MiGoutputfile
+        outputdata = np.genfromtxt(MiGoutputfile,comments='#',skip_header=2,names=True,dtype=None)
+
+        comments = {}
+        header   = []
+        lines = open(MiGoutputfile,'r')
+        for line in lines:
+            line = line.replace('\r',' ')      # remove alternative end-of-line characters (return); only respect (\n)
+            if line[0] == '#':                 # skipping header
+                header.append(line[:-1])
+            elif line == '\n':
+                pass
+            else:
+                ID           = str(line.split()[0])
+                comments[ID] = line.split('#C#')[-1][:-1]
+
+    return outputdata, comments, header
+#-------------------------------------------------------------------------------------------------------------
 def getPID(searchstring,verbose=False):
     """
     Return PID of most recent process including the given search string
