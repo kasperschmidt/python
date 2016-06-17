@@ -1057,6 +1057,39 @@ def convert_pdf2png(pdffile,res=300,clobber=False,quality='75',resize='100%',ver
         if verbose and cmdout != '':
             print '--> convert output:'
             print cmdout
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def convert_wavelength(lambdainput,version='air2vac',verbose=True):
+    """
+    Converting array of wavelengths either:
+     - from vacuum to air (dry air at 1 atm pressure and 15C with 0.045% CO2 by volume following Morton et al. 2000)
+     - from air to vacuum (following the VALD3 tools http://www.astro.uu.se/valdwiki/Air-to-vacuum%20conversion
+                           solution derived by N. Piskunov)
+
+    input wavelength should be given in Angstrom.
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    import numpy as np
+    lam_vac  = np.array([1215.670,5008.208])
+    lam_air  = kbs.convert_wavelength(lam_vac,version='vac2air')
+    lam_vac2 = kbs.convert_wavelength(lam_air,version='air2vac')
+
+    """
+    if version == 'air2vac': # expression from  N. Piskunov (http://www.astro.uu.se/valdwiki/Air-to-vacuum%20conversion)
+        s = 10**4 / lambdainput
+        n = 1.0 + 0.00008336624212083 + 0.02408926869968 / (130.1065924522 - s**2) + \
+            0.0001599740894897 / (38.92568793293 - s**2)
+        lambdaout = lambdainput * n
+
+    elif version == 'vac2air': # expression from Morton et al. (2000) ApJS, 130:403
+        s = 10**4 / lambdainput
+        n = 1.0 + 0.0000834254 + 0.02406147 / (130 - s**2) + 0.00015998 / (38.9 - s**2)
+        lambdaout = lambdainput / n
+
+    else:
+        sys.exit('Invalid "version" provided; choose between "air2vac" and "vac2air"')
+
+    return lambdaout
 
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
