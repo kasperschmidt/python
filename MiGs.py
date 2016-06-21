@@ -183,6 +183,64 @@ def get_objinfo(infofile,objid,idcol):
 
     return returndat
 #-------------------------------------------------------------------------------------------------------------
+def linelistdic(listversion='full'):
+    """
+
+    Dictionary containing lines with info on plotting etc.
+
+    Line wavelength are taken from Morton 1991 when available
+
+    """
+
+    linelist = {}
+
+    if listversion == 'full':
+        #                         name                           wavelength[A]  horizontalalignment      lineref
+        linelist['ovi']    = ['OVI $\\lambda$1032'                , 1031.9261,         'right'      , 'Morton1991tab5']
+        linelist['lya']    = ['Ly$\\alpha$ $\\lambda$1216'        , 1215.6737,         'right'      , 'Morton1991tab5']
+        linelist['lyb']    = ['Ly$\\beta$ $\\lambda$1025'         , 1025.7219,         'right'      , 'Morton1991tab5']
+        linelist['lyg']    = ['Ly$\gamma$ $\\lambda$973'          ,  972.5371,         'right'      , 'Morton1991tab5']
+        linelist['nv1']    = ['NV $\\lambda$1239'                 , 1238.821 ,         'right'      , 'Morton1991tab5']
+        linelist['nv2']    = ['NV $\\lambda$1243'                 , 1242.804 ,         'left'       , 'Morton1991tab5']
+        linelist['cii']    = ['CII $\\lambda$1336'                , 1335.6627,         'right'      , 'Morton1991tab5']
+        linelist['Siiv1']  = ['SiIV $\\lambda$1394'               , 1393.755 ,         'right'      , 'Morton1991tab5']
+        linelist['Siiv2']  = ['SiIV $\\lambda$1403'               , 1402.770 ,         'left'       , 'Morton1991tab5']
+        linelist['oiv1']   = ['OIV $\\lambda$1397'                , 1397.232 ,         'right'      , 'Morton1991tab5']
+        linelist['oiv2']   = ['OIV $\\lambda$1400'                , 1399.780 ,         'left'       , 'Morton1991tab5']
+        linelist['civ1']   = ['CIV $\\lambda$1548'                , 1548.195 ,         'right'      , 'Morton1991tab5']
+        linelist['civ2']   = ['CIV $\\lambda$1551'                , 1550.770 ,         'left'       , 'Morton1991tab5']
+        linelist['ciii1']  = ['CIII] $\\lambda$1907'              , 1907.    ,         'right'      , 'stark+2015']
+        linelist['ciii2']  = ['CIII] $\\lambda$1909'              , 1909.    ,         'left'       , 'stark+2015']
+        linelist['ciib']   = ['CII] $\\lambda$2326'               , 2326.113 ,         'right'      , 'Morton1991tab5']
+        linelist['mgii1']  = ['MgII] $\\lambda$2796'              , 2795.528 ,         'right'      , 'Morton1991tab5']
+        linelist['mgii2']  = ['MgII] $\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
+        linelist['oii1']   = ['[OII] $\\lambda$3726'              , 3726.    ,         'right'      , 'Pradhan2006']
+        linelist['oii1']   = ['[OII] $\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
+        linelist['hd']     = ['H$\delta$ $\\lambda$4103'          , 4102.89  ,         'right'      , 'VandenBerk2001tab4']
+
+        # Lines from http://www.sdss.org/dr7/algorithms/linestable.html,
+        # http://adsabs.harvard.edu/abs/2008ApJS..174..282L, and
+        # http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2001AJ....122..549V&link_type=ABSTRACT
+        #linelist['hd']     = ['$H\delta$'                         , 4101.74  ,         'right'      , '???']
+        linelist['hg']     = ['H$\gamma$ $\\lambda$4340'          , 4340.47  ,         'right'      , '???']
+        linelist['hb']     = ['H$\\beta$ $\\lambda$4861'          , 4861.33  ,         'right'      , '???']
+        linelist['oiii1']  = ['[OIII] $\\lambda$4959'             , 4959.    ,         'right'      , '???']
+        linelist['oiii2']  = ['[OIII] $\\lambda$5007'             , 5007.    ,         'right'      , '???']
+        linelist['hei']    = ['HeI $\\lambda$5877'                , 5877.    ,         'right'      , '???']
+        linelist['oi']     = ['OI $\\lambda$6302'                 , 6302.    ,         'right'      , '???']
+        linelist['nii1']   = ['NII $\\lambda$6548'                , 6548.    ,         'right'      , '???']
+        linelist['ha']     = ['H$\\alpha$ $\\lambda$6563'         , 6562.8   ,         'right'      , '???']
+        linelist['nii2']   = ['NII $\\lambda$6583.5 '             , 6583.5   ,         'right'      , '???']
+        linelist['sii1']   = ['SII $\\lambda$6718,'               , 6718.    ,         'right'      , '???']
+        linelist['sii2']   = ['SII $\\lambda$6732'                , 6732.    ,         'right'      , '???']
+        linelist['siii1']  = ['[SIII] $\\lambda$9071.1'           , 9071.1   ,         'right'      , '???']
+        linelist['siii2']  = ['[SIII] $\\lambda$9533.2'           , 9533.2   ,         'right'      , '???']
+
+    else:
+        sys.exit('invalid "listversion" provided ('+listversion+')')
+
+    return linelist
+#-------------------------------------------------------------------------------------------------------------
 class Application_1D(Frame):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def __init__(self,dir,outfile,master=None,idsearchstr='spectrum_OBJID*.fits',idlength=8,col_flux='FLUX',
@@ -234,6 +292,7 @@ class Application_1D(Frame):
         autosaveplot      Saving of the 1Dspec plot automatically when advancing to next object
         skyspectrum       Name of skyspectrum to plot (fits file with column flux - can be generated
                           with, e.g., http://www.eso.org/observing/etc/bin/simu/skycalc)
+                          For wave < 10000A the MUSE sky will be plotted if it exists in "self.MUSEskydatdir"
         lineuncertainty   To plot shaded region around emission line indicators, to symbolize line position
                           uncertainty from redshift or line velocity offsets provide either Delta z or Delta v [km/s]
                           as uncertainty (lineuncertainty < 1 is treated as Delta z and lineuncertainty > 1 as Delta v)
@@ -255,6 +314,7 @@ class Application_1D(Frame):
         self.autosaveplot  = autosaveplot
         self.skipempty     = skipempty
         self.skyspectrum   = skyspectrum
+        self.MUSEskydatdir = '/Users/kschmidt/work/MUSE/skyspectra/'
         self.lineuncertainty = lineuncertainty
 
         self.ds9open       = False # set ds9 indicator (used for ds9xpa = False)
@@ -763,23 +823,9 @@ class Application_1D(Frame):
         if fullzoom:
             xlow, xhigh, ylow, yhigh =  self.DPxlow_full, self.DPxhigh_full, self.DPylow_full, self.DPyhigh_full
         #----------------- Define emission line list -----------------
-        # Lines from http://www.sdss.org/dr7/algorithms/linestable.html,
-        # http://adsabs.harvard.edu/abs/2008ApJS..174..282L, and
-        # http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2001AJ....122..549V&link_type=ABSTRACT
-        linelist = np.asarray([1216, 1240, 1335, 1397., 1402. ,
-                               1549 ,1907.,1909., 2326., 2795., 3726., 3729.,
-                               4101.74   ,4340.47  ,4861.33 ,4959.,5007. ,
-                               5877, 6302,
-                               6548, 6562.8, 6583.5,
-                               6718,6732,
-                               9071.1,   9533.2])
-        linename = ['Lya','NV','CII','SiIV','OIV]',
-                    'CIV','CIII]1907','CIII]1909','CII]','MgII',"[OII]3726" , "[OII]3729" ,
-                    '$H\delta$','H$\gamma$','H$\\beta$','[OIII]4959','[OIII]5007',
-                    'HeI','OI',
-                    'NII6548'  ,'H$\\alpha$','NII6583.5 ',
-                    'SII6718,' ,'SII6732',
-                    '[SIII]9071.1','[SIII]9533.2']
+        llist    = MiGs.linelistdic(listversion='full')
+        linelist = np.asarray([llist[key][1] for key in llist.keys()])
+        linename = [llist[key][0] for key in llist.keys()]
         #----------------- Refreshing plot window-----------------
         if refresh:
             self.dataPlot_fig.clf() # clearing figure
@@ -848,7 +894,18 @@ class Application_1D(Frame):
 
                 # - - - - - - - - - - Sky spectrum - - - - - - - - - -
                 if (self.skyboxvar.get() != '0'):
-                    if self.skyspectrum:
+                    objinfo  = MiGs.get_objinfo(self.infofile,self.currentobj,self.col_infoid)
+                    if (np.max(wave1D) < 1.0) & (len(objinfo) == 1):
+                        fieldno          = objinfo['FIELD_ID']
+                        skyMUSEfilename  = glob.glob(self.MUSEskydatdir+'SKY*cdfs*-'+str("%.2d" % fieldno)+'*av.fits')
+                        skyMUSE          = pyfits.open(skyMUSEfilename[0])[1].data
+                        skywave = skyMUSE['lambda']/self.DPxscale
+                        skyent  = np.where((skywave > np.min(wave1D)) & (skywave < np.max(wave1D)))[0]
+                        skywave = skywave[skyent]
+                        skylow  = np.zeros(len(skywave))
+                        skyflux = skyMUSE['data'][skyent]
+                        skyhigh = skyflux/1.0
+                    elif self.skyspectrum:
                         skywave = self.skydat['lam']
                         skyent  = np.where((skywave > np.min(wave1D)) & (skywave < np.max(wave1D)))[0]
                         skywave = skywave[skyent]
