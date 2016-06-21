@@ -7,6 +7,7 @@ import glob
 import MiGs
 import pyfits
 import numpy as np
+import kbsutilities as kbs
 import ciiiEmitterCandidates as cec
 import macs2129_z6p8_MultiImgSource as mis
 import equivalentwidth as EQW
@@ -188,6 +189,10 @@ def inspect_3DHST_2Dspec(matchcatalog='/Users/kschmidt/work/MUSE/candelsCDFS_3DH
                     to the screen by cm3.get_candidates()
     smooth          Smooth the 2D spectra in DS9 with the default Gaussian kernel?
     verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    cec.inspect_3DHST_2Dspec()
 
     """
     specdir = '/Users/kschmidt/work/MUSE/candelsCDFS_3DHST/MUSECDFS_z0p0-7p0_cmtol10p0_v2p1/'
@@ -443,7 +448,7 @@ def get_MiG1Doutputsample(MiG1Doutput,CIIrange=[0,3],SiIVrange=[0,3],CIVrange=[0
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot2dir:
         if verbose: print ' - Plotting final object sample. '
-        cec.plot_MUSElya_forsample(IDout,redshift,voffsetlist=300.0,outputdir=plot2dir,verbose=verbose)
+        cec.plot_MUSElya_forsample(IDout,redshift,voffsetlist=300.0,outputdir=plot2dir,verbose=verbose,wavetype='vac')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     outputarray = np.column_stack([IDout, field, redshift, redshifterr, mag, magerr])
     return outputarray
@@ -451,7 +456,7 @@ def get_MiG1Doutputsample(MiG1Doutput,CIIrange=[0,3],SiIVrange=[0,3],CIVrange=[0
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/',outputdir='./',
                  yrangefull=[-200,300],plotSN=False,
-                 showsky=False,skyspecNIR='/Users/kschmidt/work/MUSE/skytable.fits',verbose=True):
+                 showsky=False,skyspecNIR='/Users/kschmidt/work/MUSE/skytable.fits',wavetype='air',verbose=True):
     """
     Plotting the spectra (MUSE and 3D-HST) of the MUSE LAEs with zoom-ins on lines of interest.
     And 'all-in-one' plot of MiG1D produces for inspecion.
@@ -468,17 +473,22 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
                   MUSE cubes in the field the object was found in is shown. For the NIR part of the plots
                   the skyspecNIR will be used.
     skyspecNIR    Sky spectrum to plot outside the MUSE range
+    wavetype      The wavelength to plot the sky in (default MUSE sky wavelength is air, but zLya is vacuum)
+                  Choose between 'air' and 'vac' for air and vacuum wavelengths.
+                  Will use this keyword to determine the wavelength to plot for the MUSE spectraum as well.
     verbose       Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import ciiiEmitterCandidates as cec
-    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True)
-    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],showsky=True)
+    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],showsky=True,skywave='vac')
 
-    cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True)
-    cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=True,yrangefull=[-3,20])
+    cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=True,yrangefull=[-3,20],skywave='vac')
 
-    cec.plot_MUSElya(11205037,3.05787,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True)
+    cec.plot_MUSElya(11205037,3.05787,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+
+    cec.plot_MUSElya(11503085,3.7098,voffset=-400,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Plotting figure for id_MUSE = '+str(MUSEid)
@@ -489,7 +499,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     if verbose: print ' - Loading spectra to plot from '+datadir
     file_MUSE     = glob.glob(datadir+'spectrum_'+str(MUSEid)+'.fits')
     dat_MUSE      = pyfits.open(file_MUSE[0])[1].data
-    wave_MUSE     = dat_MUSE['WAVE_AIR']
+    wave_MUSE     = dat_MUSE['WAVE_'+wavetype.upper()]
     flux_MUSE     = dat_MUSE['FLUX']
     ferr_MUSE     = dat_MUSE['FLUXERR']
     filllow_MUSE  = flux_MUSE-ferr_MUSE
@@ -515,6 +525,8 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         fileexist_3dhst = True
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Defining quanteties to plot; checking wavelength coverage of lines given redshift'
+    llistdic      = MiGs.linelistdic(listversion='full') # loading line list for plots
+
     plot_CII      = False; checkwave = 1335.*(1+redshift)
     if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
             ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
@@ -565,7 +577,14 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         filename      = glob.glob('/Users/kschmidt/work/MUSE/skyspectra/SKY*cdfs*-'+str("%.2d" % fieldno)+'*av.fits')
         skyMUSE       = pyfits.open(filename[0])[1].data
-        sky_wave_muse = skyMUSE['lambda']
+
+        if   wavetype.lower() == 'air':
+            sky_wave_muse = skyMUSE['lambda']
+        elif wavetype.lower() == 'vac':
+            sky_wave_muse = kbs.convert_wavelength(skyMUSE['lambda'],version='air2vac')
+        else:
+            sys.exit('Invalid value '+wavetype+' of "wavetype"')
+
         sky_flux_muse = skyMUSE['data']
 
         skyNIR       = pyfits.open(skyspecNIR)[1].data
@@ -600,7 +619,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     speccol           = 'blue'
-    xlabel            = '$\lambda$ / [\AA]'
+    xlabel            = '$\lambda_\\textrm{'+wavetype.lower()+'}$ / [\AA]'
     ylabel            = '$f_\lambda / [10^{-20}$erg/s/cm$^2$/\\AA]'
     if plotSN:
         ylabel        = 'S/N'
@@ -608,8 +627,8 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     wavescale         = 1.0
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 3, 1) # Lya+NV
-    windowcenter = 1225.0
-    windowwidth  = 25.0
+    windowcenter = 1229.0
+    windowwidth  = 28.0
     xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
 
     plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
@@ -639,35 +658,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    linename     = 'Ly$\\alpha$'
-    linewave     = 1215.670
-    lineposition = linewave*(redshift+1.0)/wavescale
-    plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-    if voffset != 0.0:
-        zoffset  = voffset*(redshift+1.0) / 299792.458
-        range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-        lineymin = yrange[0]
-        lineymax = yrange[1]
-        plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-    if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
-    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    linename     = 'NV'
-    linewave     = 1240.0
-    lineposition = linewave*(redshift+1.0)/wavescale
-    plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-    if voffset != 0.0:
-        zoffset  = voffset*(redshift+1.0) / 299792.458
-        range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-        lineymin = yrange[0]
-        lineymax = yrange[1]
-        plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-    if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
+    cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     plt.xlim(xrange)
     plt.ylim(yrange)
@@ -736,20 +727,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'CII'
-        linewave     = 1335.
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -761,8 +739,8 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_SiIVOIV:
         plt.subplot(4, 3, 3) # SiIV+OIV
-        windowcenter = 1400.0
-        windowwidth  = 15
+        windowcenter = 1397.0
+        windowwidth  = 13
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
         xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
 
@@ -819,35 +797,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'SiIV'
-        linewave     = 1397.0
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'OIV]'
-        linewave     = 1402.0
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition+0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='left',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -918,20 +868,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'CIV'
-        linewave     = 1549.
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -1000,35 +937,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'CIII]$\lambda$1907'
-        linewave     = 1907.0
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'CIII]$\lambda$1909'
-        linewave     = 1909.0
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition+0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='left',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -1099,20 +1008,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'CII]'
-        linewave     = 2326.
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -1183,20 +1079,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'MgII'
-        linewave     = 2795.
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -1266,35 +1149,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = '[OII]$\lambda$3726'
-        linewave     = 3726.0
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = '[OII]$\lambda$3729'
-        linewave     = 3729.0
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition+0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='left',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlim(xrange)
         plt.ylim(yrange)
@@ -1364,20 +1219,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
             plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        linename     = 'H$\delta$'
-        linewave     = 4101.74
-        lineposition = linewave*(redshift+1.0)/wavescale
-        plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
-        if voffset != 0.0:
-            zoffset  = voffset*(redshift+1.0) / 299792.458
-            range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
-            lineymin = yrange[0]
-            lineymax = yrange[1]
-            plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
-
-        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.text(lineposition-0.2*windowwidth,yrange[1]*0.95,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment='right',verticalalignment='top')
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
         plt.xlim(xrange)
@@ -1503,8 +1345,49 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     plt.close('all')
     if verbose: print ' - Saved figure to ',specfigure
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW):
+    """
+
+    """
+    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    for ll in llistdic.keys():
+        linedat      = llistdic[ll]
+        linename     = linedat[0]
+        if wavetype == 'vac':
+            linewave = linedat[1]
+        else:
+            linewave = kbs.convert_wavelength(linedat[1],version='vac2air')
+            pdb.set_trace()
+        horalign     = linedat[2]
+        lineposition = linewave*(redshift+1.0)/wavescale
+
+        if (lineposition > xrange[0]) & (lineposition < xrange[1]):
+            plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
+            if horalign == 'right':
+                xpos = lineposition-0.2*windowwidth
+            elif horalign == 'left':
+                xpos = lineposition+0.2*windowwidth
+            else:
+                xpos = lineposition
+
+            if ll in ['oiv1','oiv2']:
+                ypos = yrange[1]*0.85
+            else:
+                ypos = yrange[1]*0.95
+
+            plt.text(xpos,ypos,linename,color=col_linemarker,size=Fsize,
+                     rotation='horizontal',horizontalalignment=horalign,verticalalignment='top')
+
+            if voffset != 0.0:
+                zoffset  = voffset*(redshift+1.0) / 299792.458
+                range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
+                lineymin = yrange[0]
+                lineymax = yrange[1]
+                plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.2,color=col_linemarker)
+    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./',datadir='./spectra_CIIIcandidates/',
-                           yrangefullflux=[-400,1200],yrangefullSN=[-3,30],verbose=True):
+                           yrangefullflux=[-400,1200],yrangefullSN=[-3,30],wavetype='vac',verbose=True):
     """
     Wrapper to run cec.plot_MUSElya() for a sample of objects by providing a list of ids
 
@@ -1547,9 +1430,9 @@ def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./
             sys.stdout.flush()
 
         cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=False,yrangefull=yrangefullflux,outputdir=outputdir,
-                         showsky=True,verbose=False)
+                         showsky=True,verbose=False,wavetype=wavetype)
         cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=True,yrangefull=yrangefullSN,outputdir=outputdir,
-                         verbose=False)
+                         verbose=False,wavetype=wavetype)
 
     if verbose: print '\n - Done...'
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
