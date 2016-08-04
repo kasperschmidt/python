@@ -64,7 +64,7 @@ def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID
     # setup and launch GUI
     root = Tk()
     root.title("MUSE inspection GUI for 1D spectra (MiG1D)")
-    root.geometry("910x400") # size of GUI window
+    root.geometry("910x430") # size of GUI window
     app = Application_1D(directory,outfile,master=root,idsearchstr=idsearchstr,idlength=8,col_flux='FLUX',
                          col_fluxerr=col_fluxerr,col_wave=col_wave,fluxunit=fluxunit,
                          objlist=objlist,verbose=verbose,ds9xpa=ds9xpa,openfitsauto=openfitsauto,openfitsext=openfitsext,
@@ -209,13 +209,14 @@ def linelistdic(listversion='full'):
         linelist['oiv2']   = ['OIV $\\lambda$1400'                , 1399.780 ,         'left'       , 'Morton1991tab5']
         linelist['civ1']   = ['CIV $\\lambda$1548'                , 1548.195 ,         'right'      , 'Morton1991tab5']
         linelist['civ2']   = ['CIV $\\lambda$1551'                , 1550.770 ,         'left'       , 'Morton1991tab5']
+        linelist['heii']   = ['HeII $\\lambda$1640'               , 1640.420 ,         'right'      , 'vandenberk+2001']
         linelist['ciii1']  = ['CIII] $\\lambda$1907'              , 1907.    ,         'right'      , 'stark+2015']
         linelist['ciii2']  = ['CIII] $\\lambda$1909'              , 1909.    ,         'left'       , 'stark+2015']
         linelist['ciib']   = ['CII] $\\lambda$2326'               , 2326.113 ,         'right'      , 'Morton1991tab5']
         linelist['mgii1']  = ['MgII] $\\lambda$2796'              , 2795.528 ,         'right'      , 'Morton1991tab5']
         linelist['mgii2']  = ['MgII] $\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
         linelist['oii1']   = ['[OII] $\\lambda$3726'              , 3726.    ,         'right'      , 'Pradhan2006']
-        linelist['oii1']   = ['[OII] $\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
+        linelist['oii2']   = ['[OII] $\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
         linelist['hd']     = ['H$\delta$ $\\lambda$4103'          , 4102.89  ,         'right'      , 'VandenBerk2001tab4']
 
         # Lines from http://www.sdss.org/dr7/algorithms/linestable.html,
@@ -408,6 +409,7 @@ class Application_1D(Frame):
         self.outfile = outfile
 
         # -------- ADD LABEL --------
+        self.openpngs() # open pngs for first object
         position = [0,0,1]
         self.labelvar = StringVar()
         label = Label(master,textvariable=self.labelvar)
@@ -520,11 +522,10 @@ class Application_1D(Frame):
         """
         self.Ncol  = 4.
 
-        self.sliders      = ['a','b','c','d']
-        self.empty        = ['e','f','g','h',
+        self.sliders      = ['a','b','c','d','e','f','g','h']
+        self.empty        = ['m','n','o','p',
                              #'c','d',
                              #'i','j'#,'k','l',
-                             'm','n','o','p',
                              'q','r','s','t',
                              'u','v','w','x',
                              'y','z']
@@ -533,20 +534,20 @@ class Application_1D(Frame):
 
         # Note that letters in () enables sorting of boxes
         self.keys = {}
-        self.keys['(a) CII']   = 0
-        self.keys['(b) SiIV' ]  = 0
-        self.keys['(c) CIV']   = 0
-        self.keys['(d) CIII']  = 0
-
-        self.keys['(e) empty1']  = 0
-        self.keys['(f) empty2']  = 0
-        self.keys['(g) empty3']  = 0
-        self.keys['(h) empty4']  = 0
+        self.keys['(a) Lyb_1025']   = 0
+        self.keys['(b) OVI_1032' ]  = 0
+        self.keys['(c) NV_1240']   = 0
+        self.keys['(d) SiIVOIV_1399']  = 0
         #
-        self.keys['(i) skylineresidual']  = 0
-        self.keys['(j) defect']  = 0
-        self.keys['(k) close_counterpart']  = 0
-        self.keys['(l) poor_match']  = 0
+        self.keys['(e) CIV_1549']  = 0
+        self.keys['(f) HeII_1640']  = 0
+        self.keys['(g) CIII_1909']  = 0
+        self.keys['(h) MgII_2800']  = 0
+        #
+        self.keys['(i) close_counterpart']  = 0
+        self.keys['(j) poor_match']  = 0
+        #self.keys['(k) empty1']  = 0
+        #self.keys['(l) empty2']  = 0
 
         #
         #self.keys['(m) '+self.gris1+'Mild_Contamination'] = 0
@@ -578,6 +579,10 @@ class Application_1D(Frame):
         self.sliderdic = {}
         for key in self.keys:
             rowval = position[0]+int(np.floor(Nkey/self.Ncol))
+            if ('(a)' not in key) & ('(b)' not in key) & ('(c)' not in key) & ('(d)' not in key):
+                rowval = rowval+1 # adjusting row value after first set of sliders
+                if ('(e)' not in key) & ('(f)' not in key) & ('(g)' not in key) & ('(h)' not in key):
+                    rowval = rowval+2 # adjusting row value after second set of sliders
             colval = position[1]+int(np.round((Nkey/self.Ncol-np.floor((Nkey/self.Ncol)))*self.Ncol))
 
             self.keys[key] = Variable()
@@ -621,14 +626,14 @@ class Application_1D(Frame):
         colors['b'] = collist[6]
         colors['c'] = collist[6]
         colors['d'] = collist[6]
-        colors['e'] = collist[0]
-        colors['f'] = collist[0]
-        colors['g'] = collist[0]
-        colors['h'] = collist[0]
+        colors['e'] = collist[6]
+        colors['f'] = collist[6]
+        colors['g'] = collist[6]
+        colors['h'] = collist[6]
         colors['i'] = collist[5]
         colors['j'] = collist[5]
-        colors['k'] = collist[5]
-        colors['l'] = collist[5]
+        colors['k'] = collist[0]
+        colors['l'] = collist[0]
         colors['m'] = collist[0]
         colors['n'] = collist[0]
         colors['o'] = collist[0]
@@ -1034,7 +1039,9 @@ class Application_1D(Frame):
         else:
             id = objid
         idstr     = str(id)
-        self.pngs = glob.glob(self.dir+'/*'+idstr+'*.png')+glob.glob(self.dir+'/*'+idstr+'*.pdf')
+        self.pngs = glob.glob('/Users/kschmidt/work/MUSE/ELpostagestamps/'+idstr+'*.png')+\
+                    glob.glob(self.dir+'/*'+idstr+'*.png')+glob.glob(self.dir+'/*'+idstr+'*.pdf')
+
         if len(self.pngs) == 0:
             if self.vb: print ' - Did not find any png or pdf files to open. Looked for '+\
                               self.dir+'/*'+idstr+'*.pdf/pdf'
