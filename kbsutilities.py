@@ -1090,6 +1090,35 @@ def convert_wavelength(lambdainput,version='air2vac',verbose=True):
         sys.exit('Invalid "version" provided; choose between "air2vac" and "vac2air"')
 
     return lambdaout
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def velocityoffset2dwave(redshift,voffset,lam_rest,verbose=True):
+    """
+    Converting a velcoity offset into a wavelength difference for a given rest-frame wavelength
+    E.g., what does a 340 km/s velocity offset between Lya and CIII] for a redshift z_Lya=7.733
+    source (Stark et al. 2016) mean for the wavelength shift of CIII] wrt. the wavelength predicted
+    based on the Lya redshift?
+
+    lam_obs, lam_offset, dlam = kbs.velocityoffset2dwave(7.733,340.0,1909.0)
+
+    """
+
+    cc         = 299792.458 # km/s
+    lam_obs    = (redshift + 1.0) * lam_rest
+
+    z_offset   = (voffset * (redshift + 1.0) / cc ) # systemic redshift if redshift = z_lya
+    lam_offset = (redshift - z_offset + 1.0 ) * lam_rest
+
+    dlam       = lam_obs - lam_offset
+
+    if verbose:
+        print ' - For a line at '+str(lam_rest)+'A from a redshift '+str(redshift)+' object '
+        print '   the predicted observed wavelength of the line would be             : ',lam_obs,' A '
+        print ' - Accounting for a velcoity offset of '+str(voffset)+'km/s '
+        print '   the predicted observed wavelength of the line becomes              : ',lam_offset,' A '
+        print '   which corresponds to an expected wavelength shift of the line of   : ',dlam,' A '
+
+    return lam_obs, lam_offset, dlam
+
 
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
