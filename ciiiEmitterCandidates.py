@@ -44,7 +44,8 @@ def get_candidates(verbose=True):
     for id in dat['UNIQUE_ID'][goodent]: print id
 
     if verbose: print ' ------------ OBJECTS WITH CIII] FALLING IN THE MUSE WAVELENGTH RANGE (3D-HST MATCH) ------------ '
-    cm3.get_candidates(zrange=zrange,matchtol=0.5,catMUSE=catMUSE,cat3DHST=cat3DHST)
+    # use large matchtol to ensure all objects are listed irrespective of whether there is a close 3D-HST match
+    cm3.get_candidates(zrange=zrange,matchtol=10.0,catMUSE=catMUSE,cat3DHST=cat3DHST)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def copy_spectra(outputdir='./',verbose=True,copy2Daswell=False,
@@ -481,14 +482,17 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     --- EXAMPLE OF USE ---
     import ciiiEmitterCandidates as cec
     cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True,wavetype='vac')
-    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],showsky=True,skywave='vac')
+    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],showsky=True,wavetype='vac')
 
     cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=False,yrangefull=[-400,1100],showsky=True,wavetype='vac')
-    cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=True,yrangefull=[-3,20],skywave='vac')
+    cec.plot_MUSElya(11931070,4.836,voffset=300,plotSN=True,yrangefull=[-3,20],wavetype='vac')
 
     cec.plot_MUSElya(11205037,3.05787,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
 
     cec.plot_MUSElya(11503085,3.7098,voffset=-400,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+
+    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],wavetype='vac')
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Plotting figure for id_MUSE = '+str(MUSEid)
