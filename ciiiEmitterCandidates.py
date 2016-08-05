@@ -47,6 +47,12 @@ def get_candidates(verbose=True):
     # use large matchtol to ensure all objects are listed irrespective of whether there is a close 3D-HST match
     cm3.get_candidates(zrange=zrange,matchtol=10.0,catMUSE=catMUSE,cat3DHST=cat3DHST)
 
+    if verbose: print ' ------------ OBJECTS WITH CIV FALLING IN THE MUSE WAVELENGTH RANGE BUT WITH CIII] OUTSIDE MUSE and 3D-HST (3D-HST MATCH) ------------ '
+    zrange = [3.9,4.7]
+    # use large matchtol to ensure all objects are listed irrespective of whether there is a close 3D-HST match
+    cm3.get_candidates(zrange=zrange,matchtol=10.0,catMUSE=catMUSE,cat3DHST=cat3DHST)
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def copy_spectra(outputdir='./',verbose=True,copy2Daswell=False,
                  specdir_MUSE='/Users/kschmidt/work/MUSE/emission_spectra_0.2/',
@@ -68,32 +74,37 @@ def copy_spectra(outputdir='./',verbose=True,copy2Daswell=False,
         if verbose: print ' - The outputdir does not exists; doing nothing. \n   outputdir='+outputdir
         return
 
-    cand3DHST           = '/Users/kschmidt/work/MUSE/candelsCDFS_3DHST/candidateCIIIemitters.txt'
-    candMUSE            = '/Users/kschmidt/work/MUSE/notes/160612/MUSE_CIII_potentialemitters.txt'
-    candMUSE_3DHSTmatch = '/Users/kschmidt/work/MUSE/notes/160612/MUSE_CIII_potentialemitters_matchto3DHST.txt'
+    cand3DHST           = '/Users/kschmidt/work/MUSE/ciii_candidates/CIIIemitter_candidates_within3DHST.txt'
+    candMUSE            = '/Users/kschmidt/work/MUSE/ciii_candidates/CIIIemitter_candidates_withinMUSE.txt'
+    candMUSE_CIV        = '/Users/kschmidt/work/MUSE/ciii_candidates/CIVemitter_candidates_withinMUSE.txt'
 
-    dat_3DHST            = np.genfromtxt(cand3DHST          ,dtype=None,comments='#',names=True)
-    dat_MUSE             = np.genfromtxt(candMUSE           ,dtype=None,comments='#',names=True)
-    dat_MUSE_3DHSTmatch  = np.genfromtxt(candMUSE_3DHSTmatch,dtype=None,comments='#',names=True)
+    dat_3DHST            = np.genfromtxt(cand3DHST   ,skip_header=4,names=True,dtype=None,comments='#')
+    dat_MUSE             = np.genfromtxt(candMUSE    ,skip_header=4,names=True,dtype=None,comments='#')
+    dat_MUSE_CIV         = np.genfromtxt(candMUSE_CIV,skip_header=4,names=True,dtype=None,comments='#')
 
+    ids_MUSE_all = np.append(dat_3DHST['ID_MUSE'],dat_MUSE['ID_MUSE'])
+    ids_MUSE_all = np.append(ids_MUSE_all,dat_MUSE_CIV['ID_MUSE'])
+
+    ids_3DHST_3dhstmatch = np.append(dat_3DHST['ID_3DHST'],dat_MUSE['ID_3DHST'][dat_MUSE['R_MATCH'] < 0.5])
+    ids_3DHST_3dhstmatch = np.append(ids_3DHST_3dhstmatch,dat_MUSE_CIV['ID_3DHST'][dat_MUSE_CIV['R_MATCH'] < 0.5])
+
+    ids_MUSE_3dhstmatch  = np.append(dat_3DHST['ID_MUSE'],dat_MUSE['ID_MUSE'][dat_MUSE['R_MATCH'] < 0.5])
+    ids_MUSE_3dhstmatch  = np.append(ids_MUSE_3dhstmatch,dat_MUSE_CIV['ID_MUSE'][dat_MUSE_CIV['R_MATCH'] < 0.5])
 
     if verbose: print ' - Copying MUSE spectra over'
-    ids_MUSEall = np.append(dat_3DHST['ID_MUSE'],dat_MUSE['ID_MUSE'])
-    for objid in ids_MUSEall:
+    for objid in ids_MUSE_all:
         cpcmd = 'cp '+specdir_MUSE+'spectrum*'+str(objid)+'*.fits  '+outputdir
         cpout = commands.getoutput(cpcmd)
         if not cpout == '':
             print cpout
 
     if verbose: print ' - Reformatting and copying 3D-HST spectra over'
-    ids_3DHSTall = np.append(dat_3DHST['ID_3DHST'],dat_MUSE_3DHSTmatch['ID_3DHST'])
-    ids_MUSEall  = np.append(dat_3DHST['ID_MUSE'],dat_MUSE_3DHSTmatch['ID_MUSE'])
-    for oo, objid_3dhst in enumerate(ids_3DHSTall):
-        objid_muse = ids_MUSEall[oo]
+    for oo, objid_3dhst in enumerate(ids_3DHST_3dhstmatch):
+        objid_muse = ids_MUSE_3dhstmatch[oo]
         if verbose:
             idno    = oo+1
             infostr = '   Reformat 3D-HST 1D spectrum for '+str(objid_3dhst)+' / '+str(objid_muse)+\
-                      '   ('+str(idno)+'/'+str(len(ids_3DHSTall))+')'
+                      '   ('+str(idno)+'/'+str(len(ids_MUSE_3dhstmatch))+')'
             sys.stdout.write("%s\r" % infostr)
             sys.stdout.flush()
 
