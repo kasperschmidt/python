@@ -504,6 +504,18 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
     cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
     cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],wavetype='vac')
+
+    cec.plot_MUSElya(12350190,4.4955,voffset=300.0,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(12350190,4.4955,voffset=300.0,plotSN=True,yrangefull=[-3,20],wavetype='vac')
+
+    cec.plot_MUSElya(10414050,3.6609,voffset=300.0,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(10414050,3.6609,voffset=300.0,plotSN=True,yrangefull=[-3,20],wavetype='vac')
+
+    id       = 11503085 # 12133078
+    redshift = 3.7098   # 4.2646
+    cec.plot_MUSElya(id,redshift,voffset=-400.0,plotSN=False,yrangefull=[-400,2200],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(id,redshift,voffset=-400.0,plotSN=True,yrangefull=[-3,40],wavetype='vac')
+
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Plotting figure for id_MUSE = '+str(MUSEid)
@@ -542,6 +554,18 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     if verbose: print ' - Defining quanteties to plot; checking wavelength coverage of lines given redshift'
     llistdic      = MiGs.linelistdic(listversion='full') # loading line list for plots
 
+    # plot_Lyg      = False; checkwave = 973.*(1+redshift)
+    # if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
+    #         ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
+    #     plot_Lyg      = True
+
+    plot_Lyb      = False; checkwave = 1026.*(1+redshift)
+    if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
+            ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
+        plot_Lyb      = True
+
+    plot_Lya      = True
+
     plot_CII      = False; checkwave = 1335.*(1+redshift)
     if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
             ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
@@ -557,15 +581,20 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
             ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
         plot_CIV      = True
 
+    plot_HeII     = False; checkwave = 1640.*(1+redshift)
+    if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
+            ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
+        plot_HeII      = True
+
     plot_CIII     = False; checkwave = 1908.*(1+redshift)
     if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
             ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
         plot_CIII     = True
 
     plot_CIIb     = False; checkwave = 2326.*(1+redshift)
-    if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
-            ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
-        plot_CIIb     = True
+    # if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
+    #         ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
+    #     plot_CIIb     = True
 
     plot_MgII     = False; checkwave = 2795.*(1+redshift)
     if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
@@ -578,9 +607,10 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plot_OII      = True
 
     plot_Hd       = False; checkwave = 4101.74*(1+redshift)
-    if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
-            ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
-        plot_Hd       = True
+    # if ((checkwave > wavecov_MUSE[0]) & (checkwave < wavecov_MUSE[1])) or  \
+    #         ((checkwave > wavecov_3dhst[0]) & (checkwave < wavecov_3dhst[1])):
+    #     plot_Hd       = True
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if showsky:
         if verbose: print ' - Getting sky spectra to plot '
@@ -640,50 +670,120 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         ylabel        = 'S/N'
     col_linemarker    = '#006600'
     wavescale         = 1.0
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.subplot(4, 3, 1) # Lya+NV
-    windowcenter = 1229.0
-    windowwidth  = 28.0
-    xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+    if plot_Lyb:
+        plt.subplot(4, 3, 1) # Lybeta+OIV
+        windowcenter = 1030.0
+        windowwidth  = 20.0
+        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
 
-    plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
-    if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
+        plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
+        if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
 
-    try:
-        fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
-        fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
-        yrange  = [fluxmin,1.1*fluxmax]
-    except:
-        yrange = [0,10]
+        try:
+            fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+            fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+            yrange  = [fluxmin,1.1*fluxmax]
+        except:
+            yrange = [0,10]
 
-    if showsky:
-        if windowcenter*(redshift+1.0) < 1e4:
-            sky_w   = sky_wave_muse
-            sky_f   = sky_flux_muse
-        else:
-            sky_w   = sky_wave_nir
-            sky_f   = sky_flux_nir
+        if showsky:
+            if windowcenter*(redshift+1.0) < 1e4:
+                sky_w   = sky_wave_muse
+                sky_f   = sky_flux_muse
+            else:
+                sky_w   = sky_wave_nir
+                sky_f   = sky_flux_nir
 
-        skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
-        skywave = sky_w[skyent]
-        skylow  = np.zeros(len(skywave))
-        skyflux = sky_f[skyent]
-        skyhigh = skyflux
-        if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
+            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
+            skywave = sky_w[skyent]
+            skylow  = np.zeros(len(skywave))
+            skyflux = sky_f[skyent]
+            skyhigh = skyflux
+            if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
 
-        plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
-    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
-    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    plt.xlim(xrange)
-    plt.ylim(yrange)
-    xrange_Lya = xrange
-    yrange_Lya = yrange
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+            plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        plt.xlim(xrange)
+        plt.ylim(yrange)
+        xrange_Lyb = xrange
+        yrange_Lyb = yrange
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 1)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof Ly$\\beta$ + OVI doublet',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if plot_Lya:
+        plt.subplot(4, 3, 2) # Lyalpha+NV
+        windowcenter = 1229.0
+        windowwidth  = 28.0
+        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+
+        plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
+        if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
+
+        try:
+            fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+            fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+            yrange  = [fluxmin,1.1*fluxmax]
+        except:
+            yrange = [0,10]
+
+        if showsky:
+            if windowcenter*(redshift+1.0) < 1e4:
+                sky_w   = sky_wave_muse
+                sky_f   = sky_flux_muse
+            else:
+                sky_w   = sky_wave_nir
+                sky_f   = sky_flux_nir
+
+            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
+            skywave = sky_w[skyent]
+            skylow  = np.zeros(len(skywave))
+            skyflux = sky_f[skyent]
+            skyhigh = skyflux
+            if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
+
+            plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        plt.xlim(xrange)
+        plt.ylim(yrange)
+        xrange_Lya = xrange
+        yrange_Lya = yrange
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 2)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof Ly$\\alpha$ + NV doublet',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_CII:
-        plt.subplot(4, 3, 2) # CII
+        plt.subplot(4, 3, 3) # CII
         windowcenter = 1335.
         windowwidth  = 10.
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
@@ -751,9 +851,22 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 3)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof CII$\\lambda$1336',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_SiIVOIV:
-        plt.subplot(4, 3, 3) # SiIV+OIV
+        plt.subplot(4, 3, 4) # SiIV+OIV
         windowcenter = 1397.0
         windowwidth  = 13
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
@@ -821,10 +934,22 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 4)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof SiIV and OIV doublets',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_CIV:
-        plt.subplot(4, 3, 4) # CIV
+        plt.subplot(4, 3, 5) # CIV
         windowcenter = 1549.
         windowwidth  = 10.
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
@@ -892,9 +1017,104 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 5)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof CIV doublet',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if plot_HeII:
+        plt.subplot(4, 3, 6) # HeII
+        windowcenter = 1653.0
+        windowwidth  = 26
+        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
+        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+
+        plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
+        if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
+
+        try:
+            fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+            fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+            yrange  = [fluxmin,1.1*fluxmax]
+        except:
+            yrange = [0,10]
+
+        if fileexist_3dhst:
+            for f3 in file_3dhst:
+                f3_dat   = pyfits.open(f3)[1].data
+                wave     = f3_dat['WAVE_AIR']
+                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
+                fluxerr  = f3_dat['FLUXERR']
+                if plotSN: flux = flux/fluxerr
+                contam   = f3_dat['CONTAM']
+                try:
+                    fluxmin = np.min(np.asarray([yrange[0], np.min(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
+                    fluxmax = np.max(np.asarray([yrange[1], np.max(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
+                    yrange  = [fluxmin,1.1*fluxmax]
+                except:
+                    pass
+
+                plt.plot(wave, flux, '-',alpha=0.8,color=speccol)
+
+                if not plotSN:
+                    plt.plot(wave, contam, '--',alpha=0.8,color=speccol)
+
+                    filllow  = flux[(wave > xrange[0]) & (wave < xrange[1])]-fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
+                    filllow[filllow < np.min(flux)-1e3]  = yrangefull[0]
+                    fillhigh = flux[(wave > xrange[0]) & (wave < xrange[1])]+fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
+                    fillhigh[fillhigh > np.max(flux)+1e3]  = yrangefull[1]
+                    plt.fill_between(wave[(wave > xrange[0]) & (wave < xrange[1])],filllow,fillhigh,alpha=0.20,color=speccol)
+        if showsky:
+            if windowcenter*(redshift+1.0) < 1e4:
+                sky_w   = sky_wave_muse
+                sky_f   = sky_flux_muse
+            else:
+                sky_w   = sky_wave_nir
+                sky_f   = sky_flux_nir
+
+            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
+            skywave = sky_w[skyent]
+            skylow  = np.zeros(len(skywave))
+            skyflux = sky_f[skyent]
+            skyhigh = skyflux
+            if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
+
+            plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        plt.xlim(xrange)
+        plt.ylim(yrange)
+        xrange_HeII = xrange
+        yrange_HeII = yrange
+
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 6)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof HeII',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_CIII:
-        plt.subplot(4, 3, 5) # CIII]
+        plt.subplot(4, 3, 7) # CIII]
         windowcenter = 1908.0
         windowwidth  = 10
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
@@ -961,81 +1181,104 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 7)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof CIII doublet',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_CIIb:
-        plt.subplot(4, 3, 6) # CIIb
-        windowcenter = 2326.
-        windowwidth  = 10
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
-        if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
-
-        try:
-            fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
-            fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
-            yrange  = [fluxmin,1.1*fluxmax]
-        except:
-            yrange = [0,10]
-
-        if fileexist_3dhst:
-            for f3 in file_3dhst:
-                f3_dat   = pyfits.open(f3)[1].data
-                wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
-                fluxerr  = f3_dat['FLUXERR']
-                if plotSN: flux = flux/fluxerr
-                contam   = f3_dat['CONTAM']
-
-                try:
-                    fluxmin = np.min(np.asarray([yrange[0], np.min(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
-                    fluxmax = np.max(np.asarray([yrange[1], np.max(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
-                    yrange  = [fluxmin,1.1*fluxmax]
-                except:
-                    pass
-
-                plt.plot(wave, flux, '-',alpha=0.8,color=speccol)
-
-                if not plotSN:
-                    plt.plot(wave, contam, '--',alpha=0.8,color=speccol)
-
-                    filllow  = flux[(wave > xrange[0]) & (wave < xrange[1])]-fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
-                    filllow[filllow < np.min(flux)-1e3]  = yrangefull[0]
-                    fillhigh = flux[(wave > xrange[0]) & (wave < xrange[1])]+fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
-                    fillhigh[fillhigh > np.max(flux)+1e3]  = yrangefull[1]
-                    plt.fill_between(wave[(wave > xrange[0]) & (wave < xrange[1])],filllow,fillhigh,alpha=0.20,color=speccol)
-
-        if showsky:
-            if windowcenter*(redshift+1.0) < 1e4:
-                sky_w   = sky_wave_muse
-                sky_f   = sky_flux_muse
-            else:
-                sky_w   = sky_wave_nir
-                sky_f   = sky_flux_nir
-
-            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
-            skywave = sky_w[skyent]
-            skylow  = np.zeros(len(skywave))
-            skyflux = sky_f[skyent]
-            skyhigh = skyflux
-            if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
-
-            plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_CIIb = xrange
-        yrange_CIIb = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-
+    # if plot_CIIb:
+    #     plt.subplot(4, 3, XX) # CIIb
+    #     windowcenter = 2326.
+    #     windowwidth  = 10
+    #     if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
+    #     xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+    #
+    #     plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
+    #     if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
+    #
+    #     try:
+    #         fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+    #         fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+    #         yrange  = [fluxmin,1.1*fluxmax]
+    #     except:
+    #         yrange = [0,10]
+    #
+    #     if fileexist_3dhst:
+    #         for f3 in file_3dhst:
+    #             f3_dat   = pyfits.open(f3)[1].data
+    #             wave     = f3_dat['WAVE_AIR']
+    #             flux     = f3_dat['FLUX']-f3_dat['CONTAM']
+    #             fluxerr  = f3_dat['FLUXERR']
+    #             if plotSN: flux = flux/fluxerr
+    #             contam   = f3_dat['CONTAM']
+    #
+    #             try:
+    #                 fluxmin = np.min(np.asarray([yrange[0], np.min(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
+    #                 fluxmax = np.max(np.asarray([yrange[1], np.max(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
+    #                 yrange  = [fluxmin,1.1*fluxmax]
+    #             except:
+    #                 pass
+    #
+    #             plt.plot(wave, flux, '-',alpha=0.8,color=speccol)
+    #
+    #             if not plotSN:
+    #                 plt.plot(wave, contam, '--',alpha=0.8,color=speccol)
+    #
+    #                 filllow  = flux[(wave > xrange[0]) & (wave < xrange[1])]-fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
+    #                 filllow[filllow < np.min(flux)-1e3]  = yrangefull[0]
+    #                 fillhigh = flux[(wave > xrange[0]) & (wave < xrange[1])]+fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
+    #                 fillhigh[fillhigh > np.max(flux)+1e3]  = yrangefull[1]
+    #                 plt.fill_between(wave[(wave > xrange[0]) & (wave < xrange[1])],filllow,fillhigh,alpha=0.20,color=speccol)
+    #
+    #     if showsky:
+    #         if windowcenter*(redshift+1.0) < 1e4:
+    #             sky_w   = sky_wave_muse
+    #             sky_f   = sky_flux_muse
+    #         else:
+    #             sky_w   = sky_wave_nir
+    #             sky_f   = sky_flux_nir
+    #
+    #         skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
+    #         skywave = sky_w[skyent]
+    #         skylow  = np.zeros(len(skywave))
+    #         skyflux = sky_f[skyent]
+    #         skyhigh = skyflux
+    #         if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
+    #
+    #         plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
+    #     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    #     cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
+    #     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    #     plt.xlim(xrange)
+    #     plt.ylim(yrange)
+    #     xrange_CIIb = xrange
+    #     yrange_CIIb = yrange
+    #
+    #     plt.xlabel(xlabel)
+    #     plt.ylabel(ylabel)
+    # else:
+    #     plt.subplot(4, 3, XX)
+    #
+    #     plt.plot(-1,-1)
+    #     plt.text(0.5,0.5,'No good coverage \nof CII]',
+    #              color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+    #     plt.yticks([])
+    #     plt.xticks([])
+    #     plt.ylabel('')
+    #     plt.xlabel('')
+    #     plt.xlim([0,1])
+    #     plt.ylim([0,1])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_MgII:
-        plt.subplot(4, 3, 7) # MgII
+        plt.subplot(4, 3, 8) # MgII
         windowcenter = 2795.
         windowwidth  = 10
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
@@ -1103,9 +1346,21 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 8)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof MgII doublet',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plot_OII:
-        plt.subplot(4, 3, 8) # [OII]
+        plt.subplot(4, 3, 9) # [OII]
         windowcenter = 3727.5
         windowwidth  = 10
         if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
@@ -1173,77 +1428,101 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+    else:
+        plt.subplot(4, 3, 9)
+
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage \nof [OII] doublet',
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.xlim([0,1])
+        plt.ylim([0,1])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_Hd:
-        plt.subplot(4, 3, 9) # Hd
-        windowcenter = 4101.74
-        windowwidth  = 10
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
-        if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
-
-        try:
-            fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
-            fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
-            yrange  = [fluxmin,1.1*fluxmax]
-        except:
-            yrange = [0,10]
-
-        if fileexist_3dhst:
-            for f3 in file_3dhst:
-                f3_dat   = pyfits.open(f3)[1].data
-                wave     = f3_dat['WAVE_AIR']
-                flux     = f3_dat['FLUX']-f3_dat['CONTAM']
-                fluxerr  = f3_dat['FLUXERR']
-                if plotSN: flux = flux/fluxerr
-                contam   = f3_dat['CONTAM']
-                try:
-                    fluxmin = np.min(np.asarray([yrange[0], np.min(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
-                    fluxmax = np.max(np.asarray([yrange[1], np.max(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
-                    yrange  = [fluxmin,1.1*fluxmax]
-                except:
-                    pass
-
-                plt.plot(wave, flux, '-',alpha=0.8,color=speccol)
-
-                if not plotSN:
-                    plt.plot(wave, contam, '--',alpha=0.8,color=speccol)
-
-                    filllow  = flux[(wave > xrange[0]) & (wave < xrange[1])]-fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
-                    filllow[filllow < np.min(flux)-1e3]  = yrangefull[0]
-                    fillhigh = flux[(wave > xrange[0]) & (wave < xrange[1])]+fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
-                    fillhigh[fillhigh > np.max(flux)+1e3]  = yrangefull[1]
-                    plt.fill_between(wave[(wave > xrange[0]) & (wave < xrange[1])],filllow,fillhigh,alpha=0.20,color=speccol)
-
-        if showsky:
-            if windowcenter*(redshift+1.0) < 1e4:
-                sky_w   = sky_wave_muse
-                sky_f   = sky_flux_muse
-            else:
-                sky_w   = sky_wave_nir
-                sky_f   = sky_flux_nir
-
-            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
-            skywave = sky_w[skyent]
-            skylow  = np.zeros(len(skywave))
-            skyflux = sky_f[skyent]
-            skyhigh = skyflux
-            if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
-
-            plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_Hd = xrange
-        yrange_Hd = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+    # if plot_Hd:
+    #     plt.subplot(4, 3, XX) # Hd
+    #     windowcenter = 4101.74
+    #     windowwidth  = 10
+    #     if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
+    #     xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+    #
+    #     plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
+    #     if not plotSN: plt.fill_between(wave_MUSE,filllow_MUSE,fillhigh_MUSE,alpha=0.20,color=speccol)
+    #
+    #     try:
+    #         fluxmin = np.min(np.asarray([0, np.min(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+    #         fluxmax = np.max(np.asarray([10, np.max(flux_MUSE[(wave_MUSE > xrange[0]) & (wave_MUSE < xrange[1])]) ]))
+    #         yrange  = [fluxmin,1.1*fluxmax]
+    #     except:
+    #         yrange = [0,10]
+    #
+    #     if fileexist_3dhst:
+    #         for f3 in file_3dhst:
+    #             f3_dat   = pyfits.open(f3)[1].data
+    #             wave     = f3_dat['WAVE_AIR']
+    #             flux     = f3_dat['FLUX']-f3_dat['CONTAM']
+    #             fluxerr  = f3_dat['FLUXERR']
+    #             if plotSN: flux = flux/fluxerr
+    #             contam   = f3_dat['CONTAM']
+    #             try:
+    #                 fluxmin = np.min(np.asarray([yrange[0], np.min(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
+    #                 fluxmax = np.max(np.asarray([yrange[1], np.max(flux[(wave > xrange[0]) & (wave < xrange[1])]) ]))
+    #                 yrange  = [fluxmin,1.1*fluxmax]
+    #             except:
+    #                 pass
+    #
+    #             plt.plot(wave, flux, '-',alpha=0.8,color=speccol)
+    #
+    #             if not plotSN:
+    #                 plt.plot(wave, contam, '--',alpha=0.8,color=speccol)
+    #
+    #                 filllow  = flux[(wave > xrange[0]) & (wave < xrange[1])]-fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
+    #                 filllow[filllow < np.min(flux)-1e3]  = yrangefull[0]
+    #                 fillhigh = flux[(wave > xrange[0]) & (wave < xrange[1])]+fluxerr[(wave > xrange[0]) & (wave < xrange[1])]
+    #                 fillhigh[fillhigh > np.max(flux)+1e3]  = yrangefull[1]
+    #                 plt.fill_between(wave[(wave > xrange[0]) & (wave < xrange[1])],filllow,fillhigh,alpha=0.20,color=speccol)
+    #
+    #     if showsky:
+    #         if windowcenter*(redshift+1.0) < 1e4:
+    #             sky_w   = sky_wave_muse
+    #             sky_f   = sky_flux_muse
+    #         else:
+    #             sky_w   = sky_wave_nir
+    #             sky_f   = sky_flux_nir
+    #
+    #         skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
+    #         skywave = sky_w[skyent]
+    #         skylow  = np.zeros(len(skywave))
+    #         skyflux = sky_f[skyent]
+    #         skyhigh = skyflux
+    #         if windowcenter*(redshift+1.0) > 1e4: skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
+    #
+    #         plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
+    #     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    #     cec.plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,wavetype,LW)
+    #     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    #
+    #     plt.xlim(xrange)
+    #     plt.ylim(yrange)
+    #     xrange_Hd = xrange
+    #     yrange_Hd = yrange
+    #
+    #     plt.xlabel(xlabel)
+    #     plt.ylabel(ylabel)
+    # else:
+    #     plt.subplot(4, 3, XX)
+    #
+    #     plt.plot(-1,-1)
+    #     plt.text(0.5,0.5,'No good coverage \nof H\\delta doublet',
+    #              color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+    #     plt.yticks([])
+    #     plt.xticks([])
+    #     plt.ylabel('')
+    #     plt.xlabel('')
+    #     plt.xlim([0,1])
+    #     plt.ylim([0,1])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 3, (10,12)) # Full specs
     plt.plot(wave_MUSE, flux_MUSE, '-',alpha=0.8,color=speccol)
@@ -1278,12 +1557,21 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
 
     Dyrangefull = yrangefull[1]-yrangefull[0]
     # --- DASHED "ZOOM BOXES" ---
-    plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[0],'-',color='black',lw=LW)
-    plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[1],'-',color='black',lw=LW)
-    plt.plot(np.zeros(2)+xrange_Lya[0],yrange_Lya,'-',color='black',lw=LW)
-    plt.plot(np.zeros(2)+xrange_Lya[1],yrange_Lya,'-',color='black',lw=LW)
-    plt.text(np.mean(np.asarray(xrange_Lya)),yrange_Lya[1]+0.03*Dyrangefull,'Ly$\\alpha$',
-             color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+    if plot_Lyb:
+        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[0],'-',color='black',lw=LW)
+        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[1],'-',color='black',lw=LW)
+        plt.plot(np.zeros(2)+xrange_Lyb[0],yrange_Lyb,'-',color='black',lw=LW)
+        plt.plot(np.zeros(2)+xrange_Lyb[1],yrange_Lyb,'-',color='black',lw=LW)
+        plt.text(np.mean(np.asarray(xrange_Lyb)),yrange_Lyb[1]+0.03*Dyrangefull,'Ly$\\beta$+OVI',
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+
+    if plot_Lya:
+        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[0],'-',color='black',lw=LW)
+        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[1],'-',color='black',lw=LW)
+        plt.plot(np.zeros(2)+xrange_Lya[0],yrange_Lya,'-',color='black',lw=LW)
+        plt.plot(np.zeros(2)+xrange_Lya[1],yrange_Lya,'-',color='black',lw=LW)
+        plt.text(np.mean(np.asarray(xrange_Lya)),yrange_Lya[1]+0.03*Dyrangefull,'Ly$\\alpha$+NV',
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
 
     if plot_CII:
         plt.plot(xrange_CII,np.zeros(2)+yrange_CII[0],'-',color='black',lw=LW)
@@ -1307,6 +1595,14 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.plot(np.zeros(2)+xrange_CIV[0],yrange_CIV,'-',color='black',lw=LW)
         plt.plot(np.zeros(2)+xrange_CIV[1],yrange_CIV,'-',color='black',lw=LW)
         plt.text(np.mean(np.asarray(xrange_CIV)),yrange_CIV[1]+0.03*Dyrangefull,'CIV',
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+
+    if plot_HeII:
+        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[0],'-',color='black',lw=LW)
+        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[1],'-',color='black',lw=LW)
+        plt.plot(np.zeros(2)+xrange_HeII[0],yrange_HeII,'-',color='black',lw=LW)
+        plt.plot(np.zeros(2)+xrange_HeII[1],yrange_HeII,'-',color='black',lw=LW)
+        plt.text(np.mean(np.asarray(xrange_HeII)),yrange_HeII[1]+0.03*Dyrangefull,'HeII',
                  color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
 
     if plot_CIII:
@@ -1385,7 +1681,7 @@ def plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrang
             else:
                 xpos = lineposition
 
-            if ll in ['oiv1','oiv2']:
+            if ll in ['oiv1','oiv2','ovi1','ovi2']:
                 ypos = yrange[1]*0.85
             else:
                 ypos = yrange[1]*0.95
@@ -1402,7 +1698,7 @@ def plot_lines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrang
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./',datadir='./spectra_CIIIcandidates/',
-                           yrangefullflux=[-400,1200],yrangefullSN=[-3,30],wavetype='vac',verbose=True):
+                           yrangefullflux=[-400,1200],yrangefullSN=[-3,30],wavetype='vac',clobber=True,verbose=True):
     """
     Wrapper to run cec.plot_MUSElya() for a sample of objects by providing a list of ids
 
@@ -1434,20 +1730,114 @@ def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./
         voffsetlist = np.asarray(voffsetlist)
 
     for oo, objID in enumerate(MUSEidlist):
+        skip = False
         objz = redshiftlist[oo]
         voff = voffsetlist[oo]
 
+        Nfilesexist = len(glob.glob(outputdir+'*'+str(objID)+'*'))
         if verbose:
             idno    = oo+1
             infostr = '   Plotting spectra for object '+str(objID)+' at z = '+str(objz)+' indicating voff = '+str(voff)+\
-                      '   ('+str(idno)+'/'+str(Nobj)+')          '
+                      '   ('+str(idno)+'/'+str(Nobj)+')                            '
+
+            if (clobber == False) & (Nfilesexist == 2):
+                infostr = infostr.replace(')                           ',
+                                          ') --> skip (clobber=False)  ')
+                skip = True
+
             sys.stdout.write("%s\r" % infostr)
             sys.stdout.flush()
 
-        cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=False,yrangefull=yrangefullflux,outputdir=outputdir,
-                         showsky=True,verbose=False,wavetype=wavetype)
-        cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=True,yrangefull=yrangefullSN,outputdir=outputdir,
-                         verbose=False,wavetype=wavetype)
+        if not skip:
+            cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=False,yrangefull=yrangefullflux,outputdir=outputdir,
+                             showsky=True,verbose=False,wavetype=wavetype)
+            cec.plot_MUSElya(objID,objz,voffset=voff,plotSN=True,yrangefull=yrangefullSN,outputdir=outputdir,
+                             verbose=False,wavetype=wavetype)
 
     if verbose: print '\n - Done...'
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst,verbose=True,
+                           MUSEWideInfo='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits'):
+    """
+    Convert a MiG1D inspection output file to a latex table (adding extrac information on the sources)
+    and print the results to the screen.
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    MiG1Doutput = './MiG1D_CIIIemitter_candidates_withinMUSE_inspection160804_final.txt'
+    match3dhst  = './CIIIemitter_candidates_withinMUSE.txt'
+    cec.MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst=match3dhst,verbose=True)
+
+    MiG1Doutput = './MiG1D_CIIIemitter_candidates_within3DHST_inspection160804_final.txt'
+    match3dhst  = './CIIIemitter_candidates_within3DHST.txt'
+    cec.MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst=match3dhst,verbose=True)
+
+    MiG1Doutput = './MiG1D_CIVemitter_candidates_withinMUSE_inspection160804_final.txt'
+    match3dhst  = './CIVemitter_candidates_withinMUSE.txt'
+    cec.MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst=match3dhst,verbose=True)
+
+    """
+    if verbose: print ' - Loading data'
+    dat_MiG1D = np.genfromtxt(MiG1Doutput,dtype=None,names=True,comments='#',skip_header=2)
+    dat_match = np.genfromtxt(match3dhst ,dtype=None,names=True,comments='#',skip_header=4)
+    dat_MWide = pyfits.open(MUSEWideInfo)[1].data
+
+    objIDs = dat_MiG1D['ID']
+    Nobj   = len(objIDs)
+    if verbose: print ' - Collect data for '+str(Nobj)+' objects in MiG1D output and write table format to screen\n'
+
+    if verbose: print 'ID         & R.A. & Dec.  & ID     & $r_\\textrm{Match}$ & $z$ & ' \
+                      'Ly$\\beta$ & OVI & NV & SiIV,OIV & CIV & HeII & CIII & MgII & ' \
+                      'Close Neighbor & $z_\\textrm{Offset}$ & $Qz_\\textrm{Offset}$ & v$_\\textrm{Offset}$ \\\\ '
+
+    if verbose: print 'MUSE-Wide  & [Deg]& [Deg] & 3D-HST & [arcsec] & MUSE-Wide & ' \
+                      '1026\\AA & 1032,1035\\AA & 1239,1242\\AA & 1294--1403\\AA & 1548,1551\\AA & 1640\\AA & 1907,1909\\AA & 2796,2803\\AA &' \
+                      ' & & & [km/s] \\\\ \n\\hline'
+
+    for objid in objIDs:
+        latexstr = str(objid)
+        ent_MiG1D = np.where(dat_MiG1D['ID'] == objid)[0]
+        ent_match = np.where(dat_match['ID_MUSE'] == objid)[0]
+        ent_MWide = np.where(dat_MWide['UNIQUE_ID'] == str(objid))[0]
+
+        latexstr  = latexstr+' & '+str("%.8f" % dat_MWide['RA'][ent_MWide])+' & '+str("%.8f" % dat_MWide['DEC'][ent_MWide])
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if len(ent_match) == 1:
+            rmatch = dat_match['R_MATCH'][ent_match]
+            if rmatch < 0.5:
+                latexstr  = latexstr+' & '+str("%.f" % dat_match['ID_3DHST'][ent_match])+' & '+str("%.4f" % rmatch)
+            else:
+                latexstr  = latexstr+' &  &  '
+        else:
+            latexstr  = latexstr+' &  &  '
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        latexstr  = latexstr+' & '+str("%.4f" % dat_MWide['REDSHIFT'][ent_MWide])+'$\\pm$'+\
+                    str("%.4f" % dat_MWide['REDSHIFT_ERR'][ent_MWide])
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        MiG1Dstr =  ' & '+str("%.f" % dat_MiG1D['Lyb_1025'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['OVI_1032'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['NV_1240'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['SiIVOIV_1399'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['CIV_1549'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['HeII_1640'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['CIII_1909'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['MgII_2800'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['close_counterpart'][ent_MiG1D])+\
+                    ' & '+str("%.4f" % dat_MiG1D['byhandredshift'][ent_MiG1D])+\
+                    ' & '+str("%.f" % dat_MiG1D['byhandredshift_quality'][ent_MiG1D])+' '
+
+        MiG1Dstr  = MiG1Dstr.replace('& 0 ','& - ').replace('& -99.0000 ','&  ')
+        latexstr  = latexstr+MiG1Dstr
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        z_bh     = dat_MiG1D['byhandredshift'][ent_MiG1D]
+        if z_bh != -99.0 :
+            z_lya    = dat_MWide['REDSHIFT'][ent_MWide]
+            cc       = 299792.458 # km/s
+            voffset  = (z_lya - z_bh) * cc / (z_bh + 1.0)
+            latexstr  = latexstr+' & '+str("%.4f" % voffset)
+        else:
+            latexstr  = latexstr+' & '
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print latexstr+' \\\\'
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
