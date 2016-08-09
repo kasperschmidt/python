@@ -196,7 +196,8 @@ def linelistdic(listversion='full'):
 
     if listversion == 'full':
         #                         name                           wavelength[A]  horizontalalignment      lineref
-        linelist['ovi']    = ['OVI $\\lambda$1032'                , 1031.9261,         'right'      , 'Morton1991tab5']
+        linelist['ovi1']   = ['OVI $\\lambda$1032'                , 1031.9261,         'right'      , 'Morton1991tab2']
+        linelist['ovi2']   = ['OVI $\\lambda$1038'                , 1037.6167,         'left'       , 'Morton1991tab2']
         linelist['lya']    = ['Ly$\\alpha$ $\\lambda$1216'        , 1215.6737,         'right'      , 'Morton1991tab5']
         linelist['lyb']    = ['Ly$\\beta$ $\\lambda$1025'         , 1025.7219,         'right'      , 'Morton1991tab5']
         linelist['lyg']    = ['Ly$\gamma$ $\\lambda$973'          ,  972.5371,         'right'      , 'Morton1991tab5']
@@ -210,7 +211,9 @@ def linelistdic(listversion='full'):
         linelist['civ1']   = ['CIV $\\lambda$1548'                , 1548.195 ,         'right'      , 'Morton1991tab5']
         linelist['civ2']   = ['CIV $\\lambda$1551'                , 1550.770 ,         'left'       , 'Morton1991tab5']
         linelist['heii']   = ['HeII $\\lambda$1640'               , 1640.420 ,         'right'      , 'vandenberk+2001']
-        linelist['ciii1']  = ['CIII] $\\lambda$1907'              , 1907.    ,         'right'      , 'stark+2015']
+        linelist['oiiib1'] = ['OIII] $\\lambda$1661'              , 1660.809 ,         'right'      , 'Morton1991tab2']
+        linelist['oiiib2'] = ['OIII] $\\lambda$1666'              , 1666.150 ,         'left'       , 'Morton1991tab2']
+        linelist['ciii1']  = ['[CIII] $\\lambda$1907'             , 1907.    ,         'right'      , 'stark+2015']
         linelist['ciii2']  = ['CIII] $\\lambda$1909'              , 1909.    ,         'left'       , 'stark+2015']
         linelist['ciib']   = ['CII] $\\lambda$2326'               , 2326.113 ,         'right'      , 'Morton1991tab5']
         linelist['mgii1']  = ['MgII] $\\lambda$2796'              , 2795.528 ,         'right'      , 'Morton1991tab5']
