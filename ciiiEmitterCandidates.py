@@ -10,6 +10,7 @@ import numpy as np
 import kbsutilities as kbs
 import ciiiEmitterCandidates as cec
 import macs2129_z6p8_MultiImgSource as mis
+import rxj2248_BooneBalestraSource as bbs
 import equivalentwidth as EQW
 import CDFS_MUSEvs3DHST as cm3
 import matplotlib.pyplot as plt
@@ -466,6 +467,170 @@ def get_MiG1Doutputsample(MiG1Doutput,CIIrange=[0,3],SiIVrange=[0,3],CIVrange=[0
     return outputarray
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_LSDCatLineFluxes_all(verbose=True):
+    """
+    Run get_LSDCatLineFluxes() for all ids in MiG1D inspections
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    cec.get_LSDCatLineFluxes_all()
+
+    """
+    path = '/Users/kschmidt/work/MUSE/ciii_candidates/'
+    dat1 = np.genfromtxt(path+'MiG1D_CIIIemitter_candidates_within3DHST_inspection160804_final.txt',
+                         dtype=None,names=True,skip_header=2)
+    dat2 = np.genfromtxt(path+'MiG1D_CIIIemitter_candidates_withinMUSE_inspection160804_final.txt',
+                         dtype=None,names=True,skip_header=2)
+    dat3 = np.genfromtxt(path+'MiG1D_CIVemitter_candidates_withinMUSE_inspection160804_final.txt',
+                         dtype=None,names=True,skip_header=2)
+
+    MUSEids = dat1['ID'].tolist()+dat2['ID'].tolist()+dat3['ID'].tolist()
+    cec.get_LSDCatLineFluxes(MUSEids,outfile='./LSDCatLineFluxes_all_F_3KRON.txt',fluxcol='F_3KRON')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_LSDCatLineFluxes(MUSEids,outfile='./test_F_3KRON.txt',fluxcol='F_3KRON',
+                         catparentdir='/Users/kschmidt/work/catalogs/MUSE_GTO/original_per_field_v2.1/',
+                         redshiftcat='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits',
+                         verbose=True):
+    """
+    Pull out the LSDcat line fluxes from the original_per_field catalogs.
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    cec.get_LSDCatLineFluxes([11503085,10414050,10213086],outfile='./test_F_3KRON.txt')
+
+    """
+    Nobj = len(MUSEids)
+    if verbose: print ' - Will pull out the line fluxes for the '+str(Nobj)+' MUSE IDs provided'
+
+    if verbose: print ' - Getting redshifts from redshift catalog: \n   '+redshiftcat
+    dat_z     = pyfits.open(redshiftcat)[1].data
+    redshifts = []
+    for mi in MUSEids:
+        redshifts.append(dat_z['REDSHIFT'][dat_z['UNIQUE_ID'] == str(mi)])
+
+    if verbose: print ' - Will match the found fluxes to the location of: '
+    linelist       = MiGs.linelistdic(listversion='rest_uv_main')
+    Nlinelistlines = len(linelist)
+    if verbose:
+        for ll in [linelist[key][0] for key in linelist.keys()]:
+            print '   '+str(ll)
+
+    if verbose: print ' - Prepare output ascii file: '+outfile
+    fout = open(outfile,'w')
+    fout.write('# Linefluxes matched to expected location of lines \n')
+    fout.write('# Extracted the fluxes in column '+fluxcol+' of the cataogs from '+catparentdir+' \n')
+    fout.write('# Fluxes correspond to detected line fluxes of nearest line. \n')
+    fout.write('# lam_match_* gives the distance in wavelength to the location of the flux \n')
+    fout.write('# id  redshift ')
+    for key in linelist.keys():
+        fout.write('     f_'+key+' ferr_'+key+' lam_'+key+' lam_match_'+key)
+    fout.write(' \n')
+
+    if verbose: print ' - Looping over object, pulling out fluxes and matching to expected position of lines given z'
+    for ii, id in enumerate(MUSEids):
+        objz    = redshifts[ii]
+        fieldid = str(id)[1:3]
+        globres = glob.glob(catparentdir+'cat_ident_candels-cdfs-'+fieldid+'_rid_fluxes*')
+        if len(globres) == 0:
+            if verbose: print ' - WARNING: did not find any catalog for field '+fieldid+' skipping ID = '+str(id)
+        elif len(globres) > 1:
+            if verbose: print ' - WARNING: found more than 1 catalog for field '+fieldid+' skipping ID = '+str(id)
+        else:
+            dat_cat = pyfits.open(globres[0])[1].data
+            lineent = np.where(dat_cat['UNIQUE_ID'] == str(id))[0]
+            Nlines  = len(lineent)
+            if verbose:
+                infostr = '   Found '+str(Nlines)+' lines for ID = '+str(id)+' to match to the '+str(Nlinelistlines)+\
+                          ' lines in the linelist '
+                sys.stdout.write("%s\r" % infostr)
+                sys.stdout.flush()
+
+            outputstr = str(id)+' '+str("%.4f" % objz)+' '
+
+            for key in linelist.keys():
+                wave_exp      = linelist[key][1]*(1.0+objz) # expected position of line in linelist give obj redshift
+
+                linepositions = dat_cat['LAMBDA_PEAK_FLUX'][lineent]
+                dwaves        = linepositions - wave_exp
+                bestent       = lineent[ np.where( np.abs(dwaves) == np.min(np.abs(dwaves)) )[0] ]
+
+                line_flux    = dat_cat[fluxcol][bestent]
+                line_fluxerr = dat_cat[fluxcol+'_ERR'][bestent]
+                line_lam     = dat_cat['LAMBDA_PEAK_FLUX'][bestent]
+                line_dlam    = dat_cat['LAMBDA_PEAK_FLUX'][bestent]-wave_exp
+
+                outputstr = outputstr+'    '+\
+                            str("%8.2f" % line_flux)+' '+str("%8.2f" % line_fluxerr)+' '+\
+                            str("%8.2f" % line_lam )+' '+str("%8.2f" % line_dlam)+'  '
+
+            fout.write(outputstr+'\n')
+    if verbose: print '\n - Done...'
+    fout.close()
+    if verbose: print ' - Wrote output to '+outfile
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def print_LSDCatLineFluxSelection(LSDCatFluxFile,matchtol=50,printLyaInfo=False,verbose=True):
+    """
+    Print objects with flux measurements of lines in the LSDCat cubes within a given match distance
+    in wavelength. Fluxes are extracted with get_LSDCatLineFluxes*()
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+    LSDCatFluxFile = './LSDCatLineFluxes_all_F_3KRON_160819.txt'
+    cec.print_LSDCatLineFluxSelection(LSDCatFluxFile,matchtol=50)
+
+    """
+    if verbose: print ' - Loading LSDCat flux data in '+LSDCatFluxFile
+    fluxdat = np.genfromtxt(LSDCatFluxFile,names=True,skip_header=4,comments='#',dtype=None)
+
+    if verbose: print ' - Loading MiG1D inspextions '
+    MiG1D_path  = '/Users/kschmidt/work/MUSE/ciii_candidates/'
+    MiG1D_1     = MiG1D_path+'MiG1D_CIIIemitter_candidates_within3DHST_inspection160804_final.txt'
+    MiG1D_1dat  = np.genfromtxt(MiG1D_1,names=True,skip_header=2,comments='#',dtype=None)
+    MiG1D_2     = MiG1D_path+'MiG1D_CIIIemitter_candidates_withinMUSE_inspection160804_final.txt'
+    MiG1D_2dat  = np.genfromtxt(MiG1D_2,names=True,skip_header=2,comments='#',dtype=None)
+    MiG1D_3     = MiG1D_path+'MiG1D_CIVemitter_candidates_withinMUSE_inspection160804_final.txt'
+    MiG1D_3dat  = np.genfromtxt(MiG1D_3,names=True,skip_header=2,comments='#',dtype=None)
+
+    Nobj = len(fluxdat)
+    if verbose: print '   Found '+str(Nobj)+' objects in file to go through'
+
+    if verbose: print ' - Will look for good matchets (|dlam| < '+str(matchtol)+'A) to the lines: '
+    linelist       = MiGs.linelistdic(listversion='rest_uv_main')
+    Nlinelistlines = len(linelist)
+    if verbose:
+        for ll in [linelist[key][0] for key in linelist.keys()]:
+            print '   '+str(ll)
+
+    if verbose: print '#  id       line      f        ferr      lam     lam_match     MIG1Dflag1  MIG1Dflag2  MIG1Dflag3  '
+    if verbose: print '#                 [1e-20cgs] [1e-20cgs]  [A]        [A]        ciii3dhst   ciiiMUSE    civMUSE  '
+
+    for oo, objid in enumerate(fluxdat['id']):
+        objdat = fluxdat[oo]
+        for linekey in linelist.keys():
+            if np.abs(objdat['lam_match_'+linekey]) < matchtol:
+                if (linekey == 'lya') & (printLyaInfo == False):
+                    pass
+                else:
+                    outputstr = str(objid)+'  '+str("%6s" %linekey)+'  '+\
+                                str("%8.2f" % objdat['f_'+linekey])+'  '+\
+                                str("%8.2f" % objdat['ferr_'+linekey])+'  '+\
+                                str("%8.2f" % objdat['lam_'+linekey])+'  '+\
+                                str("%8.2f" % objdat['lam_match_'+linekey])+'  '
+
+                    for MiG1D_dat in [MiG1D_1dat,MiG1D_2dat,MiG1D_3dat]:
+                        MiGent    = np.where(MiG1D_dat['ID'] == objid)[0]
+                        if len(MiGent) == 0:
+                            outputstr = outputstr + ' '+str("%10.f" % -99)+' '
+                        elif len(MiGent) > 1:
+                            sys.exit('More than one match in MiG1D output to '+str(objid))
+                        else:
+                            for MiGline in MiG1D_dat.dtype.names[1:-5]:
+                                if MiGline.split('_')[0].lower() in linekey:
+                                    outputstr = outputstr + ' '+str("%10.f" % int(MiG1D_dat[MiGline][MiGent]))+' '
+
+                    if verbose: print outputstr
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/',outputdir='./',
                  yrangefull=[-200,300],plotSN=False,
                  showsky=False,skyspecNIR='/Users/kschmidt/work/MUSE/skytable.fits',wavetype='air',verbose=True):
@@ -505,9 +670,6 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
     cec.plot_MUSElya(10306046,3.085,voffset=300,plotSN=True,yrangefull=[-3,20],wavetype='vac')
 
-    cec.plot_MUSElya(12350190,4.4955,voffset=300.0,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
-    cec.plot_MUSElya(12350190,4.4955,voffset=300.0,plotSN=True,yrangefull=[-3,20],wavetype='vac')
-
     cec.plot_MUSElya(10414050,3.6609,voffset=300.0,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
     cec.plot_MUSElya(10414050,3.6609,voffset=300.0,plotSN=True,yrangefull=[-3,20],wavetype='vac')
 
@@ -515,6 +677,13 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     redshift = 3.7098   # 4.2646
     cec.plot_MUSElya(id,redshift,voffset=-400.0,plotSN=False,yrangefull=[-400,2200],showsky=True,wavetype='vac')
     cec.plot_MUSElya(id,redshift,voffset=-400.0,plotSN=True,yrangefull=[-3,40],wavetype='vac')
+
+    % --------- bad shading of G141 - generate manually ---------
+    cec.plot_MUSElya(11015049,4.1451,voffset=300.0,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(11015049,4.1451,voffset=300.0,plotSN=True,yrangefull=[-3,20],wavetype='vac')
+
+    cec.plot_MUSElya(12350190,4.4955,voffset=300.0,plotSN=False,yrangefull=[-400,1200],showsky=True,wavetype='vac')
+    cec.plot_MUSElya(12350190,4.4955,voffset=300.0,plotSN=True,yrangefull=[-3,20],wavetype='vac')
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -717,7 +886,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 1)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof Ly$\\beta$ + OVI doublet',
+        plt.text(0.5,0.5,'No good coverage of\nLy$\\beta$ + OVI doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -772,7 +941,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 2)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof Ly$\\alpha$ + NV doublet',
+        plt.text(0.5,0.5,'No good coverage of\nLy$\\alpha$ + NV doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -855,7 +1024,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 3)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof CII$\\lambda$1336',
+        plt.text(0.5,0.5,'No good coverage of\nCII$\\lambda$1336',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -938,7 +1107,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 4)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof SiIV and OIV doublets',
+        plt.text(0.5,0.5,'No good coverage of\nSiIV and OIV] doublets',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1021,7 +1190,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 5)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof CIV doublet',
+        plt.text(0.5,0.5,'No good coverage of\nCIV doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1103,7 +1272,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 6)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof HeII',
+        plt.text(0.5,0.5,'No good coverage of\nHeII and OIII] doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1185,7 +1354,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 7)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof CIII doublet',
+        plt.text(0.5,0.5,'No good coverage of\nCIII] doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1268,7 +1437,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     #     plt.subplot(4, 3, XX)
     #
     #     plt.plot(-1,-1)
-    #     plt.text(0.5,0.5,'No good coverage \nof CII]',
+    #     plt.text(0.5,0.5,'No good coverage of\nCII]',
     #              color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
     #     plt.yticks([])
     #     plt.xticks([])
@@ -1350,7 +1519,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 8)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof MgII doublet',
+        plt.text(0.5,0.5,'No good coverage of\nMgII doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1432,7 +1601,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.subplot(4, 3, 9)
 
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage \nof [OII] doublet',
+        plt.text(0.5,0.5,'No good coverage of\n[OII] doublet',
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1515,7 +1684,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
     #     plt.subplot(4, 3, XX)
     #
     #     plt.plot(-1,-1)
-    #     plt.text(0.5,0.5,'No good coverage \nof H\\delta doublet',
+    #     plt.text(0.5,0.5,'No good coverage of\nH\\delta doublet',
     #              color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
     #     plt.yticks([])
     #     plt.xticks([])
@@ -1602,7 +1771,7 @@ def plot_MUSElya(MUSEid,redshift,voffset=0.0,datadir='./spectra_CIIIcandidates/'
         plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[1],'-',color='black',lw=LW)
         plt.plot(np.zeros(2)+xrange_HeII[0],yrange_HeII,'-',color='black',lw=LW)
         plt.plot(np.zeros(2)+xrange_HeII[1],yrange_HeII,'-',color='black',lw=LW)
-        plt.text(np.mean(np.asarray(xrange_HeII)),yrange_HeII[1]+0.03*Dyrangefull,'HeII',
+        plt.text(np.mean(np.asarray(xrange_HeII)),yrange_HeII[1]+0.03*Dyrangefull,'HeII+OIII]',rotation='vertical',
                  color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
 
     if plot_CIII:
@@ -1737,12 +1906,12 @@ def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./
         Nfilesexist = len(glob.glob(outputdir+'*'+str(objID)+'*'))
         if verbose:
             idno    = oo+1
-            infostr = '   Plotting spectra for object '+str(objID)+' at z = '+str(objz)+' indicating voff = '+str(voff)+\
-                      '   ('+str(idno)+'/'+str(Nobj)+')                            '
+            infostr = '   Plotting object '+str(objID)+' at z = '+str(objz)+' indicating voff = '+str(voff)+\
+                      '  ('+str(idno)+'/'+str(Nobj)+')                            '
 
             if (clobber == False) & (Nfilesexist == 2):
-                infostr = infostr.replace(')                           ',
-                                          ') --> skip (clobber=False)  ')
+                infostr = infostr.replace(')                         ',
+                                          ') --> skip (clobber=False)')
                 skip = True
 
             sys.stdout.write("%s\r" % infostr)
@@ -1755,6 +1924,38 @@ def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./
                              verbose=False,wavetype=wavetype)
 
     if verbose: print '\n - Done...'
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_EWliteraturecomparison(EWcat='/Users/kschmidt/work/catalogs/EWliteraturecatalog.txt',
+                                redshiftcolor=False,plotpath='./',verbose=True):
+    """
+    Plot EW sample from literature using scrips in GitHub/GLASS/GrismReduction/rxj2248_BooneBalestraSource.py
+
+    --- EXAMPLE OF USE ---
+    cec.plot_EWliteraturecomparison()
+
+    """
+    if verbose: print ' - Load data from '+EWcat
+    ewdat = np.genfromtxt(EWcat,dtype=None,skip_header=23,names=True,comments='#')
+
+    xlabel     = 'EW( Ly$\\alpha$ ) / [\\AA]'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    xline      = 'lya'
+    yline      = 'civ'
+    plotname   = plotpath+'literatureEWs_'+xline+'VS'+yline+'.pdf'
+    if redshiftcolor: plotname = plotname.replace('.pdf','_zcol.pdf')
+    ylabel     = 'EW( CIV$\\lambda$1548\AA\ ) / [\\AA]'
+
+    goodent    = np.where((ewdat['ew_'+xline] != -9999) & (ewdat['ew_'+yline] != -9999) &
+                          (ewdat['ew_'+xline] != -99) & (ewdat['ew_'+yline] != -99))[0]
+    if len(goodent) > 0:
+        xrange     = [-23,70]
+        yrange     = [-5,32]
+        xrangezoom = [-20,60]
+        yrangezoom = [-4,-1.5]
+
+        bbs.plot_EWcatalog(xline,yline,ewdat[goodent],plotname,xlabel,ylabel,
+                           xrange,yrange,xrangezoom,yrangezoom,redshiftcolor=redshiftcolor,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst,verbose=True,
