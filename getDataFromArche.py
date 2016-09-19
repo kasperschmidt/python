@@ -46,8 +46,8 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     elif collection== 'QtClassify':
         filelist = []
         filelist.append('median_filtered_DATACUBE_'+dirname+'_v'+lsdcatvs+'.fits')
-        filelist.append('s2n_opt_v250_'+dirname+'_v1.0.fits')
-        filelist.append('cat_opt_v250_'+dirname+'_v1.0.fits')
+        filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
+        filelist.append('cat_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
         filelist.append('acs_'+acsimg+'_'+dirname+'_cut.fits')
     else:
         if verbose: print " - WARNING didn't recognize the collection="+collection+" so returning empty list "
