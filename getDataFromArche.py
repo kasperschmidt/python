@@ -1,8 +1,8 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import commands
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='./',
-                  port='2222',acsimg='606w',lsdcatvs='1.0',download=True,verbose=True):
+def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='fielddir',
+                  port='2222',acsimg='606w',lsdcatvs='1.0',SNstr='',download=True,verbose=True):
     """
 
     Downloading data for a given MUSE-Wide pointing via SCP
@@ -13,10 +13,13 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     type             Specify the collection of data to download. Choose between
                       'QtCLassify'    Data products needed to run QtClassify
                       'all'           All products found in field+pointing directory
-    outputdir        The output directory to save the downloaded files to
+    outputdir        The output directory to save the downloaded files to.
+                     By default ('fielddir') the files will be stored in the ./candels-*field*-*pointing*/
+                     directory assuming it exisits.
     port             Port to use when connecting to arche
     acsimg           Specify ACS image cutout to download           (used for collection='QtClassify')
     lsdcatvs         specify LSDCat version to download files for   (used for collection='QtClassify')
+    SNstr            if LSDCat catalog (cat*) was appended SN string provide it here, .e.g, SNstr='_sn5.0'
     download         If true the data will be downloaded. Otherwise the commands used
                      to download the data will just be printed to the screen.
     verbose          Toggle verbosity
@@ -26,11 +29,13 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     user     = 'jondoe'
     filelist = gd.download_data(user,field='cosmos',pointing='10',outputdir='temp/',collection='all')
 
-    filelist = gd.download_data(user,field='cdfs',pointing='04',outputdir='temp/',collection='QtClassify')
+    filelist = gd.download_data(user,field='cdfs',pointing='14',collection='QtClassify',SNstr='_sn5.0',lsdcatvs='2.0')
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     dirname  = 'candels-'+field+'-'+str(pointing)
+    if outputdir == 'fielddir':
+        outputdir = './'+dirname+'/'
     if verbose: print ' - Will download files from '+dirname+\
                       ' collecting files for the collection='+"'"+collection+"'"
 
@@ -45,9 +50,9 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filelist = ['*.*']
     elif collection== 'QtClassify':
         filelist = []
-        filelist.append('median_filtered_DATACUBE_'+dirname+'_v'+lsdcatvs+'.fits')
+        filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
         filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
-        filelist.append('cat_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
+        filelist.append('cat_opt_v250_'+dirname+'_v'+lsdcatvs+SNstr+'.fits')
         filelist.append('acs_'+acsimg+'_'+dirname+'_cut.fits')
     else:
         if verbose: print " - WARNING didn't recognize the collection="+collection+" so returning empty list "
@@ -92,7 +97,8 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     HSTimg=$datapath'%s'
     output=$datapath'QtClassify_output_RENAME_.fits'
 
-    qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F 0 -N 2 -hst $HSTimg --replaceCubeNaNs False
+    qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F 0 -N 2 -hst $HSTimg --replaceCubeNaNs False --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg)
             print '   (here "qtclassify" is an alias for "python' \
