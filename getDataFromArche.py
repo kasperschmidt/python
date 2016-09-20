@@ -1,8 +1,9 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import commands
+import glob
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='fielddir',
-                  port='2222',acsimg='606w',lsdcatvs='1.0',SNstr='',download=True,verbose=True):
+                  port='2222',acsimg='606w',acsimgvs='1.0',lsdcatvs='1.0',SNstr='',download=True,clobber=False,verbose=True):
     """
 
     Downloading data for a given MUSE-Wide pointing via SCP
@@ -18,10 +19,12 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
                      directory assuming it exisits.
     port             Port to use when connecting to arche
     acsimg           Specify ACS image cutout to download           (used for collection='QtClassify')
+    acsimgvs         Version of acs image cutours to download       (used for collection='QtClassify')
     lsdcatvs         specify LSDCat version to download files for   (used for collection='QtClassify')
     SNstr            if LSDCat catalog (cat*) was appended SN string provide it here, .e.g, SNstr='_sn5.0'
     download         If true the data will be downloaded. Otherwise the commands used
                      to download the data will just be printed to the screen.
+    clobber          Overwrtite files in output directory if they already exist?
     verbose          Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -29,7 +32,7 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     user     = 'jondoe'
     filelist = gd.download_data(user,field='cosmos',pointing='10',outputdir='temp/',collection='all')
 
-    filelist = gd.download_data(user,field='cdfs',pointing='14',collection='QtClassify',SNstr='_sn5.0',lsdcatvs='2.0')
+    filelist = gd.download_data(user,field='cdfs',pointing='14',collection='QtClassify',SNstr='_sn5.0',lsdcatvs='2.0',acsimgvs='1.0',clobber=False)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -53,30 +56,36 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
         filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
         filelist.append('cat_opt_v250_'+dirname+'_v'+lsdcatvs+SNstr+'.fits')
-        filelist.append('acs_'+acsimg+'_'+dirname+'_cut.fits')
+        filelist.append('acs_'+acsimg+'_'+dirname+'_cut_v'+acsimgvs+'.fits')
     else:
         if verbose: print " - WARNING didn't recognize the collection="+collection+" so returning empty list "
         return []
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Spawning the following commands to the shell:'
     filecounter = 0
+    skipcounter = 0
     for archefile in filelist:
         scpcmd = basedcmd+archefile+' '+outputdir
 
         if verbose: print '   '+scpcmd
-        if download:
-            scpout = commands.getoutput(scpcmd)
+        if (clobber == False) & ( len(glob.glob(outputdir+'/'+archefile)) != 0):
+            if verbose: print '   file already exists in output directory and clobber=False so moving on'
+            skipcounter = skipcounter + 1
+        else:
+            if download:
+                scpout = commands.getoutput(scpcmd)
 
-            if scpout == '':
-                filecounter = filecounter + 1
-            else:
-                print scpout
+                if scpout == '':
+                    filecounter = filecounter + 1
+                else:
+                    print scpout
 
     if collection == 'all':
         filecounter = len(filesALL)
         filelist    = filesALL
     if download:
-        if verbose: print ' - Succesfullt downloaded '+str(filecounter)+' / '+str(len(filelist))+' files from arche '
+        if verbose: print ' - Succesfullt downloaded '+str(filecounter)+' / '+str(len(filelist)-skipcounter)+\
+                          ' (skipping '+str(skipcounter)+') files from arche '
     else:
         if verbose: print ' - Download=False so no files downloaded from arche'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
