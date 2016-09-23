@@ -5,7 +5,7 @@ import pyfits
 import numpy as np
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='fielddir',
-                  port='2222',acsimg='606w',acsimgvs='1.0',lsdcatvs='1.0',SNstr='',download=True,clobber=False,verbose=True):
+                  port='2222',acsimg='814w',acsimgvs='1.0',lsdcatvs='1.0',SNstr='',download=True,clobber=False,verbose=True):
     """
 
     Downloading data for a given MUSE-Wide pointing via SCP
