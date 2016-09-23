@@ -104,12 +104,12 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     LSDCatSN=$datapath'%s'
     LSDCat=$datapath'%s'
     HSTimg=$datapath'%s'
-    output=$datapath'QtClassify_output_RENAME_.fits'
+    output=$datapath'%s_QtClassify_output_RENAME_.fits'
 
     qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F 0 -N 2 -hst $HSTimg --replaceCubeNaNs False --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg)
+            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname)
             print '   (here "qtclassify" is an alias for "python' \
                   ' /Local/Path/To/qtclassify/line_classification_GUI_pyqtgraph.py")'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
