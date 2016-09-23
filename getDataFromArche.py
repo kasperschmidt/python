@@ -1,6 +1,8 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import commands
 import glob
+import pyfits
+import numpy as np
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='fielddir',
                   port='2222',acsimg='606w',acsimgvs='1.0',lsdcatvs='1.0',SNstr='',download=True,clobber=False,verbose=True):
@@ -115,5 +117,78 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return filelist
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def summarize_QtClassifyOutput(qtclassifyoutputfile,idcol='ID',wavecol='LAMBDA_PEAK_SN',SNcol='DETSN_MAX',verbose=True):
+    """
 
+    Generate an ascii file with a condensed summary of a QtClassfication fits output
+
+    --- INPUT ---
+    qtclassifyoutputfile        output file from QtCLassify classification to summarize/condense
+    idcol                       column name of ID column in fits file
+    wavecol                     column name of wavelength column in fits file
+    SNcol                       column name of signal to noise of detected lines
+    verbose                     toggle verbosity
+
+    --- OUPTUT ---
+    summaryfile                 The file name of the ascii file containing the summary generated
+
+    --- EXAMPLE OF USE ---
+    import getDataFromArche as gd
+    path        = '/Users/kschmidt/work/MUSE/QtClassify/candels-cdfs-18/'
+    QtCfile     = path+'candels-cdfs-18_training_QtClassify_output_kschmidt160922.fits'
+    summaryfile = gd.summarize_QtClassifyOutput(QtCfile)
+
+    """
+    classdat = pyfits.open(qtclassifyoutputfile)[1].data
+
+    outputfile = qtclassifyoutputfile.replace('.fits','_summary.txt')
+
+    fout = open(outputfile,'w')
+    fout.write('# Condensed Summary of '+qtclassifyoutputfile+'\n')
+    fout.write('# Showing results for strongest line. \n')
+    fout.write('# identification: Cres = Continuum residual; Rev = revisit \n')
+    fout.write("# id SN_strongestline wavelength Nlines identification redshift quality confidence association #LW# all line wavelengths #C# comments \n")
+
+    IDs  = np.sort(np.unique(classdat[idcol]))
+    Nobj = len(IDs)
+    if verbose: print ' - Found '+str(Nobj)+' objects in:\n   '+qtclassifyoutputfile+'\n   to summarize classifications for'
+
+    for objid in IDs:
+        objent   = np.where(classdat[idcol] == objid)[0]
+        Nlines   = len(objent)
+        objdat   = classdat[objent]
+        if Nlines == 1:
+            maxSNent = 0
+            short    = objdat['Short'][maxSNent]
+            comments = objdat['Comment'][maxSNent]
+            objQ     = objdat['Quality'][maxSNent]
+            objC     = objdat['Confidence'][maxSNent]
+            assoc    = objdat['Association'][maxSNent]
+        else:
+            maxSNent = np.where(objdat[SNcol] == np.max(objdat[SNcol]))[0]
+            short    = objdat['Short'][maxSNent][0]
+            comments = objdat['Comment'][maxSNent][0]
+            objQ     = objdat['Quality'][maxSNent][0]
+            objC     = objdat['Confidence'][maxSNent][0]
+            assoc    = objdat['Association'][maxSNent][0]
+
+
+        lineSN   = objdat[SNcol][maxSNent]
+        linewave = objdat[wavecol][maxSNent]
+
+        objz     = objdat['Redshift'][maxSNent]
+
+
+        linelams = ','.join([str("%.f" % lw) for lw in objdat[wavecol]])
+
+        objstring = str("%.4d" % objid)+'  '+str("%7.2f" % lineSN)+'  '+str("%.f" % linewave)+'  '+str("%.4d" % Nlines)+\
+                    ' '+str("%6s" % short)+'   '+str("%.5f" % objz)+'   '+str(objQ)+' '+' '+str(objC)+'   '+\
+                    str("%6s" % assoc)+' #O# '+str(linelams)+' #C# '+str(comments)+' \n'
+
+        fout.write(objstring)
+    fout.close()
+    if verbose: print ' - wrote summary to:\n   '+outputfile
+
+    #import pdb; pdb.set_trace()
+    return outputfile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
