@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='fielddir',
-                  port='2222',acsimg='814w',acsimgvs='1.0',lsdcatvs='1.0',SNstr='',download=True,clobber=False,verbose=True):
+                  port='2222',acsimg='814w',acsimgvs='2.0',lsdcatvs='2.0',SNstr='_sn5.0_fluxes',download=True,
+                  clobber=False,verbose=True):
     """
 
     Downloading data for a given MUSE-Wide pointing via SCP
@@ -111,7 +112,10 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     HSTimg=$datapath'%s'
     output=$datapath'%s_QtClassify_output_RENAME_.fits'
 
-    qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F 0 -N 2 -hst $HSTimg --replaceCubeNaNs False --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
+    qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F 0 -N 2 -hst $HSTimg --replaceCubeNaNs False
+
+    # potentially add the following to change used coordinates:
+    # --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname)
