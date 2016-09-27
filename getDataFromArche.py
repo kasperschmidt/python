@@ -1,7 +1,10 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import commands
 import glob
+import sys
 import pyfits
+import pdb
+import matplotlib.pyplot as plt
 import numpy as np
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',outputdir='fielddir',
@@ -191,4 +194,206 @@ def summarize_QtClassifyOutput(qtclassifyoutputfile,idcol='ID',wavecol='LAMBDA_P
 
     #import pdb; pdb.set_trace()
     return outputfile
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_LSDCats(catalogs_searchstr,SNcol='DETSN_MAX',Lamcol='LAMBDA_PEAK_SN',plotsky=True,
+                 plot_SNhist=True, plot_SNvsLam=True, plot_SNcumhist=True,
+                 fieldinfo='/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_obs_info.txt',
+                 verbose=True):
+    """
+
+    Genrate plots of LSDCat catalog content
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import getDataFromArche as gd
+    catstr      = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_E36_LSDCats/cat_opt_v250_candels-c*fits'
+    gd.plot_LSDCats(catstr)
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    LSDCats  = glob.glob(catalogs_searchstr)
+
+    Ncats   = len(LSDCats)
+    if verbose: print ' - Found '+str(Ncats)+' LSDCat catalogs to generate plots from '
+    if verbose: print '   (will generate plots: *_SNhistogram.pdf, *_SNvsLamda.pdf)'
+
+    infodat    = np.genfromtxt(fieldinfo,dtype=None,names=True)
+    seeing_all = infodat['AG_FWHM_AVG']
+    fieldnames = np.asarray([nn[:-3] for nn in infodat['NAME']])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    SNvalDic = {}
+    Lamdic   = {}
+    for cc, datcat in enumerate(LSDCats):
+        if verbose:
+            catno   = cc+1
+            infostr = ' - Get SNvals for '+datcat.split('/')[-1]+'  (catalog '+str(catno)+'/'+str(Ncats)+')'
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        dat    = pyfits.open(datcat)[1].data
+        objIDs = np.unique(np.sort(dat['id']))
+        Nobj   = len(objIDs)
+
+        fieldent   = np.where(fieldnames == datcat.split('/')[-1].split('_')[3])[0]
+        seeingvals = seeing_all[fieldent]
+        seeingstr  = fieldnames[fieldent[0]]+' seeing: $<$AG\_FWHM\_AVG$>$ = '+str("%.2f" % np.mean(seeingvals))+\
+                     ' ('+', '.join([str("%.2f" % ss) for ss in seeingvals])+')'
+
+        # get array with S/N of main lines
+        SNval  = []
+        Lamval = []
+
+        for objid in objIDs:
+            objent   = np.where(dat['id'] == objid)
+            objdat   = dat[objent]
+            maxSNent = np.where(objdat[SNcol] == np.max(objdat[SNcol]))[0]
+            SNval.append(objdat[SNcol][maxSNent])
+            Lamval.append(objdat[Lamcol][maxSNent])
+
+        SNval  = np.asarray(SNval)
+        SNvalDic[fieldnames[fieldent[0]]] = SNval
+
+        Lamval = np.asarray(Lamval)
+        Lamdic[fieldnames[fieldent[0]]] = Lamval
+        if len(SNval) != Nobj: sys.exit('The length of the SNval vector is different from number of objects in'+datcat)
+    if verbose: print ''
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for cc, datcat in enumerate(LSDCats):
+        if verbose:
+            catno   = cc+1
+            infostr = ' - Plotting content of catalog: '+datcat.split('/')[-1]+'  (catalog '+str(catno)+'/'+str(Ncats)+')'
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        dat    = pyfits.open(datcat)[1].data
+        objIDs = np.unique(np.sort(dat['id']))
+        Nobj   = len(objIDs)
+
+        fieldent   = np.where(fieldnames == datcat.split('/')[-1].split('_')[3])[0]
+        seeingvals = seeing_all[fieldent]
+        seeingstr  = fieldnames[fieldent[0]]+' seeing: $<$AG\_FWHM\_AVG$>$ = '+str("%.2f" % np.mean(seeingvals))+\
+                     ' ('+', '.join([str("%.2f" % ss) for ss in seeingvals])+')'
+
+        SNval  = SNvalDic[fieldnames[fieldent[0]]]
+        Lamval = Lamdic[fieldnames[fieldent[0]]]
+
+        xmin        = 4.5
+        xmax        = 10.5
+        binwidth    = 0.5
+        histbins    = np.arange(xmin,xmax,binwidth)#+binwidth/2.
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if plot_SNhist:
+            plotname = datcat.replace('.fits','_SNhistogram.pdf')
+            fig = plt.figure(figsize=(6, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.95, bottom=0.10, top=0.95)
+            Fsize    = 10
+            lthick   = 1
+            marksize = 6
+            alp      = 0.5
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            plt.title(seeingstr,fontsize=Fsize)
+
+            plt.hist(SNval,bins=histbins,color='black',alpha=alp,normed=False,histtype='stepfilled',lw=lthick)
+
+            plt.xlim([xmin,xmax])
+            plt.ylim([0,33])
+
+            plt.xlabel('LSDCat S/N (main line)', fontsize=Fsize)
+            plt.ylabel('Number of objects', fontsize=Fsize)
+
+            # plt.text(0.9,0.55,seeingstr,horizontalalignment='center',verticalalignment='center',fontsize=12,
+            #          color='black',alpha=alp)
+
+            #if verbose: print '   Saving plot to',plotname
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if plot_SNvsLam:
+            plotname = datcat.replace('.fits','_SNvsLamda.pdf')
+            fig = plt.figure(figsize=(6, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.95, bottom=0.10, top=0.95)
+            Fsize    = 10
+            lthick   = 1
+            marksize = 6
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            plt.title(seeingstr,fontsize=Fsize)
+
+            plt.plot(Lamval,SNval,'o',color='black')
+
+            plt.xlabel('$\\lambda$[\AA]', fontsize=Fsize)
+            plt.ylabel('LSDCat S/N (main line)', fontsize=Fsize)
+
+            if plotsky:
+                skyMUSEfilename  = glob.glob('/Users/kschmidt/work/MUSE/skyspectra/'+'SKY*'+
+                                             fieldnames[fieldent[0]]+'*av.fits')
+                skyMUSE          = pyfits.open(skyMUSEfilename[0])[1].data
+                skywave          = skyMUSE['lambda']
+                skylow           = np.zeros(int(len(skywave)))
+                skyflux          = skyMUSE['data']
+                skyhigh          = skyflux/np.max(skyflux)*(xmax-xmin)
+                plt.fill_between(skywave,skylow+xmin,skyhigh+xmin,alpha=0.3,color='black')
+
+            plt.xlim([4500,9500])
+            plt.ylim([xmin,xmax])
+
+            # if verbose: print '   Saving plot to',plotname
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if plot_SNcumhist:
+            plotname = datcat.replace('.fits','_SNcumhist_withall.pdf')
+            fig = plt.figure(figsize=(6, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.95, bottom=0.10, top=0.95)
+            Fsize    = 10
+            lthick   = 2
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            plt.title(seeingstr,fontsize=Fsize)
+
+            for key in SNvalDic.keys():
+                values, base = np.histogram(SNvalDic[key], bins=histbins)
+                cumulative   = np.cumsum(values)
+
+                if key == fieldnames[fieldent[0]]:
+                    alp = 0.9
+                else:
+                    alp = 0.1
+
+                plt.plot(base[1:], cumulative, color='black',alpha=alp,lw=lthick)
+
+            plt.xlim([xmin,xmax])
+            #plt.ylim([0,33])
+
+            plt.xlabel('LSDCat S/N (main line)', fontsize=Fsize)
+            plt.ylabel('Cummulative distribution', fontsize=Fsize)
+
+            # plt.text(0.9,0.55,seeingstr,horizontalalignment='center',verticalalignment='center',fontsize=12,
+            #          color='black',alpha=alp)
+
+            #if verbose: print '   Saving plot to',plotname
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
