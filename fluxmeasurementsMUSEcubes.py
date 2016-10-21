@@ -7,6 +7,7 @@ import pyfits
 import commands
 import numpy as np
 import datetime
+import astropy.wcs as wcs
 import fluxmeasurementsMUSEcubes as fmm
 import matplotlib.pyplot as plt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -112,15 +113,63 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
     fluxcatalog = lsdcout.split('DONE!!! Wrote FITS catalog ')[-1].split(' ')[0]
     return fluxcatalog
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_MUSEcubePixelPos(outputname,IDs,ra_pix,dec_pix,lam_pix,clobber=False,verbose=True):
+def get_cubepixelpos(cube,ra,dec,wavelength,cubeextension='MEDFILTERED_DATA',verbose=True):
     """
-    Save LSDCat friend fits file which can be used as input for lsd_cat_measure.py to
-    make forced flux measurements of lines or at expected line locations in the data cubes
+    Obtain the pixel position in a
+
+    --- EXAMPLE OF USE ---
+
+    import fluxmeasurementsMUSEcubes as fmm
+
+    cube = '/Volumes/DATABCKUP3/MUSE//candels-cdfs-15/median_filtered_DATACUBE_candels-cdfs-15_v1.0.fits_effnoised.fits'
+    ra_pix, dec_pix, lam_pix = fmm.get_cubepixelpos(cube,53.113493,-27.858925,6468.3)  ; lam_pix=1375
+    ra_pix, dec_pix, lam_pix = fmm.get_cubepixelpos(cube,53.113493,-27.858925,8506.61) ; lam_pix=3006
 
     """
-    print '--- not enabled yet ---'
-    return
+    cubehdr         = pyfits.open(cube)[cubeextension].header
+    lam_pix         = fmm.get_cubepixelpos_wavelength(cubehdr,wavelength)
+    ra_pix, dec_pix = fmm.get_cubepixelpos_spatial(cubehdr,ra,dec)
 
+    if verbose:
+        print '                            ra            dec           wavelength '
+        print ' - Coordinates    :'+str("%15.8f" % ra)+' '+str("%15.8f" % dec)+' '+str("%15.4f" % wavelength)
+        print ' - Pixel position :'+str("%15.4f" % ra_pix)+' '+str("%15.4f" % dec_pix)+' '+str("%15.4f" % lam_pix)
+
+    return ra_pix, dec_pix, lam_pix
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_cubepixelpos_spatial(cubeheader,ra,dec,verbose=True):
+    """
+    Get pixel position in MUSE cube in spatial direction
+
+    """
+    del cubeheader['COMMENT'] # wcs doesn't like the comment "These data have been ZAPped!" so deleting it
+    wcsobj          = wcs.WCS(cubeheader)
+    lamdummy        = -99
+    ra_pix, dec_pix = wcsobj.wcs_world2pix(np.array([[ra,dec,lamdummy]]),1)[0][0:2] # wcsobj.wcs_pix2world()
+
+    return ra_pix, dec_pix
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_cubepixelpos_wavelength(cubeheader,wavelength,indexed=0,verbose=True):
+    """
+    Get pixel position in MUSE cube in wavelenght direction
+
+    """
+    resolution  = cubeheader['CD3_3'] # wavelength resolution in Angstrom
+    waveref_val = cubeheader['CRVAL3']
+    Nwaves      = cubeheader['NAXIS3']
+
+    wavevector  = np.arange(waveref_val,waveref_val+Nwaves*resolution,resolution)
+
+    wavediff    = np.abs(wavevector-wavelength)
+    lam_pix     = np.where(wavediff == np.min(wavediff))
+
+    if len(lam_pix) > 1:
+        if verbose: print ' - WARNING: more than 1 wavelength slice matches minimum; using the lowest wavelength'
+    lam_pix     = lam_pix[0]
+
+    if indexed == 1:
+        lam_pix = lam_pix + 1.0
+    return lam_pix
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,clobber=False,verbose=True):
     """
