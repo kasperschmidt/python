@@ -11,17 +11,6 @@ import astropy.wcs as wcs
 import fluxmeasurementsMUSEcubes as fmm
 import matplotlib.pyplot as plt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def measure_fluxes_multiplefields(linecatsearchstr='linecat*.fits',fields=None,filed_ids=None,
-                                  combineoutput=True,verbose=True):
-    """
-    Wrapper around fmm.measure_fluxes() to mesure fluxes on cubes from multiple fields.
-    Setting combineoutput=True the flux catalogs will combined to one master catalog.
-
-    """
-
-    print '--- not enabled yet ---'
-    return
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNthreshanal=1.0, cubeversion='_v1.0',
                    fhdu='MEDFILTERED_DATA', ferrhdu='EFF_STAT', ffhdu='FILTERED_DATA',fferhdu='FILTERED_STAT',
                    ffsnhdu='SIGNALTONOISE',rmin=3, rmax=6, dataparentpath='/Volumes/DATABCKUP3/MUSE/', clobber=False,
@@ -242,7 +231,8 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
                 yy[ii]   = dec_pix
                 lam[ii]  = wave_pix
             else:
-                if verbose: print '   WARNING skipping line at '+str(lam_pix[ii])+'A as it is outside MUSE wavelength range'
+                if verbose: print '   --WARNING-- Ignoring line at '+str(lam_pix[ii])+\
+                                  'A as it is outside MUSE wavelength range (will not be in output table)'
                 lam[ii] = -99
 
         datadic['I']          = np.delete(lids, np.where(lam == -99))
