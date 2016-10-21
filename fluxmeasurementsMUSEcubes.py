@@ -171,7 +171,8 @@ def get_cubepixelpos_wavelength(cubeheader,wavelength,indexed=0,verbose=True):
         lam_pix = lam_pix + 1.0
     return lam_pix
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,clobber=False,verbose=True):
+def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,clobber=False,
+                                radecwave=False,coordcube=None,verbose=True):
     """
     Save LSDCat friendly fits file which can be used as input for lsd_cat_measure.py to make
     forced flux measurements of lines or at expected line locations in the MUSE data cubes
@@ -185,11 +186,17 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     ra_pix      Pixel postion of line (SN peak) along the x direction in the cube
     dec_pix     Pixel postion of line (SN peak) along the y direction in the cube
     lam_pix     Pixel postion of line (SN peak) along the wavelength direction
+    clobber     Set to true to overwrite existing output catalog
+    radecwave   If True x_pix, y_pix and lam_pix are expected to be ra [deg], dec [deg] observed wavelength [A]
+                These will then be converted to pixel positions in the cube given in coordcube
+    coordcube   If x_pix, y_pix and lam_pix are given as ra, dec and wavelength (radecwave=True) provide
+                the cube to be used for the coordinate (wcs) transformation from coordinates to pixel postions.
+    verbose     Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import fluxmeasurementsMUSEcubes as fmm
 
-    # Example for 3 objects with 4,5 and 1 lines each
+    # >>> Example for 3 objects with 4,5 and 1 lines each <<<
     outputname = '/Users/kschmidt/work/MUSE/ciii_candidates/linecat4LSDCat_measure_161018.fits'
     lineIDs    = ['1150308501','1150308502','1150308503','1150388804']+['88801','88802','88803','88804','88805']+['99901']
     objIDs     = ['11503085']*4+[888]*5+[999]*1
@@ -199,7 +206,43 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
 
     fmm.save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,clobber=False)
 
+    # >>> Example for multiple lines for a single cdfs 15 cube ra and dec. <<<
+    linecat  = '/Users/kschmidt/work/MUSE/ciii_candidates/linecat4LSDCat_measure_cdfs15oiiemitter_161021.fits'
+    obj_z    = 6474.0/3729.0-1.0
+    obj_id   = '11503085'
+    obj_ra   = 53.113493
+    obj_dec  = -27.858925
+    wave_obs = np.array([3726,3729,4340.47,9999,4861.33,4959,5007,6562.8])*(obj_z+1) # NB: Halpha outside MUSE range
+    objIDs   = np.asarray( [obj_id]*len(wave_obs) )
+    lineIDs  = np.asarray( [obj_id+str("%.3d" % (nn+1)) for nn in xrange(len(wave_obs))] )
+    ras      = np.asarray( [obj_ra]*len(wave_obs) )
+    decs     = np.asarray( [obj_dec]*len(wave_obs) )
+    cube     = '/Volumes/DATABCKUP3/MUSE//candels-cdfs-15/median_filtered_DATACUBE_candels-cdfs-15_v1.0.fits_effnoised.fits'
+
+    fmm.save_LSDCatFriendlyFitsFile(linecat,lineIDs,objIDs,ras,decs,wave_obs,radecwave=True,coordcube=cube,clobber=False)
+
+    fluxcatalog = fmm.measure_fluxes(linecat, field='cdfs', field_id=15, verbose=True, clobber=False)
+
     """
+    if radecwave:
+        if verbose: print ' - RA, Dec and wavelength provided; converting coordinates to pixel positions in cube:' \
+                          '\n   '+coordcube
+        for ii in xrange(len(x_pix)):
+            if (lam_pix[ii] > 4775.0) & (lam_pix[ii] < 9325.0):
+                ra_pix, dec_pix, wave_pix = fmm.get_cubepixelpos(coordcube,x_pix[ii],y_pix[ii],lam_pix[ii],verbose=False)
+                x_pix[ii]   = ra_pix
+                y_pix[ii]   = dec_pix
+                lam_pix[ii] = wave_pix
+            else:
+                if verbose: print '   WARNING skipping line at '+str(lam_pix[ii])+'A as it is outside MUSE wavelength range'
+                lam_pix[ii] = -99
+
+        x_pix   = np.delete(x_pix,   np.where(lam_pix == -99))
+        y_pix   = np.delete(y_pix,   np.where(lam_pix == -99))
+        lineIDs = np.delete(lineIDs, np.where(lam_pix == -99))
+        objIDs  = np.delete(objIDs,  np.where(lam_pix == -99))
+        lam_pix = np.delete(lam_pix, np.where(lam_pix == -99))
+
     datadic = {}
     datadic['I']          = np.asarray(lineIDs)
     datadic['ID']         = np.asarray(objIDs)
