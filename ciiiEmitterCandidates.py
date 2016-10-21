@@ -10,6 +10,7 @@ import numpy as np
 import kbsutilities as kbs
 import ciiiEmitterCandidates as cec
 import macs2129_z6p8_MultiImgSource as mis
+import fluxmeasurementsMUSEcubes as fmm
 import rxj2248_BooneBalestraSource as bbs
 import equivalentwidth as EQW
 import CDFS_MUSEvs3DHST as cm3
@@ -2041,4 +2042,111 @@ def MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst,verbose=True,
             latexstr  = latexstr+' & '
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose: print latexstr+' \\\\'
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxes=True,lines_manual={},
+                      MUSEcat='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits',
+                      clobber=False,verbose=True,verbose_flux=False):
+    """
+
+    Wrapper for import fluxmeasurementsMUSEcubes functions to measure line fluxes and limits in MUSE
+    cubes at expected locations of rest-frame UV lines incl CIII and CIV
+
+    --- INPUT ---
+    MUSEids              List of object IDs (UNIQUE_ID) to estimate lines fluxes for
+    outputdir            Directory to save generated line lists and flux files to
+    generatelinelists    Set to True to generate line list. If False the line list are assumed to
+                         exist in outputdirectory
+    measurefluxes        Set to True to measure line fluxes. If False the flux outputs are assumed to
+                         exist in outputdirectory
+    lines_manual         Provide a dictionary with entries for 'lines' (cube positions) to estimate
+                         flux at. Expects the format:
+                         lines_manual = {MUSEID:[ [LINENAME1,LINENAME2,...], [WAVE_OBS1, WAVE_OBS2,...] ]}
+    MUSEcat              Muse catalog to get redshift,ra and dec of object in MUSEids list from
+    clobber              If True outputs will be overwritten
+    verbose              Toggle verbosity of main script
+    verbose_flux         Toggle verbosity of flux functions
+
+    --- EXAMPLE OF USE ---
+
+    import ciiiEmitterCandidates as cec
+    MUSEids  = ['11503085','10306046']
+    manlines = {'11503085':[ ['testman1','testman2'], [7501.99, 7502.99] ]}
+    fluxcats = cec.measurelinefluxes(MUSEids,lines_manual = manlines)
+
+    """
+    fielddic = {'1':'cdfs','2':'cosmos'}
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading obj info from MUSE catalog:\n   '+MUSEcat
+    MUSEdat = pyfits.open(MUSEcat)[1].data
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print " - Grabbing list of emission lines from MiGs' linelist"
+    linesall  = MiGs.linelistdic(listversion='full')
+    linewaves = []
+    linenames = []
+
+    for line in linesall.keys():
+        linenames.append(linesall[line][0])
+        linewaves.append(linesall[line][1])
+    linenames = np.asarray(linenames)
+    linewaves = np.asarray(linewaves)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Nobj = str(len(MUSEids))
+    if verbose: print ' - Looping over the '+Nobj+' MUSE IDs provided '
+    fluxcatalogs = []
+    for oo, obj_id in enumerate(MUSEids):
+        if verbose: print ' ------------------ Object '+obj_id+' ('+str(oo+1)+'/'+Nobj+') ------------------'
+        MUSEent  = np.where(MUSEdat['UNIQUE_ID'] == obj_id)[0]
+        if len(MUSEent) != 1:
+            sys.exit(' Something is not right - found '+str(len(MUSEent))+' entries matching MUSEid='+obj_id+' in the catalog '+MUSEcat)
+
+        linecat  = outputdir+'/'+obj_id+'_linelist.fits'
+        obj_z    = MUSEdat['REDSHIFT'][MUSEent][0]
+        obj_ra   = MUSEdat['RA'][MUSEent][0]
+        obj_dec  = MUSEdat['DEC'][MUSEent][0]
+
+        wave_obs = linewaves*(obj_z+1) # NB: Halpha outside MUSE range
+
+        if obj_id in lines_manual.keys():
+            if verbose: print ' - Found line positions in lines_manual; adding them to default line list'
+            man_names = lines_manual[obj_id][0]
+            man_waves = lines_manual[obj_id][1]
+            for mm in xrange(len(man_names)):
+                linenames    = np.append(linenames,man_names[mm])
+                man_wave_obs = man_waves[mm]
+                wave_obs     = np.append(wave_obs,man_wave_obs)
+
+        objIDs   = np.asarray( [obj_id]*len(wave_obs) )
+        lineIDs  = np.asarray( [obj_id+str("%.3d" % (nn+1)) for nn in xrange(len(wave_obs))] )
+        ras      = np.asarray( [obj_ra]*len(wave_obs) )
+        decs     = np.asarray( [obj_dec]*len(wave_obs) )
+
+        pointing = obj_id[1:3]
+        fieldno  = obj_id[0]
+        cube     = '/Volumes/DATABCKUP3/MUSE//candels-'+fielddic[fieldno]+'-'+pointing+\
+                   '/median_filtered_DATACUBE_candels-'+fielddic[fieldno]+'-'+pointing+'_v1.0.fits_effnoised.fits'
+
+        if os.path.isfile(cube):
+            if generatelinelists:
+                if verbose: print ' - Generating line list'
+                fmm.save_LSDCatFriendlyFitsFile(linecat,lineIDs,objIDs,ras,decs,wave_obs,radecwave=True,coordcube=cube,
+                                                linenames=linenames,clobber=clobber,verbose=verbose_flux)
+            else:
+                if verbose: print ' - Skip generating line list - assume it exists'
+
+            if measurefluxes:
+                if verbose: print ' - Measuring fluxes for line list '
+                fluxcatalog = fmm.measure_fluxes(linecat, field=fielddic[fieldno], field_id=pointing,
+                                                 verbose=verbose_flux, clobber=clobber)
+            else:
+                if verbose: print ' - Skipping measuring line fluxes - assume output exists'
+                fluxcatalog = linecat.replace('.fits','_fluxes.fits')
+
+            fluxcatalogs.append(fluxcatalog)
+        else:
+            if verbose: print '   WARNING: Did not find the filtered cube:\n   '+cube
+            fluxcatalogs.append(outputdir+'/'+obj_id+'_NoCubeFoundForObject')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    return fluxcatalogs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
