@@ -94,7 +94,7 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
     if verbose: print '   Started on '+nowstr
     if verbose: print '   --------------------------------- lsd_cat_measure.py output -----------------------------------'
     lsdcout = commands.getoutput(measure_cmd)
-    print lsdcout
+    if verbose: print lsdcout
     if verbose: print '   -----------------------------------------------------------------------------------------------'
     nowstr  = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     if verbose: print '   Finished on '+nowstr
@@ -161,7 +161,7 @@ def get_cubepixelpos_wavelength(cubeheader,wavelength,indexed=0,verbose=True):
     return lam_pix
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,clobber=False,
-                                radecwave=False,coordcube=None,verbose=True):
+                                radecwave=False,coordcube=None,linenames=None,verbose=True):
     """
     Save LSDCat friendly fits file which can be used as input for lsd_cat_measure.py to make
     forced flux measurements of lines or at expected line locations in the MUSE data cubes
@@ -180,6 +180,7 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
                 These will then be converted to pixel positions in the cube given in coordcube
     coordcube   If x_pix, y_pix and lam_pix are given as ra, dec and wavelength (radecwave=True) provide
                 the cube to be used for the coordinate (wcs) transformation from coordinates to pixel postions.
+    linenames   Add list of string containing name of lines to add this to output table
     verbose     Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -202,18 +203,23 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     obj_ra   = 53.113493
     obj_dec  = -27.858925
     wave_obs = np.array([3726,3729,4340.47,9999,4861.33,4959,5007,6562.8])*(obj_z+1) # NB: Halpha outside MUSE range
+    lnames   = np.asarray(['OII_1','OII_2','Hg','badline','Hb','OIII_1','OIII_2','Halpha'])
     objIDs   = np.asarray( [obj_id]*len(wave_obs) )
     lineIDs  = np.asarray( [obj_id+str("%.3d" % (nn+1)) for nn in xrange(len(wave_obs))] )
     ras      = np.asarray( [obj_ra]*len(wave_obs) )
     decs     = np.asarray( [obj_dec]*len(wave_obs) )
     cube     = '/Volumes/DATABCKUP3/MUSE//candels-cdfs-15/median_filtered_DATACUBE_candels-cdfs-15_v1.0.fits_effnoised.fits'
 
-    fmm.save_LSDCatFriendlyFitsFile(linecat,lineIDs,objIDs,ras,decs,wave_obs,radecwave=True,coordcube=cube,clobber=False)
+    fmm.save_LSDCatFriendlyFitsFile(linecat,lineIDs,objIDs,ras,decs,wave_obs,radecwave=True,coordcube=cube,linenames=lnames)
 
     fluxcatalog = fmm.measure_fluxes(linecat, field='cdfs', field_id=15, verbose=True, clobber=False)
 
     """
     datadic = {}
+
+    if linenames == None:
+        linenames = np.asarray(['None']*len(objIDs))
+
     if radecwave:
         if verbose: print ' - RA, Dec and wavelength provided; converting coordinates to pixel positions in cube:' \
                           '\n   '+coordcube
@@ -223,6 +229,7 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
         xx    = x_pix.copy()
         yy    = y_pix.copy()
         lam   = lam_pix.copy()
+        lms   = linenames.copy()
 
         for ii in xrange(len(x_pix)):
             if (lam_pix[ii] > 4775.0) & (lam_pix[ii] < 9325.0):
@@ -239,6 +246,7 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
         datadic['ID']         = np.delete(ids,  np.where(lam == -99))
         datadic['X_PEAK_SN']  = np.delete(xx,   np.where(lam == -99))
         datadic['Y_PEAK_SN']  = np.delete(yy,   np.where(lam == -99))
+        datadic['LINENAME']   = np.delete(lms,  np.where(lam == -99))
         datadic['Z_PEAK_SN']  = np.delete(lam,  np.where(lam == -99))
     else:
         datadic['I']          = np.asarray(lineIDs)
@@ -246,6 +254,7 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
         datadic['X_PEAK_SN']  = np.asarray(x_pix)
         datadic['Y_PEAK_SN']  = np.asarray(y_pix)
         datadic['Z_PEAK_SN']  = np.asarray(lam_pix)
+        datadic['LINENAME']   = np.asarray(linenames)
 
     Nlines                = len(datadic['I'])
     if verbose: print ' - Checking dimensions of input data (they should all have Nlines='+str(Nlines)+' entries)'
@@ -258,8 +267,8 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Setting up array for fits output \n   '+outputname
     columndefs = []
-    fitsformat = ['A20','A20','D','D','D']
-    for kk, key in enumerate(['I','ID','X_PEAK_SN','Y_PEAK_SN','Z_PEAK_SN']):
+    fitsformat = ['A20','A20','D','D','D','A20']
+    for kk, key in enumerate(['I','ID','X_PEAK_SN','Y_PEAK_SN','Z_PEAK_SN','LINENAME']):
         try:
             #dtype=[('I', 'S20'), ('ID', 'S20'), ('X_PEAK_SN', '>f8'), ('Y_PEAK_SN', '>f8'), ('Z_PEAK_SN', '>f8')])
             columndefs.append(pyfits.Column(name=key  , format=fitsformat[kk], array=datadic[key]))
