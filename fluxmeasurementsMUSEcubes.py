@@ -224,31 +224,38 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     fluxcatalog = fmm.measure_fluxes(linecat, field='cdfs', field_id=15, verbose=True, clobber=False)
 
     """
+    datadic = {}
     if radecwave:
         if verbose: print ' - RA, Dec and wavelength provided; converting coordinates to pixel positions in cube:' \
                           '\n   '+coordcube
+        # prevent changing input arrays outside this function
+        ids   = objIDs.copy()
+        lids  = lineIDs.copy()
+        xx    = x_pix.copy()
+        yy    = y_pix.copy()
+        lam   = lam_pix.copy()
+
         for ii in xrange(len(x_pix)):
             if (lam_pix[ii] > 4775.0) & (lam_pix[ii] < 9325.0):
-                ra_pix, dec_pix, wave_pix = fmm.get_cubepixelpos(coordcube,x_pix[ii],y_pix[ii],lam_pix[ii],verbose=False)
-                x_pix[ii]   = ra_pix
-                y_pix[ii]   = dec_pix
-                lam_pix[ii] = wave_pix
+                ra_pix, dec_pix, wave_pix = fmm.get_cubepixelpos(coordcube,xx[ii],yy[ii],lam[ii],verbose=False)
+                xx[ii]   = ra_pix
+                yy[ii]   = dec_pix
+                lam[ii]  = wave_pix
             else:
                 if verbose: print '   WARNING skipping line at '+str(lam_pix[ii])+'A as it is outside MUSE wavelength range'
-                lam_pix[ii] = -99
+                lam[ii] = -99
 
-        x_pix   = np.delete(x_pix,   np.where(lam_pix == -99))
-        y_pix   = np.delete(y_pix,   np.where(lam_pix == -99))
-        lineIDs = np.delete(lineIDs, np.where(lam_pix == -99))
-        objIDs  = np.delete(objIDs,  np.where(lam_pix == -99))
-        lam_pix = np.delete(lam_pix, np.where(lam_pix == -99))
-
-    datadic = {}
-    datadic['I']          = np.asarray(lineIDs)
-    datadic['ID']         = np.asarray(objIDs)
-    datadic['X_PEAK_SN']  = np.asarray(x_pix)
-    datadic['Y_PEAK_SN']  = np.asarray(y_pix)
-    datadic['Z_PEAK_SN']  = np.asarray(lam_pix)
+        datadic['I']          = np.delete(lids, np.where(lam == -99))
+        datadic['ID']         = np.delete(ids,  np.where(lam == -99))
+        datadic['X_PEAK_SN']  = np.delete(xx,   np.where(lam == -99))
+        datadic['Y_PEAK_SN']  = np.delete(yy,   np.where(lam == -99))
+        datadic['Z_PEAK_SN']  = np.delete(lam,  np.where(lam == -99))
+    else:
+        datadic['I']          = np.asarray(lineIDs)
+        datadic['ID']         = np.asarray(objIDs)
+        datadic['X_PEAK_SN']  = np.asarray(x_pix)
+        datadic['Y_PEAK_SN']  = np.asarray(y_pix)
+        datadic['Z_PEAK_SN']  = np.asarray(lam_pix)
 
     Nlines                = len(datadic['I'])
     if verbose: print ' - Checking dimensions of input data (they should all have Nlines='+str(Nlines)+' entries)'
@@ -277,5 +284,4 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     thdulist.writeto(outputname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
     if verbose: print '   Wrote array to output file; done.'
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
