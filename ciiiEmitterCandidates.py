@@ -2081,14 +2081,6 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print " - Grabbing list of emission lines from MiGs' linelist"
     linesall  = MiGs.linelistdic(listversion='full')
-    linewaves = []
-    linenames = []
-
-    for line in linesall.keys():
-        linenames.append(linesall[line][0])
-        linewaves.append(linesall[line][1])
-    linenames = np.asarray(linenames)
-    linewaves = np.asarray(linewaves)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Nobj = str(len(MUSEids))
@@ -2096,6 +2088,15 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
     fluxcatalogs = []
     for oo, obj_id in enumerate(MUSEids):
         if verbose: print ' ------------------ Object '+obj_id+' ('+str(oo+1)+'/'+Nobj+') ------------------'
+        if verbose: print ' - Resetting list of line locations to MiG lines'
+        linewaves = []
+        linenames = []
+        for line in linesall.keys():
+            linenames.append(linesall[line][0])
+            linewaves.append(linesall[line][1])
+        linenames = np.asarray(linenames)
+        linewaves = np.asarray(linewaves)
+
         MUSEent  = np.where(MUSEdat['UNIQUE_ID'] == obj_id)[0]
         if len(MUSEent) != 1:
             sys.exit(' Something is not right - found '+str(len(MUSEent))+' entries matching MUSEid='+obj_id+' in the catalog '+MUSEcat)
@@ -2150,13 +2151,15 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
 
     return fluxcatalogs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,verbose=True,verbose_flux=False):
+def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,measurefluxes=True,
+                             verbose=True,verbose_flux=False,clobber=False):
     """
     Wrapper for measurelinefluxes() listing the IDs to measure lines fluxes for and defining dictionary of any
     manual line positions.
 
     --- EXAMPLE OF USE ---
-    fluxcats = cec.measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False)
+    import ciiiEmitterCandidates as cec
+    fluxcats = cec.measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,measurefluxes=True)
 
     """
     MUSEids_combined = []
@@ -2202,7 +2205,8 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,ver
     lines_manual = {}
     lines_manual ['11503085'] = [ ['testman1','testman2'], [7501.99, 7502.99] ]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    fluxcats = cec.measurelinefluxes(MUSEids_combined,lines_manual = lines_manual,
+    fluxcats = cec.measurelinefluxes(MUSEids_combined,lines_manual = lines_manual,clobber=clobber,
+                                     measurefluxes=measurefluxes,
                                      verbose=verbose,verbose_flux=verbose_flux)
 
     return fluxcats
