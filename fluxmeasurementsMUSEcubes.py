@@ -7,14 +7,15 @@ import pyfits
 import commands
 import numpy as np
 import datetime
+import collections
 import astropy.wcs as wcs
 import fluxmeasurementsMUSEcubes as fmm
 import matplotlib.pyplot as plt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNthreshanal=1.0, cubeversion='_v1.0',
                    fhdu='MEDFILTERED_DATA', ferrhdu='EFF_STAT', ffhdu='FILTERED_DATA',fferhdu='FILTERED_STAT',
-                   ffsnhdu='SIGNALTONOISE',rmin=3, rmax=6, dataparentpath='/Volumes/DATABCKUP3/MUSE/', clobber=False,
-                   verbose=True):
+                   ffsnhdu='SIGNALTONOISE',rmin=3, rmax=6, dataparentpath='/Volumes/DATABCKUP3/MUSE/',plotfluxes=True,
+                   clobber=False,verbose=True):
     """
     Retrieve the flux measurements for an input LSDCat catalog (e.g., created with
     fmm.save_LSDCatFriendlyFitsFile) and return ...
@@ -36,6 +37,8 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
     ffsnhdu          Fits extension containing the signal to noise
     rmin=3
     rmax=6
+    dataparentpath
+    plotfluxes       Set to True to generate flux comparison plots
     clobber          Set to True to overwrite output if it already exists
     verbose          Toggle verbosity
 
@@ -94,12 +97,21 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
     if verbose: print '   Started on '+nowstr
     if verbose: print '   --------------------------------- lsd_cat_measure.py output -----------------------------------'
     lsdcout = commands.getoutput(measure_cmd)
+    if "DONE!!! Wrote FITS catalog" not in lsdcout:
+        print ' >>>>>>>>>> WARNING: Problems with LSDCat flux measurement <<<<<<<<<<'
+        print lsdcout
+        print ' ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+        fluxcatalog = ''
+    else:
+        fluxcatalog = lsdcout.split('DONE!!! Wrote FITS catalog ')[-1].split(' ')[0]
+        if plotfluxes:
+            fmm.plot_LSDCatFluxes(fluxcatalog,verbose=verbose,zoom=False)
+            fmm.plot_LSDCatFluxes(fluxcatalog,verbose=verbose,zoom=True)
     if verbose: print lsdcout
     if verbose: print '   -----------------------------------------------------------------------------------------------'
     nowstr  = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     if verbose: print '   Finished on '+nowstr
 
-    fluxcatalog = lsdcout.split('DONE!!! Wrote FITS catalog ')[-1].split(' ')[0]
     return fluxcatalog
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_cubepixelpos(cube,ra,dec,wavelength,cubeextension='MEDFILTERED_DATA',verbose=True):
@@ -267,7 +279,7 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Setting up array for fits output \n   '+outputname
     columndefs = []
-    fitsformat = ['A20','A20','D','D','D','A20']
+    fitsformat = ['A20','A20','D','D','D','A50']
     for kk, key in enumerate(['I','ID','X_PEAK_SN','Y_PEAK_SN','Z_PEAK_SN','LINENAME']):
         try:
             #dtype=[('I', 'S20'), ('ID', 'S20'), ('X_PEAK_SN', '>f8'), ('Y_PEAK_SN', '>f8'), ('Z_PEAK_SN', '>f8')])
@@ -283,4 +295,115 @@ def save_LSDCatFriendlyFitsFile(outputname,lineIDs,objIDs,x_pix,y_pix,lam_pix,cl
     thdulist.writeto(outputname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
     if verbose: print '   Wrote array to output file; done.'
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_LSDCatFluxes(fluxcatalog,margin=0.2,zoom=False,verbose=True):
+    """
+    Plot the content of an LSDCat flux catalog. Can for instance be generated with fmm.measure_fluxes()
+
+    --- EXAMPLE OF USE ---
+
+    fluxcatalog = '/Users/kschmidt/work/MUSE/ciii_candidates/fluxAndEWmeasurements/11522116_linelist_fluxes.fits'
+    fmm.plot_LSDCatFluxes(fluxcatalog,verbose=True)
+
+    for fluxcat in glob.glob('/Users/kschmidt/work/MUSE/ciii_candidates/fluxAndEWmeasurements/*linelist_fluxes.fits'):
+        fmm.plot_LSDCatFluxes(fluxcat,verbose=False)
+        fmm.plot_LSDCatFluxes(fluxcat,verbose=True)
+
+    """
+    dat = pyfits.open(fluxcatalog)[1].data
+    linecols = fmm.linecolors()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = fluxcatalog.replace('.fits','_f1kronVSf3kron.pdf')
+    if zoom:
+        plotname = plotname.replace('.pdf','_zoom.pdf')
+
+    if verbose: print ' - Setting up and generating plot'
+    fig = plt.figure(figsize=(6, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.98, bottom=0.10, top=0.98)
+    Fsize    = 10
+    lthick   = 1
+    marksize = 3
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('/')[-1].replace('_','\_'),fontsize=Fsize)
+
+    dx      = np.abs(np.max(dat['F_KRON'])-np.min(dat['F_KRON']))
+    dy      = np.abs(np.max(dat['F_3KRON'])-np.min(dat['F_3KRON']))
+    zoombox = [0,2000]
+    if zoom:
+        xrange = zoombox
+        yrange = zoombox
+    else:
+        xrange = [np.min(dat['F_KRON'])-dx*margin,np.max(dat['F_KRON'])+dx*margin]
+        yrange = [np.min(dat['F_3KRON'])-dy*margin,np.max(dat['F_3KRON'])+dy*margin]
+
+    for ll, line in enumerate(dat['linename']):
+        for colkey in linecols.keys():
+            if colkey in line.lower():
+                linecol = linecols[colkey]
+
+        plt.errorbar(dat['F_KRON'][ll],dat['F_3KRON'][ll],
+                     xerr=dat['F_KRON_ERR'][ll],yerr=dat['F_3KRoN_ERR'][ll],
+                     color=linecol,ls='o',lw=lthick)
+
+        plt.text(dat['F_KRON'][ll],dat['F_3KRON'][ll],line,color=linecol,ha='left',va='bottom')
+
+    plt.plot([np.min(xrange+yrange),np.max(xrange+yrange)],
+             [np.min(xrange+yrange),np.max(xrange+yrange)],
+             ls='--',color='k',lw=lthick)
+
+    if not zoom:
+        plt.plot(zoombox,np.zeros(2)+zoombox[0],ls='-',color='k',lw=lthick)
+        plt.plot(zoombox,np.zeros(2)+zoombox[1],ls='-',color='k',lw=lthick)
+        plt.plot(np.zeros(2)+zoombox[0],zoombox,ls='-',color='k',lw=lthick)
+        plt.plot(np.zeros(2)+zoombox[1],zoombox,ls='-',color='k',lw=lthick)
+
+    plt.xlabel(r'$F_{\rm{kron}}$ [1e-20 erg/s/cm$^2$]')
+    plt.ylabel(r'$F_{3\rm{kron}}$ [1e-20 erg/s/cm$^2$]')
+
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+
+    #--------- LEGEND ---------
+    # plt.errorbar(-1,-1,xerr=None,yerr=None,fmt='o',lw=lthick,ecolor='white', markersize=marksize*2,
+    #              markerfacecolor='white',markeredgecolor = 'k',label='Ground-based spec')
+    #
+    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize},ncol=1,numpoints=1)
+    #                  #bbox_to_anchor=(1.25, 1.03))  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    if verbose: print '   Saving plot to',plotname
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linecolors():
+    """
+    Define line colors for plotting.
+    """
+    linecols = collections.OrderedDict()
+    linecols['ly$\\alpha$'] = 'black'
+    linecols['ly$\\beta$']  = 'gray'
+
+    linecols['oiii']        = 'red'
+    linecols['oiv']         = 'darkred'
+    linecols['ovi']         = 'pink'
+
+    linecols['cii ']        = 'darkgreen'
+    linecols['ciii]']       = 'green'
+    linecols['civ']         = 'mediumspringgreen'
+
+    linecols['nv']          = 'magenta'
+
+    linecols['siiv']        = 'orange'
+
+    linecols['heii']        = 'blue'
+
+    linecols['test']        = 'yellow'
+    return linecols
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
