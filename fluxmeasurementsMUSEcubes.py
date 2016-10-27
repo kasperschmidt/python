@@ -301,6 +301,7 @@ def plot_LSDCatFluxes(fluxcatalog,margin=0.2,zoom=False,verbose=True):
     Plot the content of an LSDCat flux catalog. Can for instance be generated with fmm.measure_fluxes()
 
     --- EXAMPLE OF USE ---
+    import fluxmeasurementsMUSEcubes as fmm
 
     fluxcatalog = '/Users/kschmidt/work/MUSE/ciii_candidates/fluxAndEWmeasurements/11522116_linelist_fluxes.fits'
     fmm.plot_LSDCatFluxes(fluxcatalog,verbose=True)
@@ -382,9 +383,77 @@ def plot_LSDCatFluxes(fluxcatalog,margin=0.2,zoom=False,verbose=True):
     plt.clf()
     plt.close('all')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def flux2ew(lineflux,linefluxerr,line_obswave,linerestwave,ABmag,ABmagerr,bandwavelength,
+            dlambda=1.0,fluxunit=1e-20,verbose=True):
+    """
+    Convert flux mesurement to rest-frame EW using a broad band magnitude as continuum estimate
+
+    --- INPUT ---
+    lineflux           Line flux of line to estimate EW for
+    linefluxerr        Uncertainty on line flux
+    line_obswave       Observed wavelength of line in angstrom
+    linerestwave       Rest-frame wavelength of line in angstrom
+    ABmag              Broad band magnitude used to estimate continuum flux
+    ABmagerr           Uncertainty on broad band magnitude used to estimate continuum flux
+    bandwavelength     Central wavelength of broad band the AB magnitude for the continuum estimate comes from
+    dlambda            Dispersion resolution to convert line fluxes from erg/s/cm2/A to erg/s/cm2 with.
+                       The default is dlambda=1.0 corresponding to lineflux given in erg/s/cm2 already
+    fluxunit           Units of flux; default is 1e-20
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import fluxmeasurementsMUSEcubes as fmm
+    lineflux        = 500.1
+    linefluxerr     = 33.5
+    line_obswave    = 6000.0
+    linerestwave    = 1216.0
+    ABmag           = 26.0
+    ABmagerr        = 0.3
+    bandwavelength  = 8140.0
+    lineinfo = fmm.flux2ew(lineflux,linefluxerr,line_obswave,linerestwave,ABmag,ABmagerr,bandwavelength)
+
+    """
+    if verbose: print ' - Estimate continuum flux from AB magnitude [erg/s/cm2]'
+
+
+    filterwave    = bandwavelength
+    Fcont_mag     = 10**(-0.4*ABmag)*3*10**(-1.44) / filterwave**2 / fluxunit # continuum flux from photometry
+    Fcont_mag_err = ABmagerr * Fcont_mag / (2.5/np.log(10)) # convert mag err to flux err
+
+    if float(dlambda) != 1.0:
+        if verbose: print ' - "Integrate" input line flux from [erg/s/cm2/A] to [erg/s/cm2]'
+        flux         = lineflux * dlambda     # 'intergrating' units:  erg/s/cm2/A -> erg/s/cm2
+        fluxerr      = linefluxerr  * dlambda
+    else:
+        if verbose: print ' - Input line flux in units of [erg/s/cm2] already, i.e. dlambda=1.0'
+        flux         = lineflux
+        fluxerr      = linefluxerr
+
+    if verbose: print ' - Determine redshift (correction); z+1 = '
+    restcorr   = line_obswave/linerestwave # = z+1   rest frame correction
+    redshift   = restcorr - 1.0
+    if verbose: print restcorr
+
+    if verbose: print ' - Estimate EW and EWerr'
+    ewidth     = flux      / Fcont_mag / restcorr   # [erg/s/cm2  / (erg/s/cm2/A) / (A/A)] = [A]
+    ewidtherr  = np.sqrt( (fluxerr/flux)**2 + (Fcont_mag_err/Fcont_mag)**2) * np.abs(ewidth)
+
+    if verbose: print '\n - Line at '+str(line_obswave)+'A ('+str(linerestwave)+'A restframe) at z = '+str(redshift)
+    if verbose: print '   F_line  = '+str("%12.4f" % flux)     +'   +/- '+str("%12.4f" % fluxerr)+'  ['+str(fluxunit)+' erg/s/cm2]'
+    if verbose: print '   ABmag   = '+str("%12.4f" % ABmag)    +'   +/- '+str("%12.4f" % ABmagerr)+'  [mag]'
+    if verbose: print '   F_cont  = '+str("%12.4f" % Fcont_mag)+'   +/- '+str("%12.4f" % Fcont_mag_err)+'  ['+str(fluxunit)+' erg/s/cm2]'
+    if verbose: print '   EW_rest = '+str("%12.4f" % ewidth)   +'   +/- '+str("%12.4f" % ewidtherr)+'  [A]'
+
+    return flux, fluxerr, ewidth, ewidtherr, redshift, ABmag, ABmagerr, bandwavelength, linerestwave
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linecolors():
     """
     Define line colors for plotting.
+
+    --- EXAMPLE OF USE ---
+    import fluxmeasurementsMUSEcubes as fmm
+    linecolors = fmm.linecolors()
+
     """
     linecols = collections.OrderedDict()
     linecols['ly$\\alpha$'] = 'black'
@@ -392,7 +461,7 @@ def linecolors():
 
     linecols['oiii']        = 'red'
     linecols['oiv']         = 'darkred'
-    linecols['ovi']         = 'pink'
+    linecols['ovi']         = 'darkpink'
 
     linecols['cii ']        = 'darkgreen'
     linecols['ciii]']       = 'green'
