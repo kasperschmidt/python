@@ -13,9 +13,9 @@ import fluxmeasurementsMUSEcubes as fmm
 import matplotlib.pyplot as plt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNthreshanal=1.0, cubeversion='_v1.0',
-                   fhdu='MEDFILTERED_DATA', ferrhdu='EFF_STAT', ffhdu='FILTERED_DATA',fferhdu='FILTERED_STAT',
-                   ffsnhdu='SIGNALTONOISE',rmin=3, rmax=6, dataparentpath='/Volumes/DATABCKUP3/MUSE/',plotfluxes=True,
-                   clobber=False,verbose=True):
+                   fhdu='MFS_DATA_DCBGC', ferrhdu='EFF_STAT', ffhdu='FILTERED_DATA',fferhdu='FILTERED_STAT',
+                   ffsnhdu='SIGNALTONOISE',rmin=3, rmax=6, dataparentpath='/Volumes/DATABCKUP2/MUSE-Wide/data/',
+                   plotfluxes=True, clobber=False,verbose=True):
     """
     Retrieve the flux measurements for an input LSDCat catalog (e.g., created with
     fmm.save_LSDCatFriendlyFitsFile) and return ...
@@ -53,10 +53,10 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
     fieldname     = 'candels-'+field+'-'+str(field_id)
     #linecat_base=`basename ${linecatalog} .fits`
 
-    field_path   = dataparentpath+'/'+fieldname+'/'
-    fluxcube     = field_path+'median_filtered_DATACUBE_'+fieldname+cubeversion+'.fits_effnoised.fits'
-    SNcube       = field_path+'s2n_'+fieldname+'.fits'
-    filteredcube = field_path+'spec_cced_spat_cced_median_filtered_DATACUBE_'+fieldname+cubeversion+'_effnoised.fits'
+    field_path   = dataparentpath#+'/'+fieldname+'/'
+    fluxcube     = field_path+'median_filtered_DATACUBE_'+fieldname+cubeversion+'.fits_effnoised_dcbgc.fits'
+    SNcube       = field_path+'s2n_opt_v250_'+fieldname+'_v1.0.fits'
+    filteredcube = field_path+'spec_cced_spat_cced_median_filtered_DATACUBE_'+fieldname+cubeversion+'_effnoised_32.fits'
 
     if verbose:
         print ' - Will measure fluxes using the following setup:'
@@ -69,7 +69,7 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
     S/N cube              : %s
     S/N thresh (init,anal): [%s,%s]
     Apertire radius range : [%s,%s]
-    """ % (field,field_id,linecatalog,fluxcube,filteredcube,fluxcube,SNthreshinit,SNthreshanal,rmin,rmax)
+    """ % (field,field_id,linecatalog,fluxcube,filteredcube,SNcube,SNthreshinit,SNthreshanal,rmin,rmax)
 
     if verbose: print ' - Putting together lsd_cat_measure.py from input '
     measure_cmd  = 'lsd_cat_measure.py ' \
@@ -114,7 +114,7 @@ def measure_fluxes(linecatalog, field='cdfs', field_id=15, SNthreshinit=1.0, SNt
 
     return fluxcatalog
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_cubepixelpos(cube,ra,dec,wavelength,cubeextension='MEDFILTERED_DATA',verbose=True):
+def get_cubepixelpos(cube,ra,dec,wavelength,cubeextension='MFS_DATA_DCBGC',verbose=True):
     """
     Obtain the pixel position in a
 
@@ -123,8 +123,8 @@ def get_cubepixelpos(cube,ra,dec,wavelength,cubeextension='MEDFILTERED_DATA',ver
     import fluxmeasurementsMUSEcubes as fmm
 
     cube = '/Volumes/DATABCKUP3/MUSE//candels-cdfs-15/median_filtered_DATACUBE_candels-cdfs-15_v1.0.fits_effnoised.fits'
-    ra_pix, dec_pix, lam_pix = fmm.get_cubepixelpos(cube,53.113493,-27.858925,6468.3)  ; lam_pix=1375
-    ra_pix, dec_pix, lam_pix = fmm.get_cubepixelpos(cube,53.113493,-27.858925,8506.61) ; lam_pix=3006
+    ra_pix, dec_pix, lam_pix = fmm.get_cubepixelpos(cube,53.113493,-27.858925,6468.3,cubeextension='MEDFILTERED_DATA')  ; lam_pix=1375
+    ra_pix, dec_pix, lam_pix = fmm.get_cubepixelpos(cube,53.113493,-27.858925,8506.61,cubeextension='MEDFILTERED_DATA') ; lam_pix=3006
 
     """
     cubehdr         = pyfits.open(cube)[cubeextension].header
@@ -444,7 +444,150 @@ def flux2ew(lineflux,linefluxerr,line_obswave,linerestwave,ABmag,ABmagerr,bandwa
     if verbose: print '   F_cont  = '+str("%12.4f" % Fcont_mag)+'   +/- '+str("%12.4f" % Fcont_mag_err)+'  ['+str(fluxunit)+' erg/s/cm2]'
     if verbose: print '   EW_rest = '+str("%12.4f" % ewidth)   +'   +/- '+str("%12.4f" % ewidtherr)+'  [A]'
 
-    return flux, fluxerr, ewidth, ewidtherr, redshift, ABmag, ABmagerr, bandwavelength, linerestwave
+    return Fcont_mag, Fcont_mag_err, ewidth, ewidtherr, redshift
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calculateEWs(fluxcatalogs,infodictionary,datadirectory='./',fluxunit=1e-20,
+                 fluxcol='F_KRON',wavecol='LAMBDA_SN',clobber=False,verbose=True):
+    """
+    calculate the EWs for detections in LSDCat line catalog
+
+    --- INPUT ---
+    fluxcatalogs     List of fits catalogs containing line flux measrements to convert to EWs
+    infodictionary   Dictionary containing inputs for fmm.flux2ew() for each of the lines in the
+                     each of the flux catalogs. The format expected is:
+                     infodictionary[fluxcatname] = {lineid:[linerestwave,ABmag,ABmagerr,bandwavelength]}
+                     Here fluxcatname is the name of the flux catalog and lineid identifies the information
+                     (not already in the fluxcatalog) needed to estimate the EW for the given line.
+    datadirectory    Directory containing the flux catalogs (and the output catalogs)
+    fluxunit         Unit of input fluxes
+    fluxcol          Column in flux catalogs to use as estimate for line flux
+    wavecol          Column in flux catalogs to use as estimate for line wavelength
+    clobber          Overwrite output if it already exists
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+
+    -- setup --
+    import fluxmeasurementsMUSEcubes as fmm
+
+    datadirectory   = './fluxAndEWmeasurements/'
+    fluxcatalogs    = ['11503085_linelist_fluxes.fits']
+    infodictionary  = {}
+    infodictionary['11503085_linelist_fluxes.fits']  = {}
+
+    #-- Lyalpha --
+    f775w_skelton    = 1.705693
+    f775werr_skelton = 0.033858
+    linerestwave     = 1215.6737
+    ABmag            = 25.0-2.5*np.log10(f775w_skelton)
+    ABmagerr         = (2.5/np.log(10)) * f775werr_skelton/f775w_skelton
+    bandwavelength   = 7.6485e+03
+
+    infodictionary['11503085_linelist_fluxes.fits']['11503085003'] = [linerestwave,ABmag,ABmagerr,bandwavelength]
+
+    #-- CIV --
+    f850lp_skelton    = 1.631849
+    f850lperr_skelton = 0.047236
+    linerestwave      = 1548.195
+    ABmag             = 25.0-2.5*np.log10(f850lp_skelton)
+    ABmagerr          = (2.5/np.log(10)) * f850lperr_skelton/f850lp_skelton
+    bandwavelength    = 9.1688e+03
+
+    infodictionary['11503085_linelist_fluxes.fits']['11503085013'] = [linerestwave,ABmag,ABmagerr,bandwavelength]
+
+    #-- Calucate EWs --
+    lineinfo = fmm.calculateEWs(fluxcatalogs,infodictionary)
+
+    """
+    lineidcol = 'I' # Column of line IDs. Assumed to exist.
+    Ncats     = len(fluxcatalogs)
+    if verbose: print ' - Found '+str(Ncats)+' flux catalogs to estimate EWs for (in directory '+datadirectory+')'
+
+    for cat in fluxcatalogs:
+        if verbose: print ' - Loafing fluxes in '+cat+' using line ids in column '+lineidcol
+        fluxdat = pyfits.open(datadirectory+cat)[1].data
+
+        lineids_out      = []
+        linerestwave_out = []
+        lineflux_out     = []
+        linefluxerr_out  = []
+        line_obswave_out = []
+        line_z_out       = []
+        mag_out          = []
+        magerr_out       = []
+        magwave_out      = []
+        fluxcont_out     = []
+        fluxconterr_out  = []
+        ewidth_out       = []
+        ewidtherr_out    = []
+
+        for ll, line in enumerate(fluxdat[lineidcol]):
+            lineflux        = fluxdat[fluxcol][ll]
+            linefluxerr     = fluxdat[fluxcol+'_ERR'][ll]
+            line_obswave    = fluxdat[wavecol][ll]
+
+            if line in infodictionary[cat].keys():
+                if verbose: print ' -----------------------------------------------------------'
+                if verbose: print '    - '+str(line)+':'
+                lineflux        = fluxdat[fluxcol][ll]
+                linefluxerr     = fluxdat[fluxcol+'_ERR'][ll]
+                line_obswave    = fluxdat[wavecol][ll]
+                linerestwave,ABmag,ABmagerr,bandwavelength = infodictionary[cat][line]
+
+                lineinfo = fmm.flux2ew(lineflux,linefluxerr,line_obswave,linerestwave,ABmag,ABmagerr,bandwavelength,
+                                       verbose=verbose,fluxunit=fluxunit)
+                fluxcont, fluxconterr, ewidth, ewidtherr, redshift = lineinfo
+                if verbose: print ' -----------------------------------------------------------'
+            else:
+                if verbose: print '   '+str(line)+': No setup in infodictionary; set values to -99s'
+                fluxcont, fluxconterr, ewidth, ewidtherr, redshift = -99,-99,-99,-99,-99
+                linerestwave,ABmag,ABmagerr,bandwavelength = -99,-99,-99,-99
+
+            lineids_out.append(line)
+            linerestwave_out.append(linerestwave)
+            lineflux_out.append(lineflux)
+            linefluxerr_out.append(linefluxerr)
+            line_obswave_out.append(line_obswave)
+            line_z_out.append(redshift)
+            mag_out.append(ABmag)
+            magerr_out.append(ABmagerr)
+            magwave_out.append(bandwavelength)
+            fluxcont_out.append(fluxcont)
+            fluxconterr_out.append(fluxconterr)
+            ewidth_out.append(ewidth)
+            ewidtherr_out.append(ewidtherr)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print ' -----------------------------------------------------------'
+        outputfile = datadirectory+'/'+cat.replace('.fits','_EWs.fits')
+        if verbose: print ' - Writing results to '+outputfile
+        c1  = pyfits.Column(name='line_id',       format='A20', unit='', array=np.asarray(lineids_out))
+        c2  = pyfits.Column(name='line_waverest', format='D', unit='ANGSTROMS', array=np.asarray(linerestwave_out))
+        c3  = pyfits.Column(name='line_flux',     format='D', unit=str(fluxunit)+' ERG/S/CM2', array=np.asarray(lineflux_out))
+        c4  = pyfits.Column(name='line_flux_err', format='D', unit=str(fluxunit)+' ERG/S/CM2', array=np.asarray(linefluxerr_out))
+        c5  = pyfits.Column(name='line_waveobs',  format='D', unit='ANGSTROMS', array=np.asarray(line_obswave_out))
+        c6  = pyfits.Column(name='line_z',        format='D', unit='', array=np.asarray(line_z_out))
+        c7  = pyfits.Column(name='mag',           format='D', unit='MAG', array=np.asarray(mag_out))
+        c8  = pyfits.Column(name='mag_err',       format='D', unit='MAG', array=np.asarray(magerr_out))
+        c9  = pyfits.Column(name='mag_wave',      format='D', unit='ANGSTROMS', array=np.asarray(magwave_out))
+        c10 = pyfits.Column(name='cont_flux',     format='D', unit=str(fluxunit)+' ERG/S/CM2', array=np.asarray(fluxcont_out))
+        c11 = pyfits.Column(name='cont_flux_err', format='D', unit=str(fluxunit)+' ERG/S/CM2', array=np.asarray(fluxconterr_out))
+        c12 = pyfits.Column(name='ew',            format='D', unit='ANGSTROMS', array=np.asarray(ewidth_out))
+        c13 = pyfits.Column(name='ew_err',        format='D', unit='ANGSTROMS', array=np.asarray(ewidtherr_out))
+
+        coldefs = pyfits.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13])
+
+        th = pyfits.new_table(coldefs) # creating default header
+
+        # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
+        th.header.append(('FCAT    ' , cat        ,'Flux catalog used as input for EW estimates'),end=True)
+        th.header.append(('OBJID   ' , line[0:8]  ,'ID of object fluxes corrspond to'),end=True)
+
+        head    = th.header
+        tbHDU  = pyfits.new_table(coldefs, header=head)
+        tbHDU.writeto(outputfile, clobber=clobber)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linecolors():
     """
@@ -461,7 +604,7 @@ def linecolors():
 
     linecols['oiii']        = 'red'
     linecols['oiv']         = 'darkred'
-    linecols['ovi']         = 'darkpink'
+    linecols['ovi']         = 'indianred'
 
     linecols['cii ']        = 'darkgreen'
     linecols['ciii]']       = 'green'
