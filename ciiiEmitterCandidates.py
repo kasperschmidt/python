@@ -2124,8 +2124,8 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
 
         pointing = obj_id[1:3]
         fieldno  = obj_id[0]
-        cube     = '/Volumes/DATABCKUP3/MUSE//candels-'+fielddic[fieldno]+'-'+pointing+\
-                   '/median_filtered_DATACUBE_candels-'+fielddic[fieldno]+'-'+pointing+'_v1.0.fits_effnoised.fits'
+        cube     = '/Volumes/DATABCKUP2/MUSE-Wide/data/'+\
+                   '/median_filtered_DATACUBE_candels-'+fielddic[fieldno]+'-'+pointing+'_v1.0.fits_effnoised_dcbgc.fits'
 
         if os.path.isfile(cube):
             if generatelinelists:
@@ -2180,6 +2180,7 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
                    '12113032','12202034','12204055','12205056','12207063','12210066','12211067','12212068','12213069',
                    '12221111','12222112','12306090','12307091','12316117','12318120','12331149','12401001','12403012',
                    '12404013','12405014']
+        #MUSEids = ['12133078','11503085','10414050','10806104','10509034']
         MUSEids_combined = MUSEids_combined + MUSEids
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # CIII between MUSE and 3D-HST
@@ -2210,4 +2211,5 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
                                      verbose=verbose,verbose_flux=verbose_flux)
 
     return fluxcats
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
