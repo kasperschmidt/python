@@ -2162,9 +2162,23 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
     fluxcats = cec.measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,measurefluxes=True)
 
     """
-    MUSEids_combined = []
+    MUSEids_combined = cec.getids(C3inMUSE=C3inMUSE,C3inbetween=C3inbetween,C3in3DHST=C3in3DHST)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    lines_manual = {}
+    lines_manual ['11503085'] = [ ['testman1','testman2'], [7501.99, 7502.99] ]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fluxcats = cec.measurelinefluxes(MUSEids_combined,lines_manual = lines_manual,clobber=clobber,
+                                     measurefluxes=measurefluxes,
+                                     verbose=verbose,verbose_flux=verbose_flux)
+
+    return fluxcats
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def getids(C3inMUSE=True,C3inbetween=False,C3in3DHST=False):
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # CIII in MUSE
+    MUSEids_combined = []
     if C3inMUSE:
         MUSEids = ['10105016','10109024','10110025','10111026','10112027','10212085','10213086','10214087','10215088',
                    '10219097','10301001','10302002','10305045','10306046','10308055','10309056','10310057','10311058',
@@ -2202,14 +2216,196 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
                    '11931070','11936075','11938077','11940079','12124068','12132077','12135080','12236133','12361203']
         MUSEids_combined = MUSEids_combined + MUSEids
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    return MUSEids_combined
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf',showids=False,verbose=True,
+                          line2plot='Lya',fluxcolumn='F_KRON',xrange=[-10000,25000],yrange=[-10000,25000],
+                          LSDCat='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits',
+                          SkeltonCat='/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'):
+    """
+    Compare measured fluxes (and other quantities) for a list of objects.
 
-    lines_manual = {}
-    lines_manual ['11503085'] = [ ['testman1','testman2'], [7501.99, 7502.99] ]
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    fluxcats = cec.measurelinefluxes(MUSEids_combined,lines_manual = lines_manual,clobber=clobber,
-                                     measurefluxes=measurefluxes,
-                                     verbose=verbose,verbose_flux=verbose_flux)
+    --- INPUT ---
+    objects
+    fluxcatdir
+    outname
+    showids
+    verbose
+    line2plot       Name of line to compare/look for in flux catalogs, i.e. from the LSDCat
+                    original_per_field_v2.1 outputs
+    fluxcolumn      Column name of flux columns to compare
+    LSDCat
+    SkeltonCat
 
-    return fluxcats
+
+    --- EXAMPLE OF USE ---
+    MUSEids = cec.getids(C3inMUSE=True,C3inbetween=False,C3in3DHST=False)
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_1KRON_C3inMUSEids_161031.pdf',fluxcolumn='F_KRON',verbose=True)
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_2KRON_C3inMUSEids_161031.pdf',fluxcolumn='F_2KRON',verbose=True)
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_3KRON_C3inMUSEids_161031.pdf',fluxcolumn='F_3KRON',verbose=True)
+
+
+    """
+    fielddic = {'1':'cdfs','2':'cosmos'}
+    if verbose: print ' - Loading data to compare objects with:'
+    if verbose: print '   LSDCat overview    : '+LSDCat
+    lsdcatdat  = pyfits.open(LSDCat)[1].data
+    if verbose: print '   Skelton phot       : '+SkeltonCat
+    skeltondat = pyfits.open(SkeltonCat)[1].data
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = outname
+    if verbose: print ' - Setting up plot '+plotname
+    fig = plt.figure(figsize=(6, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.10, top=0.95)
+    Fsize    = 10
+    lthick   = 1
+    marksize = 3
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('/')[-1].replace('_','\_'),fontsize=Fsize)
+
+    plt.plot([np.min(xrange+yrange),np.max(xrange+yrange)],
+             [np.min(xrange+yrange),np.max(xrange+yrange)],
+             ls='--',color='k',lw=lthick)
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    linenamedic = {}
+    linenamedic['Lya']    = 'Ly$\\alpha$ $\\lambda$1216'
+    # linenamedic['lyb']    = 'Ly$\\beta$ $\\lambda$1025'
+    # linenamedic['lyg']    = 'Ly$\gamma$ $\\lambda$973'
+    # linenamedic['nv1']    = 'NV $\\lambda$1239'
+    # linenamedic['nv2']    = 'NV $\\lambda$1243'
+    # linenamedic['cii']    = 'CII $\\lambda$1336'
+    # linenamedic['Siiv1']  = 'SiIV $\\lambda$1394'
+    # linenamedic['Siiv2']  = 'SiIV $\\lambda$1403'
+    # linenamedic['oiv1']   = 'OIV $\\lambda$1397'
+    # linenamedic['oiv2']   = 'OIV $\\lambda$1400'
+    # linenamedic['civ1']   = 'CIV $\\lambda$1548'
+    # linenamedic['civ2']   = 'CIV $\\lambda$1551'
+    # linenamedic['heii']   = 'HeII $\\lambda$1640'
+    # linenamedic['oiiib1'] = 'OIII] $\\lambda$1661'
+    # linenamedic['oiiib2'] = 'OIII] $\\lambda$1666'
+    # linenamedic['ciii1']  = '[CIII] $\\lambda$1907'
+    # linenamedic['ciii2']  = 'CIII] $\\lambda$1909'
+    # linenamedic['ciib']   = 'CII] $\\lambda$2326'
+    # linenamedic['mgii1']  = 'MgII] $\\lambda$2796'
+    # linenamedic['mgii2']  = 'MgII] $\\lambda$2803'
+    # linenamedic['oii1']   = '[OII] $\\lambda$3726'
+    # linenamedic['oii2']   = '[OII] $\\lambda$3729'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for objid in objects:
+        fluxcat  = False
+        fcsearch = fluxcatdir+objid+'_linelist_fluxes.fits'
+        if os.path.isfile(fcsearch): fluxcat = fcsearch
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print ' - Plotting fluxes for object '+objid
+        if fluxcat:
+            forcedat    = pyfits.open(fcsearch)[1].data
+            forceent    = np.where(forcedat['LINENAME'] == linenamedic[line2plot])[0]
+
+            if len(forceent) == 1:
+                forceline    = forcedat['LINENAME'][forceent][0]
+                forceflux    = forcedat[fluxcolumn][forceent]
+                forcefluxerr = forcedat[fluxcolumn+'_ERR'][forceent]
+
+                fieldno     = objid[0]
+                fieldid     = objid[1:3]
+                fieldname   = 'candels-'+fielddic[fieldno]+'-'+str(fieldid)
+                LSDCatpath  = '/Users/kschmidt/work/catalogs/MUSE_GTO/original_per_field_v2.1/'
+                LSDfieldcat = LSDCatpath+'cat_ident_'+fieldname+'_rid_fluxes_v2.1.fits'
+                LSDfluxdat  = pyfits.open(LSDfieldcat)[1].data
+                LSDCobjent  = np.where((LSDfluxdat['UNIQUE_ID'] == objid) & (LSDfluxdat['Identification'] == line2plot))[0]
+
+                if len(LSDCobjent) == 1:
+                    LSDCatflux    = LSDfluxdat[fluxcolumn][LSDCobjent]
+                    LSDCatfluxerr = LSDfluxdat[fluxcolumn+'_ERR'][LSDCobjent]
+
+                    plt.errorbar(LSDCatflux,forceflux,xerr=LSDCatfluxerr,yerr=forcefluxerr,color='k',ls='o',lw=lthick)
+
+                    if showids:
+                        plt.text(LSDCatflux,forceflux,str(objid),color='k',ha='left',va='bottom')
+                else:
+                    if verbose: print '   No entry in LSDCat (looked for '+objid+' and '+line2plot+') --> Skipping'
+            else:
+                if verbose: print '   No entry in force flux catalog (looked for '+linenamedic[line2plot]+') --> Skipping'
+        else:
+            if verbose: print '   No force flux catalog (looked for '+fcsearch+') --> Skipping'
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel(r'LSDCat flux; '+fluxcolumn.replace('_','\_')+'('+line2plot+') [1e-20 erg/s/cm$^2$]')
+    plt.ylabel(r'Force flux; '+fluxcolumn.replace('_','\_')+'('+forceline+') [1e-20 erg/s/cm$^2$]')
+
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+
+    #--------- LEGEND ---------
+    # plt.errorbar(-1,-1,xerr=None,yerr=None,fmt='o',lw=lthick,ecolor='white', markersize=marksize*2,
+    #              markerfacecolor='white',markeredgecolor = 'k',label='Ground-based spec')
+    #
+    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize},ncol=1,numpoints=1)
+    #                  #bbox_to_anchor=(1.25, 1.03))  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    if verbose: print '   Saving plot to',plotname
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+
+    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # if verbose: print ' - Plotting EWs for object '+objid
+    # if EWcat:
+    #     if verbose: print '   EW plotting not enabled yet --> Skipping'
+    # else:
+    #     if verbose: print '   No flux catalog found (looked for '+ecsearch+') --> Skipping'
+    #
+    #
+    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calculateEWs4objlist(objects,fluxcatdir='./',verbose=True):
+    """
+    Compare measured fluxes (and other quanteties) for a list of objects.
+
+    --- EXAMPLE OF USE ---
+
+    """
+
+    import fluxmeasurementsMUSEcubes as fmm
+
+    datadirectory   = './fluxAndEWmeasurements/'
+    fluxcatalogs    = ['11503085_linelist_fluxes.fits']
+    infodictionary  = {}
+    infodictionary['11503085_linelist_fluxes.fits']  = {}
+
+    #-- Lyalpha --
+    f775w_skelton    = 1.705693
+    f775werr_skelton = 0.033858
+    linerestwave     = 1215.6737
+    ABmag            = 25.0-2.5*np.log10(f775w_skelton)
+    ABmagerr         = (2.5/np.log(10)) * f775werr_skelton/f775w_skelton
+    bandwavelength   = 7.6485e+03
+
+    infodictionary['11503085_linelist_fluxes.fits']['11503085003'] = [linerestwave,ABmag,ABmagerr,bandwavelength]
+
+    #-- CIV --
+    f850lp_skelton    = 1.631849
+    f850lperr_skelton = 0.047236
+    linerestwave      = 1548.195
+    ABmag             = 25.0-2.5*np.log10(f850lp_skelton)
+    ABmagerr          = (2.5/np.log(10)) * f850lperr_skelton/f850lp_skelton
+    bandwavelength    = 9.1688e+03
+
+    infodictionary['11503085_linelist_fluxes.fits']['11503085013'] = [linerestwave,ABmag,ABmagerr,bandwavelength]
+
+    #-- Calucate EWs --
+    lineinfo = fmm.calculateEWs(fluxcatalogs,infodictionary)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
