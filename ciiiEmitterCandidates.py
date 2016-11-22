@@ -2174,7 +2174,7 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
     return fluxcatalogs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,measurefluxes=True,
-                             verbose=True,verbose_flux=False,clobber=False):
+                             generatelinelists=True,verbose=True,verbose_flux=False,clobber=False):
     """
     Wrapper for measurelinefluxes() listing the IDs to measure lines fluxes for and defining dictionary of any
     manual line positions.
@@ -2183,6 +2183,8 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
     import ciiiEmitterCandidates as cec
     fluxcats = cec.measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,measurefluxes=True)
 
+    fluxcats = cec.measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=True,C3in3DHST=True,measurefluxes=True)
+
     """
     MUSEids_combined = cec.getids(C3inMUSE=C3inMUSE,C3inbetween=C3inbetween,C3in3DHST=C3in3DHST)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2190,7 +2192,7 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
     lines_manual ['11503085'] = [ ['testman1','testman2'], [7501.99, 7502.99] ]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxcats = cec.measurelinefluxes(MUSEids_combined,lines_manual = lines_manual,clobber=clobber,
-                                     measurefluxes=measurefluxes,
+                                     measurefluxes=measurefluxes,generatelinelists=generatelinelists,
                                      verbose=verbose,verbose_flux=verbose_flux)
 
     return fluxcats
