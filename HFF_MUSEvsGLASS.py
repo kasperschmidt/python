@@ -55,8 +55,8 @@ def crossmatch_catalogs(verbose=True):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_redshifts(cmcat,zcat_muse,zcat_glass,r_match_tol=0.5,Nhdrcols_glass=30,
-                   idcol_muse='ID',idcol_glass='ID',zcol_muse='z',zcol_glass='redshift',
-                   plotname='./redshiftplot.pdf',zrange=[0.0,6.0],dzmark=0.25,show_IDs=False,verbose=True):
+                   idcol_muse='ID',idcol_glass='ID',zcol_muse='z',zcol_glass='redshift',Qzcol_glass='redshift_quality',
+                   plotname='./redshiftplot.pdf',zrange=[-1.1,6.7],dzmark=0.25,show_IDs=False,verbose=True):
     """
 
     Plot the redshift with matches in both MUSE and GLASS catalogs
@@ -135,7 +135,7 @@ def plot_redshifts(cmcat,zcat_muse,zcat_glass,r_match_tol=0.5,Nhdrcols_glass=30,
 
     plt.plot(zrange,zrange,'--k',lw=lthick)
 
-    if show_IDs: print ' id_MUSE  z_MUSE  id_GLASS  z_GLASS  dz'
+    if show_IDs: print ' id_MUSE  z_MUSE  id_GLASS  z_GLASS  dz  Qz_GLASS'
 
 
     for objent in goodmatch:
@@ -147,18 +147,31 @@ def plot_redshifts(cmcat,zcat_muse,zcat_glass,r_match_tol=0.5,Nhdrcols_glass=30,
 
         GLASSent = np.where(id_GLASScat == id_GLASS)[0]
         zGLASS   = float(dat_GLASS[zcol_glass][GLASSent][0])
+        QzGLASS  = float(dat_GLASS[Qzcol_glass][GLASSent][0])
 
         dz = np.abs(zMUSE - zGLASS)
+
         if dz < dzmark:
             color = 'green'
         else:
             color = 'red'
 
+        if zGLASS == -1:
+            color = 'blue'
+
         plt.errorbar(zMUSE,zGLASS,xerr=None,yerr=None,fmt='o',lw=lthick,
                      ecolor=color, markersize=marksize,markerfacecolor=color,markeredgecolor = 'k')
 
         if show_IDs:
-            print str("%10s" % id_MUSE),str("%8.4f" % zMUSE),str("%10s" % id_GLASS),str("%8.4f" % zGLASS),str("%8.5f" % dz)
+            infostring = str("%10s" % id_MUSE)+' '+str("%8.4f" % zMUSE)+' '+str("%10s" % id_GLASS)+' '+\
+                         str("%8.4f" % zGLASS)+' '+str("%8.5f" % dz)+str("%6.2f" % QzGLASS)
+
+            if zGLASS >= 0:
+                print ' '+infostring
+            else:
+                pass
+                #print '#'+infostring
+
             #plt.text(zMUSE,zGLASS,' idMUSE='+str(id_MUSE)+', idGLASS='+str(id_GLASS),fontsize=Fsize)
 
     plt.xlabel(r'$z$ MUSE', fontsize=Fsize)
