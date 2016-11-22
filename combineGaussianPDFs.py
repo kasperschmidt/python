@@ -13,11 +13,12 @@ import scipy.interpolate as si
 import scipy.signal
 import numpy as np
 import pdb
+import sys
 import matplotlib.pyplot as plt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoints=1000,
                               outputname='gaussvaluerep.pdf',skewparam=0,sigrange=5.0,
-                              xpriorhat=False,legendlocation='upper left',
+                              xpriorhat=False,legendlocation='upper left',usexlog=False,logxlow=1e-3,
                               magnifications=False,magerrors=False,verbose=True):
     """
 
@@ -33,16 +34,18 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     errors          The estiamted uncertainteis on the measurements
     Nsigma          The number of sigma the errors represent
     axislabel       Label to put on x-axis of plot
-    Npoints         Number of points to generate for each gaussian. Will be generate out to +/-5 sigma
+    Npoints         Number of points to generate for each gaussian. Will be generate out to +/-sigrange sigma
     outputname      Name of output figure to stor plot to
     sewparam        To plot skewed Gaussians, provide list of skewness parameters
-    sigrange        Range of sigmas to consider around gaussian means, i.e., mena+/-sigrange.
-                    This is also the range consider to be 'within agreement' with each other, i.e., if
-                    andy of the measurements differ by more than sigrange it will drive the combined product to 0.
+    sigrange        Range of sigmas to consider around gaussian means, i.e., mean+/-sigrange.
+                    This is also the range considered to be 'within agreement' with each other, i.e., if
+                    any of the measurements differ by more than sigrange it will drive the combined product to 0.
     xpriorhat       Use this keyword to put a top-hat prior on the gaussians by restricting the axxepted xvalues
                     to a range [xmingood,xmaxgood]. This is useful for, for instance restrcting fluxes to be
                     postive definit, by setting xpriorhat=[0,1e5]
     legendlocation  Providing the location of the legend within the plot. If False no legend will be plotted
+    usexlog         To plot the x-axis in log set usexlog=True.
+    logxlow         If usexlog=True use this keyword to provide the lower bound of the log-axes
     magnifications  Provide a list of lens magnifications if the measurements should be corrected for this.
     magerrors       The estimated uncertainty on the lensing magnifications.
     versose         Toggle verbosity
@@ -72,6 +75,11 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     errors = [0.2,0.3,0.25,0.5]
     sumvals, prodvals = cgp.plotGauss1DRepresentation(values,errors,axislabel='test',sigrange=3)
 
+    values  = [2,2]
+    errors  = [1.2,1.2]
+    mags    = [1,10]
+    magerrs = [0,3]
+    sumvals, prodvals = cgp.plotGauss1DRepresentation(values,errors,magnifications=mags,magerrors=magerrs,sigrange=3,xpriorhat=[0,8],outputname='gaussvaluerep_161115.pdf',usexlog=False,logxlow=1e-2,legendlocation='upper right')
 
     """
     values        = np.asarray(values) # make sure values is a numpy array
@@ -88,32 +96,34 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     for vv, val in enumerate(values):
         xlow       = val-errors[vv]/Nsigma*sigrange
         xhigh      = val+errors[vv]/Nsigma*sigrange
-        xvals      = np.linspace(xlow,xhigh,Npoints)
+        xvals_obs  = np.linspace(xlow,xhigh,Npoints)
         param      = val, errors[vv], skewparam
         if not magnifications:
-            gaussvals  = cgp.gauss_skew(xvals,*param)
+            gaussvals  = cgp.gauss_skew(xvals_obs,*param)
+            xvals      = xvals_obs
         else:
             if len(np.atleast_1d(magnifications)) == 1:
                 magnifications = np.atleast_1d(magnifications).tolist()*Nmeasurements
             if len(np.atleast_1d(magerrors)) == 1:
                 magerrors = np.atleast_1d(magerrors).tolist()*Nmeasurements
 
-            gaussvals  = cgp.correct4magnification(xvals,val,errors[vv],skewparam,
-                                                   magnifications[vv],magerrors[vv],apply=False)
+            xvals_true, gaussvals, gaussobs = cgp.correct4magnification(xvals_obs,val,errors[vv],
+                                                                        magnifications[vv],magerrors[vv],
+                                                                        Nsigma=5.0,Npoints=Npoints)
+            xvals = xvals_true
 
         if xpriorhat:
             gaussvals[xvals < xpriorhat[0]] = 0.0
             gaussvals[xvals > xpriorhat[1]] = 0.0
 
         gaussreps[str(vv)] = xvals, gaussvals
-
         xmin = np.min([xmin,np.min(xvals)])
         xmax = np.max([xmax,np.max(xvals)])
 
     xrange   = [xmin,xmax]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Generating combined profile of all gaussians '
-    Npointscomb = 1000
+    Npointscomb = Npoints
     xvals_comb  = np.linspace(xrange[0],xrange[1],Npointscomb)
 
     gaussarray  = np.zeros([Nmeasurements,Npointscomb])
@@ -271,7 +281,13 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     if skewparam != 0: ylab = 'Skewed '+ylab
     plt.ylabel(ylab, fontsize=Fsize)
 
-    plt.xlim(xrange)
+
+    if usexlog:
+        plt.xlim([logxlow,xrange[1]])
+        plt.xscale('log')
+    else:
+        plt.xlim(xrange)
+
     plt.ylim([0,np.max(gauss_comb_sum)*1.3])
 
     #-------------------------------------------------------
@@ -313,10 +329,14 @@ def gauss_skew(x, *p):
 
     return gaussskew_pdf
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def correct4magnification(xvals,mean,sigma,alpha,mu,muerr,apply=False,verbose=True):
+def correct4magnification_convolve(xvals,mean,sigma,alpha,mu,muerr,apply=False,verbose=True):
     """
-    returning a skewed gaussian with magnification applied to it.
-    Magnification is modeled as the convolution of the measurement Gaussian with a
+    returning a skewed gaussian corrected for lensing magnification.
+    Magnification is modeled as
+    x
+    x
+    x
+    the convolution of the measurement Gaussian with a
     non-skewed Gaussian for the magnification to account for uncetainties in magnification
 
     --- INPUT ---
@@ -327,7 +347,7 @@ def correct4magnification(xvals,mean,sigma,alpha,mu,muerr,apply=False,verbose=Tr
                Used as mean of Gaussian representation
     muerr      Approximate symmetric uncertainty on the magnification.
                Used as standard deviation of Gaussian representation
-    apply      If apply is True the magnification provided witll be _applied_
+    apply      If apply is True the magnification provided will be _applied_
                to the measurement. I.e., instead of deconvolving the two signals,
                they will be convolved. In the case of Gaussians this means:
                mean_conv = mean1 + mean2; sigma_conv = sqrt(sigma1**2 + sigma2**2)
@@ -354,7 +374,45 @@ def correct4magnification(xvals,mean,sigma,alpha,mu,muerr,apply=False,verbose=Tr
     pdb.set_trace()
     gauss_interp     = si.interp1d(xvals,gauss,bounds_error=False,fill_value=0.0)(xvals_comb)
 
-    return gauss_exvl_mag
+    return gaussskew_pdf_exvl_mag
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def correct4magnification(xvals,Fobs,Ferrobs,mu,muerr,Nsigma=5.0,Npoints=100,verbose=True):
+    """
+    Returning a gaussian corrected for lensing magnification.
+    Magnification is accounted for by determining the intrinsic true flux by
+
+    Ftrue       = Fobs/mu
+    Ferrtrue    = sqrt[ (Ferrobs**2 - Ftrue**2 * muerr*2) / mu**2 ]
+
+    --- INPUT ---
+    xvals      xrange for non-corrected Guassian representation of measurement
+    Fobs       Mean of measurement Gaussian
+    Ferrobs    Standard deviation of measurement Gaussian
+    mu         Magnification to apply to measurement.
+               Used to determine mean of Gaussian representation
+    muerr      Symmetric uncertainty on the magnification.
+               Used to determine standard deviation of Gaussian representation
+    Nsigma     Number of sigmas with of gaussian to return
+    verbose    Toggle verbosity
+
+    """
+
+    p_obs       = Fobs,Ferrobs,0.0
+    gauss_obs   = cgp.gauss_skew(xvals,*p_obs)
+
+    Ftrue       = float(Fobs)/float(mu)
+    if (Ferrobs**2. - Ftrue**2. * muerr*2.) < 0:
+        sys.exit('Something is not right; Ferrobs**2 < Ftrue**2. * muerr*2.; (Ferrobs='+str(Ferrobs)+
+                 ', Ftrue='+str(Ftrue)+', muerr=,'+str(muerr)+')')
+    else:
+        Ferrtrue    = np.sqrt( (Ferrobs**2. - Ftrue**2. * muerr*2.) / mu**2. )
+    p_true      = Ftrue,Ferrtrue,0.0
+    xlow_true   = Ftrue-Ferrtrue*Nsigma
+    xhigh_true  = Ftrue+Ferrtrue*Nsigma
+    xvals_true  = np.linspace(xlow_true,xhigh_true,Npoints)
+    gauss_true  = cgp.gauss_skew(xvals_true,*p_true)
+
+    return xvals_true, gauss_true, gauss_obs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def deconvolvetest():
     """
