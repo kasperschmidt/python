@@ -8,6 +8,7 @@ import pyfits
 import sys
 import pdb
 import crossmatch as cm
+from astropy.cosmology import FlatLambdaCDM
 import matplotlib.pyplot as plt
 import matplotlib
 import NEOGALmodels as nm
@@ -39,9 +40,109 @@ def load_model(Zgas,filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_
     if verbose: print '   ... successful'
     return modeldata
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linenames():
+    """
+    Return dictionary that can convert NEGOAL column names to flux catalog LINENAMEs
+
+    --- EXAMPLE OF USE ---
+    import NEOGALmodels as nm
+    linenamesdic = nm.linenames()
+
+    """
+    linenamesdic = {}
+
+    linenamesdic['ovi1']   = ['OVI $\\lambda$1032'                , 1031.9261,         'right'      , 'Morton1991tab2']
+    linenamesdic['ovi2']   = ['OVI $\\lambda$1038'                , 1037.6167,         'left'       , 'Morton1991tab2']
+    linenamesdic['lyb']    = ['Ly$\\beta$ $\\lambda$1025'         , 1025.7219,         'right'      , 'Morton1991tab5']
+    linenamesdic['lya']    = ['Ly$\\alpha$ $\\lambda$1216'        , 1215.6737,         'right'      , 'Morton1991tab5']
+    linenamesdic[ 'NV1240']    = ['NV $\\lambda$1239'                 , 1238.821 ,         'right'      , 'Morton1991tab5']
+    linenamesdic['nv2']    = ['NV $\\lambda$1243'                 , 1242.804 ,         'left'       , 'Morton1991tab5']
+    linenamesdic['cii']    = ['CII $\\lambda$1336'                , 1335.6627,         'right'      , 'Morton1991tab5']
+    linenamesdic['Siiv1']  = ['SiIV $\\lambda$1394'               , 1393.755 ,         'right'      , 'Morton1991tab5']
+    linenamesdic['oiv1']   = ['OIV $\\lambda$1397'                , 1397.232 ,         'right'      , 'Morton1991tab5']
+    linenamesdic['oiv2']   = ['OIV $\\lambda$1400'                , 1399.780 ,         'left'       , 'Morton1991tab5']
+    linenamesdic['Siiv2']  = ['SiIV $\\lambda$1403'               , 1402.770 ,         'left'       , 'Morton1991tab5']
+    linenamesdic['CIV1548']   = ['CIV $\\lambda$1548'                , 1548.195 ,         'right'      , 'Morton1991tab5']
+    linenamesdic['CIV1551']   = ['CIV $\\lambda$1551'                , 1550.770 ,         'left'       , 'Morton1991tab5']
+    linenamesdic['HeII1640']   = ['HeII $\\lambda$1640'               , 1640.420 ,         'right'      , 'vandenberk+2001']
+    linenamesdic['OIII1661'] = ['OIII] $\\lambda$1661'              , 1660.809 ,         'right'      , 'Morton1991tab2']
+    linenamesdic['OIII1666'] = ['OIII] $\\lambda$1666'              , 1666.150 ,         'left'       , 'Morton1991tab2']
+    linenamesdic['ciii1']  = ['[CIII] $\\lambda$1907'             , 1907.    ,         'right'      , 'stark+2015']
+    linenamesdic['CIII1908']  = ['CIII] $\\lambda$1909'              , 1909.    ,         'left'       , 'stark+2015']
+    linenamesdic['ciib']   = ['CII] $\\lambda$2326'               , 2326.113 ,         'right'      , 'Morton1991tab5']
+    linenamesdic['mgii1']  = ['MgII] $\\lambda$2796'              , 2795.528 ,         'right'      , 'Morton1991tab5']
+    linenamesdic['mgii2']  = ['MgII] $\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
+    linenamesdic['OII3727']   = ['[OII] $\\lambda$3726'              , 3726.    ,         'right'      , 'Pradhan2006']
+    linenamesdic['oii2']   = ['[OII] $\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
+
+    return linenamesdic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRON',
+                                datadir='/Users/kschmidt/work/MUSE/ciii_candidates/fluxAndEWmeasurements/'
+                                        'ForceFluxC3inMUSE_fullrun161031/',
+                                redshiftcat='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits',
+                                convert_Flux2Lbol=False,verbose=True):
+    """
+    Loading the flux output from an LSDcat run and potentially turning it into bolometric luminoisity.
+    Returning data array to be plotted on NEGOAL diagrams
+
+    --- EXAMPLE OF USE ---
+    import NEOGALmodels as nm
+    lumarray = nm.load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRON',convert_Flux2Lbol=True)
+
+
+    """
+    if verbose: print ' - Loading redshift catalog: \n   '+redshiftcat
+    z_data       = pyfits.open(redshiftcat)[1].data
+    linenamesdic = nm.linenames()
+    if verbose: print ' - Grabbing files with flux measurements in data directory: \n   '+datadir
+    fluxfiles = glob.glob(datadir+'*_linelist_fluxes.fits')
+    Nfiles    = len(fluxfiles)
+    if Nfiles == 0:
+        sys.exit("Didn't find any *_linelist_fluxes.fits files in datadir="+datadir)
+
+    outputarray = np.ones([Nfiles,11])*-99
+
+    for ff, ffile in enumerate(fluxfiles):
+        f_data   = pyfits.open(ffile)[1].data
+        objid    = ffile.split('/')[-1][:8]
+        objent   = np.where(z_data['UNIQUE_ID'] == objid)[0]
+        if len(objent) != 1:
+            if verbose: print ' - WARNING Found '+str(len(objent))+' matches to '+str(objid)+' in redshift catalog'
+            continue
+
+        line1name = linenamesdic[line1][0]
+        line2name = linenamesdic[line2][0]
+        line1ent = np.where(f_data['LINENAME'] == line1name)[0]
+        line2ent = np.where(f_data['LINENAME'] == line2name)[0]
+        if (len(line1ent) != 1) or (len(line2ent) != 1):
+            if verbose: print ' - WARNING No match in flux table for '+line1+' and '+line2+' for '+str(objid)
+            continue
+
+        redshift     = z_data['REDSHIFT'][objent]
+        redshifterr  = z_data['REDSHIFT_ERR'][objent]
+        lineflux1    = f_data[fluxcol][line1ent]
+        linefluxerr1 = f_data[fluxcol+'_ERR'][line1ent]
+        lineflux2    = f_data[fluxcol][line2ent]
+        linefluxerr2 = f_data[fluxcol+'_ERR'][line2ent]
+
+        if convert_Flux2Lbol:
+            Lbol1, Lbolerr1 = nm.convert_Fline2Lbol(lineflux1,linefluxerr1,redshift,verbose=False)
+            Lbol2, Lbolerr2 = nm.convert_Fline2Lbol(lineflux2,linefluxerr2,redshift,verbose=False)
+        else:
+            Lbol1, Lbolerr1 = -99, -99
+            Lbol2, Lbolerr2 = -99, -99
+
+        outputarray[ff,:] = int(objid), redshift, redshifterr, \
+                            lineflux1, linefluxerr1, lineflux2, linefluxerr2, \
+                            Lbol1, Lbolerr1, Lbol2, Lbolerr2,
+
+    return outputarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pdf',
               Zgas=False,logU=False,xid=0.3,nh=100,COratio=0.38,Mcutoff=100,
-              logx=False,logy=False,logp1=False,logp2=False,fixxrange=False,fixyrange=False,verbose=True):
+              logx=False,logy=False,logp1=False,logp2=False,fixxrange=False,fixyrange=False,
+              showobs=False,verbose=True):
     """
     Plotting the model grids (in luminoisity) for two lines against each other
 
@@ -77,6 +178,8 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     logp2     Plot colors of varying model parameter 2 in log
     fixxrange To fix the x plotting range provide [ymin,ymax] with this keyword
     fixyrange To fix the y plotting range provide [ymin,ymax] with this keyword
+    showobs   To overlay/show observed measurements provide an array with these data with shape (Nobjects,11)
+              where the 11 columns contain:
     verbose   Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -85,6 +188,14 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     nm.plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',Zgas=False,logU=False,xid=0.3,nh=100,COratio=0.38,Mcutoff=100,logx=True,logy=True,logp1=True)
 
     nm.plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',Zgas=False,logU=False,xid=0.1,nh=10,COratio=0.1,Mcutoff=100,logx=True,logy=True,logp1=True)
+
+
+    line1     = 'CIV1548'
+    line2     = 'CIII1908'
+    modeldata = nm.load_model('combined',verbose=True)
+    obsdata   = nm.load_fluxes_LSDCatForcedRun(line1=line1,line2=line2,fluxcol='F_3KRON',convert_Flux2Lbol=True)
+    nm.plot_LvsL(modeldata,line1=line1,line2=line2,Zgas=False,logU=False,xid=0.1,nh=10,COratio=0.1,Mcutoff=100,logx=True,logy=True,logp1=True,showobs=obsdata)
+
 
     """
     NFalse    = 0
@@ -147,7 +258,7 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     if not Mcutoff:
         Mcutoffrange  = [0.0,400.0]
         NFalse        = NFalse + 1.0
-        inforstr      = inforstr+' Mcutoff:vary, '
+        #inforstr      = inforstr+' Mcutoff:vary, '
         freeparam.append('mup')
     else:
         Mcutoffrange  = [Mcutoff-1.0,Mcutoff+1.0]
@@ -273,8 +384,8 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
                      marker='o',lw=0, markersize=marksize*1.5,
                      markerfacecolor=p2col,ecolor=p2col,markeredgecolor = 'k',zorder=20)
 
-    plt.xlabel(r'L$_\textrm{'+line1+'}$ / [1e33 erg/s]/[Msun/yr]')
-    plt.ylabel(r'L$_\textrm{'+line2+'}$ / [1e33 erg/s]/[Msun/yr]')
+    plt.xlabel(r'L$_\textrm{'+line1+'}$ / [3.826$\times$1e33 erg/s]/[Msun/yr]')
+    plt.ylabel(r'L$_\textrm{'+line2+'}$ / [3.826$\times$1e33 erg/s]/[Msun/yr]')
 
     plt.xlim(xrange)
     plt.ylim(yrange)
@@ -329,6 +440,7 @@ def plot_LvsL_multiple(line1='CIV1548',line2='CIII1908',line1range=[1e3,1e8],lin
 
     if verbose: print ' - With the restriction Nfalse=2 the setup will results in '+str(Nplots)+\
                       ' plots (if model data allows)'
+    if verbose: print ' - These will be saved to the output directory: '+outputdir
     for pp, perm in enumerate(permutations_with2false):
         Zval     = perm[0]
         Uval     = perm[1]
@@ -348,7 +460,7 @@ def plot_LvsL_multiple(line1='CIV1548',line2='CIII1908',line1range=[1e3,1e8],lin
 
         if verbose:
             plotno    = pp+1
-            infostr = ' - Generating plot '+str("%.4d" % plotno)+'/'+str("%.4d" % Nplots)+': '+plotname+'  '
+            infostr = ' - Generating plot '+str("%.4d" % plotno)+'/'+str("%.4d" % Nplots)+': '+plotname.split('/')[-1]+'    '
             sys.stdout.write("%s\r" % infostr)
             sys.stdout.flush()
 
@@ -400,11 +512,29 @@ def combine_modeloutputs(outputname='nebular_emission_Zcombined.txt',
 
     fout.close()
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def convert_Fline2Lbol(Fline,redshift,verbose=True):
+def convert_Fline2Lbol(lineflux,linefluxerr,redshift,verbose=True):
     """
     Converting an observed integrated line flux [erg/s/cm2] to bolometric luminoisity [erg/s]
-    """
 
+    --- EXAMPLE OF USE ---
+    import NEOGALmodels as nm
+    LbolLsun, LbolLsunerr = nm.convert_Fline2Lbol(2000,100,4.1)
+
+    """
+    cosmo       = FlatLambdaCDM(H0=70, Om0=0.3)
+    if verbose: print ' - Estimating bolometric luminoisity for flat standard cosmology (H0=70, Om0=0.3, OL0=0.7)'
+    DL          = cosmo.luminosity_distance(redshift).value
+    # DLplus    = cosmo.luminosity_distance(redshift+redshifterr).value
+    # DLminus   = cosmo.luminosity_distance(redshift-redshifterr).value
+    Mpc2cm      = 3.086                          # 10**24 cm/Mpc
+    Asphere     = 4*np.pi*(DL*Mpc2cm)**2         # 10**48 cm2
+    Lbol        = lineflux*Asphere               # 10**28 erg/s ; assuming line fluxes are in 10**-20 erg/s/cm2
+    Lbolerr     = linefluxerr*Asphere            # 10**28 erg/s ; assuming line fluxes are in 10**-20 erg/s/cm2
+    LbolLsun    = Lbol/3.826*10**-5              # in units of Lbol_sun = 3.826*10**33 erg/s
+    LbolLsunerr = Lbolerr/3.826*10**-5           # in units of Lbol_sun = 3.826*10**33 erg/s
+    if verbose: print ' - Retunring luminoisity in units of Lbol_sun = 3.826e33 erg/s'
+    if verbose: print ' - Result is: '+str(LbolLsun)+' +/- '+str(LbolLsunerr)+' [3.826e33 erg/s]'
+    return LbolLsun, LbolLsunerr
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def convert_Lbol2Fline(Lbol,redshift,verbose=True):
     """
