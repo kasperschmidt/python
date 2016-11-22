@@ -1928,7 +1928,7 @@ def plot_MUSElya_forsample(MUSEidlist,redshiftlist,voffsetlist=0.0,outputdir='./
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_EWliteraturecomparison(EWcat='/Users/kschmidt/work/catalogs/EWliteraturecatalog.txt',
-                                redshiftcolor=False,plotpath='./',verbose=True):
+                                redshiftcolor=True,plotpath='./',plotOuterSymbol=True,verbose=True):
     """
     Plot EW sample from literature using scrips in GitHub/GLASS/GrismReduction/rxj2248_BooneBalestraSource.py
 
@@ -1937,26 +1937,48 @@ def plot_EWliteraturecomparison(EWcat='/Users/kschmidt/work/catalogs/EWliteratur
 
     """
     if verbose: print ' - Load data from '+EWcat
-    ewdat = np.genfromtxt(EWcat,dtype=None,skip_header=23,names=True,comments='#')
+    ewdat = np.genfromtxt(EWcat,dtype=None,skip_header=27,names=True,comments='#')
 
     xlabel     = 'EW( Ly$\\alpha$ ) / [\\AA]'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    xline      = 'lya'
+    yline      = 'ciii'
+    plotname   = plotpath+'literatureEWs_'+xline+'VS'+yline+'.pdf'
+    if redshiftcolor: plotname = plotname.replace('.pdf','_zcol.pdf')
+    ylabel     = 'EW( CIII] ) / [\\AA]'
+
+    goodent    = np.where((ewdat['ew_'+xline] != -9999) & (ewdat['ew_'+yline] != -9999) &
+                          (ewdat['ew_'+xline] != -99) & (ewdat['ew_'+yline] != -99))[0]
+    if len(goodent) > 0:
+        xrange     = [-45,220]#1000]
+        yrange     = [-5,80]
+        xrangezoom = [-20,40]
+        yrangezoom = [-4,12]
+        zcut       = [2.8,3.9]
+
+        bbs.plot_EWcatalog(xline,yline,ewdat[goodent],plotname,xlabel,ylabel,
+                           xrange,yrange,xrangezoom,yrangezoom,zcut=zcut,
+                           plotOuterSymbol=plotOuterSymbol,redshiftcolor=redshiftcolor,verbose=verbose)
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     xline      = 'lya'
     yline      = 'civ'
     plotname   = plotpath+'literatureEWs_'+xline+'VS'+yline+'.pdf'
     if redshiftcolor: plotname = plotname.replace('.pdf','_zcol.pdf')
-    ylabel     = 'EW( CIV$\\lambda$1548\AA\ ) / [\\AA]'
+    ylabel     = 'EW( CIV ) / [\\AA]'
 
     goodent    = np.where((ewdat['ew_'+xline] != -9999) & (ewdat['ew_'+yline] != -9999) &
                           (ewdat['ew_'+xline] != -99) & (ewdat['ew_'+yline] != -99))[0]
     if len(goodent) > 0:
-        xrange     = [-23,70]
-        yrange     = [-5,32]
+        xrange     = [-45,220]#1000]
+        yrange     = [-5,45]
         xrangezoom = [-20,60]
         yrangezoom = [-4,-1.5]
+        zcut       = [2.8,3.9]
 
         bbs.plot_EWcatalog(xline,yline,ewdat[goodent],plotname,xlabel,ylabel,
-                           xrange,yrange,xrangezoom,yrangezoom,redshiftcolor=redshiftcolor,verbose=verbose)
+                           xrange,yrange,xrangezoom,yrangezoom,zcut=zcut,
+                           plotOuterSymbol=plotOuterSymbol,redshiftcolor=redshiftcolor,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst,verbose=True,
@@ -2221,7 +2243,7 @@ def getids(C3inMUSE=True,C3inbetween=False,C3in3DHST=False):
 def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf',showids=False,verbose=True,
                           line2plot='Lya',fluxcolumn='F_KRON',xrange=[-10000,25000],yrange=[-10000,25000],
                           LSDCat='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits',
-                          SkeltonCat='/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'):
+                          tdhstMatch='/Users/kschmidt/work/MUSE/candelsCDFS_3DHST/MUSECDFS_z0p0-7p0_cmtol10p0_v2p1_3DHSTinfo.fits',tdhstcol=False,tdhstMatchTol=0.5,markobj=False):
     """
     Compare measured fluxes (and other quantities) for a list of objects.
 
@@ -2235,14 +2257,25 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
                     original_per_field_v2.1 outputs
     fluxcolumn      Column name of flux columns to compare
     LSDCat
-    SkeltonCat
-
+    tdhstMatch      Catalog containing match of MUSE-Wide sources to the 3D-HST data
+    tdhstcol        If a column name from the 3D-HST catalogs is provided, this will be plotted on the x-axis.
+                    Use a list of [clon_name,error_name] to specify what to plot.
+    tdhstMatchTol   Tolerance on matches to 3D-HST catalogs.
+    markobj         Provide list of objects to mark their points with red color for easy recognition
 
     --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
     MUSEids = cec.getids(C3inMUSE=True,C3inbetween=False,C3in3DHST=False)
-    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_1KRON_C3inMUSEids_161031.pdf',fluxcolumn='F_KRON',verbose=True)
-    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_2KRON_C3inMUSEids_161031.pdf',fluxcolumn='F_2KRON',verbose=True)
-    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_3KRON_C3inMUSEids_161031.pdf',fluxcolumn='F_3KRON',verbose=True)
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_Lya_1KRON_C3inMUSEids.pdf',fluxcolumn='F_KRON',fluxcatdir='./ForceFluxC3inMUSE_fullrun161031/',xrange=[-500,15000],yrange=[-500,15000])
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_Lya_2KRON_C3inMUSEids.pdf',fluxcolumn='F_2KRON',fluxcatdir='./ForceFluxC3inMUSE_fullrun161031/',xrange=[0,25000],yrange=[-5000,25000])
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_Lya_3KRON_C3inMUSEids.pdf',fluxcolumn='F_3KRON',fluxcatdir='./ForceFluxC3inMUSE_fullrun161031/',xrange=[0,25000],yrange=[-5000,25000],showids=True)
+
+
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_CIV_1KRON_C3inMUSEids.pdf',line2plot='CIV',fluxcolumn='F_KRON',fluxcatdir='./ForceFluxC3inMUSE_fullrun161031/',xrange=[-500,15000],yrange=[-500,15000])
+
+
+    cec.plot_fluxmeasurements(MUSEids,outname='./fluxcomp_Lya_1KRON_C3inMUSEids_Mass.pdf',line2plot='Lya',fluxcolumn='F_KRON',fluxcatdir='./ForceFluxC3inMUSE_fullrun161031/',tdhstcol=['lmass'],xrange=[7,12],yrange=[-500,15000],showids=True)
+
 
 
     """
@@ -2250,10 +2283,11 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
     if verbose: print ' - Loading data to compare objects with:'
     if verbose: print '   LSDCat overview    : '+LSDCat
     lsdcatdat  = pyfits.open(LSDCat)[1].data
-    if verbose: print '   Skelton phot       : '+SkeltonCat
-    skeltondat = pyfits.open(SkeltonCat)[1].data
+    if verbose: print '   3D-HST match info : '+tdhstMatch
+    tdhstdat = pyfits.open(tdhstMatch)[1].data
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = outname
+    if showids: plotname = plotname.replace('.pdf','_wIDs.pdf')
     if verbose: print ' - Setting up plot '+plotname
     fig = plt.figure(figsize=(6, 5))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.10, top=0.95)
@@ -2266,7 +2300,8 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
     plt.rc('ytick', labelsize=Fsize)
     plt.clf()
     plt.ioff()
-    #plt.title(plotname.split('/')[-1].replace('_','\_'),fontsize=Fsize)
+    if tdhstcol:
+        plt.title('Match between MUSE-Wide and 3D-HST $<$ '+str(tdhstMatchTol)+'arcsec',fontsize=Fsize)
 
     plt.plot([np.min(xrange+yrange),np.max(xrange+yrange)],
              [np.min(xrange+yrange),np.max(xrange+yrange)],
@@ -2285,7 +2320,7 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
     # linenamedic['Siiv2']  = 'SiIV $\\lambda$1403'
     # linenamedic['oiv1']   = 'OIV $\\lambda$1397'
     # linenamedic['oiv2']   = 'OIV $\\lambda$1400'
-    # linenamedic['civ1']   = 'CIV $\\lambda$1548'
+    linenamedic['CIV']   = 'CIV $\\lambda$1548'
     # linenamedic['civ2']   = 'CIV $\\lambda$1551'
     # linenamedic['heii']   = 'HeII $\\lambda$1640'
     # linenamedic['oiiib1'] = 'OIII] $\\lambda$1661'
@@ -2299,11 +2334,25 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
     # linenamedic['oii2']   = '[OII] $\\lambda$3729'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for objid in objects:
+        if tdhstcol:
+            tdhstent    = np.where(tdhstdat['id_MUSE'] == objid)[0]
+            tdhstid     = tdhstdat['id_3DHST'][tdhstent]
+            tdhstRmatch = tdhstdat['r_match_arcsec'][tdhstent]
+            if tdhstRmatch <= tdhstMatchTol:
+                plottdhst = True
+            else:
+                if verbose: print ' - Poor match (tdhstMatchTol='+str(tdhstMatchTol)+') to 3D-HST catalog for '+objid
+                plottdhst = False
+
         fluxcat  = False
         fcsearch = fluxcatdir+objid+'_linelist_fluxes.fits'
         if os.path.isfile(fcsearch): fluxcat = fcsearch
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print ' - Plotting fluxes for object '+objid
+        pointcol = 'black'
+        if objid in markobj:
+            pointcol = 'red'
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if fluxcat:
             forcedat    = pyfits.open(fcsearch)[1].data
             forceent    = np.where(forcedat['LINENAME'] == linenamedic[line2plot])[0]
@@ -2321,16 +2370,51 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
                 LSDfluxdat  = pyfits.open(LSDfieldcat)[1].data
                 LSDCobjent  = np.where((LSDfluxdat['UNIQUE_ID'] == objid) & (LSDfluxdat['Identification'] == line2plot))[0]
 
-                if len(LSDCobjent) == 1:
-                    LSDCatflux    = LSDfluxdat[fluxcolumn][LSDCobjent]
-                    LSDCatfluxerr = LSDfluxdat[fluxcolumn+'_ERR'][LSDCobjent]
+                if tdhstcol:
+                    if plottdhst:
+                        tdhstval = tdhstdat[tdhstcol[0]][tdhstent]
+                        try:
+                            tdhsterr = tdhstdat[tdhstcol[1]][tdhstent]
+                        except:
+                            tdhsterr = None
 
-                    plt.errorbar(LSDCatflux,forceflux,xerr=LSDCatfluxerr,yerr=forcefluxerr,color='k',ls='o',lw=lthick)
+                        if verbose: print ' - Plotting quanteties for object '+objid
+                        if np.isfinite(tdhstval):
+                            dxval = np.abs(xrange[1]-xrange[0])*0.05
+                            dyval = np.abs(yrange[1]-yrange[0])*0.05
+                            if tdhstval < xrange[0]:
+                                plt.arrow(xrange[0]+dxval, forceflux[0], -dxval*0.66, 0,
+                                          head_width=dyval*0.33, head_length=dxval*0.33, fc=pointcol, ec=pointcol)
 
-                    if showids:
-                        plt.text(LSDCatflux,forceflux,str(objid),color='k',ha='left',va='bottom')
+                                xvalplot = xrange[0]+dxval
+                                haval    = 'left'
+                            elif tdhstval > xrange[1]:
+                                plt.arrow(xrange[1]-dxval, forceflux[0], dxval*0.66, 0,
+                                          head_width=dyval*0.33, head_length=dxval*0.33, fc=pointcol, ec=pointcol)
+
+                                xvalplot = xrange[1]-dxval
+                                haval    = 'right'
+                            else:
+                                plt.errorbar(tdhstval,forceflux,xerr=tdhsterr,yerr=forcefluxerr,color=pointcol,
+                                             ls='o',lw=lthick)
+                                xvalplot = tdhstval
+                                haval    = 'left'
+
+                            if showids:
+                                plt.text(xvalplot,forceflux,str(objid),color=pointcol,ha=haval,va='bottom')
                 else:
-                    if verbose: print '   No entry in LSDCat (looked for '+objid+' and '+line2plot+') --> Skipping'
+                    if len(LSDCobjent) == 1:
+                        LSDCatflux    = LSDfluxdat[fluxcolumn][LSDCobjent]
+                        LSDCatfluxerr = LSDfluxdat[fluxcolumn+'_ERR'][LSDCobjent]
+
+                        if verbose: print ' - Plotting fluxes for object '+objid
+                        plt.errorbar(LSDCatflux,forceflux,xerr=LSDCatfluxerr,yerr=forcefluxerr,color=pointcol,
+                                     ls='o',lw=lthick)
+
+                        if showids:
+                            plt.text(LSDCatflux,forceflux,str(objid),color=pointcol,ha='left',va='bottom')
+                    else:
+                        if verbose: print '   No entry in LSDCat (looked for '+objid+' and '+line2plot+') --> Skipping'
             else:
                 if verbose: print '   No entry in force flux catalog (looked for '+linenamedic[line2plot]+') --> Skipping'
         else:
@@ -2338,11 +2422,25 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel(r'LSDCat flux; '+fluxcolumn.replace('_','\_')+'('+line2plot+') [1e-20 erg/s/cm$^2$]')
-    plt.ylabel(r'Force flux; '+fluxcolumn.replace('_','\_')+'('+forceline+') [1e-20 erg/s/cm$^2$]')
-
     plt.xlim(xrange)
     plt.ylim(yrange)
+
+    if tdhstcol:
+        tdhstnamedic = {}
+        tdhstnamedic['lmass']  = r'log10(M$_{\rm{FAST 3D-HST}}$ / [Msun])'
+        tdhstnamedic['lsfr']   = r'log10(SFR$_{\rm{FAST 3D-HST}}$ / [Msun/yr])'
+        tdhstnamedic['lage']   = r'log10(Age$_{\rm{FAST 3D-HST}}$ / [yr])'
+        #tdhstnamedic['sfr']   = 'log10(SFR$_\rm{W14 3D-HST}$/[Msun/yr])'
+        tdhstnamedic['jh_mag'] = r'M$_{\rm{F140W 3D-HST}}$ / [AB Mag]'
+
+        plt.xlabel(tdhstnamedic[tdhstcol[0]])
+
+        if tdhstcol[0] in ['jh_mag']:
+            plt.xlim(xrange[::-1])
+    else:
+        plt.xlabel(r'LSDCat flux; '+fluxcolumn.replace('_','\_')+'('+line2plot+') [1e-20 erg/s/cm$^2$]')
+
+    plt.ylabel(r'Force flux; '+fluxcolumn.replace('_','\_')+'('+forceline+') [1e-20 erg/s/cm$^2$]')
 
     #--------- LEGEND ---------
     # plt.errorbar(-1,-1,xerr=None,yerr=None,fmt='o',lw=lthick,ecolor='white', markersize=marksize*2,
