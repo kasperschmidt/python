@@ -6,6 +6,7 @@ import sys
 import glob
 import MiGs
 import pyfits
+import datetime
 import numpy as np
 import kbsutilities as kbs
 import ciiiEmitterCandidates as cec
@@ -2067,7 +2068,8 @@ def MiG1Doutput2LaTeXtable(MiG1Doutput,match3dhst,verbose=True,
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxes=True,lines_manual={},
                       MUSEcat='/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits',
-                      clobber=False,verbose=True,verbose_flux=False):
+                      clobber=False,verbose=True,verbose_flux=False,SNthreshinit=1.0, SNthreshanal=1.0,
+                      skipLSDCatIfExists = False):
     """
 
     Wrapper for import fluxmeasurementsMUSEcubes functions to measure line fluxes and limits in MUSE
@@ -2085,6 +2087,9 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
                          lines_manual = {MUSEID:[ [LINENAME1,LINENAME2,...], [WAVE_OBS1, WAVE_OBS2,...] ]}
     MUSEcat              Muse catalog to get redshift,ra and dec of object in MUSEids list from
     clobber              If True outputs will be overwritten
+    SNthreshinit         Set S/N threshold for LSDCat flux determination
+    SNthreshanal         Set S/N analysis threshold for LSDCat flux determination
+    skipLSDCatIfExists   To enable conitnuing a full run skip the timeconsuming LSDCat step if ouput already exists.
     verbose              Toggle verbosity of main script
     verbose_flux         Toggle verbosity of flux functions
 
@@ -2152,15 +2157,27 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
         if os.path.isfile(cube):
             if generatelinelists:
                 if verbose: print ' - Generating line list'
-                fmm.save_LSDCatFriendlyFitsFile(linecat,lineIDs,objIDs,ras,decs,wave_obs,radecwave=True,coordcube=cube,
-                                                linenames=linenames,clobber=clobber,verbose=verbose_flux)
+                if (skipLSDCatIfExists == True) & (os.path.isfile(linecat)):
+                    if verbose: print '   ... but skipLSDCatIfExists=True and '+linecat+' exists so moving on'
+                else:
+                    fmm.save_LSDCatFriendlyFitsFile(linecat,lineIDs,objIDs,ras,decs,wave_obs,radecwave=True,coordcube=cube,
+                                                    linenames=linenames,clobber=clobber,verbose=verbose_flux)
             else:
                 if verbose: print ' - Skip generating line list - assume it exists'
 
             if measurefluxes:
-                if verbose: print ' - Measuring fluxes for line list '
-                fluxcatalog = fmm.measure_fluxes(linecat, field=fielddic[fieldno], field_id=pointing,
-                                                 verbose=verbose_flux, clobber=clobber)
+                nowstr  = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                if verbose: print ' - Measuring fluxes for line list (takes ~3 min per object; now it is '+nowstr+') '
+                output_expect = linecat.replace('.fits','_fluxes.fits')
+                if (skipLSDCatIfExists == True) & (os.path.isfile(output_expect)):
+                    if verbose: print '   ... but skipLSDCatIfExists=True and '+output_expect+' exists so moving on'
+                    fluxcatalog = output_expect
+                else:
+                    fluxcatalog = fmm.measure_fluxes(linecat, field=fielddic[fieldno], field_id=pointing,
+                                                     verbose=verbose_flux, clobber=clobber,
+                                                     SNthreshinit=SNthreshinit, SNthreshanal=SNthreshanal)
+                    nowstr  = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                    if verbose: print '   ... done at '+nowstr
             else:
                 if verbose: print ' - Skipping measuring line fluxes - assume output exists'
                 fluxcatalog = linecat.replace('.fits','_fluxes.fits')
@@ -2174,7 +2191,8 @@ def measurelinefluxes(MUSEids,outputdir='./',generatelinelists=True,measurefluxe
     return fluxcatalogs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,measurefluxes=True,
-                             generatelinelists=True,verbose=True,verbose_flux=False,clobber=False):
+                             generatelinelists=True,verbose=True,verbose_flux=False,clobber=False,
+                             SNthreshinit=1.0, SNthreshanal=1.0,skipLSDCatIfExists=False):
     """
     Wrapper for measurelinefluxes() listing the IDs to measure lines fluxes for and defining dictionary of any
     manual line positions.
@@ -2193,7 +2211,8 @@ def measurelinefluxes_allobj(C3inMUSE=True,C3inbetween=False,C3in3DHST=False,mea
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxcats = cec.measurelinefluxes(MUSEids_combined,lines_manual = lines_manual,clobber=clobber,
                                      measurefluxes=measurefluxes,generatelinelists=generatelinelists,
-                                     verbose=verbose,verbose_flux=verbose_flux)
+                                     verbose=verbose,verbose_flux=verbose_flux,SNthreshinit=SNthreshinit,
+                                     SNthreshanal=SNthreshanal,skipLSDCatIfExists=skipLSDCatIfExists)
 
     return fluxcats
 
