@@ -142,7 +142,7 @@ def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRO
 def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pdf',
               Zgas=False,logU=False,xid=0.3,nh=100,COratio=0.38,Mcutoff=100,
               logx=False,logy=False,logp1=False,logp2=False,fixxrange=False,fixyrange=False,
-              showobs=False,verbose=True):
+              showobs=None,noobserr=False,verbose=True):
     """
     Plotting the model grids (in luminoisity) for two lines against each other
 
@@ -180,6 +180,20 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     fixyrange To fix the y plotting range provide [ymin,ymax] with this keyword
     showobs   To overlay/show observed measurements provide an array with these data with shape (Nobjects,11)
               where the 11 columns contain:
+                  objid             ID of object
+                  redshift          Redshift of object           (can be a dummy value if not known - no used here)
+                  redshifterr       Uncertainty on the redshift  (can be a dummy value if not known - no used here)
+                  lineflux1         Flux of line1                (can be a dummy value if not known - no used here)
+                  linefluxerr1      Uncertainty on flux of line1 (can be a dummy value if not known - no used here)
+                  lineflux2         Flux of line2                (can be a dummy value if not known - no used here)
+                  linefluxerr2      Uncertainty on flux of line2 (can be a dummy value if not known - no used here)
+                  Lbol1             Bolometric luminoisity of line1 for the given flux and redshift
+                  Lbolerr1          Uncertainty on bolometric luminoisity of line1
+                  Lbol2             Bolometric luminoisity of line2 for the given flux and redshift
+                  Lbolerr2          Uncertainty on bolometric luminoisity of line1
+              An array on this format can be obtained from the LSDCat output from a forced flux run with
+              nm.load_fluxes_LSDCatForcedRun()
+    noobserr  To not show the error bars on the observations set noobserr=True
     verbose   Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -194,8 +208,7 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     line2     = 'CIII1908'
     modeldata = nm.load_model('combined',verbose=True)
     obsdata   = nm.load_fluxes_LSDCatForcedRun(line1=line1,line2=line2,fluxcol='F_3KRON',convert_Flux2Lbol=True)
-    nm.plot_LvsL(modeldata,line1=line1,line2=line2,Zgas=False,logU=False,xid=0.1,nh=10,COratio=0.1,Mcutoff=100,logx=True,logy=True,logp1=True,showobs=obsdata)
-
+    nm.plot_LvsL(modeldata,line1=line1,line2=line2,Zgas=False,logU=False,xid=0.3,nh=100,COratio=0.38,Mcutoff=100,logx=True,logy=True,logp1=True,showobs=obsdata,fixxrange=[1e3,1e9],fixyrange=[1e0,1e9],plotname='./TESTPLOT_wdata.pdf',noobserr=True)
 
     """
     NFalse    = 0
@@ -384,8 +397,23 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
                      marker='o',lw=0, markersize=marksize*1.5,
                      markerfacecolor=p2col,ecolor=p2col,markeredgecolor = 'k',zorder=20)
 
-    plt.xlabel(r'L$_\textrm{'+line1+'}$ / [3.826$\times$1e33 erg/s]/[Msun/yr]')
-    plt.ylabel(r'L$_\textrm{'+line2+'}$ / [3.826$\times$1e33 erg/s]/[Msun/yr]')
+    if showobs != None:
+        for ii, objid in enumerate(showobs[:,0]):
+            if (showobs[:,7][ii] > xrange[0]) & (showobs[:,7][ii] < xrange[1]) & \
+                    (showobs[:,9][ii] > yrange[0]) & (showobs[:,9][ii] < yrange[1]):
+
+                if noobserr:
+                    obsxerr = None
+                    obsyerr = None
+                else:
+                    obsxerr = showobs[:,8][ii]
+                    obsyerr = showobs[:,10][ii]
+                plt.errorbar(showobs[:,7][ii],showobs[:,9][ii],xerr=obsxerr,yerr=obsyerr,
+                             marker='*',lw=lthick, markersize=marksize*2,
+                             markerfacecolor='k',ecolor='k',markeredgecolor = 'k',zorder=30)
+
+    plt.xlabel(r'L$_\textrm{'+line1+r'}$ / [3.826$\times$1e33 erg/s]/[Msun/yr]')
+    plt.ylabel(r'L$_\textrm{'+line2+r'}$ / [3.826$\times$1e33 erg/s]/[Msun/yr]')
 
     plt.xlim(xrange)
     plt.ylim(yrange)
