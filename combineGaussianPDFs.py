@@ -382,7 +382,7 @@ def correct4magnification(xvals,Fobs,Ferrobs,mu,muerr,Nsigma=5.0,Npoints=100,ver
     Magnification is accounted for by determining the intrinsic true flux by
 
     Ftrue       = Fobs/mu
-    Ferrtrue    = sqrt[ (Ferrobs**2 - Ftrue**2 * muerr*2) / mu**2 ]
+    Ferrtrue    = 1/mu * sqrt[ Fobs**2 * muerr**2 / mu**2 + Ferrobs**2 ]
 
     --- INPUT ---
     xvals      xrange for non-corrected Guassian representation of measurement
@@ -396,16 +396,13 @@ def correct4magnification(xvals,Fobs,Ferrobs,mu,muerr,Nsigma=5.0,Npoints=100,ver
     verbose    Toggle verbosity
 
     """
-
+    if verbose: print ' - Correcting fluxes for magnification '
     p_obs       = Fobs,Ferrobs,0.0
     gauss_obs   = cgp.gauss_skew(xvals,*p_obs)
 
     Ftrue       = float(Fobs)/float(mu)
-    if (Ferrobs**2. - Ftrue**2. * muerr*2.) < 0:
-        sys.exit('Something is not right; Ferrobs**2 < Ftrue**2. * muerr*2.; (Ferrobs='+str(Ferrobs)+
-                 ', Ftrue='+str(Ftrue)+', muerr=,'+str(muerr)+')')
-    else:
-        Ferrtrue    = np.sqrt( (Ferrobs**2. - Ftrue**2. * muerr*2.) / mu**2. )
+    Ferrtrue    = 1/mu * np.sqrt( Fobs**2 * muerr**2 / mu**2 + Ferrobs**2 )
+
     p_true      = Ftrue,Ferrtrue,0.0
     xlow_true   = Ftrue-Ferrtrue*Nsigma
     xhigh_true  = Ftrue+Ferrtrue*Nsigma
