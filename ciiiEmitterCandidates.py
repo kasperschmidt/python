@@ -2370,8 +2370,9 @@ def plot_fluxmeasurements(objects,fluxcatdir='./',outname='./fluxcomparison.pdf'
         if os.path.isfile(fcsearch): fluxcat = fcsearch
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         pointcol = 'black'
-        if objid in markobj:
-            pointcol = 'red'
+        if markobj:
+            if objid in markobj:
+                pointcol = 'red'
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if fluxcat:
