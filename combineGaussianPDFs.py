@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoints=1000,
                               outputname='gaussvaluerep.pdf',skewparam=0,sigrange=5.0,
                               xpriorhat=False,legendlocation='upper left',usexlog=False,logxlow=1e-3,
-                              magnifications=False,magerrors=False,verbose=True):
+                              magnifications=False,magerrors=False,fixxrange=False,verbose=True):
     """
 
     Plot measurements in 1D using Gaussians to represent the measureents and their uncertainties.
@@ -48,6 +48,9 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     logxlow         If usexlog=True use this keyword to provide the lower bound of the log-axes
     magnifications  Provide a list of lens magnifications if the measurements should be corrected for this.
     magerrors       The estimated uncertainty on the lensing magnifications.
+    fixxrange       FOr instance for larger magnification errors the automatically set xrange for plottig
+                    (set to include all gaussian representations) might not be ideal. To overwrite this for
+                    plottin purposes provide the deisred x-range to this keyword. logxlow overwrite the lower bound.
     versose         Toggle verbosity
 
     --- OUTPUT ---
@@ -109,7 +112,7 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
 
             xvals_true, gaussvals, gaussobs = cgp.correct4magnification(xvals_obs,val,errors[vv],
                                                                         magnifications[vv],magerrors[vv],
-                                                                        Nsigma=5.0,Npoints=Npoints)
+                                                                        Nsigma=sigrange,Npoints=Npoints)
             xvals = xvals_true
 
         if xpriorhat:
@@ -281,6 +284,9 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     if skewparam != 0: ylab = 'Skewed '+ylab
     plt.ylabel(ylab, fontsize=Fsize)
 
+
+    if fixxrange:
+        xrange   = fixxrange
 
     if usexlog:
         plt.xlim([logxlow,xrange[1]])
