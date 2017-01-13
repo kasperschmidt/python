@@ -315,6 +315,7 @@ def plotGauss1DRepresentation(values,errors,Nsigma=1,axislabel='line flux',Npoin
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if verbose: print ' - Returning the mean, median, and cetral values and uncertainties for sum and product "PDFs"'
+    if verbose: print '   (  [valmed,valmean,valstd,m2sig,m1sig,center,p1sig,p2sig]  )'
     return sumvals, prodvals
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gauss_skew(x, *p):
