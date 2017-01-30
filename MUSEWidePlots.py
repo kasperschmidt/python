@@ -13,7 +13,7 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
 
     --- EXAMPLE OF USE ---
     import MUSEWidePlots as mwp
-    mwp.Spec1DCombinationImage_e24ANDe36(date='170130')
+    imagearray = mwp.Spec1DCombinationImage_e24ANDe36(date='170130')
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -35,6 +35,10 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
     waveext     = 'WAVE_AIR'
     NrowPerSpec = 1
     specdir     = '/Users/kschmidt/work/MUSE/spectra1D/Arche170127/spectra/'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #if verbose: print '\n - Makeing sub-selection of objects'
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print '\n - Generating image for non-median-subtracted 1D spectra'
     outimage    = specdir+'Spec1DCOmbinationImage_e24ANDe36_'+date+'.fits'
@@ -42,7 +46,8 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
                                                  wavelengthgrid=wavegrid,fluxext=fluxext,waveext=waveext,
                                                  imagename=outimage,clobber=clobber,verbose=verbose,
                                                  scale='None',subtract='None')
-
+    returnname  = outimage
+    returnarray = imgarray
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print '\n - Generating image for median-subtracted 1D spectra'
     outimage    = specdir+'Spec1DCOmbinationImage_e24ANDe36_'+date+'_mediansubtracted.fits'
@@ -59,6 +64,9 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
                                                  imagename=outimage,clobber=clobber,verbose=verbose,
                                                  scale='max',subtract='median')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print '\n - Returning resulting image array from '+returnname
+    return returnarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*IIIII*.fits',NrowPerSpec=1,
                                wavelengthgrid=[4800,9300,5],fluxext='FLUX',waveext='WAVE_AIR',
@@ -103,7 +111,8 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
     IDsort    = np.asarray(IDlist)[zsort_ent]
 
     wavegrid  = np.arange(wavelengthgrid[0],wavelengthgrid[1],wavelengthgrid[2])
-    Ncols     = len(wavegrid)+2
+    Ninfopixs = 2
+    Ncols     = len(wavegrid)+Ninfopixs
     imgarray  = np.zeros([Nrows,Ncols])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -157,7 +166,21 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
             imgarray[ss*NrowPerSpec:ss*NrowPerSpec+NrowPerSpec,2:] = fluxinterp
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Storing image to fits file '+imagename
-    pyfits.writeto(imagename,imgarray,clobber=clobber)
+    hdu = pyfits.PrimaryHDU(imgarray)
+    # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
+    hdu.header.append(('EXTNAME ', 'SPECIMG'                  ,'Nem of extension'),end=True)
+    hdu.header.append(('CRPIX1  ', 1.0+Ninfopixs              ,''),end=True)
+    hdu.header.append(('CDELT1  ', np.unique(np.diff(wavegrid))[0]  ,''),end=True)
+    hdu.header.append(('CRVAL1  ', wavegrid[0]                ,''),end=True)
+    hdu.header.append(('CUNIT1  ', 'Angstrom'                 ,''),end=True)
+    hdu.header.append(('CTYPE1  ', 'WAVE    '                 ,''),end=True)
+    hdu.header.append(('CRPIX2  ', 1.0                        ,''),end=True)
+    hdu.header.append(('CRVAL2  ', 1.0                        ,''),end=True)
+    hdu.header.append(('CDELT2  ', 1.0                        ,''),end=True)
+    hdu.header.append(('CUNIT2  ','Nspec  '                   ,''),end=True)
+    hdu.header.append(('CTYPE2  ','INT  '                     ,''),end=True)
+
+    hdu.writeto(imagename,clobber=clobber)
 
     return imgarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
