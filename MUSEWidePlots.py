@@ -5,7 +5,38 @@ import pyfits
 import kbsutilities as kbs
 import numpy as np
 import MUSEWidePlots as mwp
+import sys
 import pdb
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def loadcatalogs(verbose=True):
+    """
+    Loading catalogs and returning combined MUSE-Wide catalog IDs, ra, dec, redshifts etc.
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    IDlist, ra, dec, redshifts = mwp.loadcatalogs()
+
+    """
+    if verbose: print ' - Loading catalogs and defining ID, RA, Dec and redshift lists'
+    photcat_e24 = '/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits'
+    e24_id      = pyfits.open(photcat_e24)[1].data['UNIQUE_ID']
+    e24_ra      = pyfits.open(photcat_e24)[1].data['RA']
+    e24_dec     = pyfits.open(photcat_e24)[1].data['DEC']
+    e24_z       = pyfits.open(photcat_e24)[1].data['REDSHIFT']
+
+    #photcat_e36 = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v0.2.fits'
+    photcat_e36 = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v1.0.fits'
+    e36_id      = pyfits.open(photcat_e36)[1].data['ID']
+    e36_ra      = pyfits.open(photcat_e36)[1].data['RA']
+    e36_dec     =  pyfits.open(photcat_e36)[1].data['DEC']
+    e36_z       = pyfits.open(photcat_e36)[1].data['REDSHIFT']
+
+    IDlist      = np.append(e24_id,e36_id)
+    ra          = np.append(e24_ra,e36_ra)
+    dec         = np.append(e24_dec,e36_dec)
+    redshifts   = np.append(e24_z, e36_z)
+
+    return IDlist, ra, dec, redshifts
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
     """
@@ -17,17 +48,8 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loading catalogs and defining ID and redshift lists'
-    photcat_e24 = '/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits'
-    e24_id      = pyfits.open(photcat_e24)[1].data['UNIQUE_ID']
-    e24_z       = pyfits.open(photcat_e24)[1].data['REDSHIFT']
+    IDlist, ra, dec, redshifts = mwp.loadcatalogs(verbose=verbose)
 
-    photcat_e36 = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v0.2.fits'
-    e36_id      = pyfits.open(photcat_e36)[1].data['ID']
-    e36_z       = pyfits.open(photcat_e36)[1].data['REDSHIFT']
-
-    IDlist      = np.append(e24_id,e36_id)
-    redshifts   = np.append(e24_z, e36_z)
     specstring  = 'spectrum_*IIIII*.fits'
     wavegrid    = [4800,9300,3]
     clobber     = True
@@ -183,4 +205,56 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
     hdu.writeto(imagename,clobber=clobber)
 
     return imgarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_DS9regionfile(outputfile_base,circlesize=0.5,width=3,addIDlabel=True,fontsize=12,clobber=False,verbose=True):
+    """
+    Generate DS9 region files of objects in MUSE-Wide catalogs
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    outbase  = '/Users/kschmidt/work/catalogs/MUSE_GTO//MUSE-Wide_objects'
+    file_cdfs, file_cosmos = mwp.gen_DS9regionfile(outbase,circlesize=1.0,width=3,fontsize=15,addIDlabel=False,clobber=True)
+
+
+    """
+    if verbose: print ' - Generating MUSE-Wide region files. Saving them to :'
+    outputfile_CDFS   = outputfile_base+'_cdfs.reg'
+    outputfile_COSMOS = outputfile_base+'_cosmos.reg'
+    if verbose: print '   '+outputfile_CDFS
+    if verbose: print '   '+outputfile_COSMOS
+
+    IDlist, ra, dec, redshifts = mwp.loadcatalogs(verbose=verbose)
+
+    for outputfile in [outputfile_CDFS,outputfile_COSMOS]:
+        if not clobber:
+            if os.path.isfile(outputfile):
+                sys.exit('The file '+outputfile+' already exists and clobber = False ')
+        fout = open(outputfile,'w')
+
+        fout.write("# Region file format: DS9 version 4.1 \nfk5\n")
+        if 'cosmos' in outputfile:
+            fieldent = np.where(ra > 100)[0]
+        else:
+            fieldent = np.where(ra < 100)[0]
+
+        RAs  = ra[fieldent]
+        DECs = dec[fieldent]
+        IDs  = IDlist[fieldent]
+        zs   = redshifts[fieldent]
+
+        for rr, raval in enumerate(RAs):
+            color = 'white'
+            if zs[rr] > 2.9: color = 'red'
+
+            string = 'circle('+str(raval)+','+str(DECs[rr])+','+str(circlesize)+'") # color='+color+' width='+str(width)+' '
+
+            if addIDlabel:
+                string = string+' font="times '+str(fontsize)+' bold roman" text={'+str(IDs[rr])+'}'
+
+            fout.write(string+' \n')
+
+        fout.close()
+
+    return outputfile_CDFS, outputfile_COSMOS
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
