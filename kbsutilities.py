@@ -35,8 +35,8 @@ import datetime
 import numpy as np
 from scipy.interpolate import interp1d
 import astropysics
-import astropysics.obstools
-from astropysics import coords
+#import astropysics.obstools     #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
+#from astropysics import coords  #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
 from astropysics.constants import choose_cosmology
 import types               # for testing types
 import pdb
