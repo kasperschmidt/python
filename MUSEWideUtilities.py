@@ -96,3 +96,90 @@ def save_img(imagedata,header,filename,clobber=False,verbose=True):
     hdulist = pyfits.HDUList(hdus)             # turn header into to hdulist
     hdulist.writeto(filename,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def insert_PSFfits_into_TDOSEinfofile(TDOSEinfofile='/Users/kschmidt/work/TDOSE/muse_tdose_setups/MUSEWide_infofile_arche.txt',
+                                      duplicatefirstline=False,verbose=True):
+    """
+    Generating new TDOSE infofile where the PSF information is updated
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    mwu.insert_PSFfits_into_TDOSEinfofile(duplicatefirstline=True)
+
+    """
+    infofile   = np.genfromtxt(TDOSEinfofile,skip_header=2,names=True,dtype=None)
+    Nsetups    = len(infofile[0])
+    fmt        = ['S150']*Nsetups
+    infofile   = np.genfromtxt(TDOSEinfofile,skip_header=2,names=True,dtype=fmt)
+
+    outfile    = TDOSEinfofile.replace('.txt','_PSFupdate.txt')
+    if verbose: print ' - Will store the updated infofile in \n   '+outfile
+    fout       = open(outfile,'w')
+
+    PSFinfo    = pyfits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits')[1].data
+
+    fieldnames = [nn.split('candels-')[-1] for nn in infofile['setupname']]
+
+    fout.write('# File updated with mwu.insert_PSFfits_into_TDOSEinfofile() \n#\n# '+
+               '  '.join(list(infofile.dtype.names))+'\n' )
+
+    if duplicatefirstline:
+        fieldnames = PSFinfo['field']
+
+    for ff, fieldname in enumerate(fieldnames):
+        if 'hudf' in fieldname: continue
+        fieldname = fieldname.split()[0]
+
+        fieldent  = np.where(PSFinfo['field'] == fieldname.ljust(9) )[0]
+        p0        = PSFinfo['p0_comb_g'][fieldent][0]
+        p1        = PSFinfo['p1_comb_g'][fieldent][0]
+
+        if (p0 == 0.0) & (p1 == 0.0):
+            p0        = PSFinfo['p0_PM_g'][fieldent][0]
+            p1        = PSFinfo['p1_PM_g'][fieldent][0]
+            if (p0 == 0.0) & (p1 == 0.0):
+                p0        = PSFinfo['p0_FFTS_g'][fieldent][0]
+                p1        = PSFinfo['p1_FFTS_g'][fieldent][0]
+                if (p0 == 0.0) & (p1 == 0.0):
+                    p0        = PSFinfo['p0_FFT_g'][fieldent][0]
+                    p1        = PSFinfo['p1_FFT_g'][fieldent][0]
+
+        if ff == 0:
+            infoent   = np.where(infofile['setupname'] == 'candels-'+fieldname)[0]
+            infofile['psf_FWHMp0'][infoent] = str(p0)
+            infofile['psf_FWHMp1'][infoent] = str(p1)
+            stringout = '  '.join(list(infofile[infoent][0]))+'\n'
+
+            if duplicatefirstline:
+                basename   = infofile['setupname'][infoent]
+                basestring = stringout
+                basep0     = str(p0)
+                basep1     = str(p1)
+        else:
+            if duplicatefirstline:
+                stringout = basestring.replace(basename[0],'candels-'+fieldname)
+                stringout = stringout.replace(basename[0].replace('-','_'),('candels-'+fieldname).replace('-','_'))
+                stringout = stringout.replace(basep0,str(p0))
+                stringout = stringout.replace(basep1,str(p1))
+            else:
+                infoent   = np.where(infofile['setupname'] == 'candels-'+fieldname)[0]
+                infofile['psf_FWHMp0'][infoent] = str(p0)
+                infofile['psf_FWHMp1'][infoent] = str(p1)
+                stringout = '  '.join(list(infofile[infoent][0]))+'\n'
+
+        fout.write(stringout)
+
+    fout.close()
+
+
+    #     if PSFinfo['p0_FFTS_g'][fieldent] != 0.0:
+    #         p0 = PSFinfo['p0_FFTS_g'][fieldent]
+    #     else:
+    #         if PSFinfo['p0_PM_g'][fieldent] != 0.0:
+    #             p0 = PSFinfo['p0_PM_g'][fieldent]
+    #         else:
+    #             if PSFinfo['p0_FFT_g'][fieldent] != 0.0:
+    #                 p0 = PSFinfo['p0_FFT_g'][fieldent]
+    #             else:
+    #                 sys.exit(' No desired PSF fit found for object ')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
