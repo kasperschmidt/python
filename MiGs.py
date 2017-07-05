@@ -191,6 +191,11 @@ def linelistdic(listversion='full'):
 
     Line wavelength are taken from Morton 1991 when available
 
+    # URLs of other linelists:
+    Nebular lines:   http://www.star.ucl.ac.uk/~msw/lines.html
+    SDSS list:       http://www.sdss.org/dr7/algorithms/linestable.html
+    Landt+08:        http://adsabs.harvard.edu/abs/2008ApJS..174..282L
+    Vanden Berk+01:  http://adsabs.harvard.edu/abs/2001AJ....122..549V
     """
 
     linelist = collections.OrderedDict()
