@@ -344,3 +344,411 @@ def plot_redshifthistograms(plotname='/Users/kschmidt/work/MUSE/MUSEWide_sourceh
 
     return outID, outz
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/spec_comparisons/tdose_cdfs-04_170630/*fits',
+                       caruanaspecssearch='/Volumes/DATABCKUP2/TDOSEextractions/spec_comparisons/caruana_cdfs-04/*',
+                       urrutiaspecssearch='/Users/kschmidt/work/MUSE/spectra1D/Arche170127/spectra/spectrum_104*fits',
+                       TDOSE2MWidmatch='/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_main_table_v3.2.fits',
+                       colors=['black','red','green'],labels=['TDOSE Gauss','Caruana','Urrutia'],
+                       outdir=None,skipobj=False,dwave=70,verbose=True):
+    """
+    Generate plots and print comparison statistics for TDOSE, Caruana and Utturia 1D spectra
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    mwp.compare_TDOSEspecs()
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loaking for spectra by globbing using the input path-strings'
+    tdosespecs   = glob.glob(tdosespecssearch)
+    caruanaspecs = glob.glob(caruanaspecssearch)
+    urrutiaspecs = glob.glob(urrutiaspecssearch)
+
+    Ntdose =  len(tdosespecs)
+    if Ntdose == 0:
+        sys.exit('No tdose spectra found in '+tdosespecssearch)
+    else:
+        if verbose: print ' - Will generate comparison plots for the '+str(Ntdose)+' TDOSE spectra found '
+
+    if len(caruanaspecs) == 0:
+        if verbose: print(' - WARNING No Caruana spectra found in \n   '+caruanaspecssearch)
+    if len(urrutiaspecs) == 0:
+        if verbose: print(' - WARNING No Urrutia spectra found in \n   '+urrutiaspecssearch)
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Putting together lists of IDs'
+    if verbose: print '   Generate ID list for TDOSE spectra'
+    ids_tdose = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in tdosespecs]
+    ids_tdose = np.asarray(ids_tdose)
+
+    if verbose: print '   Generate ID list for Caruana spectra'
+    ids_car = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in caruanaspecs]
+    ids_car = np.asarray(ids_car)
+
+    if len(urrutiaspecs) > 0:
+        if verbose: print '   Generate ID list for Urrutia spectra'
+        ids_urr_MW = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in urrutiaspecs]
+        ids_urr_MW = np.asarray(ids_urr_MW)
+
+        idmatch    = pyfits.open(TDOSE2MWidmatch)[1].data
+        ids_urr    = []
+        rmatch_urr = []
+        for MWid in ids_urr_MW:
+            if float(str(MWid)[:3]) <= 124: # add 0 to id for CDFS 1-24 fields
+                MWid_9digit = str(int(MWid))[:3]+'0'+str(int(MWid))[3:]
+            else:
+                MWid_9digit = str(int(MWid))
+            matchent = np.where(idmatch['UNIQUE_ID'] == MWid_9digit)[0]
+            ids_urr.append(idmatch['Guo_ID'][matchent])
+            rmatch_urr.append(idmatch['Guo_sep'][matchent])
+
+        ids_urr    = np.asarray(ids_urr)
+        rmatch_urr = np.asarray(rmatch_urr)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if outdir is None:
+        outdir = '/'.join(os.path.abspath(tdosespecs[0]).split('/')[:-1])+'/'
+    if verbose: print ' - Will store output figures in \n   '+outdir
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Looping over objects and generating plots'
+
+    for ii, tspec in enumerate(tdosespecs):
+        filename = tspec.split('/')[-1]
+        objidstr = filename.split('_')[-1].split('.fit')[0]
+        plotname = outdir+filename.replace('.fits','_TCUcomparison.pdf')
+        skipthisobj = False
+        if os.path.isfile(plotname) & skipobj:
+            skipthisobj = True
+
+        if verbose:
+            infostr = ' - Generate plot for ID_TDOSE = '+objidstr+' ('+str(ii+1)+'/'+str(Ntdose)+') '
+            if skipthisobj:
+                infostr = infostr+'... plot exists --> skipobj'
+            else:
+                infostr = infostr+'                           '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        if skipthisobj: continue
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        dat_tdose    = pyfits.open(tspec)[1].data
+        t_flux    = dat_tdose['flux']
+        t_fluxerr = dat_tdose['fluxerror']
+        t_wave    = dat_tdose['wave']
+        t_s2n     = dat_tdose['s2n']
+
+        cent   = np.where(ids_car == ids_tdose[ii])[0]
+        if len(cent) == 1:
+            c_flux    = pyfits.open(caruanaspecs[cent[0]])[0].data
+            c_fluxerr = pyfits.open(caruanaspecs[cent[0]])[1].data
+            c_wave    = t_wave
+
+        else:
+            c_flux    = None
+            c_fluxerr = None
+            c_wave    = None
+
+        if len(urrutiaspecs) > 0:
+            uent   = np.where(ids_urr == str(int(ids_tdose[ii])))[0]
+            if (len(uent) == 1) & (uent != 0):
+                dat_urr   = pyfits.open(urrutiaspecs[uent[0]])[1].data
+                u_flux    = dat_urr['FLUX']
+                u_fluxerr = dat_urr['FLUXERR']
+                u_wave    = dat_urr['WAVE_AIR']
+                u_rmatch  = rmatch_urr[uent]
+            else:
+                u_flux    = None
+                u_fluxerr = None
+                u_wave    = None
+                u_rmatch  = None
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        maxs2n    = np.max(t_s2n[ np.isfinite(t_s2n) ])
+        entfix0   = np.where(t_s2n == maxs2n)[0][0]
+        wavezoom0 = t_wave[entfix0]
+
+        wavezoom1    = 5500
+        diff1         = np.abs(t_wave-wavezoom1)
+        entfix1       = np.where(diff1 == np.min(diff1))[0][0]
+
+        wavezoom2    = 8500
+        diff2         = np.abs(t_wave-wavezoom2)
+        entfix2       = np.where(diff2 == np.min(diff2))[0][0]
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        Ncol         = 3
+        Nrow         = 5
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        fig = plt.figure(figsize=(Ncol*2., Nrow))
+        fig.subplots_adjust(wspace=0.4, hspace=0.6,left=0.1, right=0.98, bottom=0.07, top=0.96)
+        Fsize  = 5
+        lthick = 1
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(plotname.split('/')[-1].replace('_','\_'),fontsize=Fsize)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        drawboxes = [ [wavezoom0-dwave,wavezoom0+dwave],
+                      [wavezoom1-dwave,wavezoom1+dwave],
+                      [wavezoom2-dwave,wavezoom2+dwave] ]
+
+
+        #---------------------------- Text... ----------------------------
+        rowval  = 0
+        rowspan = 1
+        colval  = 0
+        colspan = 3
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_text(ax,filename.replace('_','\_'),
+                             t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             u_rmatch,ids_urr_MW[uent],colors,fontsize=Fsize)
+        #---------------------------- Full Spec Flux  ----------------------------
+        spectitle = 'Full Flux Spectrum'
+        rowval  = 1
+        rowspan = 1
+        colval  = 0
+        colspan = 3
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=[4800,9300],markwave=False,drawboxes=drawboxes,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=False,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+
+        #---------------------------- Full Spec S/N  ----------------------------
+        spectitle = 'Full S/N Spectrum'
+        rowval  = 2
+        rowspan = 1
+        colval  = 0
+        colspan = 3
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=[4800,9300],markwave=False,drawboxes=drawboxes,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=True,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        #---------------------------- Zoom Flux 0 ----------------------------
+        spectitle = '$\\lambda$(Max(S/N))$\\pm$'+str(dwave)+'\AA'
+        rowval  = 3
+        rowspan = 1
+        colval  = 0
+        colspan = 1
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=drawboxes[0],markwave=wavezoom0,drawboxes=False,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=False,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        #---------------------------- Zoom Flux 1 ----------------------------
+        spectitle = str(wavezoom1)+'$\\pm$'+str(dwave)+'\AA'
+        rowval  = 3
+        rowspan = 1
+        colval  = 1
+        colspan = 1
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=drawboxes[1],markwave=wavezoom1,drawboxes=False,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=False,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        #---------------------------- Zoom Flux 2 ----------------------------
+        spectitle = str(wavezoom2)+'$\\pm$'+str(dwave)+'\AA'
+        rowval  = 3
+        rowspan = 1
+        colval  = 2
+        colspan = 1
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=drawboxes[2],markwave=wavezoom2,drawboxes=False,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=False,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        #---------------------------- Zoom S/N 0 ----------------------------
+        spectitle = '$\\lambda$(Max(S/N))$\\pm$'+str(dwave)+'\AA'
+        rowval  = 4
+        rowspan = 1
+        colval  = 0
+        colspan = 1
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=drawboxes[0],markwave=wavezoom0,drawboxes=False,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=True,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        #---------------------------- Zoom S/N 1 ----------------------------
+        spectitle = str(wavezoom1)+'$\\pm$'+str(dwave)+'\AA'
+        rowval  = 4
+        rowspan = 1
+        colval  = 1
+        colspan = 1
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=drawboxes[1],markwave=wavezoom1,drawboxes=False,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=True,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        #---------------------------- Zoom S/N 2 ----------------------------
+        spectitle = str(wavezoom2)+'$\\pm$'+str(dwave)+'\AA'
+        rowval  = 4
+        rowspan = 1
+        colval  = 2
+        colspan = 1
+        ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+        mwp.gen_compare_spec(ax,spectitle,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                             xrange=drawboxes[2],markwave=wavezoom2,drawboxes=False,fontsize=Fsize,colors=colors,
+                             labels=colors,plotSNcurve=True,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #if verbose: print ' - Saving plot to',plotname
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+
+    if verbose: print '\n ... done '
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_compare_text(ax,title,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,u_rmatch,MWid,
+                     colors,fontsize=5):
+    """
+    plot of text stats
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def produce_strings(wave,flux,fluxerr):
+        mea_f          = np.mean(flux[np.isfinite(flux)])
+        med_f          = np.median(flux[np.isfinite(flux)])
+        max_f          = np.max(flux[np.isfinite(flux)])
+        max_f_wave     = wave[np.where(flux == max_f)[0]][0]
+
+        s2n            = flux/fluxerr
+        mea_s2n        = np.mean(s2n[np.isfinite(s2n)])
+        med_s2n        = np.median(s2n[np.isfinite(s2n)])
+        max_s2n        = np.max(s2n[np.isfinite(s2n)])
+        max_s2n_wave   = wave[np.where(s2n == max_s2n)[0]][0]
+
+        numberstring   = '\\verb+'+str("%12.2f" % mea_f)+'+'+\
+                         '\\verb+'+str("%18.2f" % med_f)+'+'+\
+                         '\\verb+'+str("%25.2f" % max_f)+'+'+\
+                         '\\verb+'+str("%20.2f"  % max_f_wave)+'+'\
+                         '\\verb+'+str("%10.2f" % mea_s2n)+'+'+\
+                         '\\verb+'+str("%12.2f" % med_s2n)+'+'+\
+                         '\\verb+'+str("%15.2f" % max_s2n)+'+'+\
+                         '\\verb+'+str("%17.2f"  % max_s2n_wave)+'+'
+
+        return numberstring
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    ax.text(45.0,110.0,title,horizontalalignment='center',verticalalignment='center',fontsize=fontsize)
+
+    colstring = '$<$f/[1e-20cgs]$>$ \\verb+  + f\_med/[1e-20cgs] \\verb+  + ' \
+                'f\_max/[1e-20cgs] \\verb+  + $\\lambda$(f\_max) \\verb+  +'+\
+                '$<$S/N$>$ \\verb+  + S/N\_med \\verb+  + S/N\_max \\verb+  + $\\lambda$(S/N\_max)'
+
+    ax.text(8,85.0,colstring,horizontalalignment='left',verticalalignment='center',fontsize=fontsize)
+    # --------------------------- TDOSE ---------------------------
+    ax.text(-8.0,60.0,'('+colors[0]+')',horizontalalignment='left',verticalalignment='center',fontsize=fontsize,
+            color=colors[0])
+
+    numberstring = produce_strings(t_wave,t_flux,t_fluxerr)
+    ax.text(0.0,60.0,'TDOSE:\\verb+  +'+numberstring,horizontalalignment='left',verticalalignment='center',fontsize=fontsize)
+
+    # --------------------------- CARUANA ---------------------------
+    ax.text(-8.0,35.0,'('+colors[1]+')',horizontalalignment='left',verticalalignment='center',fontsize=fontsize,
+            color=colors[1])
+
+    numberstring = produce_strings(c_wave,c_flux,c_fluxerr)
+    ax.text(0.0,35.0,'Caruana:\\verb+ +'+numberstring,horizontalalignment='left',verticalalignment='center',fontsize=fontsize)
+
+    # --------------------------- URRUTIA ---------------------------
+    ax.text(-8.0,10.0,'('+colors[2]+')',horizontalalignment='left',verticalalignment='center',fontsize=fontsize,
+            color=colors[2])
+    if u_flux is not None:
+        numberstring = produce_strings(u_wave,u_flux,u_fluxerr)
+        ax.text(0.0,10.0,'Urrutia:\\verb+  +'+numberstring,horizontalalignment='left',verticalalignment='center',fontsize=fontsize)
+        ax.text(0.0,-5.0,'MUSE-Wide ID = '+str(int(MWid[0]))+' and Guo Rmatch = '+str("%5.2f" % u_rmatch)+'"',
+                horizontalalignment='left',verticalalignment='center',fontsize=fontsize)
+    else:
+        str_urr = 'Urrutia:\\verb+         +No match between MUSE-Wide and Guo catalog'
+        ax.text(0.0,10.0,str_urr,horizontalalignment='left',verticalalignment='center',fontsize=fontsize)
+
+    ax.set_ylim([0,100])
+    ax.set_xlim([0,100])
+
+    ax.axis('off')
+    ax.set_xlabel(' ')
+    ax.set_ylabel(' ')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_compare_spec(ax,spectitle,
+                     t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,
+                     xrange=[4800,9300],markwave=5500,drawboxes=False,fontsize=6,colors=['red','blue','green'],
+                     labels=['t','c','u'],plotSNcurve=False,shownoise=True,lthick=2,fillalpha=0.30,verbose=True):
+    """
+    Plotting commands for compare_TDOSEspecs() plotting
+    """
+    ax.set_title(spectitle,fontsize=fontsize, loc='left',y=0.9)
+
+    if markwave is not None:
+        diff    = np.abs(np.asarray(t_wave)-markwave)
+        markent = np.where(diff == np.min(diff))[0]
+        if len(markent) == 0:
+            if verbose: print ' WARNING the "markwave" is outside provided plotting xrange '
+            markwave = False
+
+        if plotSNcurve:
+            t_s2n = t_flux/t_fluxerr
+            ax.plot(t_wave,t_s2n,color=colors[0],lw=lthick)
+            yrangeplot = ax.get_ylim()
+
+            if c_flux is not None:
+                c_s2n = c_flux/c_fluxerr
+                ax.plot(c_wave,c_s2n,color=colors[1],lw=lthick)
+
+            if u_flux is not None:
+                u_s2n = u_flux/u_fluxerr
+                ax.plot(u_wave,u_s2n,color=colors[2],lw=lthick)
+
+            if markwave:
+                ax.plot([t_wave[markent],t_wave[markent]],ax.get_ylim(),color='magenta',linestyle='--',lw=lthick)
+            ylabel = 'S/N'
+        else:
+            ax.plot(t_wave,t_flux,color=colors[0],lw=lthick)
+            yrangeplot = ax.get_ylim()
+            if c_flux is not None:
+                ax.plot(c_wave,c_flux,color=colors[1],lw=lthick)
+            if u_flux is not None:
+                ax.plot(u_wave,u_flux,color=colors[2],lw=lthick)
+
+            if shownoise:
+                plt.fill_between(t_wave,t_flux-t_fluxerr,t_flux+t_fluxerr,alpha=fillalpha,color=colors[0])
+                if c_flux is not None:
+                    plt.fill_between(c_wave,c_flux-c_fluxerr,c_flux+c_fluxerr,alpha=fillalpha,color=colors[1])
+                if u_flux is not None:
+                    plt.fill_between(u_wave,u_flux-u_fluxerr,u_flux+u_fluxerr,alpha=fillalpha,color=colors[2])
+
+            if markwave:
+                ax.plot([t_wave[markent],t_wave[markent]],ax.get_ylim(),color='magenta',linestyle='--',lw=lthick)
+            ylabel = 'Flux [1e-20cgs]'
+
+
+        ax.set_xlabel('Wavelength [\AA]', fontsize=fontsize)
+        ax.set_ylabel(ylabel,fontsize=fontsize)
+
+        ax.set_xlim(xrange)
+        ax.set_ylim(yrangeplot)
+
+        ax.plot(xrange,[0,0],'-',color='gray',lw=0.5)
+
+        if drawboxes:
+            for drawbox in drawboxes:
+                plt.fill_between(drawbox,[yrangeplot[0],yrangeplot[0]],[yrangeplot[1],yrangeplot[1]],
+                         color='magenta',alpha=fillalpha)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
