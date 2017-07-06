@@ -707,34 +707,40 @@ def gen_compare_spec(ax,spectitle,
             ax.plot(t_wave,t_s2n,color=colors[0],lw=lthick)
             yrangeplot = ax.get_ylim()
 
-            if c_flux is not None:
-                c_s2n = c_flux/c_fluxerr
-                ax.plot(c_wave,c_s2n,color=colors[1],lw=lthick)
+            if markwave:
+                ax.plot([t_wave[markent],t_wave[markent]],ax.get_ylim(),color='magenta',linestyle='--',lw=lthick)
 
             if u_flux is not None:
                 u_s2n = u_flux/u_fluxerr
                 ax.plot(u_wave,u_s2n,color=colors[2],lw=lthick)
 
-            if markwave:
-                ax.plot([t_wave[markent],t_wave[markent]],ax.get_ylim(),color='magenta',linestyle='--',lw=lthick)
+            if c_flux is not None:
+                c_s2n = c_flux/c_fluxerr
+                ax.plot(c_wave,c_s2n,color=colors[1],lw=lthick)
+
+            ax.plot(t_wave,t_s2n,color=colors[0],lw=lthick)
+
             ylabel = 'S/N'
         else:
-            ax.plot(t_wave,t_flux,color=colors[0],lw=lthick)
+            ax.plot(t_wave,t_flux,color=colors[0],lw=lthick) # plot to get yrange
             yrangeplot = ax.get_ylim()
-            if c_flux is not None:
-                ax.plot(c_wave,c_flux,color=colors[1],lw=lthick)
-            if u_flux is not None:
-                ax.plot(u_wave,u_flux,color=colors[2],lw=lthick)
-
-            if shownoise:
-                plt.fill_between(t_wave,t_flux-t_fluxerr,t_flux+t_fluxerr,alpha=fillalpha,color=colors[0])
-                if c_flux is not None:
-                    plt.fill_between(c_wave,c_flux-c_fluxerr,c_flux+c_fluxerr,alpha=fillalpha,color=colors[1])
-                if u_flux is not None:
-                    plt.fill_between(u_wave,u_flux-u_fluxerr,u_flux+u_fluxerr,alpha=fillalpha,color=colors[2])
 
             if markwave:
                 ax.plot([t_wave[markent],t_wave[markent]],ax.get_ylim(),color='magenta',linestyle='--',lw=lthick)
+
+            if shownoise:
+                if u_flux is not None:
+                    plt.fill_between(u_wave,u_flux-u_fluxerr,u_flux+u_fluxerr,alpha=fillalpha,color=colors[2])
+                if c_flux is not None:
+                    plt.fill_between(c_wave,c_flux-c_fluxerr,c_flux+c_fluxerr,alpha=fillalpha,color=colors[1])
+                plt.fill_between(t_wave,t_flux-t_fluxerr,t_flux+t_fluxerr,alpha=fillalpha,color=colors[0])
+
+            if u_flux is not None:
+                ax.plot(u_wave,u_flux,color=colors[2],lw=lthick)
+            if c_flux is not None:
+                ax.plot(c_wave,c_flux,color=colors[1],lw=lthick)
+            ax.plot(t_wave,t_flux,color=colors[0],lw=lthick) # plot in front
+
             ylabel = 'Flux [1e-20cgs]'
 
 
