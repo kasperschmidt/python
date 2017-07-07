@@ -183,3 +183,25 @@ def insert_PSFfits_into_TDOSEinfofile(TDOSEinfofile='/Users/kschmidt/work/TDOSE/
     #                 sys.exit(' No desired PSF fit found for object ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_specstat(wave,flux,fluxerr):
+    """
+    Return statistics on a spectrum
+
+    """
+    statdic        = {}
+    statdic['mea_f']          = np.mean(flux[np.isfinite(flux)])
+    statdic['med_f']          = np.median(flux[np.isfinite(flux)])
+    statdic['max_f']          = np.max(flux[np.isfinite(flux)])
+    statdic['std_f']          = np.std(flux[np.isfinite(flux)])
+    statdic['max_f_wave']     = wave[np.where(flux == statdic['max_f'])[0]][0]
+
+    s2n                       = flux/fluxerr
+    statdic['s2n']            = s2n
+    statdic['mea_s2n']        = np.mean(s2n[np.isfinite(s2n)])
+    statdic['med_s2n']        = np.median(s2n[np.isfinite(s2n)])
+    statdic['max_s2n']        = np.max(s2n[np.isfinite(s2n)])
+    statdic['std_s2n']        = np.std(s2n[np.isfinite(s2n)])
+    statdic['max_s2n_wave']   = wave[np.where(s2n == statdic['max_s2n'])[0]][0]
+
+    return statdic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
