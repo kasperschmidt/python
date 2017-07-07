@@ -5,6 +5,7 @@ import pyfits
 import kbsutilities as kbs
 import numpy as np
 import MUSEWidePlots as mwp
+import MUSEWideUtilities as mwu
 import sys
 import matplotlib.pyplot as plt
 import pdb
@@ -355,7 +356,7 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
 
     --- EXAMPLE OF USE ---
     import MUSEWidePlots as mwp
-    mwp.compare_TDOSEspecs()
+    mwp.compare_TDOSEspecs(skipobj=True)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -620,25 +621,15 @@ def gen_compare_text(ax,title,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def produce_strings(wave,flux,fluxerr):
-        mea_f          = np.mean(flux[np.isfinite(flux)])
-        med_f          = np.median(flux[np.isfinite(flux)])
-        max_f          = np.max(flux[np.isfinite(flux)])
-        max_f_wave     = wave[np.where(flux == max_f)[0]][0]
-
-        s2n            = flux/fluxerr
-        mea_s2n        = np.mean(s2n[np.isfinite(s2n)])
-        med_s2n        = np.median(s2n[np.isfinite(s2n)])
-        max_s2n        = np.max(s2n[np.isfinite(s2n)])
-        max_s2n_wave   = wave[np.where(s2n == max_s2n)[0]][0]
-
-        numberstring   = '\\verb+'+str("%12.2f" % mea_f)+'+'+\
-                         '\\verb+'+str("%18.2f" % med_f)+'+'+\
-                         '\\verb+'+str("%25.2f" % max_f)+'+'+\
-                         '\\verb+'+str("%20.2f"  % max_f_wave)+'+'\
-                         '\\verb+'+str("%10.2f" % mea_s2n)+'+'+\
-                         '\\verb+'+str("%12.2f" % med_s2n)+'+'+\
-                         '\\verb+'+str("%15.2f" % max_s2n)+'+'+\
-                         '\\verb+'+str("%17.2f"  % max_s2n_wave)+'+'
+        statdic = mwu.get_specstat(wave,flux,fluxerr)
+        numberstring   = '\\verb+'+str("%12.2f" % statdic['mea_f'])+'+'+\
+                         '\\verb+'+str("%18.2f" % statdic['med_f'])+'+'+\
+                         '\\verb+'+str("%25.2f" % statdic['max_f'])+'+'+\
+                         '\\verb+'+str("%20.2f"  % statdic['max_f_wave'])+'+'\
+                         '\\verb+'+str("%10.2f" % statdic['mea_s2n'])+'+'+\
+                         '\\verb+'+str("%12.2f" % statdic['med_s2n'])+'+'+\
+                         '\\verb+'+str("%15.2f" % statdic['max_s2n'])+'+'+\
+                         '\\verb+'+str("%17.2f"  % statdic['max_s2n_wave'])+'+'
 
         return numberstring
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -756,5 +747,225 @@ def gen_compare_spec(ax,spectitle,
             for drawbox in drawboxes:
                 plt.fill_between(drawbox,[yrangeplot[0],yrangeplot[0]],[yrangeplot[1],yrangeplot[1]],
                          color='magenta',alpha=fillalpha)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_comparison_stats(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/spec_comparisons/tdose_cdfs-04_170630/*fits',
+                          caruanaspecssearch='/Volumes/DATABCKUP2/TDOSEextractions/spec_comparisons/caruana_cdfs-04/*',
+                          colors=['black','red'],labels=['TDOSE Gauss','Caruana'],wavetolerance=3,
+                          outdir='./',verbose=True):
+    """
+    Plotting commands for compare_TDOSEspecs() plotting
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    mwp.plot_comparison_stats(wavetolerance=3,outdir='/Volumes/DATABCKUP2/TDOSEextractions/spec_comparisons/tdose_cdfs-04_170630/')
+    """
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loaking for spectra by globbing using the input path-strings'
+    tdosespecs   = glob.glob(tdosespecssearch)
+    caruanaspecs = glob.glob(caruanaspecssearch)
+
+    Ntdose =  len(tdosespecs)
+    if Ntdose == 0:
+        sys.exit('No tdose spectra found in '+tdosespecssearch)
+    else:
+        if verbose: print ' - Will collect and plot stats for the '+str(Ntdose)+' TDOSE spectra found '
+
+    if len(caruanaspecs) == 0:
+        sys.exit(' No Caruana spectra found in '+caruanaspecssearch)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Putting together lists of IDs'
+    if verbose: print '   Generate ID list for TDOSE spectra'
+    ids_tdose = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in tdosespecs]
+    ids_tdose = np.asarray(ids_tdose)
+
+    if verbose: print '   Generate ID list for Caruana spectra'
+    ids_car = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in caruanaspecs]
+    ids_car = np.asarray(ids_car)
+
+
+    if len(ids_tdose) != len(ids_car):
+        sys.exit(' The number of spectra (IDs) do not match between the TDOSE ('+
+                 str(len(ids_tdose))+') and the Caruana ('+str(len(ids_car))+') spectra')
+
+    t_mea_f      = []
+    t_med_f      = []
+    t_max_f      = []
+    t_std_f      = []
+    t_max_f_wave = []
+    t_mea_s2n      = []
+    t_med_s2n      = []
+    t_max_s2n      = []
+    t_std_s2n      = []
+    t_max_s2n_wave = []
+
+    c_mea_f      = []
+    c_med_f      = []
+    c_max_f      = []
+    c_std_f      = []
+    c_max_f_wave = []
+    c_mea_s2n      = []
+    c_med_s2n      = []
+    c_max_s2n      = []
+    c_std_s2n      = []
+    c_max_s2n_wave = []
+
+    plotname = outdir+'spec_stat_histograms.pdf'
+    for ii, tspec in enumerate(tdosespecs):
+        dat_tdose    = pyfits.open(tspec)[1].data
+        t_flux    = dat_tdose['flux']
+        t_fluxerr = dat_tdose['fluxerror']
+        t_wave    = dat_tdose['wave']
+        t_statdic = mwu.get_specstat(t_wave,t_flux,t_fluxerr)
+
+        t_mea_f.append(t_statdic['mea_f'])
+        t_med_f.append(t_statdic['med_f'])
+        t_std_f.append(t_statdic['std_f'])
+        t_mea_s2n.append(t_statdic['mea_s2n'])
+        t_med_s2n.append(t_statdic['med_s2n'])
+        t_std_s2n.append(t_statdic['std_s2n'])
+
+        cent   = np.where(ids_car == ids_tdose[ii])[0]
+        if len(cent) == 1:
+            c_flux    = pyfits.open(caruanaspecs[cent[0]])[0].data
+            c_fluxerr = pyfits.open(caruanaspecs[cent[0]])[1].data
+            c_wave    = t_wave
+            c_statdic = mwu.get_specstat(c_wave,c_flux,c_fluxerr)
+
+            c_mea_f.append(c_statdic['mea_f'])
+            c_med_f.append(c_statdic['med_f'])
+            c_std_f.append(c_statdic['std_f'])
+            c_mea_s2n.append(c_statdic['mea_s2n'])
+            c_med_s2n.append(c_statdic['med_s2n'])
+            c_std_s2n.append(c_statdic['std_s2n'])
+
+            if np.abs(c_statdic['max_f_wave'] - t_statdic['max_f_wave']) < wavetolerance:
+                t_max_f.append(t_statdic['max_f'])
+                t_max_f_wave.append(t_statdic['max_f_wave'])
+
+                c_max_f.append(c_statdic['max_f'])
+                c_max_f_wave.append(c_statdic['max_f_wave'])
+
+            if np.abs(c_statdic['max_s2n_wave'] - t_statdic['max_s2n_wave']) < wavetolerance:
+                t_max_s2n.append(t_statdic['max_s2n'])
+                t_max_s2n_wave.append(t_statdic['max_s2n_wave'])
+
+                c_max_s2n.append(c_statdic['max_s2n'])
+                c_max_s2n_wave.append(c_statdic['max_s2n_wave'])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Ncol         = 4
+    Nrow         = 2
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=(Ncol, Nrow))
+    fig.subplots_adjust(wspace=0.5, hspace=0.5,left=0.09, right=0.98, bottom=0.15, top=0.96)
+    Fsize  = 4
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('/')[-1].replace('_','\_'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #---------------------------- f mean hist ----------------------------
+    rowval  = 0
+    rowspan = 1
+    colval  = 0
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    bins = np.arange(-5,50,2)
+    mwp.plot_comp_hist(ax,'Mean Flux',t_mea_f,c_mea_f,colors,Fsize,lthick,bins)
+
+    #---------------------------- f median hist ----------------------------
+    rowval  = 0
+    rowspan = 1
+    colval  = 1
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    mwp.plot_comp_hist(ax,'Median Flux',t_med_f,c_med_f,colors,Fsize,lthick,bins)
+
+    #---------------------------- f std hist ----------------------------
+    rowval  = 0
+    rowspan = 1
+    colval  = 2
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    mwp.plot_comp_hist(ax,'Standard Deviation Flux',t_std_f,c_std_f,colors,Fsize,lthick,bins)
+
+    #---------------------------- f max hist ----------------------------
+    rowval  = 0
+    rowspan = 1
+    colval  = 3
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    bins = np.arange(100,600,20)
+    mwp.plot_comp_hist(ax,'Max Flux',t_max_f,c_max_f,colors,Fsize,lthick,bins)
+
+    #---------------------------- S/N mean hist ----------------------------
+    rowval  = 1
+    rowspan = 1
+    colval  = 0
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    bins = np.arange(0,2,0.05)
+    mwp.plot_comp_hist(ax,'Mean S/N',t_mea_s2n,c_mea_s2n,colors,Fsize,lthick,bins)
+
+    #---------------------------- S/N median hist ----------------------------
+    rowval  = 1
+    rowspan = 1
+    colval  = 1
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    mwp.plot_comp_hist(ax,'Median S/N',t_med_s2n,c_med_s2n,colors,Fsize,lthick,bins)
+
+    #---------------------------- f std hist ----------------------------
+    rowval  = 1
+    rowspan = 1
+    colval  = 2
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    mwp.plot_comp_hist(ax,'Standard Deviation S/N',t_std_s2n,c_std_s2n,colors,Fsize,lthick,bins)
+
+    #---------------------------- S/N max hist ----------------------------
+    rowval  = 1
+    rowspan = 1
+    colval  = 3
+    colspan = 1
+    ax = plt.subplot2grid((Nrow,Ncol), (rowval, colval), colspan=colspan, rowspan=rowspan)
+
+    bins = np.arange(-5,50,2)
+    mwp.plot_comp_hist(ax,'Max S/N',t_max_s2n,c_max_s2n,colors,Fsize,lthick,bins)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #if verbose: print ' - Saving plot to',plotname
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_comp_hist(ax,xlabel,hist1,hist2,colors,fontsize,lthick,bins):
+    """
+    Plotting for plot_comparison_stats()
+    """
+    #ax.set_title(title,fontsize=fontsize, loc='left',y=0.9)
+
+    ax.hist(hist1,bins=bins,color=colors[0],lw=lthick,histtype='step')
+    ax.hist(hist2,bins=bins,color=colors[1],lw=lthick,histtype='step')
+
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel('\#'  , fontsize=fontsize)
+
+    ax.plot(ax.get_xlim(),[0,0],'-',color='gray',lw=0.5)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
