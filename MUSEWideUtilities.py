@@ -6,7 +6,54 @@ import numpy as np
 import MUSEWideUtilities as mwu
 import sys
 import scipy.ndimage
+import tdose_utilities as tu
+from astropy import wcs
+from astropy.coordinates import SkyCoord
+import glob
 import pdb
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_pixelpos(ra,dec,pointingname,imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,
+                 radecunit="deg",pixorigin=1,verbose=True):
+    """
+    Get pixel positions in a muse cube for
+
+    """
+    searchstr = imgdir+'*'+pointingname+'*.fits'
+    img = glob.glob(searchstr)
+    if len(img) == 1:
+        imghdr = pyfits.open(img[0])[imgext].header
+    else:
+        sys.exit(' Found '+str(len(img))+' images looking for '+searchstr)
+
+    if verbose: print ' Getting pixel position in '+img[0]
+    imgwcs    = wcs.WCS(tu.strip_header(imghdr.copy()))
+
+    pixcoord  = wcs.utils.skycoord_to_pixel(SkyCoord(ra, dec, unit=radecunit),imgwcs,origin=pixorigin)
+    xpix      = pixcoord[0]
+    ypix      = pixcoord[1]
+
+    return xpix[0], ypix[0]
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_pointingname(id):
+    """
+    Returning the pointing name for a MUSE-Wide id
+
+    """
+    idstr = str(id)
+    pointingname = 'candels-'
+
+    # get field
+    if idstr[0] == '1':
+        pointingname = pointingname+'cdfs-'
+    elif idstr[0] == '2':
+        pointingname = pointingname+'cosmos-'
+    else:
+        sys.exit(' mu.gen_pointingname(): Field corresponding to ID[0]='+str(idstr[0])+' not known')
+
+    # get pointing number
+    pointingname = pointingname+idstr[1:3]
+
+    return pointingname
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def convert_wht2sigma(wht_file,wht_units='ivar',wht_ext=0,
                       smooth=False,smooth_type='gauss',smooth_param=4,
