@@ -10,9 +10,11 @@ import MiGs
 import pyfits
 import datetime
 import numpy as np
+import shutil
 import fits2ascii as f2a
 import MUSEWideUtilities as mu
 import kbsutilities as kbs
+import tdose_utilities as tu
 import uvEmissionlineSearch as uves
 import ciiiEmitterCandidates as cec
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -176,28 +178,80 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,verbose=True):
         pointingcat_fits = f2a.ascii2fits(pointingcat,asciinames=True,skip_header=2,fitsformat='D',verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_TDOSEsetupfiles(outputdir,sourcecatalog,verbose=True):
+def gen_TDOSEsetupfiles(infofile,namebase='MUSEWide_tdose_setup_LAEs',clobber=False,
+                        outputdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/',verbose=True):
     """
     Generating MUSE-Wide poitning source catalogs for TDOSE extraction of LAEs
 
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    infofile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/MUSEWide_infofile_arche_PSFupdate_LAEs.txt'
+    uves.gen_TDOSEsetupfiles(infofile)
 
     """
-    print ' under construction'
-    
+    tu.duplicate_setup_template(outputdir,infofile,namebase=namebase,clobber=clobber,loopcols='all',infofmt="S250",infohdr=2)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def run_TDOSEextraction(verbose=True):
+def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
+                  modeldir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels/',verbose=True):
     """
     Extracting spectra of LAEs using TDOSE (https://github.com/kasperschmidt/TDOSE)
 
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    outputdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/ref_image_galfit_models/'
+    sourcecatalog = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
+    uves.rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False)
+    """
+    modelfiles = glob.glob(modeldir+'/imgblock*.fits')
+    sourcetab  = pyfits.open(sourcecatalog)[1].data
+    if verbose: print ' - Found '+str(len(modelfiles))+' in modeldir to rename '
+
+    for oldname in modelfiles:
+        id     = oldname.split('/')[-1].split('_')[-1].split('.fit')[0]
+        objent = np.where(sourcetab['id'] == int(id))[0]
+
+        if len(objent) != 1:
+            print ' - No match in sourcecatalog to object '+id
+        else:
+            pointing = sourcetab['pointing'][objent][0]
+
+            if cutoutsize is None:
+                cutoutstr = ''
+            else:
+                cutoutstr = ('_id'+str("%.10d" % float(id))+'_cutout'+str(cutoutsize[0])+
+                             'x'+str(cutoutsize[1])+'arcsec').replace('.','p')
+
+            newname = outputdir+'model_acs_814w_'+pointing+'_cut_v1.0'+cutoutstr+'.fits'
+
+            if os.path.isfile(newname) & (clobber == False):
+                print ' - Clobber = False and '+newname+' already exists so no new copy made. Moving on'
+            else:
+                if verbose: print ' - Copying '+oldname+' to '+newname
+                shutil.copy(oldname,newname)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def run_TDOSEextraction(verbose=True):
+    """
+    Command (to copy-paste into arche) to run TDOSE on setup files generated with uves.gen_TDOSEsetupfiles()
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
 
     """
-    print ' under construction'
+    #mkdir tdose_models, tdose_cutouts, tdose_spectra
+    #nice ipython
+    import tdose, glob
+    import numpy as np
+    Nsessions = 30
+
+    setupfiles = glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')
+
+    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=True,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=True,logterminaloutput=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def launch_MiG(verbose=True):
