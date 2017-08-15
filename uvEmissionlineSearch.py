@@ -15,6 +15,7 @@ import fits2ascii as f2a
 import MUSEWideUtilities as mu
 import kbsutilities as kbs
 import tdose_utilities as tu
+from astropy import wcs
 import uvEmissionlineSearch as uves
 import ciiiEmitterCandidates as cec
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -181,7 +182,7 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,verbose=True):
 def gen_TDOSEsetupfiles(infofile,namebase='MUSEWide_tdose_setup_LAEs',clobber=False,
                         outputdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/',verbose=True):
     """
-    Generating MUSE-Wide poitning source catalogs for TDOSE extraction of LAEs
+    Generate TDOSE setupfiles for the LAE extractions
 
     --- INPUT ---
 
@@ -197,7 +198,8 @@ def gen_TDOSEsetupfiles(infofile,namebase='MUSEWide_tdose_setup_LAEs',clobber=Fa
 def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
                   modeldir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels/',verbose=True):
     """
-    Extracting spectra of LAEs using TDOSE (https://github.com/kasperschmidt/TDOSE)
+    Renmae GALFIT models to comply with TDOSE naming convention (i.e. so TDOSE can find the models when
+    looking for them using model_*refimage+cutoutstring*)
 
     --- INPUT ---
 
@@ -233,6 +235,58 @@ def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
             else:
                 if verbose: print ' - Copying '+oldname+' to '+newname
                 shutil.copy(oldname,newname)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True,verbose=True):
+    """
+    Extract the reference coordinates of the GALFIT models from the fits headers
+
+    PROBLEM! GALFIT apparantly doesn't propogate the coordinates of the cutouts. It quotes the reference
+             pixel coordinate from the image the cutout was generated from. In the case of the MUSE cutouts
+             this means that the coordiantes are the reference position for the fullf-FoV muse pointing
+             cutouts and not the individual object cutouts GALFIT is modeling.
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    modeldir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/ref_image_galfit_models/'
+    coordarray   = uves.get_ModelReferencePixelCoordinates(modeldir,printcoords=True,verbose=True)
+
+    """
+    modelfiles = glob.glob(modeldir+'*.fits')
+    Nfiles     = len(modelfiles)
+    if verbose: print ' - Found '+str(Nfiles)+' models to extract coordinates from '
+
+    if verbose: print ' - Looping overmodels and extracting coordinates from: '
+    coordarray = np.zeros(Nfiles, dtype={'names':['modelfile','xpix','ypix','ra','dec'],
+                                         'formats':['a250', 'f8', 'f8', 'f8', 'f8']})
+    for mm, modelfile in enumerate(modelfiles[0:5]):
+        model_refimghdr = pyfits.open(modelfile)[1].header
+        imgwcs    = wcs.WCS(tu.strip_header(model_refimghdr.copy()))
+
+        if pixpos == 'center':
+            model_shape     = pyfits.open(modelfile)[1].data.shape
+            xpix      = int(model_shape[1]/2.)
+            ypix      = int(model_shape[0]/2.)
+        else:
+            xpix      = pixpos[1]
+            ypix      = pixpos[0]
+
+        print imgwcs
+        skycoord  = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=0)
+        ra        = skycoord.ra.value
+        dec       = skycoord.dec.value
+
+        if printcoords & verbose:
+            print '   '+modelfile.split('/')[-1]+':  (ra,dec) = ('+str(ra)+','+str(dec)+')'
+
+        coordarray['modelfile'][mm] = modelfile
+        coordarray['xpix'][mm]      = xpix
+        coordarray['ypix'][mm]      = ypix
+        coordarray['ra'][mm]        = ra
+        coordarray['dec'][mm]       = dec
+
+    return coordarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def run_TDOSEextraction(verbose=True):
     """
