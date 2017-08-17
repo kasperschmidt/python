@@ -19,6 +19,25 @@ from astropy import wcs
 import uvEmissionlineSearch as uves
 import ciiiEmitterCandidates as cec
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def buildANDgenerate(clobber=True):
+    """
+    Convenience wrapper to build and generate all the files needed for the TDOSE run
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.buildANDgenerate
+
+    """
+    LAEinfofile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
+    uves.build_LAEfitstable(fitsname=LAEinfofile,clobber=clobber)
+
+    sourcecatdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/'
+    uves.gen_LAEsourceCats(sourcecatdir,LAEinfofile,modelcoord=True)
+
+    SETUPinfofile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/MUSEWide_infofile_arche_PSFupdate_LAEs.txt'
+    uves.gen_TDOSEsetupfiles(SETUPinfofile,clobber=clobber)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False,verbose=True):
     """
     Building a fits table containing information on the sources.
@@ -89,7 +108,7 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
 
     for ii,id in enumerate(objids):
         if verbose:
-            infostr = '   Getting inf for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
+            infostr = '   Getting info for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
             if verbose: print '\n'+infostr,
             # sys.stdout.write("%s\r" % infostr)
             # sys.stdout.flush()
@@ -157,7 +176,11 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
                 if verbose: print 'Model ypix has no err; ',
                 ypix    = int(float(ystr[0][1:-1]))
 
-            skycoord    = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=1)
+            if 'cdfs' in pointingname:
+                skycoord    = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=1)
+            elif 'cosmos' in pointingname:
+                skycoord    = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=0)
+
             ra_model    = skycoord.ra.value
             dec_model   = skycoord.dec.value
 
@@ -397,7 +420,7 @@ def run_TDOSEextraction():
     setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[0]] # COSMOS 06
     setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[1]] # CDFS 01
 
-    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=False,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=True,logterminaloutput=True,verbosePE=True,verbosefull=True)
+    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=True,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=False,logterminaloutput=True,verbosePE=True,verbosefull=True)
 
 
     # -------------------------- Running TDOSE on Arche - Full Run -------------------------
