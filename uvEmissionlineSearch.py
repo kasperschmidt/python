@@ -215,7 +215,7 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    uves.gen_LAEsourceCats('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/','/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')
+    uves.gen_LAEsourceCats('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/','/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits',modelcoord=True)
 
     """
     sourcetab = pyfits.open(sourcecatalog)[1].data
@@ -305,10 +305,13 @@ def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
             if cutoutsize is None:
                 cutoutstr = ''
             else:
-                cutoutstr = ('_id'+str("%.10d" % float(id))+'_cutout'+str(cutoutsize[0])+
+                cutoutstr = ('_id'+str("%.9d" % float(id))+'_cutout'+str(cutoutsize[0])+
                              'x'+str(cutoutsize[1])+'arcsec').replace('.','p')
 
-            newname = outputdir+'model_acs_814w_'+pointing+'_cut_v1.0'+cutoutstr+'.fits'
+            if 'cdfs' in pointing:
+                newname = outputdir+'model_acs_814w_'+pointing+'_cut_v2.0'+cutoutstr+'.fits'
+            elif 'cosmos' in pointing:
+                newname = outputdir+'model_acs_814w_'+pointing+'_cut_v1.0'+cutoutstr+'.fits'
 
             if os.path.isfile(newname) & (clobber == False):
                 print ' - Clobber = False and '+newname+' already exists so no new copy made. Moving on'
@@ -368,17 +371,39 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
 
     return coordarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def run_TDOSEextraction(verbose=True):
+def run_TDOSEextraction():
     """
     Command (to copy-paste into arche) to run TDOSE on setup files generated with uves.gen_TDOSEsetupfiles()
 
-    --- INPUT ---
-
     --- EXAMPLE OF USE ---
+    copy-past into Max terminal (for copying over files to arche) and on arche (for running TDOSE)
 
     """
-    #mkdir tdose_models, tdose_cutouts, tdose_spectra
-    #nice ipython
+    # ---------------------------- Copying over files from Mac ----------------------------
+    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/ref_image_galfit_models/*.fits kasper@arche.aip.de:/store/data/musewide/TDOSE/ref_image_galfit_models/
+
+    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/*candels*.txt kasper@arche.aip.de:/store/data/musewide/TDOSE/tdose_setupfiles/
+
+    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/*.fits kasper@arche.aip.de:/store/data/musewide/TDOSE/tdose_sourcecats/
+
+    # ------------------------ Running TDOSE on Arche - FewFileRun ------------------------
+    # mkdir tdose_models tdose_cutouts tdose_spectra
+    # ur_setup
+    # ipython
+    import tdose, glob
+    import numpy as np
+    Nsessions = 1
+
+    setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[0]] # COSMOS 06
+    setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[1]] # CDFS 01
+
+    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=False,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=True,logterminaloutput=True,verbosePE=True,verbosefull=True)
+
+
+    # -------------------------- Running TDOSE on Arche - Full Run -------------------------
+    # mkdir tdose_models, tdose_cutouts, tdose_spectra
+    # ur_setup
+    # nice ipython
     import tdose, glob
     import numpy as np
     Nsessions = 30
