@@ -72,22 +72,31 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
     NLAEs  = len(objids)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Assembling info for the '+str(NLAEs)+' LAEs found'
-    redshifts = []
-    ras       = []
-    decs      = []
-    pointing  = []
-    x_image   = []
-    y_image   = []
-
+    galfitmodeldir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels/'
+    redshifts       = []
+    ras             = []
+    decs            = []
+    pointing        = []
+    x_image         = []
+    y_image         = []
+    name_model      = []
+    N_model_comp    = []
+    ras_model       = []
+    decs_model      = []
+    delta_coords    = []
+    x_image_model   = []
+    y_image_model   = []
 
     for ii,id in enumerate(objids):
         if verbose:
-            infostr = '   Getting inf for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')'
-            sys.stdout.write("%s\r" % infostr)
-            sys.stdout.flush()
+            infostr = '   Getting inf for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
+            if verbose: print '\n'+infostr,
+            # sys.stdout.write("%s\r" % infostr)
+            # sys.stdout.flush()
         pointingname = mu.gen_pointingname(id)
         pointing.append(pointingname)
 
+        # - - - - - - - - - - GET LSDCAT COORDINATES - - - - - - - - - -
         if str(id) in e24_ids:
             objent = np.where(datE24main['UNIQUE_ID'] == str(id))[0]
             redshifts.append(datE24main['Z'][objent][0])
@@ -110,19 +119,78 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
 
         else:
             sys.exit('Weird... ID not found in E24 or E36 id-list...')
+        # - - - - - - - - - - GET MODEL COORDINATES - - - - - - - - - -
+        modelfile = glob.glob(galfitmodeldir+'imgblock_'+str("%.9d" % id)+'.fits')
+
+        if len(modelfile) == 0:
+            if verbose: print 'No model found; ',
+            name_model.append("NoModelFoundIn_"+galfitmodeldir)
+            N_model_comp.append(0)
+            ras_model.append(0)
+            decs_model.append(0)
+            delta_coords.append(0)
+            x_image_model.append(0)
+            y_image_model.append(0)
+        elif len(modelfile) > 1:
+            sys.exit('Found more than one model file for '+str("%.9d" % id)+'; Found the models '+modelfile)
+        else:
+            refimg_hdr  = pyfits.open(modelfile[0])[1].header
+            model_hdr   = pyfits.open(modelfile[0])[2].header
+            comps       = []
+            for hdrkey in model_hdr.keys():
+                if ('COMP_' in hdrkey) & (model_hdr[hdrkey] != 'sky'):
+                    comps.append(hdrkey)
+
+            imgwcs      = wcs.WCS(tu.strip_header(refimg_hdr.copy()))
+            xstr        = model_hdr['1_XC'].split(' ')
+            ystr        = model_hdr['1_YC'].split(' ')
+
+            if len(xstr) > 1:
+                xpix    = int(float(xstr[0]))
+            else:
+                if verbose: print 'Model xpix has no err; ',
+                xpix    = int(float(xstr[0][1:-1]))
+
+            if len(ystr) > 1:
+                ypix    = int(float(ystr[0]))
+            else:
+                if verbose: print 'Model ypix has no err; ',
+                ypix    = int(float(ystr[0][1:-1]))
+
+            skycoord    = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=1)
+            ra_model    = skycoord.ra.value
+            dec_model   = skycoord.dec.value
+
+            delta_coord = np.sqrt( (np.cos(np.deg2rad(dec_model))*(ras[ii]-ra_model))**2.0 + (decs[ii]-dec_model)**2.0 )
+
+            name_model.append(modelfile[0])
+            N_model_comp.append(len(comps))
+            ras_model.append(ra_model)
+            decs_model.append(dec_model)
+            delta_coords.append(delta_coord*3600.)
+            x_image_model.append(xpix)
+            y_image_model.append(ypix)
     if verbose: print '\n   done...'
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Defining fits table and filling it with data'
-    c1 = pyfits.Column(name='id', format='J', unit='', array=objids)
-    c2 = pyfits.Column(name='pointing', format='A30', unit='', array=pointing)
-    c3 = pyfits.Column(name='ra', format='D', unit='DEF', array=ras)
-    c4 = pyfits.Column(name='dec', format='D', unit='DEG', array=decs)
-    c5 = pyfits.Column(name='redshift', format='D', unit='', array=redshifts)
-    c6 = pyfits.Column(name='x_image_F814W', format='D', unit='PIXEL', array=x_image)
-    c7 = pyfits.Column(name='y_image_F814W', format='D', unit='PIXEL', array=y_image)
+    c1  = pyfits.Column(name='id', format='J', unit='', array=objids)
+    c2  = pyfits.Column(name='pointing', format='A30', unit='', array=pointing)
+    c3  = pyfits.Column(name='ra', format='D', unit='DEF', array=ras)
+    c4  = pyfits.Column(name='dec', format='D', unit='DEG', array=decs)
+    c5  = pyfits.Column(name='redshift', format='D', unit='', array=redshifts)
+    c6  = pyfits.Column(name='x_image_F814W', format='D', unit='PIXEL', array=x_image)
+    c7  = pyfits.Column(name='y_image_F814W', format='D', unit='PIXEL', array=y_image)
 
-    coldefs = pyfits.ColDefs([c1,c2,c3,c4,c5,c6,c7])
+    c8  = pyfits.Column(name='modelname', format='A110', unit='', array=name_model)
+    c9  = pyfits.Column(name='Nmodelcomponents', format='D', unit='DEF', array=N_model_comp)
+    c10 = pyfits.Column(name='ra_model', format='D', unit='DEF', array=ras_model)
+    c11 = pyfits.Column(name='dec_model', format='D', unit='DEG', array=decs_model)
+    c12 = pyfits.Column(name='deltacoord', format='D', unit='DEG', array=delta_coords)
+    c13 = pyfits.Column(name='x_image_model', format='D', unit='PIXEL', array=x_image_model)
+    c14 = pyfits.Column(name='y_image_model', format='D', unit='PIXEL', array=y_image_model)
+
+    coldefs = pyfits.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14])
     th      = pyfits.new_table(coldefs) # creating default header
 
     # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
@@ -139,7 +207,7 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
         kbs.create_DS9region(regionname,ras,decs,color='magenta',circlesize=0.5,textlist=objids.astype(str),clobber=clobber)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_LAEsourceCats(outputdir,sourcecatalog,verbose=True):
+def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
     """
     Generating MUSE-Wide poitning source catalogs for TDOSE extraction of LAEs
 
@@ -162,18 +230,30 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,verbose=True):
         fout.write('# parent_id id ra dec x_image y_image fluxscale \n')
 
         # if '02' in pointing:        pdb.set_trace()
+        ids2skip = []
+        ids2skip.append(121033078)  # Object with CIV being main line (conf=1) with potential Lya; no model available
+        ids2skip.append(211049280)  # Potential CIII emitter (conf=1) at 2.76, i.e., no Lya in MUSE
 
         for objent in objents:
             objstr = ' -99  '
 
-            objstr = objstr + str(sourcetab['ID'][objent]) + ' '
-            objstr = objstr + str(sourcetab['RA'][objent]) + ' '
-            objstr = objstr + str(sourcetab['DEC'][objent]) + ' '
-            objstr = objstr + str(sourcetab['x_image_F814W'][objent]) + ' '
-            objstr = objstr + str(sourcetab['y_image_F814W'][objent]) + ' '
-            objstr = objstr + ' 1.0000 ' + ' \n'
+            if sourcetab['ID'][objent] in ids2skip:
+                continue
+            else:
+                objstr = objstr + str(sourcetab['ID'][objent]) + ' '
+                if modelcoord == True:
+                    objstr = objstr + str(sourcetab['ra_model'][objent]) + ' '
+                    objstr = objstr + str(sourcetab['dec_model'][objent]) + ' '
+                    objstr = objstr + str(sourcetab['x_image_model'][objent]) + ' '
+                    objstr = objstr + str(sourcetab['y_image_model'][objent]) + ' '
+                else:
+                    objstr = objstr + str(sourcetab['RA'][objent]) + ' '
+                    objstr = objstr + str(sourcetab['DEC'][objent]) + ' '
+                    objstr = objstr + str(sourcetab['x_image_F814W'][objent]) + ' '
+                    objstr = objstr + str(sourcetab['y_image_F814W'][objent]) + ' '
+                objstr = objstr + ' 1.0000 ' + ' \n'
 
-            fout.write(objstr)
+                fout.write(objstr)
         fout.close()
 
         pointingcat_fits = f2a.ascii2fits(pointingcat,asciinames=True,skip_header=2,fitsformat='D',verbose=verbose)
@@ -257,7 +337,7 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
     Nfiles     = len(modelfiles)
     if verbose: print ' - Found '+str(Nfiles)+' models to extract coordinates from '
 
-    if verbose: print ' - Looping overmodels and extracting coordinates from: '
+    if verbose: print ' - Looping over models and extracting coordinates from: '
     coordarray = np.zeros(Nfiles, dtype={'names':['modelfile','xpix','ypix','ra','dec'],
                                          'formats':['a250', 'f8', 'f8', 'f8', 'f8']})
     for mm, modelfile in enumerate(modelfiles[0:5]):
