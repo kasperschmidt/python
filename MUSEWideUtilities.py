@@ -252,3 +252,22 @@ def get_specstat(wave,flux,fluxerr):
 
     return statdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def launch_bluebumpGUI():
+    """
+    Wrapper to set up and launch Josies GUI to serach for blue bumps in LAE spectra
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mu
+    mu.launch_bluebumpGUI()
+
+    """
+    print 'ERROR: Cannot be run within ipython using import. Run by simply typing "python determine_bb.py',pdb.set_trace()
+    print ' - Assuming positioned in /Users/kschmidt/work/MUSE/Josie_DoublePeakInspection/'
+    print ' - Importing determine_bb.py (remember to edit file and catalog info '
+    import determine_bb
+    print ' - Launching inspection GUI; happy inspecting... '
+    determine_bb.main()
+
+    print ' - GUI existed after inspections'
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
