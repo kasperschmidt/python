@@ -25,7 +25,7 @@ def buildANDgenerate(clobber=True):
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    uves.buildANDgenerate
+    uves.buildANDgenerate()
 
     """
     LAEinfofile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
@@ -106,7 +106,7 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
     x_image_model   = []
     y_image_model   = []
 
-    for ii,id in enumerate(objids):
+    for ii,id in enumerate(objids): #enumerate([206004030,101005016]):
         if verbose:
             infostr = '   Getting info for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
             if verbose: print '\n'+infostr,
@@ -161,20 +161,32 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
                     comps.append(hdrkey)
 
             imgwcs      = wcs.WCS(tu.strip_header(refimg_hdr.copy()))
-            xstr        = model_hdr['1_XC'].split(' ')
-            ystr        = model_hdr['1_YC'].split(' ')
 
-            if len(xstr) > 1:
-                xpix    = int(float(xstr[0]))
-            else:
-                if verbose: print 'Model xpix has no err; ',
-                xpix    = int(float(xstr[0][1:-1]))
+            pix_based_on_model = False
+            if pix_based_on_model:
+                xstr        = model_hdr['1_XC'].split(' ')
+                ystr        = model_hdr['1_YC'].split(' ')
 
-            if len(ystr) > 1:
-                ypix    = int(float(ystr[0]))
+                if len(xstr) > 1:
+                    xpix    = int(float(xstr[0]))
+                else:
+                    if verbose: print 'Model xpix has no err; ',
+                    xpix    = int(float(xstr[0][1:-1]))
+
+                if len(ystr) > 1:
+                    ypix    = int(float(ystr[0]))
+                else:
+                    if verbose: print 'Model ypix has no err; ',
+                    ypix    = int(float(ystr[0][1:-1]))
             else:
-                if verbose: print 'Model ypix has no err; ',
-                ypix    = int(float(ystr[0][1:-1]))
+                fit_region     = model_hdr['FITSECT']
+                cutrange_low_x = int(float(fit_region.split(':')[0].split('[')[-1]))
+                cutrange_low_y = int(float(fit_region.split(',')[-1].split(':')[0]))
+                xsize          = model_hdr['NAXIS1']
+                ysize          = model_hdr['NAXIS2']
+
+                xpix           = cutrange_low_x + int(xsize/2.)
+                ypix           = cutrange_low_y + int(ysize/2.)
 
             if 'cdfs' in pointingname:
                 skycoord    = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=1)
