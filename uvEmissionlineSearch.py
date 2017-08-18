@@ -38,6 +38,47 @@ def buildANDgenerate(clobber=True):
     uves.gen_TDOSEsetupfiles(SETUPinfofile,clobber=clobber)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def run_TDOSEextraction():
+    """
+    Command (to copy-paste into arche) to run TDOSE on setup files generated with uves.gen_TDOSEsetupfiles()
+
+    --- EXAMPLE OF USE ---
+    copy-past into Max terminal (for copying over files to arche) and on arche (for running TDOSE)
+
+    """
+    # ---------------------------- Copying over files from Mac ----------------------------
+    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/ref_image_galfit_models/*.fits kasper@arche.aip.de:/store/data/musewide/TDOSE/ref_image_galfit_models/
+
+    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/*candels*.txt kasper@arche.aip.de:/store/data/musewide/TDOSE/tdose_setupfiles/
+
+    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/*.fits kasper@arche.aip.de:/store/data/musewide/TDOSE/tdose_sourcecats/
+
+    # ------------------------ Running TDOSE on Arche - FewFileRun ------------------------
+    # mkdir tdose_models tdose_cutouts tdose_spectra
+    # ur_setup
+    # ipython
+    import tdose, glob
+    import numpy as np
+    Nsessions = 1
+
+    setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[0]] # COSMOS 06
+    setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[1]] # CDFS 01
+
+    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=True,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=False,logterminaloutput=True,verbosePE=True,verbosefull=True)
+
+    # -------------------------- Running TDOSE on Arche - Full Run -------------------------
+    # mkdir tdose_models, tdose_cutouts, tdose_spectra
+    # ur_setup
+    # nice ipython
+    import tdose, glob
+    import numpy as np
+    Nsessions = 30
+
+    setupfiles = glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')
+
+    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=True,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=True,logterminaloutput=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False,verbose=True):
     """
     Building a fits table containing information on the sources.
@@ -344,7 +385,7 @@ def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
                              'x'+str(cutoutsize[1])+'arcsec').replace('.','p')
 
             if 'cdfs' in pointing:
-                newname = outputdir+'model_acs_814w_'+pointing+'_cut_v2.0'+cutoutstr+'.fits'
+                newname = outputdir+'model_acs_814w_'+pointing+'_cut_v1.0'+cutoutstr+'.fits'
             elif 'cosmos' in pointing:
                 newname = outputdir+'model_acs_814w_'+pointing+'_cut_v1.0'+cutoutstr+'.fits'
 
@@ -405,48 +446,6 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
         coordarray['dec'][mm]       = dec
 
     return coordarray
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def run_TDOSEextraction():
-    """
-    Command (to copy-paste into arche) to run TDOSE on setup files generated with uves.gen_TDOSEsetupfiles()
-
-    --- EXAMPLE OF USE ---
-    copy-past into Max terminal (for copying over files to arche) and on arche (for running TDOSE)
-
-    """
-    # ---------------------------- Copying over files from Mac ----------------------------
-    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/ref_image_galfit_models/*.fits kasper@arche.aip.de:/store/data/musewide/TDOSE/ref_image_galfit_models/
-
-    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/*candels*.txt kasper@arche.aip.de:/store/data/musewide/TDOSE/tdose_setupfiles/
-
-    # scp /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/*.fits kasper@arche.aip.de:/store/data/musewide/TDOSE/tdose_sourcecats/
-
-    # ------------------------ Running TDOSE on Arche - FewFileRun ------------------------
-    # mkdir tdose_models tdose_cutouts tdose_spectra
-    # ur_setup
-    # ipython
-    import tdose, glob
-    import numpy as np
-    Nsessions = 1
-
-    setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[0]] # COSMOS 06
-    setupfiles = [glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')[1]] # CDFS 01
-
-    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=True,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=False,logterminaloutput=True,verbosePE=True,verbosefull=True)
-
-
-    # -------------------------- Running TDOSE on Arche - Full Run -------------------------
-    # mkdir tdose_models, tdose_cutouts, tdose_spectra
-    # ur_setup
-    # nice ipython
-    import tdose, glob
-    import numpy as np
-    Nsessions = 30
-
-    setupfiles = glob.glob('/store/data/musewide/TDOSE/tdose_setupfiles/MUSEWide_tdose_setup_LAEs_candels-*.txt')
-
-    bundles, paralleldic = tdose.perform_extractions_in_parallel(setupfiles,Nsessions=Nsessions,clobber=True,performcutout=True,store1Dspectra=True,plot1Dspectra=True,generateFullFoVmodel=True,generateOverviewPlots=True,skipextractedobjects=True,logterminaloutput=True)
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def launch_MiG(verbose=True):
     """
