@@ -459,8 +459,13 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
                     else:
                         compstring = compstring + compNo + ':??  '
 
-            outstring = models_renamed[mm]+'  '+model_ids[mm]+'  '+compstring+'     # Notes: \n'
-            fout.write(outstring)
+            outstring = models_renamed[mm]+'  '+model_ids[mm]+'  '+compstring+'     # >>>KBS Notes>>>:    >>>JK notes>>>: '
+            jknotes   = open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels_all_ids.txt','r')
+            for line in jknotes.readlines():
+                if str(model_ids[mm]) in line:
+                    outstring = outstring+'  '+line.replace('\n','').replace('	','   ')+'  '
+            jknotes.close()
+            fout.write(outstring+' \n')
         fout.close()
         if verbose: print ' - Wrote component info to: '+compinfofile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
