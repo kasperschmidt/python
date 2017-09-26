@@ -335,6 +335,135 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
         pointingcat_fits = f2a.ascii2fits(pointingcat,asciinames=True,skip_header=2,fitsformat='D',verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sourcecat_compinfo=None,
+                         refnamebase='model_acs_814w_candels-PPPP_cut_v1.0_idIIII_cutout2p0x2p0arcsec.fits',
+                         pointsourcefile=None,pointsourcescale=1.0,ignore_radius=0.3,clobber=False,verbose=True):
+    """
+
+    Function loading galfit models from modelinputdir (assumed to be names as imgblock_ID.fits), renaming them,
+    converting them to cubes and generating the corresponding source catalogs needed by TDOSE. It also generates
+    a template component info file which can be edited (after copying to a new file) and be provided back to the
+    script for a second run updating the the cubes and source catalogs accordingly.
+
+    --- INPUT ---
+
+
+    --- EXMAMPLE OF USE ---
+    import glob
+    import uvEmissionlineSearch as uves
+
+    GALFITmodels    = glob.glob('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels/imgblock_*.fits')
+    outputdir       = '/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/'
+    PSFmodels       = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/F814Wpsfmodel_imgblock_6475.fits']*len(GALFITmodels)
+    pointsourcefile = None #'/Users/kschmidt/work/MUSE/uvEmissionlineSearch/pointsourceobjects.txt'
+    uves.gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=PSFmodels,sourcecat_compinfo=None,pointsourcefile=pointsourcefile)
+
+
+    """
+    Nmodels = len(GALFITmodels)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Renaming files of '+str(Nmodels)+' models profived to GALFITmodels keyword'
+    models_renamed = []
+    model_ids      = []
+    for modelname in GALFITmodels:
+        objid    = modelname.split('block_')[-1].split('.fit')[0]
+        pointing = mu.gen_pointingname(objid)
+        newname  = outputdir+'/'+refnamebase.replace('IIII',str(objid)).replace('PPPP',pointing)
+        cpcmd    = ' cp '+modelname+' '+newname
+        if os.path.isfile(newname) & (clobber == False):
+            if verbose: print ' clobber = False and '+newname+' already exists, so moving on to next file.'
+        else:
+            cpout = commands.getoutput(cpcmd)
+        models_renamed.append(newname)
+        model_ids.append(objid)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if pointsourcefile is not None:
+        if verbose: print ' - Assembling list of models for objects to use point source extractions for '
+        pointsources      = np.genfromtxt(pointsourcefile,dtype=None,comments='#')
+        try:
+            pointsourcescales = [pointsourcescale]*len(pointsources)
+            ignore_radii      = [ignore_radius]*len(pointsources)
+        except:
+            pointsourcescales = pointsourcescale
+            ignore_radii      = ignore_radius
+    else:
+        pointsources      = None
+        pointsourcescales = 'dummy'
+        ignore_radii      = 'dummy'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if PSFmodels is None:
+        PSFlist = None
+    else:
+        if verbose: print ' - Loading PSF models '
+        if type(PSFmodels) is list:
+            PSFlist = []
+            if type(PSFmodelext) is not list:
+                PSFmodelext = [PSFmodelext] * len(PSFmodels)
+            for mm, PSFmodel in enumerate(PSFmodels):
+                PSFlist.append(pyfits.open(PSFmodel)[PSFmodelext[mm]].data)
+        else:
+            PSFlist = [pyfits.open(PSFmodels)[PSFmodelext].data]*len(GALFITmodels)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    gen_compinfofile = True
+    if sourcecat_compinfo is None:
+        compinfofile = None
+    else:
+        if os.path.isfile(sourcecat_compinfo):
+            if verbose: print ' - Will use existing point source component file provided:\n   '+sourcecat_compinfo
+            compinfofile     = sourcecat_compinfo
+            gen_compinfofile = False
+            if verbose: print '   (no new file/template will be generated)'
+        else:
+            compinfofile = None
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Building cubes from renamed GALFIT models'
+    tu.galfit_convertmodel2cube(models_renamed,includewcs=True,savecubesumimg=False,convkernels=PSFlist,
+                                sourcecat_compinfo=compinfofile,normalizecomponents=False,pointsources=pointsources,
+                                ignore_radius=ignore_radii,pointsourcescales=pointsourcescales,includesky=False,
+                                clobber=clobber,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if gen_compinfofile:
+        if verbose: print ' - Generating component info file template for source catalog updates'
+        if sourcecat_compinfo is None:
+            compinfofile = './component_info_template_RENAME_.txt'
+            if os.path.isfile(compinfofile) & (clobber == False):
+                if verbose: print '   ... but '+compinfofile+' exists and clobber=False, so skipping.'
+        else:
+            if os.path.isfile(compinfofile) & (clobber == False):
+                if verbose: print '   ... but '+compinfofile+' exists and clobber=False, so skipping.'
+            else:
+                compinfofile = sourcecat_compinfo
+
+        fout = open(compinfofile,'w')
+        fout.write("""# TDOSE source catalog components keys for J. Kerutt's 2x2 arcsec GALFIT models of the MUSE-Wide LAEs from
+# the first 60 MUSE-Wide pointings.
+#
+# --- TEMPLATE --- generated with uvEmissionlineSearch.gen_GALFITmodelcubes() on %s
+#
+# modefilename  id  componentinfo
+""" % tu.get_now_string())
+
+        for mm, GFmodel in enumerate(GALFITmodels):
+            modelheader = pyfits.open(models_renamed[mm])[2].header
+            compstring  = ' '
+            for key in modelheader.keys():
+                if 'COMP_' in key:
+                    compNo = key.split('OMP_')[-1]
+                    if modelheader[key] == 'sky':
+                        compstring = compstring + compNo + ':3  '
+                    else:
+                        compstring = compstring + compNo + ':??  '
+
+            outstring = models_renamed[mm]+'  '+model_ids[mm]+'  '+compstring+'     # Notes: \n'
+            fout.write(outstring)
+        fout.close()
+        if verbose: print ' - Wrote component info to: '+compinfofile
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_TDOSEsetupfiles(infofile,namebase='MUSEWide_tdose_setup_LAEs',clobber=False,
                         outputdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/',verbose=True):
     """
