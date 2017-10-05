@@ -271,3 +271,80 @@ def launch_bluebumpGUI():
     print ' - GUI existed after inspections'
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,outputdir,
+                              cube_data_ext='DATA_DCBGC',cube_var_ext='EFF_STAT',
+                              names=None,clobber=False,verbose=True):
+    """
+    Create narrow band images (sum over predefined set of wavelength slices) from a given data cube.
+    Will generate subcube cutouts in the porcess using tu.extract_subcube()
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mu
+
+    pointing = 'candels-cdfs-01'
+    outdir   = '/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/'
+    ras      = [53.0612466535,53.0540222689]
+    decs     = [-27.8047374553,-27.8037275129]
+    wcenters = [[5830.0,7426.5,9152.5],[5869.5,7476.9,11000]]
+    dwaves   = [[10,10,10],[10,10,10]]
+    names    = ['101011026','101012027']
+    datacube = glob.glob('/Volumes/DATABCKUP2/MUSE-Wide/datacubes_dcbgc_effnoised/DATACUBE_'+pointing+'_v1.0_dcbgc_effnoised.fits')
+
+    mu.create_narrowband_subcube(datacube[0],ras,decs,5.0,5.0,wcenters,dwaves,outdir,names=names,clobber=True)
+
+    """
+    Nsubcubes = len(ras)
+    if len(decs) != Nsubcubes:
+        sys.exit(' The number of RAs does not match the number of Decs. Make sure they do ')
+    if verbose: print ' - Found '+str(Nsubcubes)+' coordinate sets to generate sub cubes for '
+
+    if (type(dras) == float) & (type(ddecs) == float):
+        dras  = [dras] * Nsubcubes
+        ddecs = [ddecs] * Nsubcubes
+
+    cubehdr = pyfits.open(datacube)[cube_data_ext].header
+    wavevec = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    for ii in xrange(Nsubcubes):
+        subcubestr  = (str(dras[ii])+'x'+str(ddecs[ii]) ).replace('.','p')
+        subcubename = outputdir+'subcube_iiiiii_'+subcubestr+'arcsec.fits'
+        if names is not None:
+            subcubename = subcubename.replace('iiiiii',names[ii])
+        else:
+            subcubename = subcubename.replace('iiiiii',str("%.5d" % (ii+1)))
+
+        tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=[cube_data_ext,cube_var_ext],
+                           clobber=clobber,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
+
+        subcube = pyfits.open(subcubename)['DATA_DCBGC'].data
+
+        for ww, cwave in enumerate(wavecenters[ii]):
+            dwave = dwaves[ii][ww]
+            narrowbandname  = subcubename.replace('.fits','narrowbandimage_cwave'+str(cwave).replace('.','p')+
+                                                  'dwave'+str(dwave).replace('.','p')+'.fits')
+
+            wavemin = cwave-dwave
+            wavemax = cwave+dwave
+
+            goodent = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
+
+            if len(goodent) >= 2:
+                if verbose: print ' - Saving model cube to \n   '+narrowbandname
+                narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
+
+                imghdr = tu.strip_header(pyfits.open(subcubename)[cube_data_ext].header.copy())
+                for key in imghdr.keys():
+                    if '3' in key:
+                        del imghdr[key]
+                    if 'ZAP' in key:
+                        del imghdr[key]
+
+                hduimg   = pyfits.PrimaryHDU(narrowbandimage,header=imghdr)
+                hdus     = [hduimg]
+                hdulist  = pyfits.HDUList(hdus)                  # turn header into to hdulist
+                hdulist.writeto(narrowbandname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
+            else:
+                if verbose: print ' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate'
+                if verbose: print '   '+narrowbandname
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
