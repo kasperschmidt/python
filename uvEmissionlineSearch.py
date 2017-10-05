@@ -11,11 +11,13 @@ import pyfits
 import datetime
 import numpy as np
 import shutil
+import time
 import fits2ascii as f2a
 import MUSEWideUtilities as mu
 import kbsutilities as kbs
 import tdose_utilities as tu
 from astropy import wcs
+import subprocess
 import uvEmissionlineSearch as uves
 import ciiiEmitterCandidates as cec
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -336,7 +338,7 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sourcecat_compinfo=None,
-                         refnamebase='model_acs_814w_candels-PPPP_cut_v1.0_idIIII_cutout2p0x2p0arcsec.fits',
+                         refnamebase='model_acs_814w_PPPP_cut_v1.0_idIIII_cutout2p0x2p0arcsec.fits',
                          pointsourcefile=None,pointsourcescale=1.0,ignore_radius=0.3,clobber=False,verbose=True):
     """
 
@@ -358,14 +360,13 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
     pointsourcefile = None #'/Users/kschmidt/work/MUSE/uvEmissionlineSearch/pointsourceobjects.txt'
     uves.gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=PSFmodels,sourcecat_compinfo=None,pointsourcefile=pointsourcefile)
 
-
     """
     Nmodels = len(GALFITmodels)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Renaming files of '+str(Nmodels)+' models profived to GALFITmodels keyword'
     models_renamed = []
     model_ids      = []
-    for modelname in GALFITmodels:
+    for modelname in GALFITmodels[0:5]:
         objid    = modelname.split('block_')[-1].split('.fit')[0]
         pointing = mu.gen_pointingname(objid)
         newname  = outputdir+'/'+refnamebase.replace('IIII',str(objid)).replace('PPPP',pointing)
@@ -421,7 +422,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Building cubes from renamed GALFIT models'
-    tu.galfit_convertmodel2cube(models_renamed,includewcs=True,savecubesumimg=False,convkernels=PSFlist,
+    tu.galfit_convertmodel2cube(models_renamed,includewcs=True,savecubesumimg=True,convkernels=PSFlist,
                                 sourcecat_compinfo=compinfofile,normalizecomponents=False,pointsources=pointsources,
                                 ignore_radius=ignore_radii,pointsourcescales=pointsourcescales,includesky=False,
                                 clobber=clobber,verbose=verbose)
@@ -448,7 +449,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 # modefilename  id  componentinfo
 """ % tu.get_now_string())
 
-        for mm, GFmodel in enumerate(GALFITmodels):
+        for mm, GFmodel in enumerate(GALFITmodels[0:5]):
             modelheader = pyfits.open(models_renamed[mm])[2].header
             compstring  = ' '
             for key in modelheader.keys():
@@ -469,6 +470,153 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
             fout.write(outstring+' \n')
         fout.close()
         if verbose: print ' - Wrote component info to: '+compinfofile
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/',
+                         imgdir='/Volumes/DATABCKUP2/MUSE-Wide/hst_cutouts/',modelstart=1,objids=None,verbose=True):
+    """
+    Script to put open DS9 windows showing galfit models so they can be inspected
+
+    --- INPUT ---
+    modeldir     Directory containing models to display
+    modelstart   Where to start the inspection in list of models/objects. Useful to skip ahead in long object lists.
+                 E.g. when all models in a directory are to be inspected.
+    objids       List of objects ids to display. If None, all objects found in modeldir will be displayed
+
+    --- EXAMPLE OF USE ---
+
+    models = glob.glob('/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/model*arcsec.fits')
+    tu.galfit_model_ds9region(models,clobber=True)
+
+    uves.inspect_GALFITmodels(modelstart=3)
+
+    """
+    LAEinfo = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+
+    if objids is None:
+        GALFITmodels = glob.glob(modeldir+'model*arcsec.fits')
+    else:
+        GALFITmodels = []
+        for objid in objids:
+            GALFITmodels = GALFITmodels + [mod for mod in glob.glob(modeldir+'model*'+str(objid)+'*arcsec.fits')]
+    GALFITmodels      = np.asarray(GALFITmodels)
+    if verbose: print ' - Found '+str(len(GALFITmodels))+' GALFIT models'
+
+    loopmodels        = GALFITmodels[modelstart-1:]
+
+    MWregion_cosmos   = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_objects_cosmos.reg' #candels_cosmos_pointings-all.reg'
+    MWregion_cdfs     = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_objects_cdfs.reg' #candels_cdfs_pointings-all.reg'
+
+    if verbose: print ' - Will look through '+str(len(loopmodels))+' of the models starting with model number '+str(modelstart)
+
+    ds9cmd       = "ds9 -geometry 1200x800 -lock frame wcs -tile grid layout 4 3"
+    pds9         = subprocess.Popen(ds9cmd,shell=True,executable=os.environ["SHELL"])
+    #cmdout       = commands.getoutput(ds9cmd)
+    time.sleep(1.1)# sleep to make sure ds9 appear in PIDlist
+    for ii in np.arange(1,13):
+        out = commands.getoutput('xpaset -p ds9 frame new')
+    out = commands.getoutput('xpaset -p ds9 tile yes ')
+
+    for mm, GFmodel in enumerate(loopmodels):
+        if verbose:
+            infostr = '   Displaying files for model '+str("%.5d" % (mm+1))+' / '+str("%.5d" % len(loopmodels))+' in DS9.'
+            print infostr,
+
+        modelid      = GFmodel.split('_id')[-1][:9]
+        compregion   = GFmodel.replace('.fits','_ds9region.reg')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        out = commands.getoutput('xpaset -p ds9 frame 1 ')
+        out = commands.getoutput('xpaset -p ds9 file '+GFmodel+'[1]')
+        out = commands.getoutput('xpaset -p ds9 regions '+compregion)
+        out = commands.getoutput('xpaset -p ds9 zoom to fit ')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        out = commands.getoutput('xpaset -p ds9 frame 2 ')
+        out = commands.getoutput('xpaset -p ds9 file '+GFmodel+'[2]')
+        out = commands.getoutput('xpaset -p ds9 regions '+compregion)
+        out = commands.getoutput('xpaset -p ds9 zoom to fit ')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        modelcubesum = GFmodel.replace('.fits','_cubesum.fits')
+        if os.path.isfile(modelcubesum):
+            out = commands.getoutput('xpaset -p ds9 frame 4 ')
+            out = commands.getoutput('xpaset -p ds9 file '+modelcubesum)
+            out = commands.getoutput('xpaset -p ds9 regions '+compregion)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        HSTcutouts   = glob.glob('/Volumes/DATABCKUP2/MUSE-Wide/hst_cutouts/*'+GFmodel.split('/')[-1][15:-37]+'*fits')
+        for cc, HSTcutout in enumerate(HSTcutouts):
+            out = commands.getoutput('xpaset -p ds9 frame '+str(5+cc))
+            out = commands.getoutput('xpaset -p ds9 file '+HSTcutout)
+            if 'cosmos' in HSTcutout:
+                out = commands.getoutput('xpaset -p ds9 regions '+MWregion_cosmos)
+            else:
+                out = commands.getoutput('xpaset -p ds9 regions '+MWregion_cdfs)
+            out = commands.getoutput('xpaset -p ds9 scale log 1 10')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        modelcube = GFmodel.replace('.fits','_cube.fits')
+        if os.path.isfile(modelcube):
+            out = commands.getoutput('xpaset -p ds9 frame 3 ')
+            out = commands.getoutput('xpaset -p ds9 file '+modelcube)
+            out = commands.getoutput('xpaset -p ds9 regions '+compregion)
+            out = commands.getoutput('xpaset -p ds9 zoom to fit ')
+
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Printing info of object
+        if verbose:
+            objent =  np.where(LAEinfo['ID'] == int(modelid))
+            print '   ID        =  '+modelid
+            print '   [ra,dec]  = ['+str(LAEinfo['RA'][objent][0])+','+str(LAEinfo['DEC'][objent][0])+']'
+            print '   zMUSE     = '+str(LAEinfo['redshift'][objent][0])
+            lamLya    = (LAEinfo['redshift'][objent][0]+1.0) * 1216.0
+            print '   lamdaLya  = '+str("%.2f" % lamLya)
+            bandsLya  = uves.wavelength_in_bands(lamLya)
+            print '   bandsLya  = ',bandsLya
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print '\n Move on to the next model (y/n)? ',
+        input = raw_input()
+        if (input.lower() == 'y') or (input.lower() == 'yes'):
+            continue
+        else:
+            if verbose: print '\n - Okay; then shutting down '
+            return
+    if verbose: print '\n - Done; no more objects in loop'
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def wavelength_in_bands(wavelength):
+    """
+    Returning band names containing a given wavelength
+    Can be used to return bands where a certain emission line is included
+
+    Band widths are taken from
+    http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?mode=browse&gname=HST&gname2=ACS_WFC
+
+    Curves are at
+    http://www.stsci.edu/hst/wfc3/ins_performance/UVIS_sensitivity/UVIS_Longx.jpg
+    http://www.stsci.edu/hst/wfc3/ins_performance/UVIS_sensitivity/UVIS_Wide1.jpg
+    http://www.stsci.edu/hst/wfc3/ins_performance/UVIS_sensitivity/UVIS_Wide2.jpg
+    http://www.stsci.edu/hst/wfc3/ins_performance/IR_sensitivity/IR4_Wide1_single.jpg
+    Linked from
+    http://www.stsci.edu/hst/wfc3/ins_performance/ground/components/filters
+
+    """
+    infodic           = {}
+    infodic['F435W']  = [3599,4861]
+    infodic['F606W']  = [4634,7180]
+    infodic['F775W']  = [6804,8632]
+    infodic['F814W']  = [6885,9648]
+    infodic['F850LP'] = [8007,10865]
+    infodic['F105W']  = [8947,12129]
+    infodic['F125W']  = [10845,14139]
+    infodic['F160W']  = [13854,16999]
+
+    bands = []
+    for key in infodic.keys():
+        if (wavelength >= infodic[key][0]) & (wavelength <= infodic[key][1]):
+            bands.append(key)
+
+    return bands
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_TDOSEsetupfiles(infofile,namebase='MUSEWide_tdose_setup_LAEs',clobber=False,
                         outputdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_setupfiles/',verbose=True):
