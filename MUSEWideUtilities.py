@@ -272,11 +272,30 @@ def launch_bluebumpGUI():
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,outputdir,
-                              cube_data_ext='DATA_DCBGC',cube_var_ext='EFF_STAT',
+                              cube_ext=['DATA_DCBGC','EFF_STAT'],
                               names=None,clobber=False,verbose=True):
     """
     Create narrow band images (sum over predefined set of wavelength slices) from a given data cube.
     Will generate subcube cutouts in the porcess using tu.extract_subcube()
+
+    --- INPUT ---
+    datacube     Data cube to extract narrow band images from
+    ras          List of R.A.s to extract narrow band images around
+    decs         List of Dec.s to extract narrow band images around
+    dras         Size of narrow band images in R.A. direction (provided in arcsec)
+    ddecs        Size of narrow band images in Dec. direction (provided in arcsec)
+    wavecenters  List of lists of central wavelengths of narrow band images to generate for the N locations/objects
+                 provided with ras and decs input. Use format:
+                     [[obj1line1,obj1line2,obj1line3],[obj2line1,obj2line2],...]
+    dwaves       The wavelength ranges to collabse into narrow band images (by summing) for the wavecenters provided.
+                 Use format:
+                     [[obj1dwave1,obj1dwave2,obj1dwave3],[obj2dwave1,obj2dwave2],...]
+    outputdir    Directory to stroe outputs to
+    cube_ext     list of extensions to extract from cube into sub-cube. The header of the first extension mentioned
+                 in the list will be used as WCS and Header template for the narrow-band image generated
+    names        Names or IDs of locations/objects indicated by the ras and decs input
+    clobber      Overwrite existing files
+    verbose      Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import MUSEWideUtilities as mu
@@ -302,7 +321,7 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
         dras  = [dras] * Nsubcubes
         ddecs = [ddecs] * Nsubcubes
 
-    cubehdr = pyfits.open(datacube)[cube_data_ext].header
+    cubehdr = pyfits.open(datacube)[cube_ext[0]].header
     wavevec = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
 
     for ii in xrange(Nsubcubes):
@@ -313,7 +332,7 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
         else:
             subcubename = subcubename.replace('iiiiii',str("%.5d" % (ii+1)))
 
-        tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=[cube_data_ext,cube_var_ext],
+        tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=cube_ext,
                            clobber=clobber,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
 
         subcube = pyfits.open(subcubename)['DATA_DCBGC'].data
@@ -332,7 +351,7 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
                 if verbose: print ' - Saving model cube to \n   '+narrowbandname
                 narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
 
-                imghdr = tu.strip_header(pyfits.open(subcubename)[cube_data_ext].header.copy())
+                imghdr = tu.strip_header(pyfits.open(subcubename)[cube_ext[0]].header.copy())
                 for key in imghdr.keys():
                     if '3' in key:
                         del imghdr[key]
