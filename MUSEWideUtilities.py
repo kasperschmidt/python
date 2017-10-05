@@ -339,7 +339,7 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
 
         for ww, cwave in enumerate(wavecenters[ii]):
             dwave = dwaves[ii][ww]
-            narrowbandname  = subcubename.replace('.fits','narrowbandimage_cwave'+str(cwave).replace('.','p')+
+            narrowbandname  = subcubename.replace('.fits','_narrowbandimage_cwave'+str(cwave).replace('.','p')+
                                                   'dwave'+str(dwave).replace('.','p')+'.fits')
 
             wavemin = cwave-dwave
