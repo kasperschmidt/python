@@ -730,17 +730,79 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
 
     return coordarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def launch_MiG(verbose=True):
+def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,1549,1909],fwhmkey='FWHM',verbose=True):
     """
-    Launching the MUSE inspection GUI to look manually search the MUSE data
+    Generate narrow band images around the location for a set of emission lines.
+
+    If FWHM value is found in LAEinfo file, the relation from Verhamme+17 is used to predict systemic redshift
 
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
 
+    LAEinfofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
+    datacubestring = '/Volumes/DATABCKUP2/MUSE-Wide/datacubes_dcbgc_effnoised/DATACUBE_PPPP_v1.0_dcbgc_effnoised.fits'
+    outputdir      = '/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/'
+
+    uves.gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,1549,1909],fwhmkey='FWHM',verbose=True)
+
     """
-    print ' under construction'
+    LAEinfo = pyfits.open(LAEinfofile)[1].data
 
+    pointings = LAEinfo['pointing']
 
+    for pointing in np.unique(np.sort(pointings)):
+        pointing_objs = np.where(pointings == pointing)[0]
+
+        datacube = glob.glob(datacubestring.replace('PPPP',pointing))
+
+        if len(datacube) == 0:
+            if verbose: print ' -----> WARNING No data cube found globbing for '
+            if verbose: print '        '+datacubestring.replace('PPPP',pointing)
+        elif len(datacube) > 1:
+            if verbose: print ' -----> WARNING More than 1 data cube found globbing for '
+            if verbose: print '        '+datacubestring.replace('PPPP',pointing)
+            if verbose: print '        Using the first found in the list, i.e., '
+            datacube = datacube[0]
+            if verbose: print '        Extracting from: '+datacube
+        else:
+            datacube = datacube[0]
+            if verbose: print ' - Extracting from: '+datacube
+
+        ras       = LAEinfo['ra'][pointing_objs]
+        decs      = LAEinfo['dec'][pointing_objs]
+        names     = LAEinfo['id'][pointing_objs].astype(str)
+        redshifts = LAEinfo['redshift'][pointing_objs]
+
+        if fwhmkey in  LAEinfo.columns.names:
+            fwhms = LAEinfo[fwhmkey][pointing_objs]
+        else:
+            fwhms = []
+
+        wcenters = []
+        dwaves   = []
+        for redshift in redshifts:
+            wcen = []
+            dwav = []
+            if len(fwhms) != 0:
+                if verbose: print ' - Estimating systemic redshift using Verhamme+17 z_sys vs Lya_FWHM relation '
+                zsys = None
+            else:
+                zsys = redshift
+
+            for lw in linewaves:
+                if lw == 1216:
+                    wcen.append(lw*(redshift+1.0))
+                    dwav.append(10)
+                else:
+                    wcen.append(lw*(zsys+1.0))
+                    dwav.append(10)
+
+            wcenters.append(wcen)
+            dwaves.append(dwav)
+
+        mu.create_narrowband_subcube(datacube,ras,decs,5.0,5.0,wcenters,dwaves,outputdir,names=names,clobber=True)
+
+        pdb.set_trace()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
