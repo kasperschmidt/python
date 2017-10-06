@@ -508,7 +508,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
 
     if verbose: print ' - Will look through '+str(len(loopmodels))+' of the models starting with model number '+str(modelstart)
 
-    ds9cmd       = "ds9 -geometry 1200x800 -lock frame wcs -tile grid layout 4 3"
+    ds9cmd       = "ds9 -view layout vertical -lock frame wcs -height 650 -width 650 -tile grid layout 4 4 "
     pds9         = subprocess.Popen(ds9cmd,shell=True,executable=os.environ["SHELL"])
     #cmdout       = commands.getoutput(ds9cmd)
     time.sleep(1.1)# sleep to make sure ds9 appear in PIDlist
@@ -562,6 +562,17 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
             out = commands.getoutput('xpaset -p ds9 regions '+compregion)
             out = commands.getoutput('xpaset -p ds9 zoom to fit ')
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        narrowbandimages = glob.glob(modeldir+'*'+modelid+'*narrowbandimage*.fits')
+        if len(narrowbandimages) > 0:
+            for nn, nbimg in enumerate(narrowbandimages):
+                out = commands.getoutput('xpaset -p ds9 frame '+str(13+nn))
+                out = commands.getoutput('xpaset -p ds9 file '+nbimg)
+                if 'cosmos' in GFmodel:
+                    out = commands.getoutput('xpaset -p ds9 regions '+MWregion_cosmos)
+                else:
+                    out = commands.getoutput('xpaset -p ds9 regions '+MWregion_cdfs)
+            out = commands.getoutput('xpaset -p ds9 zoom to fit ')
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Printing info of object
