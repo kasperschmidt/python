@@ -366,7 +366,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
     if verbose: print ' - Renaming files of '+str(Nmodels)+' models profived to GALFITmodels keyword'
     models_renamed = []
     model_ids      = []
-    for modelname in GALFITmodels[0:5]:
+    for modelname in GALFITmodels:
         objid    = modelname.split('block_')[-1].split('.fit')[0]
         pointing = mu.gen_pointingname(objid)
         newname  = outputdir+'/'+refnamebase.replace('IIII',str(objid)).replace('PPPP',pointing)
@@ -430,18 +430,22 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if gen_compinfofile:
         if verbose: print ' - Generating component info file template for source catalog updates'
+        skip = False
         if sourcecat_compinfo is None:
             compinfofile = './component_info_template_RENAME_.txt'
             if os.path.isfile(compinfofile) & (clobber == False):
                 if verbose: print '   ... but '+compinfofile+' exists and clobber=False, so skipping.'
+                skip = True
         else:
             if os.path.isfile(compinfofile) & (clobber == False):
                 if verbose: print '   ... but '+compinfofile+' exists and clobber=False, so skipping.'
+                skip = True
             else:
                 compinfofile = sourcecat_compinfo
 
-        fout = open(compinfofile,'w')
-        fout.write("""# TDOSE source catalog components keys for J. Kerutt's 2x2 arcsec GALFIT models of the MUSE-Wide LAEs from
+        if not skip:
+            fout = open(compinfofile,'w')
+            fout.write("""# TDOSE source catalog components keys for J. Kerutt's 2x2 arcsec GALFIT models of the MUSE-Wide LAEs from
 # the first 60 MUSE-Wide pointings.
 #
 # --- TEMPLATE --- generated with uvEmissionlineSearch.gen_GALFITmodelcubes() on %s
@@ -449,27 +453,27 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 # modefilename  id  componentinfo
 """ % tu.get_now_string())
 
-        for mm, GFmodel in enumerate(GALFITmodels[0:5]):
-            modelheader = pyfits.open(models_renamed[mm])[2].header
-            compstring  = ' '
-            for key in modelheader.keys():
-                if 'COMP_' in key:
-                    compNo = key.split('OMP_')[-1]
-                    if modelheader[key] == 'sky':
-                        compstring = compstring + compNo + ':3  '
-                    else:
-                        compstring = compstring + compNo + ':??  '
+            for mm, GFmodel in enumerate(GALFITmodels):
+                modelheader = pyfits.open(models_renamed[mm])[2].header
+                compstring  = ' '
+                for key in modelheader.keys():
+                    if 'COMP_' in key:
+                        compNo = key.split('OMP_')[-1]
+                        if modelheader[key] == 'sky':
+                            compstring = compstring + compNo + ':3  '
+                        else:
+                            compstring = compstring + compNo + ':??  '
 
-            outstring = models_renamed[mm]+'  '+model_ids[mm]+'  '+compstring.ljust(50)+\
-                        '     # >>>KBS Notes>>>:    >>>JK notes>>>: '
-            jknotes   = open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels_all_ids.txt','r')
-            for line in jknotes.readlines():
-                if str(model_ids[mm]) in line:
-                    outstring = outstring+'  '+line.replace('\n','').replace('	','   ')+'  '
-            jknotes.close()
-            fout.write(outstring+' \n')
-        fout.close()
-        if verbose: print ' - Wrote component info to: '+compinfofile
+                outstring = models_renamed[mm]+'  '+model_ids[mm]+'  '+compstring.ljust(50)+\
+                            '     # >>>KBS Notes>>>:    >>>JK notes>>>: '
+                jknotes   = open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels_all_ids.txt','r')
+                for line in jknotes.readlines():
+                    if str(model_ids[mm]) in line:
+                        outstring = outstring+'  '+line.replace('\n','').replace('	','   ')+'  '
+                jknotes.close()
+                fout.write(outstring+' \n')
+            fout.close()
+            if verbose: print ' - Wrote component info to: '+compinfofile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/',
                          imgdir='/Volumes/DATABCKUP2/MUSE-Wide/hst_cutouts/',modelstart=1,objids=None,verbose=True):
@@ -741,7 +745,8 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
 
     return coordarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,1549,1909],fwhmkey='FWHM',verbose=True):
+def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,1549,1909],fwhmkey='FWHM',
+                         clobber=False,verbose=True):
     """
     Generate narrow band images around the location for a set of emission lines.
 
@@ -778,7 +783,7 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
             if verbose: print '        Extracting from: '+datacube
         else:
             datacube = datacube[0]
-            if verbose: print ' - Extracting from: '+datacube
+            if verbose: print '\n - Extracting from: '+datacube
 
         ras       = LAEinfo['ra'][pointing_objs]
         decs      = LAEinfo['dec'][pointing_objs]
@@ -812,8 +817,6 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
             wcenters.append(wcen)
             dwaves.append(dwav)
 
-        mu.create_narrowband_subcube(datacube,ras,decs,5.0,5.0,wcenters,dwaves,outputdir,names=names,clobber=True)
-
-        pdb.set_trace()
+        mu.create_narrowband_subcube(datacube,ras,decs,5.0,5.0,wcenters,dwaves,outputdir,names=names,clobber=clobber)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
