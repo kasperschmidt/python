@@ -11,6 +11,7 @@ from astropy import wcs
 from astropy.coordinates import SkyCoord
 import glob
 import pdb
+import os
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_pixelpos(ra,dec,pointingname,imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,
                  radecunit="deg",pixorigin=1,verbose=True):
@@ -332,38 +333,41 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
         else:
             subcubename = subcubename.replace('iiiiii',str("%.5d" % (ii+1)))
 
-        tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=cube_ext,
-                           clobber=clobber,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
+        if os.path.isfile(subcubename) & (clobber == False):
+            if verbose: print ' - '+subcubename+' exists and clobber=False so skipping...'
+        else:
+            tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=cube_ext,
+                               clobber=clobber,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
 
-        subcube = pyfits.open(subcubename)['DATA_DCBGC'].data
+            subcube = pyfits.open(subcubename)['DATA_DCBGC'].data
 
-        for ww, cwave in enumerate(wavecenters[ii]):
-            dwave = dwaves[ii][ww]
-            narrowbandname  = subcubename.replace('.fits','_narrowbandimage_cwave'+str(cwave).replace('.','p')+
-                                                  'dwave'+str(dwave).replace('.','p')+'.fits')
+            for ww, cwave in enumerate(wavecenters[ii]):
+                dwave = dwaves[ii][ww]
+                narrowbandname  = subcubename.replace('.fits','_narrowbandimage_cwave'+str(cwave).replace('.','p')+
+                                                      'dwave'+str(dwave).replace('.','p')+'.fits')
 
-            wavemin = cwave-dwave
-            wavemax = cwave+dwave
+                wavemin = cwave-dwave
+                wavemax = cwave+dwave
 
-            goodent = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
+                goodent = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
 
-            if len(goodent) >= 2:
-                if verbose: print ' - Saving model cube to \n   '+narrowbandname
-                narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
+                if len(goodent) >= 2:
+                    if verbose: print ' - Saving model cube to \n   '+narrowbandname
+                    narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
 
-                imghdr = tu.strip_header(pyfits.open(subcubename)[cube_ext[0]].header.copy())
-                for key in imghdr.keys():
-                    if '3' in key:
-                        del imghdr[key]
-                    if 'ZAP' in key:
-                        del imghdr[key]
+                    imghdr = tu.strip_header(pyfits.open(subcubename)[cube_ext[0]].header.copy())
+                    for key in imghdr.keys():
+                        if '3' in key:
+                            del imghdr[key]
+                        if 'ZAP' in key:
+                            del imghdr[key]
 
-                hduimg   = pyfits.PrimaryHDU(narrowbandimage,header=imghdr)
-                hdus     = [hduimg]
-                hdulist  = pyfits.HDUList(hdus)                  # turn header into to hdulist
-                hdulist.writeto(narrowbandname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
-            else:
-                if verbose: print ' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate'
-                if verbose: print '   '+narrowbandname
+                    hduimg   = pyfits.PrimaryHDU(narrowbandimage,header=imghdr)
+                    hdus     = [hduimg]
+                    hdulist  = pyfits.HDUList(hdus)                  # turn header into to hdulist
+                    hdulist.writeto(narrowbandname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
+                else:
+                    if verbose: print ' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate'
+                    if verbose: print '   '+narrowbandname
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
