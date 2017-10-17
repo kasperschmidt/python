@@ -339,7 +339,7 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sourcecat_compinfo=None,
                          refnamebase='model_acs_814w_PPPP_cut_v1.0_idIIII_cutout2p0x2p0arcsec.fits',
-                         pointsourcefile=None,pointsourcescale=1.0,ignore_radius=0.3,clobber=False,verbose=True):
+                         pointsourcefile=None,pointsourcescale=1.0,ignore_radius=0.5,clobber=False,verbose=True):
     """
 
     Function loading galfit models from modelinputdir (assumed to be names as imgblock_ID.fits), renaming them,
@@ -384,7 +384,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
         pointsources      = np.genfromtxt(pointsourcefile,dtype=None,comments='#')
         try:
             pointsourcescales = [pointsourcescale]*len(pointsources)
-            ignore_radii      = [ignore_radius]*len(pointsources)
+            ignore_radii      = [ignore_radius]*2 # same radius in x and y dimension
         except:
             pointsourcescales = pointsourcescale
             ignore_radii      = ignore_radius
@@ -422,8 +422,13 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Building cubes from renamed GALFIT models'
+    # newlist = []
+    # for mod in models_renamed:
+    #     if 'id12400' in mod: newlist.append(mod)
+    # models_renamed = newlist
+
     tu.galfit_convertmodel2cube(models_renamed,includewcs=True,savecubesumimg=True,convkernels=PSFlist,
-                                sourcecat_compinfo=compinfofile,normalizecomponents=False,pointsources=pointsources,
+                                sourcecat_compinfo=compinfofile,normalizecomponents=True,pointsources=pointsources,
                                 ignore_radius=ignore_radii,pointsourcescales=pointsourcescales,includesky=False,
                                 clobber=clobber,verbose=verbose)
 
@@ -450,6 +455,26 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 #
 # --- TEMPLATE --- generated with uvEmissionlineSearch.gen_GALFITmodelcubes() on %s
 #
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# modelfilename        Path and name of model file
+# id                   MUSE-Wide object ID
+# componentinfo        Information on the model components given as ComponentNumber:InfoKey
+#                      where the info keys are:  1 = object, 2 = contaminant and 3 = sky
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# The following default notes are used for commenting after ">>>Notes>>>:" (appended by notes from JK's inspection)
+#
+# NoteKey      ShortRef           NoteExplanation
+#
+# ND           Non Detection      A (visual) non detection in all the optical bands (606, 775W, 814W, 850LP)
+# PS           Point Source       Add a point source at central location to represent the soource
+# BD           Blue detection     Detection in filters blue-wards of the Lyalpha line (filters not including the Lyalpha wavelength)
+# WD           Weak drop          There is a week drop in the filters blue wards of the Lyalpha line
+# MO           Model offset       The model appears offset compared to LSDCat (Lyalpha) location
+# NBid         Neighbor           A neioghboring LAE (with id "id") which can potentially cause confusion/overlap of LAE spectra exists
+# DFfilter     Detection Filter   Object only detected in (a few) filters. Indicate those with multiple DFfilter comments
+# OCtext       Other Comment      Anything else to comment on? Follow comment by text
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # modefilename  id  componentinfo
 """ % tu.get_now_string())
 
@@ -462,10 +487,10 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
                         if modelheader[key] == 'sky':
                             compstring = compstring + compNo + ':3  '
                         else:
-                            compstring = compstring + compNo + ':??  '
+                            compstring = compstring + compNo + ':?  '
 
                 outstring = models_renamed[mm]+'  '+model_ids[mm]+'  '+compstring.ljust(50)+\
-                            '     # >>>KBS Notes>>>:    >>>JK notes>>>: '
+                            '     # >>>Notes>>>:  ND  PS  BD  WD  MO  NBid  DFfilter  OCtext    >>>JK notes>>>: '
                 jknotes   = open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels_all_ids.txt','r')
                 for line in jknotes.readlines():
                     if str(model_ids[mm]) in line:
@@ -483,7 +508,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
     --- INPUT ---
     modeldir     Directory containing models to display
     modelstart   Where to start the inspection in list of models/objects. Useful to skip ahead in long object lists.
-                 E.g. when all models in a directory are to be inspected.
+                 E.g. when all models in a directory are to be inspected. First model has modelstart=1
     objids       List of objects ids to display. If None, all objects found in modeldir will be displayed
 
     --- EXAMPLE OF USE ---
@@ -548,7 +573,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
             out = commands.getoutput('xpaset -p ds9 regions '+compregion)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        HSTcutouts   = glob.glob('/Volumes/DATABCKUP2/MUSE-Wide/hst_cutouts/*'+GFmodel.split('/')[-1][15:-37]+'*fits')
+        HSTcutouts   = glob.glob(imgdir+'*'+GFmodel.split('/')[-1][15:-37]+'*fits')
         for cc, HSTcutout in enumerate(HSTcutouts):
             out = commands.getoutput('xpaset -p ds9 frame '+str(5+cc))
             out = commands.getoutput('xpaset -p ds9 file '+HSTcutout)
