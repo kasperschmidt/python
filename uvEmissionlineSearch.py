@@ -483,6 +483,7 @@ def get_LAEidLists(sourcecatalog,skipids=True,includecomponentinfo=True,verbose=
             for line in compinfo.readlines():
                 if not line.startswith('#'):
                     cols = line.split()
+                    # - - - - - - - - - - - - Check for no assigned components - - - - - - - - - - - -
                     assignedcomponent = False
                     for col in cols:
                         if (len(col) == 3) & (':' in col):
@@ -490,8 +491,19 @@ def get_LAEidLists(sourcecatalog,skipids=True,includecomponentinfo=True,verbose=
                                 assignedcomponent = True
 
                     if not assignedcomponent:
-                        ids2skip.append(int(cols[1])) # grep for "1:2   2:3"
+                        ids2skip.append(int(cols[1]))
                         if verbose: print('   No assigned component for '+cols[1]+' as '+' '.join(cols[2:8])+'[...]')
+                    # - - - - - - Check for neighbors, i.e., dublicate IDs in source catalogs - - - - - -
+                    if ' NB ' in line:
+                        ids2skip.append(int(cols[1]))
+                        if verbose: print("   Close neighbor causing duplicate ID'ing for "+cols[1])
+                    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ids2skip  = np.unique(np.sort(np.asarray(ids2skip)))
+    Nobj_skip = len(ids2skip)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Nobj      = len(sourcetab['id'])
+    if verbose: print(' - Will put id lists together for the '+str(Nobj-Nobj_skip)+
+                      '; (Nobj - Nobj_skip) = ('+str(Nobj)+','+str(Nobj_skip)+')')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     idlists = {}
 
