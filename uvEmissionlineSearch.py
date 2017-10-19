@@ -283,7 +283,33 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
         if verbose: print ' - Generating DS9 region file'
         regionname = fitsname.replace('.fits','.reg')
         kbs.create_DS9region(regionname,ras,decs,color='magenta',circlesize=0.5,textlist=objids.astype(str),clobber=clobber)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_LAEidLists(sourcecatalog,verbose=True):
+    """
+    Generate TDOSE setupfiles for the LAE extractions
 
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    sourcecatalog = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
+    idlists = uves.get_LAEidLists(sourcecatalog)
+
+    """
+    sourcetab = pyfits.open(sourcecatalog)[1].data
+    pointings = np.unique(np.sort(sourcetab['pointing']))
+    idlists = {}
+
+    for pp, pointing in enumerate(pointings):
+        objents     = np.where(sourcetab['pointing'] == pointing)[0]
+        idlist      = []
+        for laeid in sourcetab['id'][objents]:
+            idlist.append(laeid)
+
+        if verbose: print(pointing+'    '+str(idlist).replace(', ',','))
+        idlists[pointing] = idlist
+
+    return idlists
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
     """
