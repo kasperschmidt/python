@@ -1054,7 +1054,7 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
-
+    import uvEmissionlineSearch as uves
     LAEinfofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
     datacubestring = '/Volumes/DATABCKUP2/MUSE-Wide/datacubes_dcbgc_effnoised/DATACUBE_PPPP_v1.0_dcbgc_effnoised.fits'
     outputdir      = '/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/'
@@ -1117,4 +1117,109 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
             dwaves.append(dwav)
 
         mu.create_narrowband_subcube(datacube,ras,decs,5.0,5.0,wcenters,dwaves,outputdir,names=names,clobber=clobber)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10,verbose=True):
+    """
+    Get limits at line locations from 1D spectra
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    spectra       = glob.glob('/Volumes/DATABCKUP1/TDOSEextractions/tdose_spectra/tdose_spectrum_candels*.fits')
+    sourcecatalog = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
+    output        = uves.estimate_limits(spectra,sourcecatalog,linewaves=['lya','civ','ciii'])
+    fluxvals, fluxerrs, SNvals, fluxvals_Dwav, fluxerrs_Dwav, SNvals_Dwav, EW_limits = output
+    """
+    if verbose: print(' - Loading source catalog ')
+    sourcecat = pyfits.open(sourcecatalog)[1].data
+
+    Nspec = len(spectra)
+    if verbose: print(' - Will estimate limits as provided line logations for '+str(Nspec))
+    fluxvals       = []
+    fluxerrs       = []
+    SNvals         = []
+    fluxvals_Dwav  = []
+    fluxerrs_Dwav  = []
+    SNvals_Dwav    = []
+    EW_limits      = []
+
+    for ss, spec in enumerate(spectra):
+        specdat  = pyfits.open(spec)[1].data
+        spec_lam = specdat['wave']
+        spec_f   = specdat['flux']
+        spec_err = specdat['fluxerror']
+        spec_s2n = specdat['s2n']
+
+        objid    = spec.split('_')[-1].split('-')[-1].split('.fit')[0]
+        objent   = np.where(sourcecat['id'] == objid)[0]
+        z_sys    = sourcecat['z_sys_AV17'][objent][0]
+        z_lya    = sourcecat['z_vac_red'][objent][0]
+
+        for ll, line in enumerate(lines):
+            if line.lower() == 'lya':
+                line_lam_1 = 1215.6737
+                line_lam_2 = None
+            elif line.lower() == 'civ':
+                line_lam_1 = 1548.195
+                line_lam_2 = 1550.770
+            elif line.lower() == 'ciii':
+                line_lam_1 = 1907.00
+                line_lam_2 = 1909.00
+            else:
+                sys.exit(' Did not find any setups for the line designated '+line)
+
+            line_wave_1  = (z_sys+1)*line_lam_1
+
+            fluxval, fluxerr, SNval, fluxval_Dwav, fluxerr_Dwav, SNval_Dwav = \
+                uves.lininfofromspec(line_wave_1,spec_lam,spec_f,spec_err,spec_s2n,deltalam=deltalam,verbose=verbose)
+
+            if line_lam_2 is not None:
+                fluxval, fluxerr, SNval, fluxval_Dwav, fluxerr_Dwav, SNval_Dwav = \
+                    uves.lininfofromspec(0.0,spec_lam,spec_f,spec_err,spec_s2n,deltalam=deltalam,verbose=verbose)
+
+            fluxvals.append(fluxval)
+            fluxerrs.append(fluxerr)
+            SNvals.append(SNval)
+            fluxvals_Dwav.append(fluxval_Dwav)
+            fluxerrs_Dwav.append(fluxerr_Dwav)
+            SNvals_Dwav.append(SNval_Dwav)
+            EW_limits.append(np.NaN)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - -  PLOTTING - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    return fluxvals, fluxerrs, SNvals, fluxvals_Dwav, fluxerrs_Dwav, SNvals_Dwav, EW_limits
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def lininfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltalam=10,verbose=True):
+    """
+    return info at given wavelength based on spectrum
+
+    """
+    wavediff     = np.abs(spec_lam-wavelength)
+    waveent      = np.where(wavediff == np.min(wavediff))
+
+    if len(waveent) == 0:
+        if verbose: print(' - '+str(wavelength)+' not within spectral range; returning 0s')
+        fluxval       = 0
+        fluxerr       = 0
+        SNval         = 0
+        fluxval_Dwav  = 0
+        fluxerr_Dwav  = 0
+        SNval_Dwav    = 0
+    else:
+        if len(waveent) >= 1:
+            if verbose: print(' - multiple matches for '+str(wavelength)+'; returning info for the first match: '+
+                              str(spec_lam[waveent[0]]))
+        ent      = waveent[0]
+        ent_dlam = np.where( (spec_lam > spec_lam[ent]-dlam) & (spec_lam + spec_lam[ent]+dlam) )
+
+        fluxval       = spec_flux[ent]
+        fluxerr       = spec_fluxerr[ent]
+        SNval         = spec_s2n[ent]
+        fluxval_Dwav  = np.mean(spec_flux[ent_dlam])
+        fluxerr_Dwav  = np.std(spec_fluxerr[ent_dlam])
+        SNval_Dwav    = np.mean(spec_s2n[ent_dlam])
+
+    return fluxval, fluxerr, SNval, fluxval_Dwav, fluxerr_Dwav, SNval_Dwav
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
