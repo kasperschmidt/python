@@ -287,7 +287,7 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
     """
-    Generating MUSE-Wide poitning source catalogs for TDOSE extraction of LAEs
+    Generating MUSE-Wide pointing source catalogs for TDOSE extraction of LAEs
 
     --- INPUT ---
 
@@ -332,6 +332,58 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
                 objstr = objstr + ' 1.0000 ' + ' \n'
 
                 fout.write(objstr)
+        fout.close()
+
+        pointingcat_fits = f2a.ascii2fits(pointingcat,asciinames=True,skip_header=2,fitsformat='D',verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_LAEsourceCats_fromGALFITmodelCubeSourceCats(outputdir,sourcecatalog,modelsourcecatdir,ignore99s=False,verbose=True):
+    """
+    Generating MUSE-Wide pointing source catalogs for TDOSE extraction of LAEs where all objects from
+    the source catalogs generated when converting GALFIT models into cubes are combined
+
+    --- INPUT ---
+    outputdir            Output directory to contain pointing source catalogs
+    sourcecatalog        Source catalog of LAEs to get pointing names from
+    modelsourcecatdir    Directory containing the source catalogs generated when converting
+                         LAE galfit models into cubes that TDOSE can understand for the spectral extractions.
+    ignore99s            Ignore objects with (parent)IDs of -99? These are the central coordinates of the models.
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    outputdir         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/'
+    sourcecat         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
+    modelsourcecatdir = '/Volumes/DATABCKUP1/TDOSEextractions/MW_LAEs_JKgalfitmodels/'
+
+    uves.gen_LAEsourceCats_fromGALFITmodelCubeSourceCats(outputdir,sourcecat,modelsourcecatdir,ignore99s=False)
+
+    """
+    sourcetab = pyfits.open(sourcecatalog)[1].data
+    pointings = np.unique(np.sort(sourcetab['pointing']))
+
+    for pp, pointing in enumerate(pointings):
+        modelsourcecats = glob.glob(modelsourcecatdir+'/*'+pointing+'*_sourcecatalog.txt')
+
+        pointingcat     = outputdir+'tdose_sourcecat_LAEs_'+pointing+'.txt'
+        fout = open(pointingcat,'w')
+        fout.write('# TDOSE Source catalog generated with uvEmissionlineSearch.gen_LAEsourceCats_fromGALFITmodelCubeSourceCats() on '+tu.get_now_string()+'  \n')
+        fout.write('# \n')
+        fout.write('# parent_id id ra dec x_image y_image fluxscale \n')
+
+        for modcat in modelsourcecats:
+            catinfo = open(modcat,'r')
+            for line in catinfo.readlines():
+                if line.startswith('#'):
+                    pass
+                else:
+                    if ignore99s:
+                        if line.split()[0] == '-99':
+                            pass
+                        else:
+                            fout.write(line)
+                    else:
+                        fout.write(line)
         fout.close()
 
         pointingcat_fits = f2a.ascii2fits(pointingcat,asciinames=True,skip_header=2,fitsformat='D',verbose=verbose)
