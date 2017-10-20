@@ -1295,7 +1295,26 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                 fluxval_Dlam_sum.append(lineinfo[9])
                 SNval_Dlam_sum.append(lineinfo[10])
 
-                EW_limit.append(np.NaN)
+                # - - - - -  Estimate EW  - - - - -
+                objent        = np.where(sourcecat['id'] == int(id))[0]
+                beta          = sourcecat['beta'][objent][0]
+                bandswithLya  = uves.wavelength_in_bands( 1216 * (sourcecat['z_sys_AV17'][objent][0] + 1))
+                bandswithline = uves.wavelength_in_bands( line_wave )
+
+                f_cont        = []
+                bands         = ['F606W','F775W','F814W']
+                wave_refs     = [6034.0,7730.0,8140.2]
+                for bb, band in enumerate(bands):
+                    if (band not in bandswithLya) & (band not in bandswithline):
+                        f_ref  = sourcecat[ 'flux_acs_'+band.lower()[1:] ][objent][0] * 1e20
+                        f_wave = uves.estimate_continuumlevel_viaBeta(line_wave, wave_refs[bb], f_ref, beta, verbose=False)
+                        f_cont.append(f_wave)
+
+                if (fluxval > 0.0) & (len(f_cont) > 0):
+                    EW_limit.append( fluxval_Dlam_sum / np.mean(np.asarray(f_cont)) )
+                else:
+                    EW_limit.append( np.NaN )
+                # - - - - - - - - - - - - - - - - - -
 
             outputdic[keys[ll]] = ids, \
                                   fluxval, fluxerr, SNval, \
@@ -1304,6 +1323,49 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                                   fluxval_Dlam_sum, SNval_Dlam_sum, \
                                   EW_limit
     return outputdic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta, verbose=True):
+    """
+    Estiamting the continuum level assuming a spectrum with a fixed beta extrapolating ot the provided wavelength
+
+    --- INPUT ---
+    wave          The wavelength at whihc the continuum is estimated
+    wave_ref      Referece wavelength at whihc the flux is known
+    f_ref         Flux at wave_ref
+    beta          The conitnuum slope to use for estrapolation to wave. Will assum f ~ wave**beta
+
+    --- EXAMPLE OF USE ---
+
+    sourcecatdat = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    objent       = np.where(sourcecatdat['id'] == 102013086)[0]
+    wave         = 1551 * (sourcecatdat['redshift'][objent][0] + 1)
+    beta         = sourcecatdat['beta'][objent][0]
+    bandswithLya = uves.wavelength_in_bands( 1216 * (sourcecatdat['redshift'][objent][0] + 1))
+
+    wave_ref     = 8140.2
+    f_ref        = sourcecatdat['flux_acs_814w'][objent][0]
+    f_wave = uves.estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta)
+
+    wave_ref     = 7730.0
+    f_ref        = sourcecatdat['flux_acs_775w'][objent][0]
+    f_wave = uves.estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta)
+
+    wave_ref     = 6034.0
+    f_ref        = sourcecatdat['flux_acs_606w'][objent][0]
+    f_wave = uves.estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta)
+
+
+    """
+    if verbose: print(' - Estimating flux at wavelength '+str(wave)+' using:')
+    if verbose: print('   reference wave = '+str(wave_ref))
+    if verbose: print('   reference flux = '+str(f_ref))
+    if verbose: print('   beta           = '+str(beta))
+    if verbose: print('   ')
+
+    f_wave = f_ref * (wave / wave_ref)**beta
+    if verbose: print('   f_'+str(int(np.round(wave)))+'         = '+str(f_wave)+'\n')
+
+    return f_wave
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colortype='redshift', showids=False,verbose=True):
     """
