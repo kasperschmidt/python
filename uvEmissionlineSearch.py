@@ -135,6 +135,11 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
     datE36lp    = pyfits.open(catE36lineprops)[1].data
     if verbose: print '   Columns: '+str(datE36lp.dtype.names)+'\n'
 
+    catLyaEW          = '/Users/kschmidt/work/catalogs/MUSE_GTO/fluxes_EWs_line_props.fits'
+    if verbose: print '   '+catLyaEW
+    datLyaEW  = pyfits.open(catLyaEW)[1].data
+    if verbose: print '   Columns: '+str(datLyaEW.dtype.names)+'\n'
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Counting LAEs and putting together ID list'
     e24_ids  = datE24main['UNIQUE_ID']
@@ -194,6 +199,22 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
     red_peak_shift_AV17_kms_err  = []
     z_sys_AV17                   = []  # Systemic redshift estimate based on A. Verhamme et al. (2017) relations
     z_sys_AV17_err               = []
+
+    # v v v    Lya EW props  v v v
+    EW_0                 = []
+    EW_0_err             = []
+    beta                 = []
+    beta_err             = []
+    flux_acs_606w        = []
+    flux_err_acs_606w    = []
+    flux_acs_775w        = []
+    flux_err_acs_775w    = []
+    flux_acs_814w        = []
+    flux_err_acs_814w    = []
+    flux_wfc3_125w       = []
+    flux_err_wfc3_125w   = []
+    flux_wfc3_160w       = []
+    flux_err_wfc3_160w   = []
 
     for ii,id in enumerate(objids): #enumerate([206004030,101005016]):
         if verbose:
@@ -393,6 +414,39 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
             z_sys_AV17.append(z_sys)
             z_sys_AV17_err.append(z_sys_err)
 
+        # - - - - - - - - - - ADD INFO FROM EW LINE PROPS TABLE - - - - - - - - - -
+        if len(modelfile) == 0:
+            EW_0.append(0.0)
+            EW_0_err.append(0.0)
+            beta.append(0.0)
+            beta_err.append(0.0)
+            flux_acs_606w.append(0.0)
+            flux_err_acs_606w.append(0.0)
+            flux_acs_775w.append(0.0)
+            flux_err_acs_775w.append(0.0)
+            flux_acs_814w.append(0.0)
+            flux_err_acs_814w.append(0.0)
+            flux_wfc3_125w.append(0.0)
+            flux_err_wfc3_125w.append(0.0)
+            flux_wfc3_160w.append(0.0)
+            flux_err_wfc3_160w.append(0.0)
+        else:
+            objent = np.where(datLyaEW['IDs'] == str(id))[0]
+            EW_0.append(datLyaEW['EW_0'][objent][0])
+            EW_0_err.append(datLyaEW['EW_0_err'][objent][0])
+            beta.append(datLyaEW['beta'][objent][0])
+            beta_err.append(datLyaEW['beta_err'][objent][0])
+            flux_acs_606w.append(datLyaEW['flux_acs_606w'][objent][0])
+            flux_err_acs_606w.append(datLyaEW['flux_err_acs_606w'][objent][0])
+            flux_acs_775w.append(datLyaEW['flux_acs_775w'][objent][0])
+            flux_err_acs_775w.append(datLyaEW['flux_err_acs_775w'][objent][0])
+            flux_acs_814w.append(datLyaEW['flux_acs_814w'][objent][0])
+            flux_err_acs_814w.append(datLyaEW['flux_err_acs_814w'][objent][0])
+            flux_wfc3_125w.append(datLyaEW['flux_wfc3_125w'][objent][0])
+            flux_err_wfc3_125w.append(datLyaEW['flux_err_wfc3_125w'][objent][0])
+            flux_wfc3_160w.append(datLyaEW['flux_wfc3_160w'][objent][0])
+            flux_err_wfc3_160w.append(datLyaEW['flux_err_wfc3_160w'][objent][0])
+
     if verbose: print '\n   done...'
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -439,10 +493,26 @@ def build_LAEfitstable(fitsname='./LAEinfo.fits',genDS9region=True,clobber=False
     c37 = pyfits.Column(name='z_sys_AV17', format='D', unit='', array=z_sys_AV17)
     c38 = pyfits.Column(name='z_sys_AV17_err', format='D', unit='', array=z_sys_AV17_err)
 
+    c39 = pyfits.Column(name='EW_0', format='D', unit='A', array=EW_0)
+    c40 = pyfits.Column(name='EW_0_err', format='D', unit='A', array=EW_0_err)
+    c41 = pyfits.Column(name='beta', format='D', unit='', array=beta)
+    c42 = pyfits.Column(name='beta_err', format='D', unit='', array=beta_err)
+    c43 = pyfits.Column(name='flux_acs_606w', format='D', unit='ERG/S/CM**2', array=flux_acs_606w)
+    c44 = pyfits.Column(name='flux_err_acs_606w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_606w)
+    c45 = pyfits.Column(name='flux_acs_775w', format='D', unit='ERG/S/CM**2', array=flux_acs_775w)
+    c46 = pyfits.Column(name='flux_err_acs_775w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_775w)
+    c47 = pyfits.Column(name='flux_acs_814w', format='D', unit='ERG/S/CM**2', array=flux_acs_814w)
+    c48 = pyfits.Column(name='flux_err_acs_814w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_814w)
+    c49 = pyfits.Column(name='flux_wfc3_125w', format='D', unit='ERG/S/CM**2', array=flux_wfc3_125w)
+    c50 = pyfits.Column(name='flux_err_wfc3_125w', format='D', unit='ERG/S/CM**2', array=flux_err_wfc3_125w)
+    c51 = pyfits.Column(name='flux_wfc3_160w', format='D', unit='ERG/S/CM**2', array=flux_wfc3_160w)
+    c52 = pyfits.Column(name='flux_err_wfc3_160w', format='D', unit='ERG/S/CM**2', array=flux_err_wfc3_160w)
+
     coldefs = pyfits.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,
                               c9,c10,c11,c12,c13,c14,
                               c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,
-                              c35,c36,c37,c38])
+                              c35,c36,c37,c38,
+                              c39,c40,c41,c42,c43,c44,c45,c46,c47,c48,c49,c50,c51,c52])
     th      = pyfits.new_table(coldefs) # creating default header
 
     # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
