@@ -20,6 +20,8 @@ import tdose_utilities as tu
 from astropy import wcs
 import subprocess
 import uvEmissionlineSearch as uves
+import matplotlib
+import matplotlib.pyplot as plt
 import ciiiEmitterCandidates as cec
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
@@ -1130,108 +1132,416 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
 
         mu.create_narrowband_subcube(datacube,ras,decs,5.0,5.0,wcenters,dwaves,outputdir,names=names,clobber=clobber)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10,verbose=True):
+def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10,plot=True,verbose=True):
     """
     Get limits at line locations from 1D spectra
 
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
-    import uvEmissionlineSearch as uves
+    import uvEmissionlineSearch as uves, glob
     spectra       = glob.glob('/Volumes/DATABCKUP1/TDOSEextractions/tdose_spectra/tdose_spectrum_candels*.fits')
     sourcecatalog = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
-    output        = uves.estimate_limits(spectra,sourcecatalog,linewaves=['lya','civ','ciii'])
-    fluxvals, fluxerrs, SNvals, fluxvals_Dwav, fluxerrs_Dwav, SNvals_Dwav, EW_limits = output
+    limit_output  = uves.estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=5)
+
+    plotbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/estimatelimits'
+    uves.plot_limits(sourcecatalog,plotbasename,limit_output)
+
     """
     if verbose: print(' - Loading source catalog ')
     sourcecat = pyfits.open(sourcecatalog)[1].data
 
     Nspec = len(spectra)
-    if verbose: print(' - Will estimate limits as provided line logations for '+str(Nspec))
-    fluxvals       = []
-    fluxerrs       = []
-    SNvals         = []
-    fluxvals_Dwav  = []
-    fluxerrs_Dwav  = []
-    SNvals_Dwav    = []
-    EW_limits      = []
+    if verbose: print(' - Will estimate limits for lines '+str(lines)+' for '+str(Nspec)+' spectra found')
+    outputdic = {}
+    outputdic['deltalam'] = deltalam
 
-    for ss, spec in enumerate(spectra):
-        specdat  = pyfits.open(spec)[1].data
-        spec_lam = specdat['wave']
-        spec_f   = specdat['flux']
-        spec_err = specdat['fluxerror']
-        spec_s2n = specdat['s2n']
 
-        objid    = spec.split('_')[-1].split('-')[-1].split('.fit')[0]
-        objent   = np.where(sourcecat['id'] == objid)[0]
-        z_sys    = sourcecat['z_sys_AV17'][objent][0]
-        z_lya    = sourcecat['z_vac_red'][objent][0]
+    for ll, line in enumerate(lines):
+        if line.lower() == 'lya':
+            line_lams  = [1215.6737]
+            use_sys    = False
+            keys       = ['lya']
+        elif line.lower() == 'civ':
+            line_lams  = [1548.195,1550.770]
+            use_sys    = True
+            keys       = ['civ1548','civ1551']
+        elif line.lower() == 'ciii':
+            line_lams  = [1907.00,1909.00]
+            use_sys    = True
+            keys       = ['ciii1907','ciii1909']
+        else:
+            sys.exit(' Did not find any setups for the line designated '+line)
 
-        for ll, line in enumerate(lines):
-            if line.lower() == 'lya':
-                line_lam_1 = 1215.6737
-                line_lam_2 = None
-            elif line.lower() == 'civ':
-                line_lam_1 = 1548.195
-                line_lam_2 = 1550.770
-            elif line.lower() == 'ciii':
-                line_lam_1 = 1907.00
-                line_lam_2 = 1909.00
-            else:
-                sys.exit(' Did not find any setups for the line designated '+line)
+        for ll, line_lam in enumerate(line_lams):
+            ids                 = []
+            # v v v   From uves.lineinfofromspec()   v v v
+            fluxval             = []
+            fluxerr             = []
+            SNval               = []
+            fluxval_Dlam        = []
+            fluxstd_Dlam        = []
+            fluxerr_Dlam        = []
+            SNval_Dlam          = []
+            fluxval_Dlam_max    = []
+            SNval_Dlam_max      = []
+            fluxval_Dlam_sum    = []
+            SNval_Dlam_sum      = []
+            # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+            EW_limit            = []
 
-            line_wave_1  = (z_sys+1)*line_lam_1
+            if verbose: print(' - Looping over spectra for line = '+keys[ll])
+            for ss, spec in enumerate(spectra):
+                id       = spec.split('/')[-1].split('.fit')[0][-9:]
+                specdat  = pyfits.open(spec)[1].data
+                spec_lam = specdat['wave']
+                spec_f   = specdat['flux']
+                spec_err = specdat['fluxerror']
+                spec_s2n = specdat['s2n']
 
-            fluxval, fluxerr, SNval, fluxval_Dwav, fluxerr_Dwav, SNval_Dwav = \
-                uves.lininfofromspec(line_wave_1,spec_lam,spec_f,spec_err,spec_s2n,deltalam=deltalam,verbose=verbose)
+                objid    = int(spec.split('_')[-1].split('-')[-1].split('.fit')[0])
+                objent   = np.where(sourcecat['id'] == objid)[0]
 
-            if line_lam_2 is not None:
-                fluxval, fluxerr, SNval, fluxval_Dwav, fluxerr_Dwav, SNval_Dwav = \
-                    uves.lininfofromspec(0.0,spec_lam,spec_f,spec_err,spec_s2n,deltalam=deltalam,verbose=verbose)
+                if use_sys:
+                    z_lam    = sourcecat['z_sys_AV17'][objent] # using systemic redshift
+                else:
+                    z_lam    = sourcecat['z_vac_red'][objent]  # using Lya redshiftfrom red peak
 
-            fluxvals.append(fluxval)
-            fluxerrs.append(fluxerr)
-            SNvals.append(SNval)
-            fluxvals_Dwav.append(fluxval_Dwav)
-            fluxerrs_Dwav.append(fluxerr_Dwav)
-            SNvals_Dwav.append(SNval_Dwav)
-            EW_limits.append(np.NaN)
+                line_wave  = (z_lam+1)*line_lam
+                lineinfo   = uves.lineinfofromspec(line_wave,spec_lam,spec_f,spec_err,spec_s2n,
+                                                   deltalam=deltalam,verbose=verbose)
 
-    # - - - - - - - - - - - - - - - - - - - - - - - -  PLOTTING - - - - - - - - - - - - - - - - - - - - - - - - -
+                ids.append(id)
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    return fluxvals, fluxerrs, SNvals, fluxvals_Dwav, fluxerrs_Dwav, SNvals_Dwav, EW_limits
+                fluxval.append(lineinfo[0])
+                fluxerr.append(lineinfo[1])
+                SNval.append(lineinfo[2])
+                fluxval_Dlam.append(lineinfo[3])
+                fluxstd_Dlam.append(lineinfo[4])
+                fluxerr_Dlam.append(lineinfo[5])
+                SNval_Dlam.append(lineinfo[6])
+                fluxval_Dlam_max.append(lineinfo[7])
+                SNval_Dlam_max.append(lineinfo[8])
+                fluxval_Dlam_sum.append(lineinfo[9])
+                SNval_Dlam_sum.append(lineinfo[10])
+
+                EW_limit.append(np.NaN)
+
+            outputdic[keys[ll]] = ids, \
+                                  fluxval, fluxerr, SNval, \
+                                  fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
+                                  fluxval_Dlam_max, SNval_Dlam_max, \
+                                  fluxval_Dlam_sum, SNval_Dlam_sum, \
+                                  EW_limit
+    return outputdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def lininfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltalam=10,verbose=True):
+def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colortype='redshift', showids=False,verbose=True):
+    """
+    Plotting the output from uves.estimate_limits()
+
+    """
+    sourcedat = pyfits.open(sourcecatalog)[1].data
+    z_sys     = sourcedat['z_sys_AV17']
+    z_lya     = sourcedat['z_vac_red']
+
+    for key in limits_dictionary.keys():
+        if key == 'deltalam':
+            continue
+        else:
+            ids, \
+            fluxval, fluxerr, SNval, \
+            fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
+            fluxval_Dlam_max, SNval_Dlam_max, \
+            fluxval_Dlam_sum, SNval_Dlam_sum, \
+            EW_limit = limits_dictionary[key]
+
+        # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print ' - Setting up and generating plot'
+        plotname = namebase+'_'+key+'_fluxVSs2n.pdf'
+        fig = plt.figure(figsize=(7, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 4
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        xvalues = np.asarray(SNval)
+        yvalues = np.asarray(fluxval)
+        xerr    = None
+        yerr    = np.asarray(fluxerr)
+
+        if colorcode:
+            cmap    = plt.cm.get_cmap('rainbow')
+
+            if colortype == 'redshift':
+                cmin    = 2.8
+                cmax    = 6.2
+            else:
+                sys.exit(' Color type '+colortype+' not enabled ')
+
+            colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+            cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+            m       = plt.cm.ScalarMappable(cmap=cmap)
+            m.set_array(cmaparr)
+            cb      = plt.colorbar(m)
+
+            if colortype == 'redshift':
+                cb.set_label('redshift')
+
+            for ii,id in enumerate(ids):
+
+                if colortype == 'redshift':
+                    objcol = cmap(colnorm(z_sys[ii]))
+
+                if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]):
+                    plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr,yerr=yerr[ii],
+                                 marker='o',lw=0, markersize=marksize,alpha=1.0,
+                                 markerfacecolor=objcol,ecolor=objcol,
+                                 markeredgecolor='None',zorder=10)
+        else:
+            plt.errorbar(xvalues,yvalues,xerr=xerr,yerr=yerr,
+                         marker='o',lw=0, markersize=marksize,alpha=0.5,
+                         markerfacecolor='gray',ecolor='k',
+                         markeredgecolor='k',zorder=10)
+
+        #marking AGN:
+        AGN     = ['104014050','115003085','214002011']
+        AGNcand = ['123048186','123501191','121033078']
+        for ii,id in enumerate(ids):
+            if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGN):
+                plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
+                                 marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+                                 markerfacecolor='None',ecolor=objcol,
+                                 markeredgecolor='black',zorder=20)
+
+            if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGNcand):
+                plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
+                                 marker='D',lw=0, markersize=marksize,alpha=1.0,
+                                 markerfacecolor='None',ecolor=objcol,
+                                 markeredgecolor='black',zorder=20)
+
+
+        if showids:
+            for ii,id in enumerate(ids):
+                if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]):
+                    plt.text(xvalues[ii],yvalues[ii],id,color='black',fontsize=Fsize/2.)
+
+        plt.plot([3,3],[-5000,5000],'--',color='gray',lw=lthick,zorder=5)
+
+        plt.xlabel('S/N of MUSE-Wide LAE 1D spectra at location of '+key)
+        plt.ylabel('Flux [1e-20cgs] of MUSE-Wide LAE 1D spectra at location of '+key)
+
+
+        #--------- RANGES ---------
+        xmin = np.min(xvalues[np.isfinite(xvalues)])
+        xmax = np.max(xvalues[np.isfinite(xvalues)])
+        dx   = xmax-xmin
+
+        ymin = np.min(yvalues[np.isfinite(yvalues)])
+        ymax = np.max(yvalues[np.isfinite(yvalues)])
+        dy   = ymax-ymin
+
+        plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
+        plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
+
+        # if logx:
+        #     plt.xscale('log')
+        # if logy:
+        #     plt.yscale('log')
+
+        #--------- LEGEND ---------
+        plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+                     markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
+        plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+                     markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+        plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+                     markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+
+        leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
+                         bbox_to_anchor=(0.5, 1.1),)  # add the legend
+        leg.get_frame().set_alpha(0.7)
+        #--------------------------
+
+        if verbose: print '   Saving plot to',plotname
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+
+        # # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
+        # if verbose: print ' - Setting up and generating plot'
+        # plotname = namebase+'_'+key+'_LyaEWVSflux.pdf'
+        # fig = plt.figure(figsize=(7, 5))
+        # fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
+        # Fsize    = 10
+        # lthick   = 2
+        # marksize = 4
+        # plt.rc('text', usetex=True)
+        # plt.rc('font', family='serif',size=Fsize)
+        # plt.rc('xtick', labelsize=Fsize)
+        # plt.rc('ytick', labelsize=Fsize)
+        # plt.clf()
+        # plt.ioff()
+        # #plt.title(inforstr[:-2],fontsize=Fsize)
+        #
+        # xvalues = np.asarray(LyaEW)
+        # yvalues = np.asarray(fluxval)
+        # xerr    = None
+        # yerr    = np.asarray(fluxerr)
+        #
+        # if colorcode:
+        #     cmap    = plt.cm.get_cmap('rainbow')
+        #
+        #     if colortype == 'redshift':
+        #         cmin    = 2.8
+        #         cmax    = 6.2
+        #     else:
+        #         sys.exit(' Color type '+colortype+' not enabled ')
+        #
+        #     colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+        #     cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+        #     m       = plt.cm.ScalarMappable(cmap=cmap)
+        #     m.set_array(cmaparr)
+        #     cb      = plt.colorbar(m)
+        #
+        #     if colortype == 'redshift':
+        #         cb.set_label('redshift')
+        #
+        #     for ii,id in enumerate(ids):
+        #
+        #         if colortype == 'redshift':
+        #             objcol = cmap(colnorm(z_sys[ii]))
+        #
+        #         if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]):
+        #             plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr,yerr=yerr[ii],
+        #                          marker='o',lw=0, markersize=marksize,alpha=1.0,
+        #                          markerfacecolor=objcol,ecolor=objcol,
+        #                          markeredgecolor='None',zorder=10)
+        # else:
+        #     plt.errorbar(xvalues,yvalues,xerr=xerr,yerr=yerr,
+        #                  marker='o',lw=0, markersize=marksize,alpha=0.5,
+        #                  markerfacecolor='gray',ecolor='k',
+        #                  markeredgecolor='k',zorder=10)
+        #
+        # #marking AGN:
+        # AGN     = ['104014050','115003085','214002011']
+        # AGNcand = ['123048186','123501191','121033078']
+        # for ii,id in enumerate(ids):
+        #     if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGN):
+        #         plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
+        #                          marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+        #                          markerfacecolor='None',ecolor=objcol,
+        #                          markeredgecolor='black',zorder=20)
+        #
+        #     if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGNcand):
+        #         plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
+        #                          marker='D',lw=0, markersize=marksize,alpha=1.0,
+        #                          markerfacecolor='None',ecolor=objcol,
+        #                          markeredgecolor='black',zorder=20)
+        #
+        #
+        # if showids:
+        #     for ii,id in enumerate(ids):
+        #         if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]):
+        #             plt.text(xvalues[ii],yvalues[ii],id,color='black',fontsize=Fsize/2.,zorder=30)
+        #
+        # plt.plot([3,3],[-5000,5000],'--',color='gray',lw=lthick,zorder=5)
+        #
+        # plt.xlabel('S/N of MUSE-Wide LAE 1D spectra at location of '+key)
+        # plt.ylabel('Flux [1e-20cgs] of MUSE-Wide LAE 1D spectra at location of '+key)
+        #
+        #
+        # #--------- RANGES ---------
+        # xmin = np.min(xvalues[np.isfinite(xvalues)])
+        # xmax = np.max(xvalues[np.isfinite(xvalues)])
+        # dx   = xmax-xmin
+        #
+        # ymin = np.min(yvalues[np.isfinite(yvalues)])
+        # ymax = np.max(yvalues[np.isfinite(yvalues)])
+        # dy   = ymax-ymin
+        #
+        # plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
+        # plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
+        #
+        # # if logx:
+        # #     plt.xscale('log')
+        # # if logy:
+        # #     plt.yscale('log')
+        #
+        # #--------- LEGEND ---------
+        # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+        #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
+        # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+        #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+        # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+        #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+        #
+        # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
+        #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
+        # leg.get_frame().set_alpha(0.7)
+        # #--------------------------
+        #
+        # if verbose: print '   Saving plot to',plotname
+        # plt.savefig(plotname)
+        # plt.clf()
+        # plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def lineinfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltalam=10,verbose=True):
     """
     return info at given wavelength based on spectrum
 
     """
-    wavediff     = np.abs(spec_lam-wavelength)
-    waveent      = np.where(wavediff == np.min(wavediff))
+    if (wavelength > np.min(spec_lam)) & (wavelength < np.max(spec_lam)):
 
-    if len(waveent) == 0:
-        if verbose: print(' - '+str(wavelength)+' not within spectral range; returning 0s')
-        fluxval       = 0
-        fluxerr       = 0
-        SNval         = 0
-        fluxval_Dwav  = 0
-        fluxerr_Dwav  = 0
-        SNval_Dwav    = 0
-    else:
-        if len(waveent) >= 1:
+        wavediff     = np.abs(spec_lam-wavelength)
+        waveent      = np.where(wavediff == np.min(wavediff))
+
+        if len(waveent) > 1:
             if verbose: print(' - multiple matches for '+str(wavelength)+'; returning info for the first match: '+
                               str(spec_lam[waveent[0]]))
         ent      = waveent[0]
-        ent_dlam = np.where( (spec_lam > spec_lam[ent]-dlam) & (spec_lam + spec_lam[ent]+dlam) )
+        ent_dlam = np.where( (spec_lam > (spec_lam[ent]-deltalam)) & (spec_lam < (spec_lam[ent]+deltalam)) )
 
         fluxval       = spec_flux[ent]
         fluxerr       = spec_fluxerr[ent]
         SNval         = spec_s2n[ent]
-        fluxval_Dwav  = np.mean(spec_flux[ent_dlam])
-        fluxerr_Dwav  = np.std(spec_fluxerr[ent_dlam])
-        SNval_Dwav    = np.mean(spec_s2n[ent_dlam])
 
-    return fluxval, fluxerr, SNval, fluxval_Dwav, fluxerr_Dwav, SNval_Dwav
+        fluxval_Dlam  = np.mean(spec_flux[ent_dlam])
+        fluxstd_Dlam  = np.std(spec_fluxerr[ent_dlam])
+        fluxerr_Dlam  = np.mean(spec_fluxerr[ent_dlam])
+        SNval_Dlam    = np.mean(spec_s2n[ent_dlam])
+
+        fluxval_Dlam_max  = np.max(spec_flux[ent_dlam])
+        SNval_Dlam_max    = np.max(spec_s2n[ent_dlam])
+
+        fluxval_Dlam_sum  = np.sum(spec_flux[ent_dlam])
+        SNval_Dlam_sum    = fluxval_Dlam_sum/fluxerr_Dlam
+
+    else:
+        if verbose: print(' - '+str(wavelength)+' not within spectral range; returning NaNs')
+        fluxval       = [np.NaN]
+        fluxerr       = [np.NaN]
+        SNval         = [np.NaN]
+
+        fluxval_Dlam  = np.NaN
+        fluxstd_Dlam  = np.NaN
+        fluxerr_Dlam  = np.NaN
+        SNval_Dlam    = np.NaN
+
+        fluxval_Dlam_max  = np.NaN
+        SNval_Dlam_max    = np.NaN
+
+        fluxval_Dlam_sum  = np.NaN
+        SNval_Dlam_sum    = np.NaN
+
+    return fluxval[0], fluxerr[0], SNval[0], \
+           fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
+           fluxval_Dlam_max, SNval_Dlam_max, \
+           fluxval_Dlam_sum, SNval_Dlam_sum
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
