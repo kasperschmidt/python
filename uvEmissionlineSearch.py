@@ -1310,8 +1310,8 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                         f_wave = uves.estimate_continuumlevel_viaBeta(line_wave, wave_refs[bb], f_ref, beta, verbose=False)
                         f_cont.append(f_wave)
 
-                if (fluxval > 0.0) & (len(f_cont) > 0):
-                    EW_limit.append( fluxval_Dlam_sum / np.mean(np.asarray(f_cont)) )
+                if (fluxval_Dlam_sum[ss] > 0.0) & (len(f_cont) > 0):
+                    EW_limit.append( fluxval_Dlam_sum[ss]/ deltalam / np.mean(np.asarray(f_cont)) )
                 else:
                     EW_limit.append( np.NaN )
                 # - - - - - - - - - - - - - - - - - -
@@ -1373,19 +1373,179 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
 
     """
     sourcedat = pyfits.open(sourcecatalog)[1].data
-    z_sys     = sourcedat['z_sys_AV17']
-    z_lya     = sourcedat['z_vac_red']
 
     for key in limits_dictionary.keys():
+    # for key in ['lya']:
         if key == 'deltalam':
             continue
+
+        ids, \
+        fluxval, fluxerr, SNval, \
+        fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
+        fluxval_Dlam_max, SNval_Dlam_max, \
+        fluxval_Dlam_sum, SNval_Dlam_sum, \
+        EW_limit = limits_dictionary[key]
+
+        # - - - - build vectors from source catalog using IDs - - - -
+        z_sys      = []
+        z_lya      = []
+        EW_lya     = []
+        EW_lya_err = []
+        beta       = []
+
+        for ii,id in enumerate(ids):
+            objent = np.where(sourcedat['id'] == int(id))[0]
+            z_sys.append(sourcedat['z_sys_AV17'][objent][0])
+            z_lya.append(sourcedat['z_vac_red'][objent][0])
+            EW_lya.append(sourcedat['EW_0'][objent][0])
+            EW_lya_err.append(sourcedat['EW_0_err'][objent][0])
+            beta.append(sourcedat['beta'][objent][0])
+
+        # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print ' - Setting up and generating plot'
+        plotname = namebase+'_'+key+'_EWlyaVSEW'+key+'.pdf'
+        fig = plt.figure(figsize=(7, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 4
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        xvalues = np.asarray(EW_lya)
+        yvalues = np.asarray(EW_limit)
+        xerr    = [None]*len(xvalues)
+        yerr    = [None]*len(xvalues)
+
+        if colorcode:
+            cmap    = plt.cm.get_cmap('rainbow')
+
+            if colortype == 'redshift':
+                cmin    = 2.8
+                cmax    = 6.2
+            else:
+                sys.exit(' Color type '+colortype+' not enabled ')
+
+            colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+            cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+            m       = plt.cm.ScalarMappable(cmap=cmap)
+            m.set_array(cmaparr)
+            cb      = plt.colorbar(m)
+
+            if colortype == 'redshift':
+                cb.set_label('redshift')
+
+            for ii,id in enumerate(ids):
+
+                if colortype == 'redshift':
+                    objcol = cmap(colnorm(z_sys[ii]))
+
+                if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]):
+                    marker = 'o'
+                    ms     = marksize
+                    mec    = objcol
+                    mfc    = objcol
+
+                    if SNval_Dlam_sum[ii] < 3.0:
+                        mfc    = 'None'
+
+                    if (beta[ii] == -2.0) & (SNval_Dlam_sum[ii] > 3.0):
+                        #marker = r'$\downarrow$'
+                        marker = r'$\nearrow$'
+                        ms     = ms*2
+
+                        plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
+                                     marker=marker,lw=0, markersize=ms,alpha=1.0,
+                                     markerfacecolor=mfc,ecolor=objcol,
+                                     markeredgecolor=mec,zorder=10)
+                    else:
+                        plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
+                                     marker=marker,lw=0, markersize=ms,alpha=1.0,
+                                     markerfacecolor=mfc,ecolor=objcol,
+                                     markeredgecolor=mec,zorder=10)
+
         else:
-            ids, \
-            fluxval, fluxerr, SNval, \
-            fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
-            fluxval_Dlam_max, SNval_Dlam_max, \
-            fluxval_Dlam_sum, SNval_Dlam_sum, \
-            EW_limit = limits_dictionary[key]
+            plt.errorbar(xvalues,yvalues,xerr=xerr,yerr=yerr,
+                         marker='o',lw=0, markersize=marksize,alpha=0.5,
+                         markerfacecolor='gray',ecolor='k',
+                         markeredgecolor='k',zorder=10)
+
+        #marking AGN:
+        AGN     = ['104014050','115003085','214002011']
+        AGNcand = ['123048186','123501191','121033078']
+        for ii,id in enumerate(ids):
+            if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGN):
+                plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
+                                 marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+                                 markerfacecolor='None',ecolor=objcol,
+                                 markeredgecolor='black',zorder=20)
+
+            if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGNcand):
+                plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
+                                 marker='D',lw=0, markersize=marksize,alpha=1.0,
+                                 markerfacecolor='None',ecolor=objcol,
+                                 markeredgecolor='black',zorder=20)
+
+        if showids:
+            for ii,id in enumerate(ids):
+                if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]):
+                    plt.text(xvalues[ii],yvalues[ii],id,color='black',fontsize=Fsize/2.)
+
+        if key.lower() == 'lya':
+            plt.plot([-5000,5000],[-5000,5000],'--',color='gray',lw=lthick,zorder=5)
+            plt.xscale('log')
+            plt.yscale('log')
+
+        plt.xlabel(' EW( Ly$\\alpha$ ) ')
+        plt.ylabel(' EW( '+key+' )')
+
+        #--------- RANGES ---------
+        goodent = np.where(np.isfinite(xvalues) & np.isfinite(yvalues))
+        xmin = np.min(xvalues[goodent])
+        xmax = np.max(xvalues[goodent])
+        dx   = xmax-xmin
+
+        ymin = np.min(yvalues[goodent])
+        ymax = np.max(yvalues[goodent])
+        dy   = ymax-ymin
+
+        plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
+        plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
+
+        # if logx:
+        #     plt.xscale('log')
+        # if logy:
+        #     plt.yscale('log')
+
+        #--------- LEGEND ---------
+        plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+                     markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N $>$ 3)')
+        plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+                     markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N $<$ 3)')
+        plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker=r'$\nearrow$',lw=0, markersize=marksize*2,alpha=1.0,
+                     markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (HST non-det. lower limit)')
+
+
+        plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+                     markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+        plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+                     markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+
+        leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.7},ncol=3,numpoints=1,
+                         bbox_to_anchor=(0.5, 1.1),)  # add the legend
+        leg.get_frame().set_alpha(0.7)
+        #--------------------------
+
+        if verbose: print '   Saving plot to',plotname
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+
 
         # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
         if verbose: print ' - Setting up and generating plot'
