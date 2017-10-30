@@ -1212,7 +1212,7 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
     import uvEmissionlineSearch as uves, glob
     spectra       = glob.glob('/Volumes/DATABCKUP1/TDOSEextractions/tdose_spectra/tdose_spectrum_candels*.fits')
     sourcecatalog = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
-    limit_output  = uves.estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=5)
+    limit_output  = uves.estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=3)
 
     plotbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/estimatelimits'
     uves.plot_limits(sourcecatalog,plotbasename,limit_output)
@@ -1258,7 +1258,9 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
             fluxval_Dlam_sum    = []
             SNval_Dlam_sum      = []
             # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
-            EW_limit            = []
+            EW                  = []
+            EW_Dlam             = []
+            EW_Dlam_sum         = []
 
             if verbose: print(' - Looping over spectra for line = '+keys[ll])
             for ss, spec in enumerate(spectra):
@@ -1310,10 +1312,21 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                         f_wave = uves.estimate_continuumlevel_viaBeta(line_wave, wave_refs[bb], f_ref, beta, verbose=False)
                         f_cont.append(f_wave)
 
-                if (fluxval_Dlam_sum[ss] > 0.0) & (len(f_cont) > 0):
-                    EW_limit.append( fluxval_Dlam_sum[ss]/ deltalam / np.mean(np.asarray(f_cont)) )
+                if (fluxval[ss] > 0.0) & (len(f_cont) > 0):
+                    EW.append( fluxval[ss] / np.mean(np.asarray(f_cont)) )
                 else:
-                    EW_limit.append( np.NaN )
+                    EW.append( np.NaN )
+
+                if (fluxval_Dlam[ss] > 0.0) & (len(f_cont) > 0):
+                    EW_Dlam.append( fluxval_Dlam[ss] / deltalam / np.mean(np.asarray(f_cont)) )
+                else:
+                    EW_Dlam.append( np.NaN )
+
+                if (fluxval_Dlam_sum[ss] > 0.0) & (len(f_cont) > 0):
+                    EW_Dlam_sum.append( fluxval_Dlam_sum[ss] / deltalam / np.mean(np.asarray(f_cont)) )
+                else:
+                    EW_Dlam_sum.append( np.NaN )
+
                 # - - - - - - - - - - - - - - - - - -
 
             outputdic[keys[ll]] = ids, \
@@ -1321,7 +1334,7 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                                   fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
                                   fluxval_Dlam_max, SNval_Dlam_max, \
                                   fluxval_Dlam_sum, SNval_Dlam_sum, \
-                                  EW_limit
+                                  EW, EW_Dlam, EW_Dlam_sum
     return outputdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta, verbose=True):
@@ -1375,7 +1388,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
     sourcedat = pyfits.open(sourcecatalog)[1].data
 
     for key in limits_dictionary.keys():
-    # for key in ['lya']:
+    #for key in ['lya']:
         if key == 'deltalam':
             continue
 
@@ -1384,7 +1397,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
         fluxval_Dlam_max, SNval_Dlam_max, \
         fluxval_Dlam_sum, SNval_Dlam_sum, \
-        EW_limit = limits_dictionary[key]
+        EW, EW_Dlam, EW_Dlam_sum = limits_dictionary[key]
 
         # - - - - build vectors from source catalog using IDs - - - -
         z_sys      = []
@@ -1418,7 +1431,9 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         #plt.title(inforstr[:-2],fontsize=Fsize)
 
         xvalues = np.asarray(EW_lya)
-        yvalues = np.asarray(EW_limit)
+        #yvalues = np.asarray(EW)
+        #yvalues = np.asarray(EW_Dlam)
+        yvalues = np.asarray(EW_Dlam_sum)
         xerr    = [None]*len(xvalues)
         yerr    = [None]*len(xvalues)
 
@@ -1464,10 +1479,13 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
                                      markerfacecolor=mfc,ecolor=objcol,
                                      markeredgecolor=mec,zorder=10)
                     else:
-                        plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
-                                     marker=marker,lw=0, markersize=ms,alpha=1.0,
-                                     markerfacecolor=mfc,ecolor=objcol,
-                                     markeredgecolor=mec,zorder=10)
+                        if SNval_Dlam_sum[ii] > 0.0:
+                            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
+                                         marker=marker,lw=0, markersize=ms,alpha=1.0,
+                                         markerfacecolor=mfc,ecolor=objcol,
+                                         markeredgecolor=mec,zorder=10)
+                        else:
+                            pass # not plotting S/N < 3 points
 
         else:
             plt.errorbar(xvalues,yvalues,xerr=xerr,yerr=yerr,
@@ -1515,7 +1533,9 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         dy   = ymax-ymin
 
         plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
+        #plt.xlim([0,400])
         plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
+        #plt.ylim([0,30])
 
         # if logx:
         #     plt.xscale('log')
@@ -1524,9 +1544,9 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
 
         #--------- LEGEND ---------
         plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
-                     markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N $>$ 3)')
+                     markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N\_'+key+' $>$ 3)')
         plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
-                     markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N $<$ 3)')
+                     markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N\_'+key+' $<$ 3)')
         plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker=r'$\nearrow$',lw=0, markersize=marksize*2,alpha=1.0,
                      markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (HST non-det. lower limit)')
 
