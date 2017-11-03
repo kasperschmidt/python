@@ -5,11 +5,7 @@ import pyfits
 import numpy as np
 import MUSEWideUtilities as mwu
 import MUSEWideCDFS44release as mw44
-import sys
-import scipy.ndimage
 import tdose_utilities as tu
-from astropy import wcs
-from astropy.coordinates import SkyCoord
 import commands
 import glob
 import tdose
@@ -150,6 +146,7 @@ def prepare_repeat_setup():
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
+    mw44.prepare_repeat_setup()
 
     """
     infofile  = '/Users/kschmidt/work/MUSE/MUSEWide_CFDS44release/musewide_infofile_DATABCKUP1.txt'
@@ -165,6 +162,7 @@ def prepare_repeat_photocat():
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
+    mw44.prepare_repeat_photocat()
 
     """
     catalogs = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/catalogs_photometry/catalog_photometry_candels-cdfs-*.cat')
@@ -229,26 +227,30 @@ def get_repeat_IDlists(infofile='/Users/kschmidt/work/MUSE/MUSEWide_CFDS44releas
             idliststr = fieldname.ljust(20)+str(idlist).replace(', ',',')
             if verbose: print (idliststr.ljust(100)+'END')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def run_repeat_TDOSE(verbose=True):
+def run_repeat_TDOSE(skipextractedobjects=True,gencutputsandscats=True,verbose=True):
     """
 
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
     import MUSEWideCDFS44release as mw44
-    mw44.run_repeat_TDOSE()
+    mw44.run_repeat_TDOSE(skipextractedobjects=True,gencutputsandscats=False)
 
 
     """
     setupdir   = '/Volumes/DATABCKUP1/TDOSEextractions/tdose_setupfiles/'
-    setupfiles = glob.glob(setupdir+'MUSEWide_CDFS44repeat_tdose_setup_DATABCKUP1_candels_candels-cdfs-24.txt')
+    setupfiles = glob.glob(setupdir+'MUSEWide_CDFS44repeat_tdose_setup_DATABCKUP1_candels_candels-cdfs-*.txt')
 
-    for sfile in setupfiles[:2]:
+    files2run  = setupfiles[-2:]
+
+    for sfile in files2run:
         tdose.perform_extraction(setupfile=sfile, modelrefimage=True,refimagemodel2cubewcs=True,definePSF=True,
                                  modeldatacube=True,createsourcecube=True,store1Dspectra=True,plot1Dspectra=True,
                                  plotS2Nspectra=True,save_init_model_output=False,clobber=True,verbose=True,verbosefull=True,
-                                 logterminaloutput=False,skipextractedobjects=True,skipspecificobjects=None,
-                                 performcutout=True,generatesourcecat=True)
+                                 logterminaloutput=False,skipextractedobjects=skipextractedobjects,skipspecificobjects=None,
+                                 performcutout=gencutputsandscats,generatesourcecat=gencutputsandscats)
 
+    for sfile in files2run:
+        tu.gen_overview_plot('all',sfile,skipobj=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
