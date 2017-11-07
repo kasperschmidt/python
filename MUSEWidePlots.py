@@ -1015,9 +1015,9 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     fluxerrcols  = ['fluxerror','FLUXERR','FLUXERR']
     zLya         = 2.97756004333
     voffset      = 235
-    skyspectra   = ['/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-06_av.fits',None,None]
-    wavecols_sky = ['lambda',None,None]
-    fluxcols_sky = ['data',None,None]
+    skyspectra   = ['/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-06_av.fits',None,'/Users/kschmidt/work/MUSE/skytable.fits']
+    wavecols_sky = ['lambda',None,'lam']
+    fluxcols_sky = ['data',None,'flux']
     yrangefull   = [-1000,2000]
 
     mwp.plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, zLya, voffset=voffset, skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky, outputfigure='default', yrangefull=yrangefull, plotSN=False)
@@ -1173,7 +1173,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1206,7 +1206,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1240,7 +1240,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1275,7 +1275,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1310,7 +1310,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1345,7 +1345,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1380,7 +1380,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1414,7 +1414,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1448,7 +1448,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   windowcenter,redshift,xrange,plotSN=plotSN,labels=None)
+                                                   xrange,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1478,7 +1478,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     xrangefull   = [4500,18000]
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                               windowcenter,redshift,xrangefull,plotSN=plotSN,labels=labels)
+                                               xrangefull,plotSN=plotSN,labels=labels)
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     if not plotSN:
         if yrangefull is None:
@@ -1487,93 +1487,95 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         yrangefull  = yrange
     Dyrangefull = yrangefull[1]-yrangefull[0]
     # --- "ZOOM BOXES" ---
+    boxzorder = 150
+
     if plot_Lyb:
-        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[0],'-',color='black',lw=LW)
-        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_Lyb[0],yrange_Lyb,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_Lyb[1],yrange_Lyb,'-',color='black',lw=LW)
+        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_Lyb[0],yrange_Lyb,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_Lyb[1],yrange_Lyb,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_Lyb)),yrange_Lyb[1]+0.03*Dyrangefull,'Ly$\\beta$+OVI',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_Lya:
-        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[0],'-',color='black',lw=LW)
-        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_Lya[0],yrange_Lya,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_Lya[1],yrange_Lya,'-',color='black',lw=LW)
+        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_Lya[0],yrange_Lya,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_Lya[1],yrange_Lya,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_Lya)),yrange_Lya[1]+0.03*Dyrangefull,'Ly$\\alpha$+NV',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_CII:
-        plt.plot(xrange_CII,np.zeros(2)+yrange_CII[0],'-',color='black',lw=LW)
-        plt.plot(xrange_CII,np.zeros(2)+yrange_CII[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_CII[0],yrange_CII,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_CII[1],yrange_CII,'-',color='black',lw=LW)
+        plt.plot(xrange_CII,np.zeros(2)+yrange_CII[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_CII,np.zeros(2)+yrange_CII[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_CII[0],yrange_CII,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_CII[1],yrange_CII,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_CII)),yrange_CII[1]+0.03*Dyrangefull,'CII',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_SiIVOIV:
-        plt.plot(xrange_SiIVOIV,np.zeros(2)+yrange_SiIVOIV[0],'-',color='black',lw=LW)
-        plt.plot(xrange_SiIVOIV,np.zeros(2)+yrange_SiIVOIV[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_SiIVOIV[0],yrange_SiIVOIV,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_SiIVOIV[1],yrange_SiIVOIV,'-',color='black',lw=LW)
+        plt.plot(xrange_SiIVOIV,np.zeros(2)+yrange_SiIVOIV[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_SiIVOIV,np.zeros(2)+yrange_SiIVOIV[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_SiIVOIV[0],yrange_SiIVOIV,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_SiIVOIV[1],yrange_SiIVOIV,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_SiIVOIV)),yrange_SiIVOIV[1]+0.03*Dyrangefull,'SiIV+OIV]',rotation='vertical',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_CIV:
-        plt.plot(xrange_CIV,np.zeros(2)+yrange_CIV[0],'-',color='black',lw=LW)
-        plt.plot(xrange_CIV,np.zeros(2)+yrange_CIV[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_CIV[0],yrange_CIV,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_CIV[1],yrange_CIV,'-',color='black',lw=LW)
+        plt.plot(xrange_CIV,np.zeros(2)+yrange_CIV[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_CIV,np.zeros(2)+yrange_CIV[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_CIV[0],yrange_CIV,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_CIV[1],yrange_CIV,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_CIV)),yrange_CIV[1]+0.03*Dyrangefull,'CIV',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_HeII:
-        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[0],'-',color='black',lw=LW)
-        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_HeII[0],yrange_HeII,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_HeII[1],yrange_HeII,'-',color='black',lw=LW)
+        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_HeII[0],yrange_HeII,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_HeII[1],yrange_HeII,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_HeII)),yrange_HeII[1]+0.03*Dyrangefull,'HeII+OIII]',rotation='vertical',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_CIII:
-        plt.plot(xrange_CIII,np.zeros(2)+yrange_CIII[0],'-',color='black',lw=LW)
-        plt.plot(xrange_CIII,np.zeros(2)+yrange_CIII[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_CIII[0],yrange_CIII,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_CIII[1],yrange_CIII,'-',color='black',lw=LW)
+        plt.plot(xrange_CIII,np.zeros(2)+yrange_CIII[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_CIII,np.zeros(2)+yrange_CIII[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_CIII[0],yrange_CIII,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_CIII[1],yrange_CIII,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_CIII)),yrange_CIII[1]+0.03*Dyrangefull,'CIII]',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     # if plot_CIIb:
-    #     plt.plot(xrange_CIIb,np.zeros(2)+yrange_CIIb[0],'-',color='black',lw=LW)
-    #     plt.plot(xrange_CIIb,np.zeros(2)+yrange_CIIb[1],'-',color='black',lw=LW)
-    #     plt.plot(np.zeros(2)+xrange_CIIb[0],yrange_CIIb,'-',color='black',lw=LW)
-    #     plt.plot(np.zeros(2)+xrange_CIIb[1],yrange_CIIb,'-',color='black',lw=LW)
+    #     plt.plot(xrange_CIIb,np.zeros(2)+yrange_CIIb[0],'-',color='black',lw=LW,zorder=boxzorder)
+    #     plt.plot(xrange_CIIb,np.zeros(2)+yrange_CIIb[1],'-',color='black',lw=LW,zorder=boxzorder)
+    #     plt.plot(np.zeros(2)+xrange_CIIb[0],yrange_CIIb,'-',color='black',lw=LW,zorder=boxzorder)
+    #     plt.plot(np.zeros(2)+xrange_CIIb[1],yrange_CIIb,'-',color='black',lw=LW,zorder=boxzorder)
     #     plt.text(np.mean(np.asarray(xrange_CIIb)),yrange_CIIb[1]+0.03*Dyrangefull,'CII]',
-    #              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+    #              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_MgII:
-        plt.plot(xrange_MgII,np.zeros(2)+yrange_MgII[0],'-',color='black',lw=LW)
-        plt.plot(xrange_MgII,np.zeros(2)+yrange_MgII[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_MgII[0],yrange_MgII,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_MgII[1],yrange_MgII,'-',color='black',lw=LW)
+        plt.plot(xrange_MgII,np.zeros(2)+yrange_MgII[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_MgII,np.zeros(2)+yrange_MgII[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_MgII[0],yrange_MgII,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_MgII[1],yrange_MgII,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_MgII)),yrange_MgII[1]+0.03*Dyrangefull,'MgII',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     if plot_OII:
-        plt.plot(xrange_OII,np.zeros(2)+yrange_OII[0],'-',color='black',lw=LW)
-        plt.plot(xrange_OII,np.zeros(2)+yrange_OII[1],'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_OII[0],yrange_OII,'-',color='black',lw=LW)
-        plt.plot(np.zeros(2)+xrange_OII[1],yrange_OII,'-',color='black',lw=LW)
+        plt.plot(xrange_OII,np.zeros(2)+yrange_OII[0],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(xrange_OII,np.zeros(2)+yrange_OII[1],'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_OII[0],yrange_OII,'-',color='black',lw=LW,zorder=boxzorder)
+        plt.plot(np.zeros(2)+xrange_OII[1],yrange_OII,'-',color='black',lw=LW,zorder=boxzorder)
         plt.text(np.mean(np.asarray(xrange_OII)),yrange_OII[1]+0.03*Dyrangefull,'[OII]',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     # if plot_Hd:
-    #     plt.plot(xrange_Hd,np.zeros(2)+yrange_Hd[0],'-',color='black',lw=LW)
-    #     plt.plot(xrange_Hd,np.zeros(2)+yrange_Hd[1],'-',color='black',lw=LW)
-    #     plt.plot(np.zeros(2)+xrange_Hd[0],yrange_Hd,'-',color='black',lw=LW)
-    #     plt.plot(np.zeros(2)+xrange_Hd[1],yrange_Hd,'-',color='black',lw=LW)
+    #     plt.plot(xrange_Hd,np.zeros(2)+yrange_Hd[0],'-',color='black',lw=LW,zorder=boxzorder)
+    #     plt.plot(xrange_Hd,np.zeros(2)+yrange_Hd[1],'-',color='black',lw=LW,zorder=boxzorder)
+    #     plt.plot(np.zeros(2)+xrange_Hd[0],yrange_Hd,'-',color='black',lw=LW,zorder=boxzorder)
+    #     plt.plot(np.zeros(2)+xrange_Hd[1],yrange_Hd,'-',color='black',lw=LW,zorder=boxzorder)
     #     plt.text(np.mean(np.asarray(xrange_Hd)),yrange_Hd[1]+0.03*Dyrangefull,'H$\delta$',
-    #              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom')
+    #              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
     #--------- LEGEND ---------
     anchorpos = (0.5, 1.2)
@@ -1594,7 +1596,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     plt.close('all')
     if verbose: print ' - Saved figure to ',specfigure
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,colors,windowcenter,redshift,xrange,plotSN=False,labels=None):
+def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,colors,xrange,plotSN=False,labels=None):
     """
 
     """
@@ -1607,7 +1609,7 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
         if plotSN:
             plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss])
+                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
 
             try:
                 fluxmin = np.min(np.asarray([0,  np.min(datadic[specname]['spec_S2N'][waveent]) ]))
@@ -1618,35 +1620,51 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
         else:
             plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_flux'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss])
+                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
 
             plt.fill_between(datadic[specname]['spec_wave'],datadic[specname]['spec_filllow'],datadic[specname]['spec_fillhigh'],
-                             alpha=0.20,color=colors[ss])
+                             alpha=0.20,color=colors[ss],zorder=100)
 
             try:
                 fluxmin = np.min(np.asarray([0,  np.min(datadic[specname]['spec_flux'][waveent]) ]))
                 fluxmax = np.max(np.asarray([10, np.max(datadic[specname]['spec_flux'][waveent]) ]))
                 yrange  = [fluxmin,1.1*fluxmax]
             except:
-                yrange = [0,500]
-
-        if skyspectra[ss] is not None:
-            sky_w   = datadic[specname][wavecols_sky[ss]]
-            sky_f   = datadic[specname][fluxcols_sky[ss]]
-            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]))[0]
-            skywave = sky_w[skyent]
-            skylow  = np.zeros(len(skywave))
-            skyflux = sky_f[skyent]
-            skyhigh = skyflux
-            #skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
-
-            plt.fill_between(skywave,skylow+yrange[0],skyhigh+yrange[0],alpha=0.3,color='black')
+                yrange = [0,100]
 
         if yrange[0] < yrangecomb[0]:
             yrangecomb[0] = yrange[0]
 
         if yrange[1] > yrangecomb[1]:
             yrangecomb[1] = yrange[1]
+
+    for ss, specname in enumerate(spectra):
+        if plotSN:
+            waveent = (datadic[specname]['spec_wave'] > xrange[0]) & (datadic[specname]['spec_wave'] < xrange[1])
+            meanerr = np.mean(datadic[specname]['spec_ferr'])
+        else:
+            meanerr = 1.0
+
+        if skyspectra[ss] is not None:
+            sky_w   = datadic[specname]['spec_wave_sky']
+            sky_f   = datadic[specname]['spec_flux_sky']
+
+            if skyspectra[ss] == '/Users/kschmidt/work/MUSE/skytable.fits':
+                sky_w = sky_w * 1e4
+                sky_f = sky_f / 1e3
+
+            sky_f   = sky_f / meanerr # scale to fit in S/N windows
+
+            skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]) &
+                               (sky_w > np.min(datadic[specname]['spec_wave'])) &
+                               (sky_w < np.max(datadic[specname]['spec_wave'])))[0]
+            skywave = sky_w[skyent]
+            skylow  = np.zeros(len(skywave))
+            skyflux = sky_f[skyent]
+            skyhigh = skyflux
+            #skyhigh = skyhigh / np.max(skyflux) * (yrange[1]-yrange[0])
+
+            plt.fill_between(skywave,skylow+yrangecomb[0],skyhigh+yrangecomb[0],alpha=1.0,color='black',zorder=1)
 
     return yrangecomb
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1667,7 +1685,7 @@ def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,c
         lineposition = linewave*(redshift+1.0)/wavescale
 
         if (lineposition > xrange[0]) & (lineposition < xrange[1]):
-            plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW)
+            plt.plot(np.zeros(2)+lineposition,yrange,color=col_linemarker,alpha=0.7,linestyle='-',linewidth=LW,zorder=20)
             if horalign == 'right':
                 xpos = lineposition-0.2*windowwidth
             elif horalign == 'left':
@@ -1681,14 +1699,14 @@ def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,c
                 ypos = yrange[1]*0.95
 
             plt.text(xpos,ypos,linename,color=col_linemarker,size=Fsize,
-                     rotation='horizontal',horizontalalignment=horalign,verticalalignment='top')
+                     rotation='horizontal',horizontalalignment=horalign,verticalalignment='top',zorder=20)
 
             if voffset != 0.0:
                 zoffset  = voffset*(redshift+1.0) / 299792.458
                 range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
                 lineymin = yrange[0]
                 lineymax = yrange[1]
-                plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.5,color=col_linemarker)
+                plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.5,color=col_linemarker,zorder=10)
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
