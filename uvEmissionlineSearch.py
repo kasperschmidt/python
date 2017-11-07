@@ -15,6 +15,7 @@ import shutil
 import time
 import fits2ascii as f2a
 import MUSEWideUtilities as mu
+import MUSEWidePlots as mwp
 import kbsutilities as kbs
 import tdose_utilities as tu
 from astropy import wcs
@@ -1202,7 +1203,7 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
 
         mu.create_narrowband_subcube(datacube,ras,decs,5.0,5.0,wcenters,dwaves,outputdir,names=names,clobber=clobber)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10,plot=True,verbose=True):
+def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10,plot=True,verbose=True,printresults=False):
     """
     Get limits at line locations from 1D spectra
 
@@ -1304,25 +1305,28 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                 bandswithline = uves.wavelength_in_bands( line_wave )
 
                 f_cont        = []
-                bands         = ['F606W','F775W','F814W']
-                wave_refs     = [6034.0,7730.0,8140.2]
+                bands         = ['F606W','F775W','F814W','F125W']
+                wave_refs     = [6034.0,7730.0,8140.2,12516.2]
                 for bb, band in enumerate(bands):
                     if (band not in bandswithLya) & (band not in bandswithline):
-                        f_ref  = sourcecat[ 'flux_acs_'+band.lower()[1:] ][objent][0] * 1e20
+                        if band == 'F125W':
+                            f_ref  = sourcecat[ 'flux_wfc3_'+band.lower()[1:] ][objent][0] * 1e20
+                        else:
+                            f_ref  = sourcecat[ 'flux_acs_'+band.lower()[1:] ][objent][0] * 1e20
                         f_wave = uves.estimate_continuumlevel_viaBeta(line_wave, wave_refs[bb], f_ref, beta, verbose=False)
                         f_cont.append(f_wave)
 
-                if (fluxval[ss] > 0.0) & (len(f_cont) > 0):
+                if (len(f_cont) > 0):
                     EW.append( fluxval[ss] / np.mean(np.asarray(f_cont)) )
                 else:
                     EW.append( np.NaN )
 
-                if (fluxval_Dlam[ss] > 0.0) & (len(f_cont) > 0):
+                if (len(f_cont) > 0):
                     EW_Dlam.append( fluxval_Dlam[ss] / deltalam / np.mean(np.asarray(f_cont)) )
                 else:
                     EW_Dlam.append( np.NaN )
 
-                if (fluxval_Dlam_sum[ss] > 0.0) & (len(f_cont) > 0):
+                if (len(f_cont) > 0):
                     EW_Dlam_sum.append( fluxval_Dlam_sum[ss] / deltalam / np.mean(np.asarray(f_cont)) )
                 else:
                     EW_Dlam_sum.append( np.NaN )
@@ -1335,6 +1339,27 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                                   fluxval_Dlam_max, SNval_Dlam_max, \
                                   fluxval_Dlam_sum, SNval_Dlam_sum, \
                                   EW, EW_Dlam, EW_Dlam_sum
+
+    if printresults:
+        for ss, spec in enumerate(spectra):
+            id = spec.split('/')[-1].split('.fit')[0][-9:]
+            print ' - - - - - - Object '+id+' (Dlam = lambda +/-'+str(outputdic['deltalam'])+'A)- - - - - -  '
+            for key in outputdic.keys():
+                if key is not 'deltalam':
+                    print ' - '+key+' flux           = '+str('%.4f' % outputdic[key][1][ss])+' +/- '+\
+                          str('%.4f' % outputdic[key][2][ss])
+                    print ' - '+key+' S/N            = '+str('%.4f' % outputdic[key][3][ss])
+                    print ' - '+key+' flux_Dlam      = '+str('%.4f' % outputdic[key][4][ss])+' +/- '+\
+                          str('%.4f' % outputdic[key][5][ss])
+                    print ' - '+key+' S/N_Dlam       = '+str('%.4f' % outputdic[key][7][ss])
+                    print ' - '+key+' flux_Dlam_max  = '+str('%.4f' % outputdic[key][8][ss])
+                    print ' - '+key+' S/N_Dlam_max   = '+str('%.4f' % outputdic[key][9][ss])
+                    print ' - '+key+' flux_Dlam_sum  = '+str('%.4f' % outputdic[key][10][ss])
+                    print ' - '+key+' S/N_Dlam_sum   = '+str('%.4f' % outputdic[key][11][ss])
+                    print ' - '+key+' EW             = '+str('%.4f' % outputdic[key][12][ss])
+                    print ' - '+key+' EW_Dlam        = '+str('%.4f' % outputdic[key][13][ss])
+                    print ' - '+key+' EW_Dlam_sum    = '+str('%.4f' % outputdic[key][14][ss])
+
     return outputdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta, verbose=True):
@@ -1856,4 +1881,5 @@ def lineinfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltala
            fluxval_Dlam, fluxstd_Dlam, fluxerr_Dlam, SNval_Dlam, \
            fluxval_Dlam_max, SNval_Dlam_max, \
            fluxval_Dlam_sum, SNval_Dlam_sum
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
