@@ -1030,7 +1030,8 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         specfigure = plotpath+'/overview_1DspecWzooms_z'+str(redshift).replace('.','p')+\
                      '_voffset'+str(voffset).replace('.','p')+'.pdf'
     else:
-        specfigure = outputfigure
+        specfigure = outputfigure.replace('.pdf','_z'+str(redshift).replace('.','p')+\
+                     '_voffset'+str(voffset).replace('.','p')+'.pdf')
 
     if plotSN:
         specfigure = specfigure.replace('.pdf','_SN.pdf')
