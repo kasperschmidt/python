@@ -22,6 +22,7 @@ from astropy import wcs
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import subprocess
+import collections
 import uvEmissionlineSearch as uves
 import matplotlib
 import matplotlib.pyplot as plt
@@ -1947,4 +1948,238 @@ def lineinfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltala
            fluxval_Dlam_max, SNval_Dlam_max, \
            fluxval_Dlam_sum, SNval_Dlam_sum
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400,1200],yrangefullSN=[-3,30],
+                                  TDOSEdir  = '/Volumes/DATABCKUP1/TDOSEextractions/TDOSEext_171019/',
+                                  tol3DHSTmatch=0.5,clobber=True,verbose=True):
+    """
+    Wrapper to run mwp.plot_1DspecOverview() for a sample of objects collecting the relevant spectra
+
+    UNDER CONSTRUCTION KBS171106
+
+
+
+    --- INPUT ---
+    MUSEidlist      List of MUSE ids of objects to plot
+    outputdir       Directory to save figure to
+    yrangefullflux  Yrange of full-spectra overview in flux figure
+    yrangefullSN    Yrange of full-spectra overview in S/N figure
+    TDOSEdir        Directory containing TDOSE extraction to plot spectra from
+    tol3DHSTmatch   Tolerance of match to 3D-HST catalog (and spectra)
+    clobber         Overwrite existing files?
+    verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import ciiiEmitterCandidates as cec
+
+    MUSEidlist  = [10306046,11931070]
+    MUSEidlist  = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
+    
+    outputdir   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/171108_1DspecOverview/'
+    plottedspec = uves.plot_1DspecOverview_forsample(MUSEidlist,outputdir=outputdir)
+
+    """
+    Nobj     = len(MUSEidlist)
+    if verbose: print ' - Plotting spectra of '+str(Nobj)+' objects in "MUSEidlist"'
+    LAEinfo        = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    spectraplottet = collections.OrderedDict()
+
+    for oo, objID in enumerate(MUSEidlist):
+        idstr        = str(objID)
+        idstr_short  = str(objID)[:3]+str(objID)[-5:]
+
+        outputfigure = outputdir+'id'+idstr+'_1DspecOverview.pdf'
+
+        objent = np.where(LAEinfo['id'] == objID)[0]
+        if len(objent) == 0:
+            sys.exit(' object ID '+str(objID)+' not found in LAEinfo file ')
+
+        sep3DHST = LAEinfo['sep_skelton'][objent]
+
+        if (sep3DHST < tol3DHSTmatch) & (sep3DHST != 0.0):
+            id3DHST = LAEinfo['id_skelton'][objent]
+        else:
+            id3DHST  = -99
+
+        # - - - - - - - TDOSE extraction - - - - - - -
+        TDOSEspec    = glob.glob(TDOSEdir+'tdose_spectra/tdose_spectrum_candels*'+idstr+'*.fits')+\
+                       glob.glob(TDOSEdir+'tdose_spectra/tdose_spectrum_candels*'+idstr_short+'*.fits')
+        TDOSElabel   = ['TDOSE']*len(TDOSEspec)
+        TDOSEwave    = ['wave']*len(TDOSEspec)
+        TDOSEflux    = ['flux']*len(TDOSEspec)
+        TDOSEferr    = ['fluxerror']*len(TDOSEspec)
+        TDOSEsky     = ['None']*len(TDOSEspec)
+        TDOSEskyW    = ['None']*len(TDOSEspec)
+        TDOSEskyF    = ['None']*len(TDOSEspec)
+        TDOSEsky[0]  = '/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_'+LAEinfo['pointing'][objent]+'_av.fits'
+        TDOSEskyW[0] = ['lamda']*len(grismspec)
+        TDOSEskyF[0] = ['data']*len(grismspec)
+
+        # - - - - - - - PSF weighted extraction - - - - - - -
+        PSFextdir = '/Users/kschmidt/work/MUSE/spectra1D/Arche170127/spectra/'
+        PSFspec   = glob.glob(PSFextdir+'spectrum_'+idstr+'.fits')+\
+                    glob.glob(PSFextdir+'spectrum_'+idstr_short+'.fits')
+        if len(PSFspec) > 1:
+            sys.exit(' More than one PSF extraction spectrum found for '+idstr+' in '+PSFextdir)
+        elif len(PSFspec) == 1:
+            PSFlabel = ['PSFext']
+            PSFwave  = ['WAVE_AIR']
+            PSFflux  = ['FLUX']
+            PSFferr  = ['FLUXERR']
+            PSFsky   = ['None']
+            PSFskyW  = ['None']
+            PSFskyF  = ['None']
+        else:
+            PSFlabel = []
+            PSFwave  = []
+            PSFflux  = []
+            PSFferr  = []
+            PSFsky   = []
+            PSFskyW  = []
+            PSFskyF  = []
+
+        # - - - - - - - 3D-HST spectra - - - - - - -
+        if id3DHST != -99:
+            if idstr.startswith('1'):
+                specdic = uves.get_3DHSTspecname([id3DHST],field='goodss',verbose=verbose)
+            elif idstr.startswith('2'):
+                specdic = uves.get_3DHSTspecname([id3DHST],field='cosmos',verbose=verbose)
+            else:
+                sys.exit(' Invalid MUSE id - does not start with "1" or "2"')
+
+            grismspec  = specdic[idstr]
+
+            if len(grismspec) > 0:
+                grismlabel   = ['3D-HST '+gs[:9] for gs in grismspec]
+                grismwave    = ['WAVE_AIR??']*len(grismspec)
+                grismflux    = ['FLUX??']*len(grismspec)
+                grismferr    = ['FLUXERR??']*len(grismspec)
+                grismsky     = ['None']*len(grismspec)
+                grismskyW    = ['None']*len(grismspec)
+                grismskyF    = ['None']*len(grismspec)
+                grismsky[0]  = '/Users/kschmidt/work/MUSE/skytable.fits'
+                grismskyW[0] = ['lam']*len(grismspec)
+                grismskyF[0] = ['flux']*len(grismspec)
+
+            else:
+                grismlabel = []
+                grismwave  = []
+                grismflux  = []
+                grismferr  = []
+                grismsky   = []
+                grismskyW  = []
+                grismskyF  = []
+        else:
+            grismspec  = []
+            grismlabel = []
+            grismwave  = []
+            grismflux  = []
+            grismferr  = []
+            grismsky   = []
+            grismskyW  = []
+            grismskyF  = []
+
+        # - - - - - - - Assemble input for plot - - - - - - -
+        spectra      = TDOSEspec  + PSFspec  + grismspec
+        labels       = TDOSElabel + PSFlabel + grismlabel
+        wavecols     = TDOSEwave  + PSFwave  + grismwave
+        fluxcols     = TDOSEflux  + PSFflux  + grismflux
+        fluxerrcols  = TDOSEferr  + PSFferr  + grismferr
+        skyspectra   = TDOSEsky   + PSFsky   + grismsky
+        wavecols_sky = TDOSEskyW  + PSFskyW  + grismskyW
+        fluxcols_sky = TDOSEskyF  + PSFskyF  + grismskyF
+
+        zLya         = LAEinfo['redshift'][objent]
+        zsys         = LAEinfo['z_sys_AV17'][objent]
+        voffset      = LAEinfo['red_peak_shift_AV17_kms'][objent]
+
+        spectraplottet[idstr] = spectra
+        if verbose:
+            plotit  = True
+            idno    = oo+1
+            infostr = '   Plotting object '+str(objID)+' at z = '+str(zLya)+' indicating voff = '+str(voffset)+\
+                      '  ('+str(idno)+'/'+str(Nobj)+')                            '
+
+            if (clobber == False) & (len(glob.glob(outputfigure.replace('.pdf','*.pdf'))) != 0):
+                infostr = infostr.replace(')                         ',
+                                          ') --> skip (clobber=False)')
+                plotit  = False
+
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+            if plotit:
+                for plotSN in [True,False]:
+                    if plotSN:
+                        yrangefull = yrangefullSN
+                    else:
+                        yrangefull = yrangefullflux
+
+                    mwp.plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, zLya, voffset=voffset,
+                                            skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                            outputfigure=outputfigure, yrangefull=yrangefull, plotSN=plotSN)
+
+    if verbose: print '\n - Done...'
+    return spectraplottet
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_3DHSTspecname(ids,spec1D=False,field='goodss',verbose=True):
+    """
+
+    Return absolute paths for existing 3D-HST 2D fits files. If
+
+    --- INPUT ---
+    ids           list of 3D-HST ids to return list of spectr for
+    spec1D        if true, paths of the 1D spectra will be returned
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    spectradic = uves.get_3DHSTspecname([22684,21926,9033,7609])
+
+    """
+    dataparentdir = '/Volumes/DATABCKUP1/3DHST/'+field.lower()+'_WFC3_V4.1.5/'
+    path3DHST     = field.lower()+'_3dhst_v4.1.5_catalogs/'
+    cat_spec      = field.lower()+'_3dhst.v4.1.5.duplicates_2d.dat'    # list of (duplicate) spectra for each ID
+
+    if field == 'GOODSS':
+        dat_spec      = np.genfromtxt(path3DHST+cat_spec,comments='#',
+                                      names=['id','s1','s2','s3','s4','s5','s6','s7'],
+                                      dtype='f,40a,40a,40a,40a,40a,40a,40a')
+    elif field == 'COSMOS':
+        dat_spec      = np.genfromtxt(path3DHST+cat_spec,comments='#',
+                                      names=['id','s1','s2','s3','s4','s5','s6','s7'],
+                                      dtype='f,40a,40a,40a,40a,40a,40a,40a')
+
+    else:
+        sys.exit(' No 3D-HST directory setup available for the field "'+field+'"')
+
+    infodic = collections.OrderedDict()
+
+    for id in ids:
+        objent   = np.where(dat_spec['id'] == float(id))[0]
+        namelist = dat_spec[objent][1:]
+        filelist = []
+
+        for name in namelist:
+            if name != '00000':
+                if spec1D:
+                    namestr  = '/1D/FITS/'+name
+                    filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.1D.fits')
+                    if os.path.isfile(filename):
+                        filelist.append(os.path.abspath(filename[0]))
+                else:
+                    # look for regular spectrum
+                    namestr  = '/2D/FITS/'+name
+                    filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.2D.fits')
+                    if os.path.isfile(filename):
+                        filelist.append(os.path.abspath(filename[0]))
+
+                    # look for BIG spectrum
+                    namestr  = '/BIG/2D/'+name.replace('G141','G141-big')
+                    filename = glob.glob(dataparentdir+'/'+name[:-11]+namestr+'.2D.fits')
+                    if os.path.isfile(filename):
+                        filelist.append(os.path.abspath(filename[0]))
+
+        infodic[str(id)] = filelist
+
+    return infodic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
