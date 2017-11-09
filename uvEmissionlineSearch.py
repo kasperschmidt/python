@@ -642,7 +642,7 @@ def get_LAEidLists(sourcecatalog,skipids=True,includecomponentinfo=True,verbose=
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Nobj      = len(sourcetab['id'])
     if verbose: print(' - Will put id lists together for the '+str(Nobj-Nobj_skip)+
-                      '; (Nobj - Nobj_skip) = ('+str(Nobj)+','+str(Nobj_skip)+')')
+                      '; (Nobj, Nobj_skip) = ('+str(Nobj)+','+str(Nobj_skip)+')')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     idlists = {}
 
@@ -1639,7 +1639,8 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
                      markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N\_'+key+' $<$ 3)')
         plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker=r'$\nearrow$',lw=0, markersize=marksize*2,alpha=1.0,
-                     markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (HST non-det. lower limit)')
+                     markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,
+                     label='MW LAE (HST non-det. lower limit)')
 
 
         plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
@@ -1974,7 +1975,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
 
     MUSEidlist  = [10306046,11931070]
     MUSEidlist  = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
-    
+
     outputdir   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/171108_1DspecOverview/'
     plottedspec = uves.plot_1DspecOverview_forsample(MUSEidlist,outputdir=outputdir)
 
@@ -2182,4 +2183,59 @@ def get_3DHSTspecname(ids,spec1D=False,field='goodss',verbose=True):
         infodic[str(id)] = filelist
 
     return infodic
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def copy_singleobjsourcecats(outputdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats_singleobjects/',
+                             verbose=True):
+    """
+
+    --- EXAMPLE OF USE ---
+    uves.copy_singleobjsourcecats()
+
+    """
+    modeldir      = '/Volumes/DATABCKUP1/TDOSEextractions/MW_LAEs_JKgalfitmodels/'
+
+    sourcecats = ['model_acs_814w_candels-cdfs-01_cut_v1.0_id101005016_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-01_cut_v1.0_id101023043_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-01_cut_v1.0_id101024044_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-02_cut_v1.0_id102015088_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-03_cut_v1.0_id103006046_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-03_cut_v1.0_id103050126_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-04_cut_v1.0_id104024069_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-06_cut_v1.0_id106014046_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-06_cut_v1.0_id106035088_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-11_cut_v1.0_id111013028_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-22_cut_v1.0_id122002034_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-22_cut_v1.0_id122002035_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-23_cut_v1.0_id123016117_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-25_cut_v1.0_id125049122_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-28_cut_v1.0_id128038236_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-31_cut_v1.0_id131016105_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-31_cut_v1.0_id131016106_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-35_cut_v1.0_id135010177_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-35_cut_v1.0_id135010178_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-41_cut_v1.0_id141003075_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-41_cut_v1.0_id141036146_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-43_cut_v1.0_id143033113_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-44_cut_v1.0_id144008046_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-45_cut_v1.0_id145022065_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-45_cut_v1.0_id145065132_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cdfs-46_cut_v1.0_id146069355_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-01_cut_v1.0_id201073224_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-02_cut_v1.0_id202013030_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-02_cut_v1.0_id202044085_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-03_cut_v1.0_id203007099_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-04_cut_v1.0_id204053120_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-06_cut_v1.0_id206014089_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-07_cut_v1.0_id207022169_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-09_cut_v1.0_id209006108_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-11_cut_v1.0_id211015198_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-12_cut_v1.0_id212029067_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-13_cut_v1.0_id213022109_cutout2p0x2p0arcsec_sourcecatalog.*',
+                  'model_acs_814w_candels-cosmos-15_cut_v1.0_id215016042_cutout2p0x2p0arcsec_sourcecatalog.*']
+
+    for scat in sourcecats:
+        cpout = commands.getoutput('cp '+modeldir+scat+' '+outputdir)
+        if cpout != '':
+            print cpout
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
