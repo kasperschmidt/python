@@ -1038,8 +1038,8 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     if verbose: print ' - 1D overview figure will be saved to:\n   '+specfigure
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     redshiftplot = redshift + (voffset*(redshift+1.0) / 299792.458)
-    if verbose: print ' - Will plot emission line markers using at redshift '+str("%.6f" % redshift)+\
-                      ' (z~'+str("%.6f" % redshiftplot)+' including (Lya) velocity offset of '+str(voffset)+'km/s)'
+    if verbose: print ' - Will plot emission line markers at redshift '+str("%.6f" % redshift)+\
+                      ' (z~'+str("%.6f" % redshiftplot)+' incl. (Lya) velocity offset = '+str(voffset)+'km/s)'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Nspec = len(spectra)
     if verbose: print ' - Loading the '+str(Nspec)+' spectra provided for plotting'
@@ -1156,7 +1156,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     hspace = 0.20   # the amount of height reserved for white space between subplots
     plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
-    speccols          = ['blue','green','red','magenta','cyan','orange']
+    speccols          = ['blue','green','red','magenta','cyan','orange','purple','yellow','skyblue']
     #speccol           = 'blue'
     xlabel            = '$\lambda$ / [\AA]'
     ylabel            = '$f_\lambda / [10^{-20}$erg/s/cm$^2$/\\AA]'
@@ -1652,7 +1652,10 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
             if skyspectra[ss] == '/Users/kschmidt/work/MUSE/skytable.fits':
                 sky_w = sky_w * 1e4
-                sky_f = sky_f / 1e3
+                if plotSN:
+                    sky_f = sky_f / 1e5
+                else:
+                    sky_f = sky_f / 1e3
 
             sky_f   = sky_f / meanerr # scale to fit in S/N windows
 
