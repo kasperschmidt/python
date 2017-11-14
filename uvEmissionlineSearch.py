@@ -770,7 +770,7 @@ def gen_LAEsourceCats_fromGALFITmodelCubeSourceCats(outputdir,sourcecatalog,mode
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=15.0,photcat='skelton',
-                                  refimgdir='/Volumes/DATABCKUP1/MUSE-Wide/hst_cutouts/',
+                                  refimgdir='/Volumes/DATABCKUP1/MUSE-Wide/hst_cutouts/',returnSeparations=False,
                                   clobber=False,verbose=True):
     """
     Generate source catalogs based on photometric catalogs for individual MUSE Wide objects
@@ -780,17 +780,19 @@ def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=1
     --- INPUT ---
     outputdir            Output directory to contain object source catalogs
     MUSEIDlist           List of objects to generate source catalogs for
-    fitsinfo             Directory containing the source catalogs generated when converting
-                         LAE galfit models into cubes that TDOSE can understand for the spectral extractions.
-    ignore99s            Ignore objects with (parent)IDs of -99? These are the central coordinates of the models.
+    LAEinfo              LAE info file
+    sourcecatradius      Radius to search and return in the source catalogs
+    photcat              The photmetric cataog to match to
+    refimgdir            The reference image directory used to get WCS info
+    returnSeparations    Return the separations in the fluxscale column of the source catalog
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
     outputdir         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats_noModelComponent/'
     LAEinfo           = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits'
-    MUSEIDlist        = [123016117,209006108]
+    MUSEIDlist        = [121033078,211015198]
     #MUSEIDlist        = [101005016,117027076,123016117,125049122,141003075,144008046,146069355,201073224,202013030,202044085,203007099,204053120,206014089,207022169,209006108,211015198,212029067,213022109,215016042]
-    uves.gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,photcat='skelton')
+    uves.gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,photcat='skelton',returnSeparations=False)
 
     """
     LAEinfo = pyfits.open(LAEinfo)[1].data
@@ -824,8 +826,15 @@ def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=1
         imgheader    = pyfits.open(refimg)[0].header
         sourcelist   = [ [Mid, Mid, objra, objdec, 1]]
         outname      = outputdir+'tdose_sourcecat_from_fitscat_id'+idstr+'.txt'
+
+        if returnSeparations:
+            fluxfactor = 'separation'
+        else:
+            fluxfactor = 1.0
+
         sourcecat    = tu.gen_sourcecat_from_FitsCat(fitscat,'id','ra','dec',[objra,objdec],sourcecatradius,imgheader,
-                                                     outname=outname,newsources=sourcelist,clobber=clobber,verbose=verbose)
+                                                     fluxfactor=fluxfactor,outname=outname,newsources=sourcelist,
+                                                     clobber=clobber,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sourcecat_compinfo=None,
@@ -2032,10 +2041,6 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
                                   tol3DHSTmatch=0.5,clobber=False,verbose=True):
     """
     Wrapper to run mwp.plot_1DspecOverview() for a sample of objects collecting the relevant spectra
-
-    UNDER CONSTRUCTION KBS171106
-
-
 
     --- INPUT ---
     MUSEidlist      List of MUSE ids of objects to plot
