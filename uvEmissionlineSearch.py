@@ -2037,7 +2037,7 @@ def lineinfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltala
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400,1200],yrangefullSN=[-3,30],
-                                  TDOSEdir  = '/Volumes/DATABCKUP1/TDOSEextractions/TDOSEext_171019/',
+                                  specdir  = '/Volumes/DATABCKUP1/TDOSEextractions/TDOSEext_171019/tdose_spectra/',
                                   tol3DHSTmatch=0.5,clobber=False,verbose=True):
     """
     Wrapper to run mwp.plot_1DspecOverview() for a sample of objects collecting the relevant spectra
@@ -2047,7 +2047,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
     outputdir       Directory to save figure to
     yrangefullflux  Yrange of full-spectra overview in flux figure
     yrangefullSN    Yrange of full-spectra overview in S/N figure
-    TDOSEdir        Directory containing TDOSE extraction to plot spectra from
+    specdir         Directory containing TDOSE spectra to plot
     tol3DHSTmatch   Tolerance of match to 3D-HST catalog (and spectra)
     clobber         Overwrite existing files?
     verbose         Toggle verbosity
@@ -2085,8 +2085,8 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
             id3DHST  = -99
 
         # - - - - - - - TDOSE extraction - - - - - - -
-        TDOSEspec    = glob.glob(TDOSEdir+'tdose_spectra/tdose_spectrum_candels*'+idstr+'*.fits')+\
-                       glob.glob(TDOSEdir+'tdose_spectra/tdose_spectrum_candels*'+idstr_short+'*.fits')
+        TDOSEspec    = glob.glob(specdir+'tdose_spectrum_candels*'+idstr+'*.fits')+\
+                       glob.glob(specdir+'tdose_spectrum_candels*'+idstr_short+'*.fits')
         if len(TDOSEspec) == 0:
             if verbose: print('----- No TDOSE spectrum found for '+str(objID)+' -> moving on to next object ----- ')
             continue
