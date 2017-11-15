@@ -10,6 +10,7 @@ import MiGs
 import pyfits
 import datetime
 import numpy as np
+import collections
 import shutil
 import fits2ascii as f2a
 from astropy.coordinates import SkyCoord
@@ -185,4 +186,42 @@ def gen_TDOSEsetupfiles(infofile,namebase='MUSEWide_tdose_setup_LAEs',clobber=Fa
     """
     tu.duplicate_setup_template(outputdir,infofile,namebase=namebase,clobber=clobber,loopcols='all',infofmt="S250",infohdr=2)
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MUSE_PSF_SKYSUB',
+                                                   'SPE_MUSE_WHITE_SKYSUB','SPE_MUSE_APER_0.4_SKYSUB'],
+                            verbose=True):
+    """
+    Loading source file an pulling out spectra
+
+    --- INPUT ---
+    import MUSE_TDOSEvsUDF as mtu
+
+    sourcefiles = ['/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00006.fits','/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00533.fits']
+    specdic = mtu.load_sourcefile_spectra(sourcefiles)
+
+    """
+    Nfiles = len(sourcefiles)
+    if verbose: print(' - Loading the spectra from the '+str(Nfiles)+' source files provided')
+
+    specdic_all = collections.OrderedDict()
+
+    for sourcefile in sourcefiles:
+        sfhdu   = pyfits.open(sourcefile)
+        specdic = collections.OrderedDict()
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        for spectype in spectypes:
+            flux                 = sfhdu[spectype+'_DATA'].data
+            error                = sfhdu[spectype+'_STAT'].data
+            wave                 = (sfhdu[spectype+'_DATA'].header['CRVAL1'] -
+                                    sfhdu[spectype+'_DATA'].header['CDELT1'] * (sfhdu[spectype+'_DATA'].header['CRPIX1'] - 1)) +\
+                                   np.arange(len(flux)) * sfhdu[spectype+'_DATA'].header['CDELT1']
+            specarr              = np.zeros(len(flux),dtype=[('wave',np.float32),('flux',np.float32),('fluxerror',np.float32)])
+            specarr['lambda']    = wave
+            specarr['flux']      = flux
+            specarr['fluxerror'] = error
+
+            specdic[spectype]    = specarr
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        specdic_all[sourcefile] = specdic
+    return specdic_all
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
