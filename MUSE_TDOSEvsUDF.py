@@ -201,7 +201,7 @@ def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MU
 
     """
     Nfiles = len(sourcefiles)
-    if verbose: print(' - Loading the spectra from the '+str(Nfiles)+' source files provided')
+    if verbose: print(' - Loading the spectra from the '+str(Nfiles)+' source files provided and returning dictionary')
 
     specdic_all = collections.OrderedDict()
 
@@ -215,7 +215,7 @@ def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MU
             wave                 = (sfhdu[spectype+'_DATA'].header['CRVAL1'] -
                                     sfhdu[spectype+'_DATA'].header['CDELT1'] * (sfhdu[spectype+'_DATA'].header['CRPIX1'] - 1)) +\
                                    np.arange(len(flux)) * sfhdu[spectype+'_DATA'].header['CDELT1']
-            specarr              = np.zeros(len(flux),dtype=[('wave',np.float32),('flux',np.float32),('fluxerror',np.float32)])
+            specarr              = np.zeros(len(flux),dtype=[('lambda',np.float32),('flux',np.float32),('fluxerror',np.float32)])
             specarr['lambda']    = wave
             specarr['flux']      = flux
             specarr['fluxerror'] = error
@@ -224,4 +224,45 @@ def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MU
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         specdic_all[sourcefile] = specdic
     return specdic_all
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_UDFspec_fits(sourcefiles,outputdir,clobber=False,verbose=True):
+    """
+
+    Load the 1D spectra from a set of source files, and save the indivdual spectra as
+    stand alone fits files (makes comparison plotting with MUSEWidePlots.plot_1DspecOverview() straight forward)
+
+    --- EXAMPLE OF USE ---
+    import MUSE_TDOSEvsUDF as mtu
+
+    sourcefiles = ['/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00006.fits','/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00533.fits']
+    outputdir  = '/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6_1Dspecs/'
+
+    mtu.gen_UDFspec_fits(sourcefiles,outputdir,clobber=False)
+
+    """
+    if not os.path.isdir(outputdir):
+        sys.exit('Output directory specified ('+outputdir+') does not appear to exist')
+
+    specdic = mtu.load_sourcefile_spectra(sourcefiles,verbose=verbose)
+
+    if verbose: print(' - Storing spectra extracted from source files to individual fits files')
+
+    for sourcefile in sourcefiles:
+        for spec in specdic[sourcefile].keys():
+            if spec.startswith('SPE_'):
+                specarr  = specdic[sourcefile][spec]
+                fitsname = outputdir+sourcefile.split('/')[-1].replace('.fits','_'+spec+'.fits')
+                if verbose: print('   Generating '+fitsname)
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                c1  = pyfits.Column(name='lambda',    format='D', unit='ang',                 array=specarr['lambda'])
+                c2  = pyfits.Column(name='flux',      format='D', unit='1e-20 erg/ang/cm2/s', array=specarr['flux'])
+                c3  = pyfits.Column(name='fluxerror', format='D', unit='1e-20 erg/ang/cm2/s', array=specarr['fluxerror'])
+
+                coldefs = pyfits.ColDefs([c1,c2,c3])
+                tb      = pyfits.new_table(coldefs) # creating default header
+                head    = tb.header
+                tbHDU   = pyfits.new_table(coldefs, header=head)
+                tbHDU.writeto(fitsname, clobber=clobber)
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
