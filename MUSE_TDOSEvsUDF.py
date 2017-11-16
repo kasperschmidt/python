@@ -239,7 +239,7 @@ def gen_UDFspec_fits(sourcefiles,outputdir,clobber=False,verbose=True):
     --- EXAMPLE OF USE ---
     import MUSE_TDOSEvsUDF as mtu
 
-    sourcefiles = ['/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00006.fits','/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00533.fits']
+    sourcefiles = ['/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00004.fits','/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00006.fits','/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00533.fits']
     outputdir  = '/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6_1Dspecs/'
 
     mtu.gen_UDFspec_fits(sourcefiles,outputdir,clobber=False)
@@ -282,4 +282,116 @@ def load_UDFmastertable(votablename):
     table = parse_single_table(votablename)
 
     return table.array
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1Doverviewcomparison(ids,outputdir,
+                              specdir_udf='/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6_1Dspecs/',
+                              specdir_tdose='/Volumes/DATABCKUP1/UDFvsMUSEWide/tdose_spectra/',
+                              clobber=False,verbose=True):
+    """
+    Plot 1D overview plots of UDF, MUSE-Wide and 3D-HST spectra
+
+    --- EXAMPLE OF USE ---
+    import MUSE_TDOSEvsUDF as mtu
+
+    mtu.plot_1Doverviewcomparison([4,6,533],'/Volumes/DATABCKUP1/UDFvsMUSEWide/overviewplots/',clobber=False)
+
+    """
+    votablename = '/Volumes/DATABCKUP1/UDFvsMUSEWide/master_idlist_20170214.vot'
+    table = mtu.load_UDFmastertable(votablename)
+
+    if ids == 'all':
+        ids = table['ID']
+
+    Nids = len(ids)
+    if verbose: print(' - Will attempt to generate plots for the spectra found for the '+str(Nids)+' IDs in list')
+    for id in ids:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #                             UDF-10
+        objent_udf = np.where(table['ID'] == int(id))[0]
+        Nent_udf   = len(objent_udf)
+        if Nent_udf == 0:
+            print(' WARNING No match to id='+str(id)+' found in master_idlist_20170214.vot')
+        elif Nent_udf > 1:
+            print(' WARNING Mor than one match to id='+str(id)+' found in master_idlist_20170214.vot; using the first match')
+            objent_udf = objent_udf[0]
+
+        objRA            = table['DEC'][objent_udf]
+        objDEC           = table['RA'][objent_udf]
+        obj_UDFfile      = table['UDF10_FILENAME'][objent_udf]
+        obj_Mosaicfil    = table['MOSAIC_FILENAME'][objent_udf]
+
+        sourcefiledir    = '/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/'
+        sourcefile       = sourcefiledir+obj_UDFfile.data[0]
+
+        zs, specdic      = mtu.load_sourcefile_spectra([sourcefile])
+        obj_z_ent_muse   = np.where(zs[sourcefile]['Z_DESC'] == 'MUSE')[0]
+        if len(obj_z_ent_muse) == 1:
+            obj_z = zs[sourcefile]['Z'][obj_z_ent_muse][0]
+        else:
+            obj_z_ent_eazy   = np.where(zs[sourcefile]['Z_DESC'] == 'EAZY')[0]
+            obj_z            = zs[sourcefile]['Z'][obj_z_ent_eazy][0]
+
+        spec_udf         = glob.glob(specdir_udf+obj_UDFfile.data[0].replace('.fits','*.fits'))
+
+        wave_udf         = ['lambda']*len(spec_udf)
+        flux_udf         = ['flux']*len(spec_udf)
+        ferr_udf         = ['fluxerror']*len(spec_udf)
+        sky_udf          = ['/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-35_av.fits']+[None]*(len(spec_udf)-1)
+        sky_wc_udf       = ['lambda']+[None]*len(spec_udf)
+        sky_fc_udf       = ['data']+[None]*len(spec_udf)
+
+        lab_udf          = [ss.split('/')[-1].split('.fit')[0].replace('_','\_') for ss in spec_udf]
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #                             TDOSE
+        spec_tdose       = glob.glob(specdir_tdose+'tdose_spectrum_*'+obj_UDFfile.data[0].replace('.fits','*.fits'))
+        lab_tdose        = ['TDOSE']*len(spec_tdose)
+        wave_tdose       = ['wave']*len(spec_tdose)
+        flux_tdose       = ['flux']*len(spec_tdose)
+        ferr_tdose       = ['fluxerror']*len(spec_tdose)
+
+        sky_tdose        = [None]*len(spec_tdose)
+        sky_wc_tdose     = [None]*len(spec_tdose)
+        sky_fc_tdose     = [None]*len(spec_tdose)
+
+        lab_tdose    = [ss.split('/')[-1].split('.fit')[0] for ss in spec_tdose]
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #                             3D-HST
+        spec_3dhst     = []
+        if len(spec_3dhst) > 0:
+            sky_3dhst      = ['/Users/kschmidt/work/MUSE/skytable.fits']+[None]*(len(spec_3dhst)-1)
+        else:
+            sky_3dhst      = []
+        sky_wc_3dhst   = ['lam']+[None]*len(spec_udf)
+        sky_fc_3dhst   = ['flux']+[None]*len(spec_udf)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #                            PLOTTING
+        spectra      = spec_udf + spec_tdose + spec_3dhst
+        if len(spectra) == 0:
+            if verbose: print(' WARNING No spectra found for object id='+str(id)+' with source file '+obj_UDFfile.data[0])
+        else:
+            labels       = lab_udf  + lab_tdose  #+ lab_3dhst
+
+            wavecols     = wave_udf + wave_tdose #+ wave_3dhst
+            fluxcols     = flux_udf + flux_tdose #+ flux_3dhst
+            ferrcols     = ferr_udf + ferr_tdose #+ ferr_3dhst
+
+            skyspecs     = sky_udf  + sky_tdose  + sky_3dhst
+            wavecols_sky = sky_wc_udf + sky_wc_tdose + sky_wc_3dhst
+            fluxcols_sky = sky_fc_udf + sky_fc_tdose + sky_fc_3dhst
+
+            redshift     = obj_z
+            voffset      = 0.0
+            yrangefull   = [-1000,2000]
+
+            outputfig    = outputdir+obj_UDFfile.data[0].replace('.fits','_1Doverviewplots.pdf')
+            for plotSN in [True,False]:
+                if os.path.isfile(outputfig) & (clobber==False):
+                    if verbose: print(' WARNING the following plot exist and clobber=False so skipping:\n   '+outfig)
+                else:
+                    mwp.plot_1DspecOverview(spectra, labels, wavecols, fluxcols, ferrcols, redshift, voffset=voffset,
+                                            skyspectra=skyspecs,wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                            outputfigure=outputfig,yrangefull=yrangefull, plotSN=plotSN,verbose=verbose)
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
