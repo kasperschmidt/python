@@ -270,3 +270,16 @@ def gen_UDFspec_fits(sourcefiles,outputdir,clobber=False,verbose=True):
                 tbHDU.writeto(fitsname, clobber=clobber)
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def load_UDFmastertable(votablename):
+    """
+
+    --- EXAMPLE OF USE ---
+    import MUSE_TDOSEvsUDF as mtu
+    votablename = '/Volumes/DATABCKUP1/UDFvsMUSEWide/master_idlist_20170214.vot'
+    table = mtu.load_UDFmastertable(votablename)
+
+    """
+    table = parse_single_table(votablename)
+
+    return table.array
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
