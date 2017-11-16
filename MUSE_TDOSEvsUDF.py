@@ -273,6 +273,9 @@ def gen_UDFspec_fits(sourcefiles,outputdir,clobber=False,verbose=True):
 def load_UDFmastertable(votablename):
     """
 
+    Loading the master ID list VOTable
+    NB that there is now also a fits version of this table
+
     --- EXAMPLE OF USE ---
     import MUSE_TDOSEvsUDF as mtu
     votablename = '/Volumes/DATABCKUP1/UDFvsMUSEWide/master_idlist_20170214.vot'
@@ -393,5 +396,48 @@ def plot_1Doverviewcomparison(ids,outputdir,
                                             skyspectra=skyspecs,wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
                                             outputfigure=outputfig,yrangefull=yrangefull, plotSN=plotSN,verbose=verbose)
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_sourcecat_FromFitsCats(outputdir,centralcoords=[[]],catnames=['UDF10'],
+                               returnSeparations=False,clobber=False,verbose=True):
+    """
+    Generate source catalogs from UDF 10 fits catalog and Rafelski catalog
 
+    --- INPUT ---
+    outputdir            Output directory to contain object source catalogs
+    sourcecatradius      Radius to search and return in the source catalogs
+    returnSeparations    Return the separations in the fluxscale column of the source catalog
+
+    --- EXAMPLE OF USE ---
+    import MUSE_TDOSEvsUDF as mtu
+
+    outdir = '/Users/kschmidt/work/MUSE/UDFvsMUSEWide/tdose_sourcecats/'
+    udf10coord = [53.160554,-27.778928]
+
+    mtu.gen_sourcecat_FromFitsCats(outdir,centralcoords=[udf10coord],catnames=['UDF10'],clobber=False)
+
+    """
+    scat_radius  = 70.0 # using a radius of 70 arc sec to ensure all relevant objects are included in source catalog
+    cat_raf      = '/Users/kschmidt/work/catalogs/uvudf_rafelski_2015.fits'
+
+    cat_udf      = '/Users/kschmidt/work/MUSE/UDFvsMUSEWide/udf10_c042_e031_withz_iter6.fits'
+    dat_udf      = pyfits.open(cat_udf)[1].data
+
+    refimg       = '/Users/kschmidt/work/images_MAST/hlsp_xdf_hst_acswfc-30mas_hudf_f814w_v1_sci.fits'
+    imgheader    = pyfits.open(refimg)[0].header
+
+    for cc, ccoord in enumerate(centralcoords):
+        ra_cen, dec_cen = ccoord
+        outname      = outputdir+'tdose_sourcecat_from_fitscat_'+catnames[cc]+'.txt'
+        sourcelist = []
+        for ss, udfid in enumerate(dat_udf['ID']):
+            sourcelist.append([int(udfid+1e9), int(udfid+1e9), dat_udf['RA'][ss], dat_udf['DEC'][ss], 1])
+
+        if returnSeparations:
+            fluxfactor = 'separation'
+        else:
+            fluxfactor = 1.0
+
+        sourcecat    = tu.gen_sourcecat_from_FitsCat(cat_raf,'ID','RA','DEC',[ra_cen,dec_cen],scat_radius,imgheader,
+                                                     fluxfactor=fluxfactor,outname=outname,newsources=sourcelist,
+                                                     clobber=clobber,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
