@@ -15,11 +15,13 @@ import shutil
 import fits2ascii as f2a
 from astropy.coordinates import SkyCoord
 import MUSEWideUtilities as mu
+import MUSEWidePlots as mwp
 import kbsutilities as kbs
 import tdose_utilities as tu
 from astropy import wcs
 import MUSE_TDOSEvsUDF as mtu
 import ciiiEmitterCandidates as cec
+from astropy.io.votable import parse_single_table
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
     """
@@ -197,13 +199,14 @@ def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MU
     import MUSE_TDOSEvsUDF as mtu
 
     sourcefiles = ['/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00006.fits','/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/udf_udf10_00533.fits']
-    specdic = mtu.load_sourcefile_spectra(sourcefiles)
+    redshifts, specdic = mtu.load_sourcefile_spectra(sourcefiles)
 
     """
     Nfiles = len(sourcefiles)
     if verbose: print(' - Loading the spectra from the '+str(Nfiles)+' source files provided and returning dictionary')
 
     specdic_all = collections.OrderedDict()
+    redshifts   = collections.OrderedDict()
 
     for sourcefile in sourcefiles:
         sfhdu   = pyfits.open(sourcefile)
@@ -223,7 +226,8 @@ def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MU
             specdic[spectype]    = specarr
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         specdic_all[sourcefile] = specdic
-    return specdic_all
+        redshifts[sourcefile]   = sfhdu['Z'].data
+    return redshifts, specdic_all
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_UDFspec_fits(sourcefiles,outputdir,clobber=False,verbose=True):
@@ -244,7 +248,7 @@ def gen_UDFspec_fits(sourcefiles,outputdir,clobber=False,verbose=True):
     if not os.path.isdir(outputdir):
         sys.exit('Output directory specified ('+outputdir+') does not appear to exist')
 
-    specdic = mtu.load_sourcefile_spectra(sourcefiles,verbose=verbose)
+    redshifts, specdic = mtu.load_sourcefile_spectra(sourcefiles,verbose=verbose)
 
     if verbose: print(' - Storing spectra extracted from source files to individual fits files')
 
