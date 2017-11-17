@@ -970,7 +970,6 @@ def plot_comp_hist(ax,xlabel,hist1,hist2,colors,fontsize,lthick,bins):
 
     ax.plot(ax.get_xlim(),[0,0],'-',color='gray',lw=0.5)
 
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshift, voffset=0,
                         outputfigure='default', plotSN=False, skyspectra=None, wavecols_sky=None, fluxcols_sky=None,
@@ -1078,62 +1077,6 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     if verbose: print ' - Defining quanteties to plot; checking wavelength coverage of lines given redshift'
     llistdic      = MiGs.linelistdic(listversion='full') # loading line list for plots
 
-    plot_Lyg      = False; checkwave = 973.*(1+redshift)
-
-    plot_Lyb      = False; checkwave = 1026.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_Lyb = True
-
-    plot_Lya      = True
-
-    plot_CII      = False; checkwave = 1335.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_CII      = True
-
-    plot_SiIVOIV  = False; checkwave = 1400.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_SiIVOIV  = True
-
-    plot_CIV      = False; checkwave = 1549.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_CIV      = True
-
-    plot_HeII     = False; checkwave = 1640.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_HeII      = True
-
-    plot_CIII     = False; checkwave = 1908.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_CIII     = True
-
-    plot_CIIb     = False; checkwave = 2326.*(1+redshift)
-
-    plot_MgII     = False; checkwave = 2795.*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_MgII     = True
-
-    plot_OII      = False; checkwave = 3727.5*(1+redshift)
-    for specname in spectra:
-        wavecov = datadic[specname]['spec_wavecov']
-        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
-            plot_OII      = True
-
-    plot_Hd       = False; checkwave = 4101.74*(1+redshift)
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print ' - Plotting figure '
     figuresize_x = 13
@@ -1164,315 +1107,37 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         ylabel        = 'S/N'
     col_linemarker    = 'gray'
     wavescale         = 1.0
+    nrows             = 4
+    ncols             = 3
+
+    subplotinfo  = mwp.plot_1DspecOverview_subplotinfo()
+    xrangedic    = {}
+    yrangedic    = {}
+
+    if redshift > 2.5:
+        linenames    = ['Lyb','Lya','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
+    else:
+        linenames    = ['MgII','OII','NeIII','Hg','Hb','OIII','HeI','Ha','SII']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_Lyb:
-        plt.subplot(4, 3, 1) # Lybeta+OIV
-        windowcenter = 1030.0
-        windowwidth  = 20.0
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+    for ll, linename in enumerate(linenames):
+        linewave      = subplotinfo[linename][0]
+        windowcenter  = subplotinfo[linename][1]
+        windowwidth   = subplotinfo[linename][2]
+        linelatex     = subplotinfo[linename][3]
+        checkwave     = linewave*(1+redshift)
+        speccoverage  = mwp.plot_1DspecOverview_checkcoverage(spectra,datadic,checkwave)
 
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_Lyb = xrange
-        yrange_Lyb = yrange
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 1)
+        if windowcenter*(redshift+1.0) > 10000.:
+            windowwidth  = 70
 
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nLy$\\beta$ + OVI doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
+        plotindex = ll+1
+        xrangedic[linename], yrangedic[linename] = \
+            mwp.plot_1DspecOverview_subplot(nrows,ncols,plotindex,linename,datadic,spectra,skyspectra,wavecols_sky,
+                                            fluxcols_sky,speccols,plotSN,voffset,llistdic,Fsize,col_linemarker,LW,
+                                            xlabel,ylabel,linelatex,windowcenter,windowwidth,wavescale,redshift,
+                                            specinrange=speccoverage)
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_Lya:
-        plt.subplot(4, 3, 2) # Lyalpha+NV
-        windowcenter = 1229.0
-        windowwidth  = 28.0
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_Lya = xrange
-        yrange_Lya = yrange
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 2)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nLy$\\alpha$ + NV doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_CII:
-        plt.subplot(4, 3, 3) # CII
-        windowcenter = 1335.
-        windowwidth  = 10.
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_CII = xrange
-        yrange_CII = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 3)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nCII$\\lambda$1336',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_SiIVOIV:
-        plt.subplot(4, 3, 4) # SiIV+OIV
-        windowcenter = 1397.0
-        windowwidth  = 13
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_SiIVOIV = xrange
-        yrange_SiIVOIV = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 4)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nSiIV and OIV] doublets',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_CIV:
-        plt.subplot(4, 3, 5) # CIV
-        windowcenter = 1549.
-        windowwidth  = 10.
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_CIV = xrange
-        yrange_CIV = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 5)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nCIV doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_HeII:
-        plt.subplot(4, 3, 6) # HeII
-        windowcenter = 1653.0
-        windowwidth  = 26
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_HeII = xrange
-        yrange_HeII = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 6)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nHeII and OIII] doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_CIII:
-        plt.subplot(4, 3, 7) # CIII]
-        windowcenter = 1908.0
-        windowwidth  = 10
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_CIII = xrange
-        yrange_CIII = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 7)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nCIII] doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_MgII:
-        plt.subplot(4, 3, 8) # MgII
-        windowcenter = 2795.
-        windowwidth  = 10
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_MgII = xrange
-        yrange_MgII = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 8)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\nMgII doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if plot_OII:
-        plt.subplot(4, 3, 9) # [OII]
-        windowcenter = 3727.5
-        windowwidth  = 10
-        if windowcenter*(redshift+1.0) > 10000.: windowwidth  = 70
-        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
-
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
-                                          xrange,yrange,redshift,LW,wavetype='vac')
-        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        plt.xlim(xrange)
-        plt.ylim(yrange)
-        xrange_OII = xrange
-        yrange_OII = yrange
-
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-    else:
-        plt.subplot(4, 3, 9)
-
-        plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\n[OII] doublet',
-                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-        plt.yticks([])
-        plt.xticks([])
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.xlim([0,1])
-        plt.ylim([0,1])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 3, (10,12)) # Full specs
     windowcenter = 7500.0
@@ -1487,96 +1152,17 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     else:
         yrangefull  = yrange
     Dyrangefull = yrangefull[1]-yrangefull[0]
+
     # --- "ZOOM BOXES" ---
     boxzorder = 150
 
-    if plot_Lyb:
-        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_Lyb,np.zeros(2)+yrange_Lyb[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_Lyb[0],yrange_Lyb,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_Lyb[1],yrange_Lyb,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_Lyb)),yrange_Lyb[1]+0.03*Dyrangefull,'Ly$\\beta$+OVI',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_Lya:
-        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_Lya,np.zeros(2)+yrange_Lya[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_Lya[0],yrange_Lya,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_Lya[1],yrange_Lya,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_Lya)),yrange_Lya[1]+0.03*Dyrangefull,'Ly$\\alpha$+NV',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_CII:
-        plt.plot(xrange_CII,np.zeros(2)+yrange_CII[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_CII,np.zeros(2)+yrange_CII[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_CII[0],yrange_CII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_CII[1],yrange_CII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_CII)),yrange_CII[1]+0.03*Dyrangefull,'CII',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_SiIVOIV:
-        plt.plot(xrange_SiIVOIV,np.zeros(2)+yrange_SiIVOIV[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_SiIVOIV,np.zeros(2)+yrange_SiIVOIV[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_SiIVOIV[0],yrange_SiIVOIV,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_SiIVOIV[1],yrange_SiIVOIV,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_SiIVOIV)),yrange_SiIVOIV[1]+0.03*Dyrangefull,'SiIV+OIV]',rotation='vertical',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_CIV:
-        plt.plot(xrange_CIV,np.zeros(2)+yrange_CIV[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_CIV,np.zeros(2)+yrange_CIV[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_CIV[0],yrange_CIV,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_CIV[1],yrange_CIV,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_CIV)),yrange_CIV[1]+0.03*Dyrangefull,'CIV',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_HeII:
-        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_HeII,np.zeros(2)+yrange_HeII[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_HeII[0],yrange_HeII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_HeII[1],yrange_HeII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_HeII)),yrange_HeII[1]+0.03*Dyrangefull,'HeII+OIII]',rotation='vertical',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_CIII:
-        plt.plot(xrange_CIII,np.zeros(2)+yrange_CIII[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_CIII,np.zeros(2)+yrange_CIII[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_CIII[0],yrange_CIII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_CIII[1],yrange_CIII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_CIII)),yrange_CIII[1]+0.03*Dyrangefull,'CIII]',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    # if plot_CIIb:
-    #     plt.plot(xrange_CIIb,np.zeros(2)+yrange_CIIb[0],'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.plot(xrange_CIIb,np.zeros(2)+yrange_CIIb[1],'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.plot(np.zeros(2)+xrange_CIIb[0],yrange_CIIb,'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.plot(np.zeros(2)+xrange_CIIb[1],yrange_CIIb,'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.text(np.mean(np.asarray(xrange_CIIb)),yrange_CIIb[1]+0.03*Dyrangefull,'CII]',
-    #              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_MgII:
-        plt.plot(xrange_MgII,np.zeros(2)+yrange_MgII[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_MgII,np.zeros(2)+yrange_MgII[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_MgII[0],yrange_MgII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_MgII[1],yrange_MgII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_MgII)),yrange_MgII[1]+0.03*Dyrangefull,'MgII',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    if plot_OII:
-        plt.plot(xrange_OII,np.zeros(2)+yrange_OII[0],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(xrange_OII,np.zeros(2)+yrange_OII[1],'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_OII[0],yrange_OII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.plot(np.zeros(2)+xrange_OII[1],yrange_OII,'-',color='black',lw=LW,zorder=boxzorder)
-        plt.text(np.mean(np.asarray(xrange_OII)),yrange_OII[1]+0.03*Dyrangefull,'[OII]',
-                 color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
-
-    # if plot_Hd:
-    #     plt.plot(xrange_Hd,np.zeros(2)+yrange_Hd[0],'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.plot(xrange_Hd,np.zeros(2)+yrange_Hd[1],'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.plot(np.zeros(2)+xrange_Hd[0],yrange_Hd,'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.plot(np.zeros(2)+xrange_Hd[1],yrange_Hd,'-',color='black',lw=LW,zorder=boxzorder)
-    #     plt.text(np.mean(np.asarray(xrange_Hd)),yrange_Hd[1]+0.03*Dyrangefull,'H$\delta$',
-    #              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
+    for ll, linename in enumerate(linenames):
+        linewave      = subplotinfo[linename][0]
+        checkwave     = linewave*(1+redshift)
+        speccoverage  = mwp.plot_1DspecOverview_checkcoverage(spectra,datadic,checkwave)
+        if speccoverage:
+            mwp.plot_1DspecOverview_genbox(linename,xrangedic[linename],yrangedic[linename],
+                                           LW,boxzorder,Dyrangefull,col_linemarker,Fsize)
 
     #--------- LEGEND ---------
     anchorpos = (0.5, 1.2)
@@ -1596,6 +1182,98 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     plt.clf()
     plt.close('all')
     if verbose: print ' - Saved figure to ',specfigure
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1DspecOverview_checkcoverage(spectra,datadic,checkwave):
+    """
+    Function checking if plot should be generated, i.e., if there is spectral coverage of line
+    """
+    coverage  = False
+
+    for specname in spectra:
+        wavecov = datadic[specname]['spec_wavecov']
+        if (checkwave > wavecov[0]) & (checkwave < wavecov[1]):
+            coverage = True
+
+    return coverage
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1DspecOverview_subplotinfo():
+    """
+    Retruning dictionary with subplot in for generating subplots of different lines
+    """
+    subplotinfodic = {}
+
+    #                             linewave    wavecenter,    wavewidth,    latexname
+    subplotinfodic['Lyg']     =  [ 973.0,      973.0,        20.0,         'Ly$\gamma$']
+    subplotinfodic['Lyb']     =  [1026.0,     1030.0,        20.0,         'Ly$\\beta$ + OVI doublet']
+    subplotinfodic['Lya']     =  [1216.0,     1229.0,        28.0,         'Ly$\\alpha$ + NV doublet']
+    subplotinfodic['CII']     =  [1335.0,     1335.0,        10.0,         'CII$\\lambda$1336']
+    subplotinfodic['SiIVOIV'] =  [1400.0,     1400.0,        13.0,         'SiIV and OIV] doublets']
+    subplotinfodic['CIV']     =  [1549.0,     1549.0,        10.0,         'CIV doublet']
+    subplotinfodic['HeII']    =  [1640.0,     1653.0,        26.0,         'HeII and OIII] doublet']
+    subplotinfodic['CIII']    =  [1909.0,     1908.0,        10.0,         'CIII] doublet']
+    subplotinfodic['CIIb']    =  [2326.0,     2326.0,        26.0,         'CIIb']
+    subplotinfodic['MgII']    =  [2795.0,     2795.0,        10.0,         'MgII doublet']
+    subplotinfodic['OII']     =  [3727.0,     3727.5,        10.0,         '[OII] doublet']
+    subplotinfodic['NeIII']   =  [3869.0,     3869.0,        30.0,         '[NeIII]$\\lambda$3869']
+    subplotinfodic['Hd']      =  [4101.0,     4101.0,        10.0,         'H\delta']
+    subplotinfodic['Hg']      =  [4340.0,     4340.0,        30.0,         'H$\gamma$']
+    subplotinfodic['Hb']      =  [4862.0,     4862.0,        30.0,         'H$\\beta$']
+    subplotinfodic['OIII']    =  [5007.0,     5007.0,        30.0,         '[OIII] doublet']
+    subplotinfodic['HeI']     =  [5877.0,     5877.0,        30.0,         'HeI$\\lambda$5877']
+    subplotinfodic['Ha']      =  [6563.0,     6563.0,        30.0,         'H$\\alpha$']
+    subplotinfodic['SII']     =  [6717.0,     6723.0,        30.0,         '[SII] doublet']
+
+    return subplotinfodic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1DspecOverview_subplot(nrows,ncols,plotindex,
+                                line,datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,plotSN,voffset,
+                                llistdic,Fsize,col_linemarker,LW,xlabel,ylabel,
+                                linestring,windowcenter,windowwidth,wavescale,redshift,specinrange=True):
+    """
+    Function generating sub plots for plot_1DspecOverview()
+    """
+    plt.subplot(nrows,ncols,plotindex) # CII
+    if specinrange:
+        xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
+                                                   xrange,plotSN=plotSN,labels=None)
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
+                                          xrange,yrange,redshift,LW,wavetype='vac')
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+    else:
+        plt.plot(-1,-1)
+        plt.text(0.5,0.5,'No good coverage of\n'+linestring,
+                 color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+        plt.yticks([])
+        plt.xticks([])
+        plt.ylabel('')
+        plt.xlabel('')
+        xrange = [0,1]
+        yrange = [0,1]
+
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+    return list(xrange), list(yrange)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1DspecOverview_genbox(boxstring,xrange,yrange,LW,boxzorder,Dyrangefull,col_linemarker,Fsize):
+    """
+    Function generating boxes for full-spec view in plot_1DspecOverview()
+    """
+    plt.plot(xrange,np.zeros(2)+yrange[0],'-',color='black',lw=LW,zorder=boxzorder)
+    plt.plot(xrange,np.zeros(2)+yrange[1],'-',color='black',lw=LW,zorder=boxzorder)
+    plt.plot(np.zeros(2)+xrange[0],yrange,'-',color='black',lw=LW,zorder=boxzorder)
+    plt.plot(np.zeros(2)+xrange[1],yrange,'-',color='black',lw=LW,zorder=boxzorder)
+    plt.text(np.mean(np.asarray(xrange)),yrange[1]+0.03*Dyrangefull,boxstring,
+             color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,colors,xrange,plotSN=False,labels=None):
     """
