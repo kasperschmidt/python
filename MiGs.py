@@ -226,6 +226,7 @@ def linelistdic(listversion='full'):
         linelist['mgii2']    = ['MgII $\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
         linelist['oii1']     = ['[OII] $\\lambda$3726'              , 3726.    ,         'right'      , 'Pradhan2006']
         linelist['oii2']     = ['[OII] $\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
+        linelist['NeIII']    = ['[NeIII] $\\lambda$3869'            , 3869.0   ,        'right'       , 'Nebular URL']
         linelist['hd']       = ['H$\delta$ $\\lambda$4103'          , 4102.89  ,         'right'      , 'VandenBerk2001tab4']
         linelist['oiii4363'] = ['[OIII] $\\lambda$4363'             , 4363.    ,         'right'      , 'Sanders+2016']
         # Lines from http://www.sdss.org/dr7/algorithms/linestable.html,
