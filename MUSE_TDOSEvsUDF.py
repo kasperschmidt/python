@@ -221,7 +221,7 @@ def load_sourcefile_spectra(sourcefiles,spectypes=['SPE_MUSE_TOT_SKYSUB','SPE_MU
             specarr              = np.zeros(len(flux),dtype=[('lambda',np.float32),('flux',np.float32),('fluxerror',np.float32)])
             specarr['lambda']    = wave
             specarr['flux']      = flux
-            specarr['fluxerror'] = error
+            specarr['fluxerror'] = np.sqrt(error)
 
             specdic[spectype]    = specarr
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -286,7 +286,7 @@ def load_UDFmastertable(votablename):
 
     return table.array
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_1Doverviewcomparison(ids,outputdir,
+def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],
                               specdir_udf='/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6_1Dspecs/',
                               specdir_tdose='/Volumes/DATABCKUP1/UDFvsMUSEWide/tdose_spectra/',
                               clobber=False,verbose=True):
@@ -320,6 +320,7 @@ def plot_1Doverviewcomparison(ids,outputdir,
 
         objRA            = table['DEC'][objent_udf]
         objDEC           = table['RA'][objent_udf]
+        rafID            = table['RAF_ID'][objent_udf]
         obj_UDFfile      = table['UDF10_FILENAME'][objent_udf]
         obj_Mosaicfil    = table['MOSAIC_FILENAME'][objent_udf]
 
@@ -343,20 +344,18 @@ def plot_1Doverviewcomparison(ids,outputdir,
         sky_wc_udf       = ['lambda']+[None]*len(spec_udf)
         sky_fc_udf       = ['data']+[None]*len(spec_udf)
 
-        lab_udf          = [ss.split('/')[-1].split('.fit')[0].replace('_','\_') for ss in spec_udf]
+        lab_udf          = [' '.join(ss.split('udf_udf10_')[-1].split('.fit')[0][6:].split('_')[2:]) for ss in spec_udf]
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #                             TDOSE
-        spec_tdose       = glob.glob(specdir_tdose+'tdose_spectrum_*'+obj_UDFfile.data[0].replace('.fits','*.fits'))
-        lab_tdose        = ['TDOSE']*len(spec_tdose)
+        spec_tdose       = glob.glob(specdir_tdose+'tdose_spectrum_*'+str("%.10d" % int(rafID.data[0].split(',')[0]))+'*.fits')
         wave_tdose       = ['wave']*len(spec_tdose)
         flux_tdose       = ['flux']*len(spec_tdose)
         ferr_tdose       = ['fluxerror']*len(spec_tdose)
-
         sky_tdose        = [None]*len(spec_tdose)
         sky_wc_tdose     = [None]*len(spec_tdose)
         sky_fc_tdose     = [None]*len(spec_tdose)
 
-        lab_tdose    = [ss.split('/')[-1].split('.fit')[0] for ss in spec_tdose]
+        lab_tdose        = ['TDOSE '+ss.split('tdose_spectrum_UDF-10_')[-1].split('_')[0] for ss in spec_tdose]
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #                             3D-HST
         spec_3dhst     = []
@@ -385,12 +384,13 @@ def plot_1Doverviewcomparison(ids,outputdir,
 
             redshift     = obj_z
             voffset      = 0.0
-            yrangefull   = [-1000,2000]
 
             outputfig    = outputdir+obj_UDFfile.data[0].replace('.fits','_1Doverviewplots.pdf')
             for plotSN in [True,False]:
-                if os.path.isfile(outputfig) & (clobber==False):
-                    if verbose: print(' WARNING the following plot exist and clobber=False so skipping:\n   '+outfig)
+                serachstr   = outputfig.replace('plots.pdf','plots*.pdf')
+                filesstored = glob.glob(serachstr)
+                if (len(filesstored) > 0) & (clobber==False):
+                    if verbose: print(' WARNING Skipping, as clobber=False and plot exists for:\n   '+serachstr)
                 else:
                     mwp.plot_1DspecOverview(spectra, labels, wavecols, fluxcols, ferrcols, redshift, voffset=voffset,
                                             skyspectra=skyspecs,wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
