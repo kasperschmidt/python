@@ -397,15 +397,22 @@ def plot_1Doverviewcomparison(ids,outputdir,
                                             outputfigure=outputfig,yrangefull=yrangefull, plotSN=plotSN,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_sourcecat_FromFitsCats(outputdir,centralcoords=[[]],catnames=['UDF10'],
-                               returnSeparations=False,clobber=False,verbose=True):
+def gen_sourcecat_FromFitsCats(outputdir,centralcoords=[[53.160554,-27.778928]],catnames=['UDF-10'],addMUSEcat=True,
+                               fluxcol='FLUX_F775W',fluxfactor=1.0,returnSeparations=False,clobber=False,verbose=True):
     """
     Generate source catalogs from UDF 10 fits catalog and Rafelski catalog
 
     --- INPUT ---
     outputdir            Output directory to contain object source catalogs
-    sourcecatradius      Radius to search and return in the source catalogs
+    centralcoords        list of coordinates [ra,deg] in degrees to generate catalogs around
+    catnames             Names of the catalogs generated around centralcoords
+    addMUSEcat           Adding the MUSE catalog (including ORION-only detections)
+    fluxcol              Flux column to use as for flux scaling of sources
+    fluxfactor           Value to use as flux factor in source catalog.
+                         If returnSeparations=True this is overwritten.
     returnSeparations    Return the separations in the fluxscale column of the source catalog
+    clobber              Overwrite existing files
+    Verbose              Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import MUSE_TDOSEvsUDF as mtu
@@ -413,7 +420,7 @@ def gen_sourcecat_FromFitsCats(outputdir,centralcoords=[[]],catnames=['UDF10'],
     outdir = '/Users/kschmidt/work/MUSE/UDFvsMUSEWide/tdose_sourcecats/'
     udf10coord = [53.160554,-27.778928]
 
-    mtu.gen_sourcecat_FromFitsCats(outdir,centralcoords=[udf10coord],catnames=['UDF10'],clobber=False)
+    mtu.gen_sourcecat_FromFitsCats(outdir,centralcoords=[udf10coord],catnames=['UDF-10'],addMUSEcat=False,clobber=False)
 
     """
     scat_radius  = 70.0 # using a radius of 70 arc sec to ensure all relevant objects are included in source catalog
@@ -429,15 +436,18 @@ def gen_sourcecat_FromFitsCats(outputdir,centralcoords=[[]],catnames=['UDF10'],
         ra_cen, dec_cen = ccoord
         outname      = outputdir+'tdose_sourcecat_from_fitscat_'+catnames[cc]+'.txt'
         sourcelist = []
-        for ss, udfid in enumerate(dat_udf['ID']):
-            sourcelist.append([int(udfid+1e9), int(udfid+1e9), dat_udf['RA'][ss], dat_udf['DEC'][ss], 1])
+
+        if addMUSEcat:
+            for ss, udfid in enumerate(dat_udf['ID']):
+                sourcelist.append([int(udfid+1e9), int(udfid+1e9), dat_udf['RA'][ss], dat_udf['DEC'][ss], 1])
+
+        if type(fluxfactor) == str:
+            fluxfactor = dat_udf
 
         if returnSeparations:
             fluxfactor = 'separation'
-        else:
-            fluxfactor = 1.0
 
         sourcecat    = tu.gen_sourcecat_from_FitsCat(cat_raf,'ID','RA','DEC',[ra_cen,dec_cen],scat_radius,imgheader,
-                                                     fluxfactor=fluxfactor,outname=outname,newsources=sourcelist,
+                                                     fluxfactor=fluxfactor,fluxcol=fluxcol,outname=outname,newsources=sourcelist,
                                                      clobber=clobber,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
