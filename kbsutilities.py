@@ -40,17 +40,20 @@ import astropysics
 from astropysics.constants import choose_cosmology
 import types               # for testing types
 import pdb
+import MiGs
 import fits2ascii as f2a
 import commands
 import time
 import pyfits
 import os
 import glob
+import matplotlib.pyplot as plt
 #from wand.image import Image as wImage
 #from wand.color import Color as wColor
 from PyPDF2 import PdfFileReader, PdfFileMerger
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+import collections
 #-------------------------------------------------------------------------------------------------------------
 def test4float(str): 
     """testing whehter a string contains letters (i.e. whether it can be converted to a float)"""
@@ -1267,6 +1270,178 @@ def matplotlib_colornames():
     'yellowgreen':          '#9ACD32'}
 
     return cnames
+
+#-------------------------------------------------------------------------------------------------------------
+def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresize_x=8,
+                      redshiftrange=[0.,17.],verbose=True):
+    """
+
+    Plotting an overview of coverage of emission lines for given filters as a function of redshift
+
+    --- INPUT ---
+    lines           list of lines in MiGs.linelistdic to show in plot
+    filters         list of filter names to illustrate line location for in plot
+    outname         name of output plot to generate
+    figuresize_x    Size of figure in x direction
+    redshiftrange   Range of redshift to include in plot
+
+    verbose         toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    lines   = ['lya','civ2','ciii2','oii2','oiii2','ha','pah6p2','h29p7','neii12p8']
+    filters = ['muse','wfc3_g102','wfc3_g141','niriss_f115w','niriss_f150w','niriss_f200w','nirspec_g140h/F100lp','nirspec_g235h/F170lp','nirspec_g395h/F290lp','nirspec_prismclear','nircam_f277w','nircam_f356w','nircam_f444w','miri_lrs','miri_mrs']
+    outname = '/Users/kschmidt/work/linecoverageplot.pdf'
+    kbs.plot_linecoverage(lines,filters,outname=outname,verbose=True)
+
+    """
+    filterinfo = kbs.get_filterinfo()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Loading line list dictionary from MiGs.linelistdic'
+    linedic      = MiGs.linelistdic(listversion='full') # loading line list for plots
+
+    import matplotlib
+    cmap = matplotlib.cm.get_cmap('rainbow')
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=len(filters))
+
+    filtercolors = [ cmap(norm(filternumber)) for filternumber in np.arange(len(filters))]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print ' - Plotting figure '
+    figuresize_y = len(lines) #6
+    fig, ax      = plt.subplots(figsize=(figuresize_x,figuresize_y))
+    Fsize        = 10
+    plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+    plt.rc('font', family='serif',size=Fsize)           # setting text font
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    left   = 0.12   # the left side of the subplots of the figure
+    right  = 0.72   # the right side of the subplots of the figure
+    bottom = 1.0/figuresize_y/2.0       # the bottom of the subplots of the figure
+    top    = 1.0-1.0/figuresize_y/2.0   # the top of the subplots of the figure
+    wspace = 0.20   # the amount of width reserved for blank space between subplots
+    hspace = 0.20   # the amount of height reserved for white space between subplots
+    plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    plt.gca().xaxis.grid(b=True, which='major',linestyle='--',zorder=0,color='lightgray')
+    # plt.minorticks_on()
+    # plt.gca().xaxis.grid(b=True, which='minor',linestyle=':',zorder=0,color='gray')
+    plt.gca().yaxis.grid(False)
+
+
+    xlabel  = 'Redshift'
+    ylabel  = ''
+    yrange  = [0.5,len(lines)+0.5]
+
+    linelabels = []
+    dy         = 1.0/len(filters)
+    for ll, line in enumerate(lines):
+        linelabels.append(linedic[line][0])
+        for ff,filt in enumerate(filters):
+            if filt not in filterinfo.keys():
+                sys.exit(' Filter info for "'+filt+'" was not found in filterinfo dictionary from kbs.get_filterinfo')
+            label  = filterinfo[filt]['label']
+            zrange = np.asarray(filterinfo[filt]['waverange'])/linedic[line][1]-1.0
+            yhigh   = [ll+1.5-ff*dy]*2
+            ylow  = [ll+1.5-(ff+1)*dy]*2
+
+            if ll == 0:
+                plt.fill_between(zrange,yhigh,ylow,alpha=0.7,color=filtercolors[ff],label=label,zorder=20)
+            else:
+                plt.fill_between(zrange,yhigh,ylow,alpha=0.7,color=filtercolors[ff],zorder=20)
+
+        if ll < len(lines)-1:
+            plt.plot(redshiftrange,[ll+1.5]*2,'k-',linewidth=1.0,zorder=30)
+
+    ylabelposition = np.arange(len(lines))+1
+    plt.yticks(ylabelposition, linelabels)
+
+    redshiftticks        = np.arange(redshiftrange[0],redshiftrange[1]+1, 1.0)
+    redshiftlabels       = redshiftticks.astype(int).astype(str)
+    # redshiftlabels[1::2] = ''
+    plt.xticks(redshiftticks,redshiftlabels)
+    #plt.yticks('')
+    #plt.ylabels(linelabels)
+
+    #--------- LEGEND ---------
+    anchorpos = (1.0, 0.99)
+    leg = plt.legend(fancybox=True,numpoints=1, loc='upper left',prop={'size':Fsize},ncol=1,
+                     bbox_to_anchor=anchorpos)  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    plt.xlim(redshiftrange)
+    plt.ylim(yrange)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    ax2 = ax.twiny()  # ax2 is responsible for "top" axis and "right" axis
+    ax2.set_xticks(redshiftticks)
+    ax2.set_xticklabels(redshiftlabels)
+    # ax2.axis["right"].major_ticklabels.set_visible(False)
+    # ax2.axis["top"].major_ticklabels.set_visible(True)
+    ax2.set_xlabel(xlabel)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.savefig(outname)
+    plt.clf()
+    plt.close('all')
+    if verbose: print ' - Saved figure to ',outname
+
+
+#-------------------------------------------------------------------------------------------------------------
+def get_filterinfo():
+    """
+    band widths taken from http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?mode=browse&gname=HST&gname2=ACS_WFC
+
+    """
+    filterinfo = collections.OrderedDict()
+
+    filterinfo['muse']            = {'label':'MUSE',             'waverange':[4800,9300]}
+
+    filterinfo['mosfire']         = {'label':'MOSFIRE',          'waverange':[9000,25000]}
+
+    filterinfo['wfc3_g102']       = {'label':'WFC3 G102',        'waverange':[8000,11719]}
+    filterinfo['wfc3_g141']       = {'label':'WFC3 G141',        'waverange':[10404,17747]}
+
+    # NIRSpec
+    filterinfo['niriss_f090w']    = {'label':'NIRISS F090W',     'waverange':[9973,13061]}
+    filterinfo['niriss_f115w']    = {'label':'NIRISS F115W',     'waverange':[9973,13061]}
+    filterinfo['niriss_f150w']    = {'label':'NIRISS F150W',     'waverange':[13020,16968]}
+    filterinfo['niriss_f200w']    = {'label':'NIRISS F200W',     'waverange':[17201,22595]}
+
+    # NIRCAM
+    filterinfo['nircam_f277w']    = {'label':'NIRCAM F777W',     'waverange':[23657,32166]}
+    filterinfo['nircam_f356w']    = {'label':'NIRCAM F356W',     'waverange':[30696,40787]}
+    filterinfo['nircam_f444w']    = {'label':'NIRCAM F444W',     'waverange':[38013,50996]}
+
+    # NIRSpec info from: https://jwst-docs.stsci.edu/display/JTI/NIRSpec+Dispersers+and+Filters
+    filterinfo['nirspec_g140mf070lp']  = {'label':'NIRSpec G140M/F070LP',    'waverange':[7000,12700]}
+    filterinfo['nirspec_g140m/F100lp'] = {'label':'NIRSpec G140M/F100LP',    'waverange':[9700,18900]}
+    filterinfo['nirspec_g235m/F170lp'] = {'label':'NIRSpec G235M/F170LP',    'waverange':[16600,31700]}
+    filterinfo['nirspec_g395m/F290lp'] = {'label':'NIRSpec G395M/F290LP',    'waverange':[28700,52700]}
+    filterinfo['nirspec_g140h/F070lp'] = {'label':'NIRSpec G140H/F070LP',    'waverange':[7000,12700]}
+    filterinfo['nirspec_g140h/F100lp'] = {'label':'NIRSpec G140H/F100LP',    'waverange':[9700,18900]}
+    filterinfo['nirspec_g235h/F170lp'] = {'label':'NIRSpec G235H/F170LP',    'waverange':[16600,31700]}
+    filterinfo['nirspec_g395h/F290lp'] = {'label':'NIRSpec G395H/F290LP',    'waverange':[28700,52700]}
+    filterinfo['nirspec_prismclear']   = {'label':'NIRSpec PRISM/CLEAR',     'waverange':[6000,53000]}
+
+    # MIRI
+    # x
+    # x
+    # x
+
+    # MIRI LRS https://jwst-docs.stsci.edu/display/JTI/MIRI+Low-Resolution+Spectroscopy
+    filterinfo['miri_lrs']   = {'label':'MIRI LRS',     'waverange':[50000,120000]}
+
+    # MIRI MRS https://jwst-docs.stsci.edu/display/JTI/MIRI+Medium-Resolution+Spectroscopy
+    filterinfo['miri_mrs']   = {'label':'MIRI MRS IFU',       'waverange':[49000,288000]}
+
+    return filterinfo
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
