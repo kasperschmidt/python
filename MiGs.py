@@ -246,6 +246,17 @@ def linelistdic(listversion='full'):
         linelist['sii2']     = ['SII $\\lambda$6732'                , 6732.    ,         'right'      , '???']
         linelist['siii1']    = ['[SIII] $\\lambda$9071.1'           , 9071.1   ,         'right'      , '???']
         linelist['siii2']    = ['[SIII] $\\lambda$9533.2'           , 9533.2   ,         'right'      , '???']
+
+        # mid-IR lines from H. Inami (email 171121)   'pah6p2','h29p7','neii12p8'
+        linelist['pah6p2']   = ['PAH 6.2$\mu$m'                     , 62000.   ,         'right'      , 'Inami']
+        linelist['pah8p6']   = ['PAH 8.6$\mu$m'                     , 86000.   ,         'right'      , 'Inami']
+        linelist['h29p7']    = ['H$_2$ 9.7$\mu$m'                   , 97000.   ,         'right'      , 'Inami']
+        linelist['h212p3']   = ['H$_2$ 12.3$\mu$m'                  , 123000.  ,         'right'      , 'Inami']
+        linelist['neii12p8'] = ['[NeII] 12.8$\mu$m'                 , 128000.  ,         'right'      , 'Inami']
+        linelist['neiii15p6']= ['[NeIII] 15.6$\mu$m'                , 156000.  ,         'right'      , 'Inami']
+        linelist['siv10p5']  = ['[SIV] 10.5$\mu$m'                  , 105000.  ,         'right'      , 'Inami']
+        linelist['nev14p3']  = ['[NeV] 14.3$\mu$m'                  , 143000.  ,         'right'      , 'Inami']
+
     elif listversion == 'rest_uv_main':
         #                         name                           wavelength[A]  horizontalalignment      lineref
         # linelist['lyg']    = ['Ly$\gamma$ $\\lambda$973'          ,  972.5371,         'right'      , 'Morton1991tab5']
