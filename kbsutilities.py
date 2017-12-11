@@ -1415,7 +1415,7 @@ def get_filterinfo():
     filterinfo['niriss_f200w']    = {'label':'NIRISS F200W',     'waverange':[17201,22595]}
 
     # NIRCAM
-    filterinfo['nircam_f277w']    = {'label':'NIRCAM F777W',     'waverange':[23657,32166]}
+    filterinfo['nircam_f277w']    = {'label':'NIRCAM F277W',     'waverange':[23657,32166]}
     filterinfo['nircam_f356w']    = {'label':'NIRCAM F356W',     'waverange':[30696,40787]}
     filterinfo['nircam_f444w']    = {'label':'NIRCAM F444W',     'waverange':[38013,50996]}
 
