@@ -247,6 +247,13 @@ def linelistdic(listversion='full'):
         linelist['siii1']    = ['[SIII] $\\lambda$9071.1'           , 9071.1   ,         'right'      , '???']
         linelist['siii2']    = ['[SIII] $\\lambda$9533.2'           , 9533.2   ,         'right'      , '???']
 
+        # near-IR lines from http://www.star.ucl.ac.uk/~msw/lines.html
+        linelist['pag']   = ['Pa$\gamma$ $\\lambda$10941'           , 10941.091,         'right'      , 'Nebular lines']
+        linelist['pab']   = ['Pa$\\beta$ $\\lambda$12821'           , 12821.59 ,         'right'      , 'Nebular lines']
+        linelist['paa']   = ['Pa$\\alpha$ $\\lambda$18756'          , 18756.13 ,         'right'      , 'Nebular lines']
+        linelist['feii1p6']=['[FeII] $\\lambda$1.644$\mu$m'         , 16440.00 ,         'right'      , 'Nebular lines']
+        linelist['brg']   = ['Br$\gamma$ $\\lambda$21661'           , 21661.20 ,         'right'      , 'Nebular lines']
+
         # mid-IR lines from H. Inami (email 171121)   'pah6p2','h29p7','neii12p8'
         linelist['pah6p2']   = ['PAH 6.2$\mu$m'                     , 62000.   ,         'right'      , 'Inami']
         linelist['pah8p6']   = ['PAH 8.6$\mu$m'                     , 86000.   ,         'right'      , 'Inami']
