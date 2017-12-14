@@ -973,7 +973,7 @@ def plot_comp_hist(ax,xlabel,hist1,hist2,colors,fontsize,lthick,bins):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshift, voffset=0,
                         outputfigure='default', plotSN=False, skyspectra=None, wavecols_sky=None, fluxcols_sky=None,
-                        yrangefull=None, verbose=True):
+                        yrangefull=None, xrangefull=[4500,18000], speccols=None, verbose=True):
     """
 
     Plotting overview with zoom-ins of 1D spectrum.
@@ -1099,8 +1099,9 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     hspace = 0.20   # the amount of height reserved for white space between subplots
     plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
-    speccols          = ['blue','green','red','magenta','cyan','orange','purple','yellow','skyblue']
-    #speccol           = 'blue'
+    if speccols is None:
+        speccols          = ['blue','green','red','magenta','cyan','orange','purple','yellow','skyblue']
+
     xlabel            = '$\lambda$ / [\AA]'
     ylabel            = '$f_\lambda / [10^{-20}$erg/s/cm$^2$/\\AA]'
     if plotSN:
@@ -1141,7 +1142,6 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 3, (10,12)) # Full specs
     windowcenter = 7500.0
-    xrangefull   = [4500,18000]
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
                                                xrangefull,plotSN=plotSN,labels=labels)
@@ -1166,7 +1166,11 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     #--------- LEGEND ---------
     anchorpos = (0.5, 1.2)
-    leg = plt.legend(fancybox=True,numpoints=1, loc='upper center',prop={'size':Fsize},ncol=len(labels))#,
+    if len(labels) > 6:
+        ncols = 6
+    else:
+        ncols = len(labels)
+    leg = plt.legend(fancybox=True,numpoints=1, loc='upper center',prop={'size':Fsize},ncol=ncols)#,
                      #bbox_to_anchor=anchorpos)  # add the legend
     leg.get_frame().set_alpha(0.7)
     #--------------------------
