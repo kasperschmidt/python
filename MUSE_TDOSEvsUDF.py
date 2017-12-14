@@ -11,6 +11,7 @@ import pyfits
 import datetime
 import numpy as np
 import collections
+import matplotlib
 import shutil
 import fits2ascii as f2a
 from astropy.coordinates import SkyCoord
@@ -286,7 +287,235 @@ def load_UDFmastertable(votablename):
 
     return table.array
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],
+def plot_1Doverviewcomparison_crossobject_wrapper(plotdir,specdir_tdose,specdir_udf,idset='nonLAEs',
+                                                  specs2show=['TDOSE gauss','PSF SKYSUB'], # ,'TDOSE aperture'
+                                                  yrangefull=[-200,1000], xrangefull=[4500,9500],clobber=False):
+    """
+
+    """
+
+    #### getting id redshifts
+    if idset == 'LAEs':
+        iddat   = np.genfromtxt('/Users/kschmidt/work/MUSE/UDFvsMUSEWide/blends_UDF10.txt',names=True,comments='#')
+    elif idset == 'nonLAEs':
+        iddat   = np.genfromtxt('/Users/kschmidt/work/MUSE/UDFvsMUSEWide/blends_UDF10_pt2.txt',names=True,comments='#')
+    else:
+        sys.exit('Unknown idset in plot_1Doverviewcomparison_crossobject_wrapper()')
+
+    MUSEids = iddat['id_MUSE']
+    zdat    = pyfits.open('/Users/kschmidt/work/MUSE/UDFvsMUSEWide/master_idlist_20170214.fits')[1].data
+    for id in MUSEids:
+        objent = np.where(zdat['ID'] == id)[0]
+        print str(int(id))+'       '+str(zdat['RAF_ID'][objent[0]])+'       # z = '+str(zdat['UDF10_Z'][objent[0]])
+
+    idsetdic = collections.OrderedDict()
+
+    if idset == 'LAEs':
+        idsetdic['01'] = [[50,208,183], 5.7810, 1, None]
+        idsetdic['02'] = [[50,208,183], 3.3178, 1, None]
+        idsetdic['03'] = [[50,208,183], 3.1863, 1, None]
+        idsetdic['04'] = [[559,218,44], 4.5120, 1, None]
+        idsetdic['05'] = [[559,218,44], 3.0483, 1, None]
+        idsetdic['06'] = [[559,218,44], 1.6103, 1, None]
+        idsetdic['07'] = [[587,720,6336], 5.9765, 2, [1,0,0]]
+        idsetdic['08'] = [[587,720,6336], 3.71472, 2, [1,0,0]]
+        idsetdic['09'] = [[6300,277], 4.5221, 1, None]
+        idsetdic['10'] = [[6300,277], 3.7148, 1, None]
+        idsetdic['11'] = [[6312,6769,6680], 6.3097, 1, None]
+        idsetdic['12'] = [[6312,6769,6680], 4.5046, 1, None]
+        idsetdic['13'] = [[6311], 5.4200, 1, None]
+        idsetdic['14'] = [[109,748,6327], 3.0863, 1, None]
+        idsetdic['15'] = [[109,748,6327], 5.1351, 1, None]
+        idsetdic['16'] = [[287], 3.7242, 1, None]
+        idsetdic['17'] = [[319], 6.5658, 1, None]
+        idsetdic['18'] = [[304,173,46], 5.9405, 1, None]
+        idsetdic['19'] = [[304,173,46], 1.4135, 1, None]
+        idsetdic['20'] = [[459,823], 6.1852, 1, None]
+        idsetdic['21'] = [[6291], 3.2994, 1, None]
+    elif idset == 'nonLAEs':
+        idsetdic['01'] = [[4,11,12,14], 0.7650, 1, None]
+        idsetdic['02'] = [[4,11,12,14], 1.0376, 1, None]
+        idsetdic['03'] = [[4,11,12,14], 0.9967, 1, None]
+        idsetdic['04'] = [[21,79],  0.8939, 1, None]
+        idsetdic['05'] = [[21,79],  0.3631, 1, None]
+        idsetdic['06'] = [[26,40],  1.1348, 1, None]
+        idsetdic['07'] = [[26,40],  0.9798, 1, None]
+        idsetdic['08'] = [[32,121], 1.3066, 1, None]
+        idsetdic['09'] = [[32,121], 1.3060, 1, None]
+        idsetdic['10'] = [[38,627], 0.7655, 1, None]
+        idsetdic['11'] = [[38,627], 5.1352, 1, None]
+        idsetdic['12'] = [[46,92],  1.4135, 1, None]
+        idsetdic['13'] = [[46,92],  1.4137, 1, None]
+        idsetdic['14'] = [[65,605], 1.3069, 1, None]
+        idsetdic['15'] = [[65,605], 3.4390, 1, None]
+        idsetdic['16'] = [[69,72],  0.5439, 1, None]
+        idsetdic['17'] = [[69,72],  1.0969, 1, None]
+        idsetdic['18'] = [[93,156], 0.6181, 1, None]
+        idsetdic['19'] = [[93,156], 0.8588, 1, None]
+        idsetdic['20'] = [[96,114], 0.6220, 2, [0,1]]
+        idsetdic['21'] = [[96,114], 0.6777, 2, [0,1]]
+
+        idsetdic['22'] = [[2,6368], 0.4193, 1, None]
+        idsetdic['23'] = [[2,6368], 0.2754, 1, None]
+        idsetdic['24'] = [[33,6324], 1.4153, 1, None]
+        idsetdic['25'] = [[33,6324], 5.1321, 1, None]
+        idsetdic['26'] = [[48,6322], 0.4681, 1, None]
+        idsetdic['27'] = [[48,6322], 3.6056, 1, None]
+
+
+    for key in idsetdic.keys():
+        idset        = idsetdic[key][0]
+        plotredshift = idsetdic[key][1]
+        Nrafids      = idsetdic[key][2]
+
+
+        if Nrafids == 2:
+            namestring   = 'ids'+'-'.join(np.asarray(idset).astype(str))+'_rafid2'
+            rafent       = idsetdic[key][3]
+            mtu.plot_1Doverviewcomparison_crossobject(idset, plotredshift, plotdir, specdir_tdose=specdir_tdose, rafident=rafent,
+                                                      namestring=namestring, specdir_udf=specdir_udf, clobber=clobber,
+                                                      yrangefull=yrangefull, xrangefull=xrangefull, specs2show=specs2show)
+
+        namestring   = 'ids'+'-'.join(np.asarray(idset).astype(str))
+        mtu.plot_1Doverviewcomparison_crossobject(idset, plotredshift, plotdir, specdir_tdose=specdir_tdose,
+                                                  rafident=0,
+                                                  namestring=namestring, specdir_udf=specdir_udf, clobber=clobber,
+                                                  yrangefull=yrangefull, xrangefull=xrangefull, specs2show=specs2show)
+
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1Doverviewcomparison_crossobject(ids,plotredshift,outputdir,namestring='_RENAME_',rafident=0,
+                                          specs2show=['TDOSE gauss','TDOSE aperture','PSF SKYSUB'],
+                                          yrangefull=[-1000,2000],xrangefull=[4500,18000],
+                                          specdir_udf='/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6_1Dspecs/',
+                                          specdir_tdose='/Volumes/DATABCKUP1/UDFvsMUSEWide/tdose_spectra/',
+                                          clobber=False,verbose=True):
+    """
+    Plot 1D overview plots of UDF, MUSE-Wide and 3D-HST spectra
+
+    --- INPUT ---
+    ids      MUSE ids to plot
+
+    --- EXAMPLE OF USE ---
+    import MUSE_TDOSEvsUDF as mtu
+
+    mtu.plot_1Doverviewcomparison([4,6,533],1.2,'/Volumes/DATABCKUP1/UDFvsMUSEWide/overviewplots/',clobber=False)
+
+    """
+    try:
+        float(rafident)
+        rafident = [rafident]*len(ids)
+    except:
+        pass
+
+    votablename = '/Volumes/DATABCKUP1/UDFvsMUSEWide/master_idlist_20170214.vot'
+    table = mtu.load_UDFmastertable(votablename)
+
+    colormaps    = ['Reds','Greens','Blues','Oranges','Purples','Greys']
+    speccolmaps  = collections.OrderedDict()
+    for cmapuse in colormaps:
+        cmap = matplotlib.cm.get_cmap(cmapuse)
+        norm = matplotlib.colors.Normalize(vmin=0, vmax=len(specs2show)*2.5)
+        speccolmaps[cmapuse]    = [ cmap(norm(objnumner+len(specs2show))) for objnumner in np.arange(len(specs2show))]
+
+    # speccols['red']    = ['darkred','red','tomato','pink','lightred']
+    # speccols['green']  = ['darkgreen','green','seagreen','lime','lightgreen']
+    # speccols['blue']   = ['darkblue','blue','steelblue','cyan','lightblue']
+    # speccols['orange'] = ['darkorange','orange','gold','yellow','khaki']
+
+    Nids = len(ids)
+    if verbose: print(' - Will attempt to generate plots for the spectra found for the '+str(Nids)+' IDs in list')
+    spectra, labels, wavecols, fluxcols, ferrcols, skyspecs, wavecols_sky, fluxcols_sky = [],[],[],[],[],[],[],[]
+    speccols_all = []
+    for ii, id in enumerate(ids):
+        speccols = speccolmaps[speccolmaps.keys()[ii]]
+        objent_udf = np.where(table['ID'] == int(id))[0]
+        Nent_udf   = len(objent_udf)
+        if Nent_udf == 0:
+            print(' WARNING No match to id='+str(id)+' found in master_idlist_20170214.vot')
+        elif Nent_udf > 1:
+            print(' WARNING More than one match to id='+str(id)+' found in master_idlist_20170214.vot; using the first match')
+            objent_udf = objent_udf[0]
+
+        rafID            = table['RAF_ID'][objent_udf]
+        obj_UDFfile      = table['UDF10_FILENAME'][objent_udf]
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #                             UDF-10
+        spec_udf         = glob.glob(specdir_udf+obj_UDFfile.data[0].replace('.fits','*.fits'))
+
+        spec_udf_show    = []
+        for su in spec_udf:
+            lab_udf          = ' '.join(su.split('udf_udf10_')[-1].split('.fit')[0][6:].split('_')[2:])
+            if lab_udf in specs2show:
+                spec_udf_show.append(su)
+        Nspecudf         = len(spec_udf_show)
+
+        wave_udf         = ['lambda']*Nspecudf
+        flux_udf         = ['flux']*Nspecudf
+        ferr_udf         = ['fluxerror']*Nspecudf
+        sky_udf          = ['/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-35_av.fits']+[None]*(Nspecudf-1)
+        sky_wc_udf       = ['lambda']+[None]*(Nspecudf-1)
+        sky_fc_udf       = ['data']+[None]*(Nspecudf-1)
+
+        lab_udf          = [' '.join(ss.split('udf_udf10_')[-1].split('.fit')[0][6:].split('_')[2:])+' id'+str(int(id))
+                            for ss in spec_udf_show]
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #                             TDOSE
+        spec_tdose       = glob.glob(specdir_tdose+'tdose_spectrum_*'+
+                                     str("%.10d" % int(rafID.data[0].split(',')[rafident[ii]]))+'*.fits')
+
+        spec_tdose_show  = []
+        for st in spec_tdose:
+            lab_tdose          = 'TDOSE '+st.split('tdose_spectrum_UDF-10_')[-1].split('_')[0]
+            if lab_tdose in specs2show:
+                spec_tdose_show.append(st)
+        Nspectdose       = len(spec_tdose_show)
+
+        wave_tdose       = ['wave']*Nspectdose
+        flux_tdose       = ['flux']*Nspectdose
+        ferr_tdose       = ['fluxerror']*Nspectdose
+        sky_tdose        = [None]*Nspectdose
+        sky_wc_tdose     = [None]*Nspectdose
+        sky_fc_tdose     = [None]*Nspectdose
+
+        lab_tdose        = ['TDOSE '+ss.split('tdose_spectrum_UDF-10_')[-1].split('_')[0]+' id'+str(int(id))
+                            for ss in spec_tdose_show]
+
+
+        spectra      = spectra + spec_udf_show + spec_tdose_show
+        speccols_all = speccols_all + speccols
+        if len(spectra) == 0:
+            if verbose: print(' WARNING No spectra found for object id='+str(id)+' with source file '+obj_UDFfile.data[0])
+        else:
+            labels       = labels + lab_udf  + lab_tdose
+
+            wavecols     = wavecols + wave_udf + wave_tdose
+            fluxcols     = fluxcols + flux_udf + flux_tdose
+            ferrcols     = ferrcols + ferr_udf + ferr_tdose
+
+            skyspecs     = skyspecs + sky_udf  + sky_tdose
+            wavecols_sky = wavecols_sky + sky_wc_udf + sky_wc_tdose
+            fluxcols_sky = fluxcols_sky + sky_fc_udf + sky_fc_tdose
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #                            PLOTTING
+    voffset      = 0.0
+    outputfig    = outputdir+'UDF10_1Doverviewplots_crossobj_'+namestring+'.pdf'
+    for plotSN in [True,False]:
+        serachstr   = outputfig.replace('plots.pdf','plots*.pdf')
+        filesstored = glob.glob(serachstr)
+        if (len(filesstored) > 0) & (clobber==False):
+            if verbose: print(' WARNING Skipping, as clobber=False and plot exists for:\n   '+serachstr)
+        else:
+            mwp.plot_1DspecOverview(spectra, labels, wavecols, fluxcols, ferrcols, plotredshift, voffset=voffset,
+                                    skyspectra=skyspecs,wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                    outputfigure=outputfig,yrangefull=yrangefull, xrangefull=xrangefull,
+                                    plotSN=plotSN,speccols=speccols_all,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],xrangefull=[4500,18000],rafident=0,
                               specdir_udf='/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6_1Dspecs/',
                               specdir_tdose='/Volumes/DATABCKUP1/UDFvsMUSEWide/tdose_spectra/',
                               clobber=False,verbose=True):
@@ -315,7 +544,7 @@ def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],
         if Nent_udf == 0:
             print(' WARNING No match to id='+str(id)+' found in master_idlist_20170214.vot')
         elif Nent_udf > 1:
-            print(' WARNING Mor than one match to id='+str(id)+' found in master_idlist_20170214.vot; using the first match')
+            print(' WARNING More than one match to id='+str(id)+' found in master_idlist_20170214.vot; using the first match')
             objent_udf = objent_udf[0]
 
         objRA            = table['DEC'][objent_udf]
@@ -347,7 +576,8 @@ def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],
         lab_udf          = [' '.join(ss.split('udf_udf10_')[-1].split('.fit')[0][6:].split('_')[2:]) for ss in spec_udf]
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #                             TDOSE
-        spec_tdose       = glob.glob(specdir_tdose+'tdose_spectrum_*'+str("%.10d" % int(rafID.data[0].split(',')[0]))+'*.fits')
+        spec_tdose       = glob.glob(specdir_tdose+'tdose_spectrum_*'+
+                                     str("%.10d" % int(rafID.data[0].split(',')[rafident]))+'*.fits')
         wave_tdose       = ['wave']*len(spec_tdose)
         flux_tdose       = ['flux']*len(spec_tdose)
         ferr_tdose       = ['fluxerror']*len(spec_tdose)
@@ -394,7 +624,8 @@ def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],
                 else:
                     mwp.plot_1DspecOverview(spectra, labels, wavecols, fluxcols, ferrcols, redshift, voffset=voffset,
                                             skyspectra=skyspecs,wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
-                                            outputfigure=outputfig,yrangefull=yrangefull, plotSN=plotSN,verbose=verbose)
+                                            outputfigure=outputfig,yrangefull=yrangefull, xrangefull=xrangefull,
+                                            plotSN=plotSN,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_sourcecat_FromFitsCats(outputdir,centralcoords=[[53.160554,-27.778928]],catnames=['UDF-10'],addMUSEcat=True,
