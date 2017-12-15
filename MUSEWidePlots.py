@@ -1227,7 +1227,7 @@ def plot_1DspecOverview_subplotinfo():
     subplotinfodic['Hd']      =  [4101.0,     4101.0,        10.0,         'H\delta']
     subplotinfodic['Hg']      =  [4340.0,     4340.0,        30.0,         'H$\gamma$']
     subplotinfodic['Hb']      =  [4862.0,     4862.0,        30.0,         'H$\\beta$']
-    subplotinfodic['OIII']    =  [5007.0,     5007.0,        30.0,         '[OIII] doublet']
+    subplotinfodic['OIII']    =  [5007.0,     4985.0,        60.0,         '[OIII] doublet']
     subplotinfodic['HeI']     =  [5877.0,     5877.0,        30.0,         'HeI$\\lambda$5877']
     subplotinfodic['Ha']      =  [6563.0,     6563.0,        30.0,         'H$\\alpha$']
     subplotinfodic['SII']     =  [6717.0,     6723.0,        30.0,         '[SII] doublet']
