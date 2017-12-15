@@ -577,6 +577,7 @@ def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],xrangefull=[
             obj_z = 6.4672 # Z_EAZY from Rafelski catalog
         elif int(id) == 6769:
             obj_z = 6.4334 # Z_EAZY from Rafelski catalog
+            obj_z = 4.5030 # trying to fit potential Lya
         else:
             sys.exit(' No source file and no manually provided redshift for object '+str(id)+' (raf '+str(rafID)+')')
 
@@ -635,6 +636,8 @@ def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],xrangefull=[
             voffset      = 0.0
 
             outputfig    = outputdir+obj_UDFfile.data[0].replace('.fits','_1Doverviewplots.pdf')
+            if obj_UDFfile == '':
+                outputfig    = outputdir+'udf_udf10_'+str('%.5d' % int(id))+'_nosourcefile_1Doverviewplots.pdf'
             for plotSN in [True,False]:
                 serachstr   = outputfig.replace('plots.pdf','plots*.pdf')
                 filesstored = glob.glob(serachstr)
