@@ -1117,6 +1117,8 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     if redshift > 2.5:
         linenames    = ['Lyb','Lya','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
+    elif (redshift > 1.5) & (redshift <= 2.5):
+        linenames    = ['CIV','HeII','CIII','MgII','OII','NeIII','Hg','Hb','OIII']
     else:
         linenames    = ['MgII','OII','NeIII','Hg','Hb','OIII','HeI','Ha','SII']
 
