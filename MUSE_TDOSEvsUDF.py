@@ -556,15 +556,34 @@ def plot_1Doverviewcomparison(ids,outputdir,yrangefull=[-1000,2000],xrangefull=[
         sourcefiledir    = '/Volumes/DATABCKUP1/UDFvsMUSEWide/udf10_c042_e031_withz_iter6/'
         sourcefile       = sourcefiledir+obj_UDFfile.data[0]
 
-        zs, specdic      = mtu.load_sourcefile_spectra([sourcefile])
-        obj_z_ent_muse   = np.where(zs[sourcefile]['Z_DESC'] == 'MUSE')[0]
-        if len(obj_z_ent_muse) == 1:
-            obj_z = zs[sourcefile]['Z'][obj_z_ent_muse][0]
+        if os.path.isfile(sourcefile):
+            zs, specdic      = mtu.load_sourcefile_spectra([sourcefile])
+            obj_z_ent_muse   = np.where(zs[sourcefile]['Z_DESC'] == 'MUSE')[0]
+            if len(obj_z_ent_muse) == 1:
+                obj_z = zs[sourcefile]['Z'][obj_z_ent_muse][0]
+            else:
+                obj_z_ent_eazy   = np.where(zs[sourcefile]['Z_DESC'] == 'EAZY')[0]
+                obj_z            = zs[sourcefile]['Z'][obj_z_ent_eazy][0]
+            #continue # Skipping objects with source files
+        elif int(id) == 173:
+            obj_z = 2.4017 # Z_EAZY from Rafelski catalog
+        elif int(id) == 720:
+            obj_z = 3.1007 # Z_EAZY from Rafelski catalog
+        elif int(id) == 748:
+            obj_z = 1.5973 # Z_EAZY from Rafelski catalog
+        elif int(id) == 823:
+            obj_z = 1.1186 # Z_EAZY from Rafelski catalog
+        elif int(id) == 849:
+            obj_z = 6.4672 # Z_EAZY from Rafelski catalog
+        elif int(id) == 6769:
+            obj_z = 6.4334 # Z_EAZY from Rafelski catalog
         else:
-            obj_z_ent_eazy   = np.where(zs[sourcefile]['Z_DESC'] == 'EAZY')[0]
-            obj_z            = zs[sourcefile]['Z'][obj_z_ent_eazy][0]
+            sys.exit(' No source file and no manually provided redshift for object '+str(id)+' (raf '+str(rafID)+')')
 
-        spec_udf         = glob.glob(specdir_udf+obj_UDFfile.data[0].replace('.fits','*.fits'))
+        if obj_UDFfile == '':
+            spec_udf         = []
+        else:
+            spec_udf         = glob.glob(specdir_udf+obj_UDFfile.data[0].replace('.fits','*.fits'))
 
         wave_udf         = ['lambda']*len(spec_udf)
         flux_udf         = ['flux']*len(spec_udf)
