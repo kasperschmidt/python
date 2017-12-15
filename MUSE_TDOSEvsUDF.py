@@ -319,19 +319,24 @@ def plot_1Doverviewcomparison_crossobject_wrapper(plotdir,specdir_tdose,specdir_
         idsetdic['06'] = [[559,218,44], 1.6103, 1, None]
         idsetdic['07'] = [[587,720,6336], 5.9765, 2, [1,0,0]]
         idsetdic['08'] = [[587,720,6336], 3.71472, 2, [1,0,0]]
-        idsetdic['09'] = [[6300,277], 4.5221, 1, None]
-        idsetdic['10'] = [[6300,277], 3.7148, 1, None]
+        idsetdic['09'] = [[6300,277,290], 4.5221, 2, [0,0,1]]
+        idsetdic['10'] = [[6300,277,290], 3.7148, 2, [0,0,1]]
         idsetdic['11'] = [[6312,6769,6680], 6.3097, 1, None]
         idsetdic['12'] = [[6312,6769,6680], 4.5046, 1, None]
-        idsetdic['13'] = [[6311], 5.4200, 1, None]
-        idsetdic['14'] = [[109,748,6327], 3.0863, 1, None]
-        idsetdic['15'] = [[109,748,6327], 5.1351, 1, None]
-        idsetdic['16'] = [[287], 3.7242, 1, None]
-        idsetdic['17'] = [[319], 6.5658, 1, None]
+        idsetdic['131']= [[6311], 5.4200, 1, None]
+        idsetdic['132']= [[675], 5.4200, 2, [1]]
+        idsetdic['133']= [[6768], 5.4200, 1, None]
+        idsetdic['14'] = [[109,748,6327], 3.0863, 2, [1,0,0]]
+        idsetdic['15'] = [[109,748,6327], 5.1351, 2, [1,0,0]]
+        idsetdic['152'] = [[109,748,6327], 0.4665, 2, [1,0,0]] #moving [OII] to potential feature
+        idsetdic['161'] = [[287], 3.7242, 2, [1]]
+        idsetdic['162'] = [[423], 3.7242, 1, None]
+        idsetdic['171'] = [[319], 6.5658, 2, [1]]
+        idsetdic['172'] = [[319], 6.5658, 3, [2]]
         idsetdic['18'] = [[304,173,46], 5.9405, 1, None]
         idsetdic['19'] = [[304,173,46], 1.4135, 1, None]
-        idsetdic['20'] = [[459,823], 6.1852, 1, None]
-        idsetdic['21'] = [[6291], 3.2994, 1, None]
+        idsetdic['20'] = [[459,823], 6.1852, 2, [1,0]]
+        idsetdic['21'] = [[6291,516], 3.2994, 1, None]
     elif idset == 'nonLAEs':
         idsetdic['01'] = [[4,11,12,14], 0.7650, 1, None]
         idsetdic['02'] = [[4,11,12,14], 1.0376, 1, None]
@@ -368,9 +373,8 @@ def plot_1Doverviewcomparison_crossobject_wrapper(plotdir,specdir_tdose,specdir_
         plotredshift = idsetdic[key][1]
         Nrafids      = idsetdic[key][2]
 
-
-        if Nrafids == 2:
-            namestring   = 'ids'+'-'.join(np.asarray(idset).astype(str))+'_rafid2'
+        if Nrafids > 1:
+            namestring   = 'ids'+'-'.join(np.asarray(idset).astype(str))+'_rafid'+str(int(Nrafids))
             rafent       = idsetdic[key][3]
             mtu.plot_1Doverviewcomparison_crossobject(idset, plotredshift, plotdir, specdir_tdose=specdir_tdose, rafident=rafent,
                                                       namestring=namestring, specdir_udf=specdir_udf, clobber=clobber,
@@ -439,6 +443,7 @@ def plot_1Doverviewcomparison_crossobject(ids,plotredshift,outputdir,namestring=
             objent_udf = objent_udf[0]
 
         rafID            = table['RAF_ID'][objent_udf]
+        if int(id) == 6311: rafID.data[0] = '9130'
         obj_UDFfile      = table['UDF10_FILENAME'][objent_udf]
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
