@@ -2038,7 +2038,7 @@ def lineinfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltala
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400,1200],yrangefullSN=[-3,30],
                                   specdir  = '/Volumes/DATABCKUP1/TDOSEextractions/TDOSEext_171019/tdose_spectra/',
-                                  tol3DHSTmatch=0.5,clobber=False,verbose=True):
+                                  tol3DHSTmatch=0.5,showPSFspec=True,clobber=False,verbose=True):
     """
     Wrapper to run mwp.plot_1DspecOverview() for a sample of objects collecting the relevant spectra
 
@@ -2049,6 +2049,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
     yrangefullSN    Yrange of full-spectra overview in S/N figure
     specdir         Directory containing TDOSE spectra to plot
     tol3DHSTmatch   Tolerance of match to 3D-HST catalog (and spectra)
+    showPSFspec     Plot the spectra extracted via PSF weighting (TU's extraction)
     clobber         Overwrite existing files?
     verbose         Toggle verbosity
 
@@ -2067,6 +2068,9 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
     LAEinfo        = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
     spectraplottet = collections.OrderedDict()
 
+    if type(specdir) == str:
+        specdir = [specdir]
+
     for oo, objID in enumerate(MUSEidlist):
         idstr        = str(objID)
         idstr_short  = str(objID)[:3]+str(objID)[-5:]
@@ -2084,38 +2088,56 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
         else:
             id3DHST  = -99
 
-        # - - - - - - - TDOSE extraction - - - - - - -
-        TDOSEspec    = glob.glob(specdir+'tdose_spectrum_candels*'+idstr+'*.fits')+\
-                       glob.glob(specdir+'tdose_spectrum_candels*'+idstr_short+'*.fits')
-        if len(TDOSEspec) == 0:
-            if verbose: print('----- No TDOSE spectrum found for '+str(objID)+' -> moving on to next object ----- ')
-            continue
-        TDOSElabel   = ['TDOSE']*len(TDOSEspec)
-        TDOSEwave    = ['wave']*len(TDOSEspec)
-        TDOSEflux    = ['flux']*len(TDOSEspec)
-        TDOSEferr    = ['fluxerror']*len(TDOSEspec)
-        TDOSEsky     = [None]*len(TDOSEspec)
-        TDOSEskyW    = [None]*len(TDOSEspec)
-        TDOSEskyF    = [None]*len(TDOSEspec)
+        # - - - - - - - TDOSE extractions - - - - - - -
+        TDOSEspecs = []
+        TDOSElabel = []
+        for sdir in specdir:
+            TDOSEspec    = glob.glob(sdir+'tdose_spectrum_candels*'+idstr+'*.fits')+\
+                           glob.glob(sdir+'tdose_spectrum_candels*'+idstr_short+'*.fits')
+            if len(TDOSEspec) == 0:
+                if verbose: print('----- No TDOSE spectrum found for '+str(objID)+' in \n      '+
+                                  sdir+'\n      -> moving on to next object ----- ')
+                continue
+
+            labelstrings = ['TDOSE '+specname.split('/')[-1].split('_')[3] for specname in TDOSEspec]
+            TDOSElabel   = TDOSElabel + labelstrings
+            TDOSEspecs   = TDOSEspecs + TDOSEspec
+
+        TDOSEwave    = ['wave']*len(TDOSEspecs)
+        TDOSEflux    = ['flux']*len(TDOSEspecs)
+        TDOSEferr    = ['fluxerror']*len(TDOSEspecs)
+        TDOSEsky     = [None]*len(TDOSEspecs)
+        TDOSEskyW    = [None]*len(TDOSEspecs)
+        TDOSEskyF    = [None]*len(TDOSEspecs)
         TDOSEsky[0]  = '/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_'+LAEinfo['pointing'][objent][0]+'_av.fits'
         TDOSEskyW[0] = 'lambda'
         TDOSEskyF[0] = 'data'
 
         # - - - - - - - PSF weighted extraction - - - - - - -
-        PSFextdir = '/Users/kschmidt/work/MUSE/spectra1D/Arche170127/spectra/'
-        PSFspec   = glob.glob(PSFextdir+'spectrum_'+idstr+'.fits')+\
-                    glob.glob(PSFextdir+'spectrum_'+idstr_short+'.fits')
-        if len(PSFspec) > 1:
-            sys.exit(' More than one PSF extraction spectrum found for '+idstr+' in '+PSFextdir)
-        elif len(PSFspec) == 1:
-            PSFlabel = ['PSFext']
-            PSFwave  = ['WAVE_AIR']
-            PSFflux  = ['FLUX']
-            PSFferr  = ['FLUXERR']
-            PSFsky   = [None]
-            PSFskyW  = [None]
-            PSFskyF  = [None]
+        if showPSFspec:
+            PSFextdir = '/Users/kschmidt/work/MUSE/spectra1D/Arche170127/spectra/'
+            PSFspec   = glob.glob(PSFextdir+'spectrum_'+idstr+'.fits')+\
+                        glob.glob(PSFextdir+'spectrum_'+idstr_short+'.fits')
+            if len(PSFspec) > 1:
+                sys.exit(' More than one PSF extraction spectrum found for '+idstr+' in '+PSFextdir)
+            elif len(PSFspec) == 1:
+                PSFlabel = ['PSFext']
+                PSFwave  = ['WAVE_AIR']
+                PSFflux  = ['FLUX']
+                PSFferr  = ['FLUXERR']
+                PSFsky   = [None]
+                PSFskyW  = [None]
+                PSFskyF  = [None]
+            else:
+                PSFlabel = []
+                PSFwave  = []
+                PSFflux  = []
+                PSFferr  = []
+                PSFsky   = []
+                PSFskyW  = []
+                PSFskyF  = []
         else:
+            PSFspec  = []
             PSFlabel = []
             PSFwave  = []
             PSFflux  = []
@@ -2166,7 +2188,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
             grismskyF  = []
 
         # - - - - - - - Assemble input for plot - - - - - - -
-        spectra      = TDOSEspec  + PSFspec  + grismspec
+        spectra      = TDOSEspecs + PSFspec  + grismspec
         labels       = TDOSElabel + PSFlabel + grismlabel
         wavecols     = TDOSEwave  + PSFwave  + grismwave
         fluxcols     = TDOSEflux  + PSFflux  + grismflux
