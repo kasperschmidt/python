@@ -10,6 +10,9 @@ import sys
 import matplotlib.pyplot as plt
 import collections
 import MiGs
+import aplpy
+import tdose_utilities as tu
+import commands
 import pdb
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def loadcatalogs(verbose=True):
@@ -1397,4 +1400,126 @@ def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,c
                 plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.5,color=col_linemarker,zorder=10)
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_FoVoverview(ras,decs,names,sizeFoV,outputdir='./',pointings=None,showregions=True,
+                     pmin=1,pmax=99,vmin=-0.003,vmax=0.003,stretch='linear',invert=False,
+                     cleanimage=False,fontsize=30,clobber=False,verbose=True):
+    """
+    Plot overview of MUSE-Wide object (ra dec) field-of-view
+
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    import pyfits
+
+    objdata   = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    names     = [str(id) for id in objdata['id']][-5:]
+    ras       = objdata['ra'][-5:]
+    decs      = objdata['dec'][-5:]
+    pointings = objdata['pointing'][-5:]
+    sizeFoV   = [5,5]
+    outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVoverviews/'
+
+    mwp.plot_FoVoverview(ras,decs,names,sizeFoV,pointings=pointings,outputdir=outputdir,cleanimage=False,clobber=False,showregions=True)
+
+    """
+    outnames = ['FoVoverview_'+str(name)+'.png' for name in names]
+
+    if (len(ras) != len(decs)) or (len(ras) != len(outnames)):
+        sys.exit('The number of ras ('+str(len(ras))+') and decs ('+str(len(ras))+') provided do not match')
+
+    Nplots = len(ras)
+    if verbose: print(' - Lopping over '+str(Nplots)+' coordinate pares to generate plots for ')
+    for rr,ra in enumerate(ras):
+        plotname = outputdir+outnames[rr]
+        infostr  = ' - Generating '+plotname+' ('+str(rr+1)+'/'+str(Nplots)+') '
+        if os.path.isfile(plotname) & (clobber == False):
+            infostr = infostr+' ... plot exists --> skipobj'
+        else:
+            infostr = infostr+'                           '
+        if verbose: print('\n'+infostr)
+        if os.path.isfile(plotname) & (clobber == False): continue
+
+        if ra > 100:  # <------------------ COSMOS
+            regfile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVoverviews/MUSE-Wide_objects_cosmos.reg'
+            #regfile = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_objects_cosmos.reg'
+            imgfile = '/Users/kschmidt/work/images_MAST/hlsp_candels_hst_wfc3_cos-tot_f125w_v1.0_drz.fits'
+        else:         # <------------------ CDFS
+            regfile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVoverviews/MUSE-Wide_objects_cdfs.reg'
+            #regfile = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_objects_cdfs.reg'
+            imgfile = '/Users/kschmidt/work/images_MAST/hlsp_candels_hst_wfc3_gs-tot_f125w_v1.0_drz.fits'
+
+        if pointings is not None: # change image file if poitnings are provided
+            imgfile = '/Users/kschmidt/work/images_MAST/MUSEWidePointings/acs_814w_'+pointings[rr]+'_cut_v1.0.fits'
+
+        xcen        = ras[rr]
+        ycen        = decs[rr]
+        xwindow     = sizeFoV[0]/3600. # arcsec -> degrees
+        ywindow     = sizeFoV[1]/3600.
+        regionfiles = [regfile]
+        cutname     = './FoVoverview_tempcutout.fits'
+        cutout      = tu.extract_subimage(imgfile,xcen,ycen,[xwindow*3600.,ywindow*3600.],outname=cutname,
+                                          clobber=clobber,verbose=verbose)
+
+        # ------------------------ PLOTTING FOV ------------------------
+        fsize = fontsize
+        plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+        plt.rc('font', family='serif',size=fsize)           # enable serif rendering of text
+        fig = aplpy.FITSFigure(cutname)
+        #fig.show_rgb(rgbclean)
+        fig.show_grayscale(vmin=vmin,vmax=vmax,pmin=pmin, pmax=pmax,stretch=stretch, invert=invert)
+
+        # - - - - ZOOM - - - -
+        #fig.recenter(xcen, ycen, width=xwindow, height=ywindow)  # degrees
+
+        # - - - - TICKS - - - -
+        fig.tick_labels.set_font(size=fsize,family='serif')
+        # fig.ticks.set_xspacing(1.0/3600.)  # degrees
+        # fig.ticks.set_yspacing(1.0/3600.)  # degrees
+        fig.tick_labels.set_xformat('hh:mm:ss.s')
+        fig.tick_labels.set_yformat('dd:mm:ss.s')
+        fig.ticks.set_linewidth(4)
+
+        fig.axis_labels.set_font(size=fsize,family='serif')
+
+        # - - - - GRID - - - -
+        fig.add_grid()
+        fig.grid.set_color('white')
+        fig.grid.set_alpha(0.3)
+
+        if cleanimage:
+            fig.ticks.hide()
+            fig.axis_labels.hide()
+            fig.tick_labels.hide()
+            fig.grid.hide()
+
+        # - - - - COLOR BAR - - - -
+        fig.add_colorbar()
+        fig.colorbar.set_width(0.3)
+        fig.colorbar.set_location('right')
+
+        # - - - - CONTOURS - - - -
+        # if contourimg:
+        #     fig.show_contour(contourimg, levels=Clevel, colors=Ccolor,alpha=0.5,linewidths=3)
+
+        # - - - - DS9 REGION - - - -
+        if showregions:
+            for region in regionfiles:
+                if os.path.isfile(region):
+                    fig.show_regions(region)
+                else:
+                    if verbose: print 'WARNING: The region file '+region+' does not exist, hence nothing shown'
+
+        # - - - - LABELS - - - -
+        # fig.add_label(34.455, 54.112, 'My favorite galaxy')
+        fig.add_label(0.5,1.05,'Object: '+names[rr].replace('_','\_'),color='black',relative=True,family='serif',size=fsize)
+
+        # - - - - SAVE - - - -
+        fig.save(plotname,dpi=300)
+        #fig.save(plotname)
+        plt.clf()
+        plt.close('all')
+
+        os.remove(cutname)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
