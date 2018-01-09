@@ -2345,4 +2345,94 @@ def copy_singleobjsourcecats(outputdir='/Users/kschmidt/work/MUSE/uvEmissionline
         cpout = commands.getoutput('cp '+modeldir+scat+' '+outputdir)
         if cpout != '':
             print cpout
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_overviewdocument(outdir,outfile,clobber=False):
+    """
+    Generate LaTeX document summarizing objects (using figures and text) to ease inspections
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    outdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/overviewdocument/'
+    outfile = 'overviewdocument.tex'
+    uves.gen_overviewdocument(outdir,outfile)
+
+    """
+
+    objdata   = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    ids       = objdata['id']
+    ras       = objdata['ra']
+    decs      = objdata['dec']
+    redshifts = objdata['redshift']
+    pointings = objdata['pointing']
+
+    specoverview = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/overviewplots/idIIII*.pdf'
+    FoVoverview  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVoverviews/FoVoverview_IIII.png'
+
+    # - - - - - Generate main document - - - - -
+    if os.path.isfile(outdir+outfile) & (clobber==False):
+        sys.exit('Document '+outdir+outfile+' exists and clobber = False')
+
+    fmain = open(outdir+outfile,'w')
+    fmain.write("""
+\documentclass[a4paper,10pt]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{float}
+\usepackage[pdftex]{graphicx}
+\usepackage[left=1cm,right=1cm,top=1cm,bottom=2cm]{geometry}
+%===========================================================================
+\\begin{document}
+%===========================================================================
+""")
+
+    for ii, id in enumerate(ids[:]):
+        pagename = 'page'+str(id)+'.tex'
+
+        FoVfig   = FoVoverview.replace('IIII',str(id))
+        specfigs = glob.glob(specoverview.replace('IIII',str(id)))
+        fluxfig  = specfigs[0]
+        snfig    = specfigs[1]
+
+        fpage = open(outdir+pagename,'w')
+        fpage.write("""
+\section*{%s (%s)}
+\small
+\\begin{verbatim}
+ID(MUSE-Wide) = %s     z  = %s     (ra,dec) = (%s,%s)
+ID(Guo)       = %s     dr = %s     (ra,dec) = (%s,%s)
+ID(Skelton)   = %s     dr = %s     (ra,dec) = (%s,%s)
+\end{verbatim}
+\\normalsize
+
+\\begin{figure}[h]
+\\begin{center}
+\includegraphics[width=0.45\\textwidth]{%s}
+\caption{Candels F814W 5$\\times$5 arcsec field of view. Circles have r=0.5arcsec. Red circles mark MUSE-Wide LAEs. White circles mark MUSE-Wide non-Ly$\\alpha$ EL sources (low-$z$).}
+\label{fig:FoV%s}
+\end{center}
+\end{figure}
+
+\\begin{figure*}
+\\begin{center}
+\includegraphics[width=0.9\\textwidth]{%s}
+\includegraphics[width=0.9\\textwidth]{%s}
+\caption{Spectral overview (incl. crossmatch to 3D-HST) with zoom-ins on rest-frame UV line regions. V-offset (gray region) estimated based on Verhamme+18 relations with peak seperation or FWHM.}
+\label{fig:spec%s}
+\end{center}
+\end{figure*}
+
+        """ % (id,pointings[ii],
+               str("%11s" % int(id)),str("%.4f" % redshifts[ii]),ras[ii],decs[ii],
+               str("%11s" % int(objdata['id_guo'][ii])),str("%.4f" % objdata['sep_guo'][ii]),objdata['ra_guo'][ii],objdata['dec_guo'][ii],
+               str("%11s" % int(objdata['id_skelton'][ii])),str("%.4f" % objdata['sep_skelton'][ii]),objdata['ra_skelton'][ii],objdata['dec_skelton'][ii],
+               FoVfig,id,fluxfig,snfig,id))
+        fpage.close()
+
+        fmain.write('\input{./'+pagename+'}\\newpage\n')
+
+    fmain.write("""
+%===========================================================================
+\end{document}""")
+    fmain.close()
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
