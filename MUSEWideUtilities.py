@@ -9,8 +9,10 @@ import scipy.ndimage
 import tdose_utilities as tu
 from astropy import wcs
 from astropy.coordinates import SkyCoord
+import datetime
 import glob
 import pdb
+import collections
 import os
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_pixelpos(ra,dec,pointingname,imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,
@@ -369,5 +371,202 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
                 else:
                     if verbose: print ' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate'
                     if verbose: print '   '+narrowbandname
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_PSFasciiselectiontemplate(outname='./PSFselectionAsciiTemplate_RENAME_.txt',campaign='E40',clobber=False,verbose=True):
+    """
 
+    --- INPUT ---
+    outname    Name of ascii template to generate
+    campaign   Defines what inspection campaign to add fields names to ascii template for
+    clobber    Overwrite existing file?
+    verbose    Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    campaigns = ['E24','E36','E40','E100']
+    for campaign in campaigns:
+        output    = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFselectionAsciiTemplate_'+campaign+'_TEMPLATE.txt'
+        mwu.gen_PSFasciiselectiontemplate(outname=output,campaign=campaign,clobber=True)
+    """
+
+    if os.path.isfile(outname) & (clobber == False):
+        sys.exit(' The output '+outname+' exists and clobber=False ')
+    else:
+        if verbose: print(' - Getting list of fields in campaign = '+campaign)
+        if campaign == 'E24':
+            fields = mwu.E24fields()
+        elif campaign == 'E36':
+            fields = mwu.E36fields()
+        elif campaign == 'E40':
+            fields = mwu.E40fields()
+        else:
+            sys.exit(' Fields still need to be set up for campaign = '+campaign)
+
+        fout = open(outname,'w')
+        fout.write('# Template for selection of PSF parameter generated on '+
+                   datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+
+                   ' with MUSEWideUtilities.gen_PSFasciiselectiontemplate()\n')
+        fout.write('# field                PSF_FullConv         PSF_PampelMuse        PSF_GalaxyFitting  # \n')
+
+        if verbose: print(' - Writing template to '+outname)
+        for field in fields:
+            fout.write(str("%15s" %field)+'              0                     0                       0         # \n')
+
+        fout.close()
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def check_PSFasciiselectiontemplate(selectionascii):
+    """
+    Check that 1 (and exactly 1) option is chosen for each of the fields in a PSF selection file
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    mwu.check_PSFasciiselectiontemplate('/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFselectionAsciiTemplate_E40_TEST.txt')
+
+    """
+    data = np.genfromtxt(selectionascii,dtype=None,names=True,skip_header=1)
+    cols = data.dtype.names
+
+    for ff, field in enumerate(data['field']):
+        selectionvec = np.asarray([data[col][ff] for col in cols[1:]])
+        Nsel = int(np.sum(selectionvec))
+        if Nsel == 0:
+            print(' - WARNING: Field '+field+' has NO selected PSF')
+        elif Nsel > 1:
+            print(' - WARNING: Field '+field+' has '+str(Nsel)+' selected PSFs')
+        else:
+            continue
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def E40_generatePSFcatalog(selectionascii,fitsE40,clobber=False,verbose=True):
+    """
+
+    --- INPUT ---
+    selectionascii
+    clobber
+    verbose
+
+    --- EXAMPLE OF USE ---
+
+    """
+
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_masterPSFcat(fitscatalogs,fitsselection,outcatname,clobber=False,verbose=True):
+    """
+
+    --- INPUT ---
+    fitscatalogs        Fits catalogs with PSF parameters from campaigns (E24, E36 and E40 for instance) to combine
+    fitsselections      fits selections corresponding to the fits catalogs. If None all values are set to -99
+                        of selection columns in output catalog
+    outcatname          The name of the output catalog to generate
+    clobber             Overwrite existing output?
+    verbose             Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    fitscatalogs = ['/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits']
+    outcatname   = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFmastercatalogTEST.fits'
+    mwu.gen_masterPSFcat(fitscatalogs,outcatname,clobber=False)
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Gettting list of MUSE-Wide fields to look for')
+    MWfields = mwu.E24fields() + mwu.E36fields() + mwu.E40fields()
+
+    columns = ['field', 'AG',
+               'p0_FFT_m', 'p1_FFT_m', 'beta_FFT', 'p0_FFT_g', 'p1_FFT_g',
+               'p0_FFTS_m', 'p1_FFTS_m', 'beta_FFTS', 'p0_FFTS_g', 'p1_FFTS_g',
+               'p0_comb_m', 'p1_comb_m', 'beta_comb', 'p0_comb_g', 'p1_comb_g',
+               'p0_PM_m', 'p1_PM_m', 'beta_PM', 'p0_PM_g', 'p1_PM_g',
+               'p0_S_g', 'p1_S_g',
+               'psf_sel','p0_sel_m','p1_sel_m','beta_sel_m','p0_sel_g','p1_sel_g']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Extract information from fitscatalogs: ')
+    for cc, cat in enumerate(fitscatalogs):
+        if verbose: print('   -> '+cat)
+        data    = pyfits.open(cat)[1].data
+
+        for ff, fieldname in enumerate(data['field']):
+            fieldname = fieldname.split()[0] #removing trailing spaces
+            if fieldname in MWfields:
+                fieldentry = [0]*len(columns)
+
+                for oo, col in enumerate(columns):
+                    try:
+                        val = data[col][ff]
+                    except:
+                        val = -99
+                    fieldentry[oo] = val
+
+                try:
+                    masterarray = np.vstack([masterarray, np.asarray(fieldentry)])
+                except:
+                    masterarray = np.asarray(fieldentry)
+
+
+            else:
+                print ' WARNING The field '+fieldname+' from '+cat+' is not in the MUSE-Wide field list! '
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Writing assembled array to fitsfile')
+    columndic = collections.OrderedDict()
+
+    for cc, col in enumerate(columns):
+        if col in ['field','psf_sel']:
+            columndic[col]    =  pyfits.Column(name=col, format='A15', unit='', array=masterarray[:,cc].astype(str))
+        else:
+            columndic[col]    =  pyfits.Column(name=col, format='D', unit='', array=masterarray[:,cc].astype(float))
+
+    collist   = [columndic[key] for key in columndic.keys()]
+    coldefs   = pyfits.ColDefs(collist)
+    th        = pyfits.new_table(coldefs) # creating default header
+
+    # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
+    #th.header.append(('MAG     ' , spec2D[0].header['MAG']   ,'MAG_AUTO from interlaced catalog'),end=True)
+
+    head    = th.header
+    tbHDU   = pyfits.new_table(coldefs, header=head)
+
+    tbHDU.writeto(outcatname, clobber=clobber)
+    if verbose: print '   Fits table stored in \n   '+outcatname
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def E24fields():
+    """
+    Returning list of fields in E40
+    """
+    fields = ['cdfs-01', 'cdfs-02', 'cdfs-03', 'cdfs-04', 'cdfs-05', 'cdfs-06',
+               'cdfs-07', 'cdfs-08', 'cdfs-09', 'cdfs-10', 'cdfs-11', 'cdfs-12',
+               'cdfs-13', 'cdfs-14', 'cdfs-15', 'cdfs-16', 'cdfs-17', 'cdfs-18',
+               'cdfs-19', 'cdfs-20', 'cdfs-21', 'cdfs-22', 'cdfs-23', 'cdfs-24']
+    return fields
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def E36fields():
+    """
+    Returning list of fields in E40
+    """
+    fields = ['cdfs-25', 'cdfs-26', 'cdfs-28', 'cdfs-29', 'cdfs-30', 'cdfs-31', 'cdfs-32',
+              'cdfs-33', 'cdfs-34', 'cdfs-35', 'cdfs-36', 'cdfs-37', 'cdfs-39', 'cdfs-40',
+              'cdfs-41', 'cdfs-42', 'cdfs-43', 'cdfs-44', 'cdfs-45', 'cdfs-46',
+              'cosmos-01', 'cosmos-02', 'cosmos-03', 'cosmos-04', 'cosmos-05', 'cosmos-06',
+              'cosmos-07', 'cosmos-08', 'cosmos-09', 'cosmos-10', 'cosmos-11', 'cosmos-12',
+              'cosmos-13', 'cosmos-14', 'cosmos-15', 'cosmos-16']
+
+    return fields
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def E40fields():
+    """
+    Returning list of fields in E40
+    """
+    fields = ['udf-01', 'udf-02', 'udf-03', 'udf-04', 'udf-05',
+              'udf-06', 'udf-07', 'udf-08', 'udf-09',
+              'cdfs-47', 'cdfs-48', 'cdfs-49', 'cdfs-50', 'cdfs-51', 'cdfs-52',
+              'cdfs-53', 'cdfs-54', 'cdfs-55', 'cdfs-56', 'cdfs-57', 'cdfs-58',
+              'cdfs-59', 'cdfs-60', 'cdfs-61', 'cdfs-62',
+              'cosmos-17', 'cosmos-18', 'cosmos-19', 'cosmos-20', 'cosmos-21', 'cosmos-58', 'cosmos-59',
+              'hudf09-1-01', 'hudf09-1-02', 'hudf09-1-03', 'hudf09-1-04',
+              'hudf09-2-01', 'hudf09-2-02', 'hudf09-2-03', 'hudf09-2-04']
+    return fields
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
