@@ -147,8 +147,8 @@ def fluxlimit(mABobj,SNobj,SNcut=5,lam=10480,Dlam=1,Npix=1,Verbose=0):
     Flam  = Flam * Dlam / math.sqrt(Npix)            # potentially changing Flam to limiting line flux
 
     if Verbose == 1: 
-        print 'The ',SNcut,' sigma limiting flux was estimated to be ',Flam,' erg/s/cm^2/A'
-        print 'corresponding to a limiting magnitude of ',mlim
+        print('The ',SNcut,' sigma limiting flux was estimated to be ',Flam,' erg/s/cm^2/A')
+        print('corresponding to a limiting magnitude of ',mlim)
     return Flam
 
 #-------------------------------------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
     ra_grid  = np.arange(RAcenter,RAcenter+2*radius,stepsize[0])-radius
     dec_grid = np.arange(DECcenter,DECcenter+2*radius,stepsize[0])-radius
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Setting up grid to estimate extinction on'
+    if verbose: print(' - Setting up grid to estimate extinction on')
     grid_coords = []
     for rag in ra_grid:
         for decg in dec_grid:
@@ -244,10 +244,10 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ds9gridfile = './gridregions.reg'
-    if verbose: print ' - Saving grid to DS9 region file in '+ds9gridfile
+    if verbose: print(' - Saving grid to DS9 region file in '+ds9gridfile)
     kbs.create_DS9region(ds9gridfile,coords_arr[:,0],coords_arr[:,1],clobber=True)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Getting extinction for '+str(Ngridpoints)+' gridpoints '
+    if verbose: print(' - Getting extinction for '+str(Ngridpoints)+' gridpoints ')
     Avvals  = []
     EBVvals = []
     for coord in coords_arr:
