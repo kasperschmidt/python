@@ -420,7 +420,7 @@ def check_PSFasciiselectiontemplate(selectionascii):
 
     --- EXAMPLE OF USE ---
     import MUSEWideUtilities as mwu
-    mwu.check_PSFasciiselectiontemplate('/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFselectionAsciiTemplate_E40_TEST.txt')
+    data = mwu.check_PSFasciiselectiontemplate('/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFselectionAsciiTemplate_E40_TEST.txt')
 
     """
     data = np.genfromtxt(selectionascii,dtype=None,names=True,skip_header=1)
@@ -435,38 +435,28 @@ def check_PSFasciiselectiontemplate(selectionascii):
             print(' - WARNING: Field '+field+' has '+str(Nsel)+' selected PSFs')
         else:
             continue
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def E40_generatePSFcatalog(selectionascii,fitsE40,clobber=False,verbose=True):
-    """
 
-    --- INPUT ---
-    selectionascii
-    clobber
-    verbose
-
-    --- EXAMPLE OF USE ---
-
-    """
-
-
+    return data
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_masterPSFcat(fitscatalogs,fitsselection,outcatname,clobber=False,verbose=True):
+def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,verbose=True):
     """
 
     --- INPUT ---
     fitscatalogs        Fits catalogs with PSF parameters from campaigns (E24, E36 and E40 for instance) to combine
-    fitsselections      fits selections corresponding to the fits catalogs. If None all values are set to -99
-                        of selection columns in output catalog
+    psfselections       PSF selection ascii files corresponding to the fits catalogs. If None values are set to -99
+                        for the selection columns in output catalog
     outcatname          The name of the output catalog to generate
     clobber             Overwrite existing output?
     verbose             Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import MUSEWideUtilities as mwu
-    fitscatalogs = ['/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits']
-    outcatname   = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFmastercatalogTEST.fits'
-    mwu.gen_masterPSFcat(fitscatalogs,outcatname,clobber=False)
+    import glob
+    fitscatalogs  = ['/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits','/Users/kschmidt/work/MUSE/MUSEWide_PSFs/psf_E40_final.fits']
+    outcatname    = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFmastercatalogTEST.fits'
+    psfselections = glob.glob('/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFselectionAsciiTemplate_E*_180112.txt')
+    mwu.gen_masterPSFcat(fitscatalogs,outcatname,psfselections=psfselections,clobber=False)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -479,34 +469,107 @@ def gen_masterPSFcat(fitscatalogs,fitsselection,outcatname,clobber=False,verbose
                'p0_comb_m', 'p1_comb_m', 'beta_comb', 'p0_comb_g', 'p1_comb_g',
                'p0_PM_m', 'p1_PM_m', 'beta_PM', 'p0_PM_g', 'p1_PM_g',
                'p0_S_g', 'p1_S_g',
-               'psf_sel','p0_sel_m','p1_sel_m','beta_sel_m','p0_sel_g','p1_sel_g']
+               'psf_sel','p0_sel_m','p1_sel_m','beta_sel','p0_sel_g','p1_sel_g']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    psfseldatadic = {}
+    if psfselections is not None:
+        if verbose: print(' - Loading data from PSF selection files')
+        for psfselfile in psfselections:
+            seldata = mwu.check_PSFasciiselectiontemplate(psfselfile)
+            psfseldatadic[psfselfile] = seldata
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Extract information from fitscatalogs: ')
     for cc, cat in enumerate(fitscatalogs):
         if verbose: print('   -> '+cat)
-        data    = pyfits.open(cat)[1].data
+        data     = pyfits.open(cat)[1].data
+        datacols = data.dtype.names
 
         for ff, fieldname in enumerate(data['field']):
             fieldname = fieldname.split()[0] #removing trailing spaces
+
+            if ('psf_all_Converted_cleaned.fits' in cat) & \
+                    (fieldname in ['cdfs-47','cdfs-48','cdfs-49','cdfs-51','cdfs-52']):
+                continue
+
             if fieldname in MWfields:
                 fieldentry = [0]*len(columns)
-
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 for oo, col in enumerate(columns):
-                    try:
+                    val = -99
+                    if col in datacols:
                         val = data[col][ff]
-                    except:
-                        val = -99
                     fieldentry[oo] = val
 
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                if psfselections is not None:
+                    for psfselfile in psfselections:
+                        data_psfsel = psfseldatadic[psfselfile]
+                        fieldent    = np.where(data_psfsel['field'] == fieldname)[0]
+
+                        if len(fieldent) == 1:
+                            for selcol in ['PSF_FullConv', 'PSF_PampelMuse', 'PSF_GalaxyFitting', 'PSF_Sextractor']:
+                                try:
+                                    selval = data_psfsel[selcol][fieldent]
+                                except:
+                                    selval = 0
+
+                                if selval == 1:
+                                    if selcol == 'PSF_FullConv':
+                                        selstring = 'FFT'
+                                    elif selcol == 'PSF_PampelMuse':
+                                        selstring = 'PM'
+                                    elif selcol == 'PSF_GalaxyFitting':
+                                        selstring = 'comb'
+                                    elif selcol == 'PSF_Sextractor':
+                                        selstring = 'S'
+
+                                    fieldentry[-6] = selstring
+                                    try:
+                                        fieldentry[-5] = data['p0_'+selstring+'_m'][ff]# 'p0_sel_m'
+                                        fieldentry[-4] = data['p1_'+selstring+'_m'][ff]# 'p1_sel_m'
+                                        fieldentry[-3] = data['beta_'+selstring+''][ff]# 'beta_sel'
+                                    except:
+                                        fieldentry[-5] = -99# 'p0_sel_m'
+                                        fieldentry[-4] = -99# 'p1_sel_m'
+                                        fieldentry[-3] = -99# 'beta_sel'
+                                    fieldentry[-2] = data['p0_'+selstring+'_g'][ff]# 'p0_sel_g'
+                                    fieldentry[-1] = data['p1_'+selstring+'_g'][ff]# 'p1_sel_g'
+
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                if fieldname == 'cdfs-28':
+                    fieldentry[-6] = 'MeanSlopeAndAGfix'
+                    fieldentry[-5] = -99# 'p0_sel_m'
+                    fieldentry[-4] = -99# 'p1_sel_m'
+                    fieldentry[-3] = -99# 'beta_sel'
+                    fieldentry[-2] = 0.963# 'p0_sel_g'
+                    fieldentry[-1] = -4.4394e-05# 'p1_sel_g'
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                for vv, val in enumerate(fieldentry):
+                    if val == 0.0:
+                        fieldentry[vv] = -99
+
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 try:
                     masterarray = np.vstack([masterarray, np.asarray(fieldentry)])
                 except:
                     masterarray = np.asarray(fieldentry)
 
-
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             else:
                 print ' WARNING The field '+fieldname+' from '+cat+' is not in the MUSE-Wide field list! '
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Check for duplicate entries in catalog')
+    arrayfields = [field.split()[0] for field in masterarray[:,0]]
+    ufields     = np.unique(arrayfields)
+    if len(arrayfields) != len(ufields):
+        for uf in ufields:
+            if len(np.where(np.asarray(arrayfields) == uf)[0]) > 1:
+                if verbose: print('   WARNING Duplicate entry for '+uf)
+    else:
+        if verbose: print('   Good - only one entry per field.')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Writing assembled array to fitsfile')
@@ -514,7 +577,9 @@ def gen_masterPSFcat(fitscatalogs,fitsselection,outcatname,clobber=False,verbose
 
     for cc, col in enumerate(columns):
         if col in ['field','psf_sel']:
-            columndic[col]    =  pyfits.Column(name=col, format='A15', unit='', array=masterarray[:,cc].astype(str))
+            columndic[col]    =  pyfits.Column(name=col, format='A20', unit='', array=masterarray[:,cc].astype(str))
+        elif 'beta' in col:
+            columndic[col]    =  pyfits.Column(name=col+'_m', format='D', unit='', array=masterarray[:,cc].astype(float))
         else:
             columndic[col]    =  pyfits.Column(name=col, format='D', unit='', array=masterarray[:,cc].astype(float))
 
