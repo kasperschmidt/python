@@ -45,10 +45,10 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     dirname  = 'candels-'+field+'-'+str(pointing)
     if outputdir == 'fielddir':
         outputdir = './'+dirname+'/'
-    if verbose: print ' - Will download files from '+dirname+\
-                      ' collecting files for the collection='+"'"+collection+"'"
+    if verbose: print(' - Will download files from '+dirname+\
+                      ' collecting files for the collection='+"'"+collection+"'")
 
-    if verbose: print ' - Putthing together scp command and setting up file lists'
+    if verbose: print(' - Putthing together scp command and setting up file lists')
     basedcmd = 'scp -P '+str(port)+' '+archeuser+'@arche.aip.de:/store/data/musewide/'+dirname+'/'
 
     if collection == 'all':
@@ -71,18 +71,18 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         #filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
         filelist.append('DATACUBE_'+dirname+'_v1.0_dcbgc_effnoised.fits')
     else:
-        if verbose: print " - WARNING didn't recognize the collection="+collection+" so returning empty list "
+        if verbose: print(" - WARNING didn't recognize the collection="+collection+" so returning empty list ")
         return []
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Spawning the following commands to the shell:'
+    if verbose: print(' - Spawning the following commands to the shell:')
     filecounter = 0
     skipcounter = 0
     for archefile in filelist:
         scpcmd = basedcmd+archefile+' '+outputdir
 
-        if verbose: print '   '+scpcmd
+        if verbose: print('   '+scpcmd)
         if (clobber == False) & ( len(glob.glob(outputdir+'/'+archefile)) != 0):
-            if verbose: print '   file already exists in output directory and clobber=False so moving on'
+            if verbose: print('   file already exists in output directory and clobber=False so moving on')
             skipcounter = skipcounter + 1
         else:
             if download:
@@ -91,16 +91,16 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
                 if scpout == '':
                     filecounter = filecounter + 1
                 else:
-                    print scpout
+                    print(scpout)
 
     if collection == 'all':
         filecounter = len(filesALL)
         filelist    = filesALL
     if download:
-        if verbose: print ' - Succesfullt downloaded '+str(filecounter)+' / '+str(len(filelist)-skipcounter)+\
-                          ' (skipping '+str(skipcounter)+') files from arche '
+        if verbose: print(' - Succesfullt downloaded '+str(filecounter)+' / '+str(len(filelist)-skipcounter)+\
+                          ' (skipping '+str(skipcounter)+') files from arche ')
     else:
-        if verbose: print ' - Download=False so no files downloaded from arche'
+        if verbose: print(' - Download=False so no files downloaded from arche')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if collection == 'QtClassify' or collection == 'QtClassifyE40' :
         if verbose:
@@ -114,8 +114,8 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         if collection == 'QtClassifyE40':
             fluxhdu = 1
 
-            print '\n - To run QtClassify move to outputdir ('+outputdir+') and execute (in your shell):'
-            print """
+            print ('\n - To run QtClassify move to outputdir ('+outputdir+') and execute (in your shell):')
+            print("""
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     datapath='%s'
     datacube=$datapath'%s'
@@ -130,9 +130,9 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     # --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname,fluxhdu)
-            print '   (here "qtclassify" is an alias for "python' \
-                  ' /Local/Path/To/qtclassify/line_classification_GUI_pyqtgraph.py")'
+            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname,fluxhdu))
+            print('   (here "qtclassify" is an alias for "python' \
+                  ' /Local/Path/To/qtclassify/line_classification_GUI_pyqtgraph.py")')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return filelist
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -170,7 +170,7 @@ def summarize_QtClassifyOutput(qtclassifyoutputfile,idcol='ID',wavecol='LAMBDA_P
 
     IDs  = np.sort(np.unique(classdat[idcol]))
     Nobj = len(IDs)
-    if verbose: print ' - Found '+str(Nobj)+' objects in:\n   '+qtclassifyoutputfile+'\n   to summarize classifications for'
+    if verbose: print(' - Found '+str(Nobj)+' objects in:\n   '+qtclassifyoutputfile+'\n   to summarize classifications for')
 
     for objid in IDs:
         objent   = np.where(classdat[idcol] == objid)[0]
@@ -206,7 +206,7 @@ def summarize_QtClassifyOutput(qtclassifyoutputfile,idcol='ID',wavecol='LAMBDA_P
 
         fout.write(objstring)
     fout.close()
-    if verbose: print ' - wrote summary to:\n   '+outputfile
+    if verbose: print(' - wrote summary to:\n   '+outputfile)
 
     #import pdb; pdb.set_trace()
     return outputfile
@@ -231,8 +231,8 @@ def plot_LSDCats(catalogs_searchstr,SNcol='DETSN_MAX',Lamcol='LAMBDA_PEAK_SN',pl
     LSDCats  = glob.glob(catalogs_searchstr)
 
     Ncats   = len(LSDCats)
-    if verbose: print ' - Found '+str(Ncats)+' LSDCat catalogs to generate plots from '
-    if verbose: print '   (will generate plots: *_SNhistogram.pdf, *_SNvsLamda.pdf)'
+    if verbose: print(' - Found '+str(Ncats)+' LSDCat catalogs to generate plots from ')
+    if verbose: print('   (will generate plots: *_SNhistogram.pdf, *_SNvsLamda.pdf)')
 
     infodat    = np.genfromtxt(fieldinfo,dtype=None,names=True)
     seeing_all = infodat['AG_FWHM_AVG']
@@ -274,7 +274,7 @@ def plot_LSDCats(catalogs_searchstr,SNcol='DETSN_MAX',Lamcol='LAMBDA_PEAK_SN',pl
         Lamval = np.asarray(Lamval)
         Lamdic[fieldnames[fieldent[0]]] = Lamval
         if len(SNval) != Nobj: sys.exit('The length of the SNval vector is different from number of objects in'+datcat)
-    if verbose: print ''
+    if verbose: print('')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for cc, datcat in enumerate(LSDCats):
         if verbose:
