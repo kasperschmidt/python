@@ -42,7 +42,10 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    dirname  = 'candels-'+field+'-'+str(pointing)
+    if 'udf' in field:
+        dirname  = field+'-'+str(pointing)
+    else:
+        dirname  = 'candels-'+field+'-'+str(pointing)
     if outputdir == 'fielddir':
         outputdir = './'+dirname+'/'
     if verbose: print(' - Will download files from '+dirname+\
