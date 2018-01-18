@@ -59,10 +59,17 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filelist = ['*.*']
     elif collection== 'QtClassify':
         filelist = []
-        filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
-        filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
         filelist.append('cat_opt_v250_'+dirname+'_v'+lsdcatvs+SNstr+'.fits')
         filelist.append('acs_'+acsimg+'_'+dirname+'_cut_v'+acsimgvs+'.fits')
+        filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
+        filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
+    elif collection== 'QtClassifyE40':
+        filelist = []
+        filelist.append('cat_opt_v250_'+dirname+SNstr+'_fluxes.fits')
+        filelist.append('acs_'+acsimg+'_'+dirname+'_cut_v'+acsimgvs+'.fits')
+        filelist.append('s2n_mod_'+dirname+'.fits')
+        #filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
+        filelist.append('DATACUBE_'+dirname+'_v1.0_dcbgc_effnoised.fits')
     else:
         if verbose: print " - WARNING didn't recognize the collection="+collection+" so returning empty list "
         return []
@@ -95,12 +102,17 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     else:
         if verbose: print ' - Download=False so no files downloaded from arche'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if collection == 'QtClassify':
+    if collection == 'QtClassify' or collection == 'QtClassifyE40' :
         if verbose:
-            datacube = filelist[0]
-            LSDCatSN = filelist[1]
-            LSDCat   = filelist[2]
-            HSTimg   = filelist[3]
+            LSDCat    = filelist[0]
+            HSTimg    = filelist[1]
+            LSDCatSN  = filelist[2]
+            datacube  = filelist[3]
+
+        if collection == 'QtClassify':
+            fluxhdu = 0
+        if collection == 'QtClassifyE40':
+            fluxhdu = 1
 
             print '\n - To run QtClassify move to outputdir ('+outputdir+') and execute (in your shell):'
             print """
@@ -112,13 +124,13 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     HSTimg=$datapath'%s'
     output=$datapath'%s_QtClassify_output_RENAME_.fits'
 
-    qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F 0 -N 2 -hst $HSTimg --replaceCubeNaNs False
+    qtclassify -id $datacube -isn $LSDCatSN -c $LSDCat -o $output -F %s -N 2 -hst $HSTimg --replaceCubeNaNs False
 
     # potentially add the following to change used coordinates:
     # --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname)
+            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname,fluxhdu)
             print '   (here "qtclassify" is an alias for "python' \
                   ' /Local/Path/To/qtclassify/line_classification_GUI_pyqtgraph.py")'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
