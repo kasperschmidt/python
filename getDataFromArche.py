@@ -68,8 +68,9 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filelist.append('cat_opt_v250_'+dirname+SNstr+'_fluxes.fits')
         filelist.append('acs_'+acsimg+'_'+dirname+'_cut_v'+acsimgvs+'.fits')
         filelist.append('s2n_mod_'+dirname+'.fits')
+        filelist.append(field+'-'+str(pointing)+'_mfs-and-effvar-cube.fits')
         #filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
-        filelist.append('DATACUBE_'+dirname+'_v1.0_dcbgc_effnoised.fits')
+        #filelist.append('DATACUBE_'+dirname+'_v1.0_dcbgc_effnoised.fits')
     else:
         if verbose: print(" - WARNING didn't recognize the collection="+collection+" so returning empty list ")
         return []
