@@ -1273,7 +1273,7 @@ def matplotlib_colornames():
 
 #-------------------------------------------------------------------------------------------------------------
 def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresize_x=8,
-                      redshiftrange=[0.,17.],verbose=True):
+                      redshiftrange=[0.,17.],zspacing=1.0,verticalmarker=None,verbose=True):
     """
 
     Plotting an overview of coverage of emission lines for given filters as a function of redshift
@@ -1284,7 +1284,8 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     outname         name of output plot to generate
     figuresize_x    Size of figure in x direction
     redshiftrange   Range of redshift to include in plot
-
+    zspacing        Spacing between redshift axis ticks
+    verticalmarker  Add a vertical line at a given redshift providing [redshift,name]
     verbose         toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -1332,7 +1333,6 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     # plt.gca().xaxis.grid(b=True, which='minor',linestyle=':',zorder=0,color='gray')
     plt.gca().yaxis.grid(False)
 
-
     xlabel  = 'Redshift'
     ylabel  = ''
     yrange  = [0.5,len(lines)+0.5]
@@ -1360,10 +1360,18 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     ylabelposition = np.arange(len(lines))+1
     plt.yticks(ylabelposition, linelabels)
 
-    redshiftticks        = np.arange(redshiftrange[0],redshiftrange[1]+1, 1.0)
-    redshiftlabels       = redshiftticks.astype(int).astype(str)
+    if verticalmarker is not None:
+        plt.plot([verticalmarker[0],verticalmarker[0]],yrange,'r-',label=verticalmarker[1],zorder=100)
+
+    redshiftticks        = np.arange(redshiftrange[0],redshiftrange[1]+1, zspacing)
+    if zspacing == np.round(zspacing):
+        redshiftlabels   = redshiftticks.astype(int).astype(str)
+        plt.xticks(redshiftticks,redshiftlabels)
+    else:
+        redshiftlabels   = redshiftticks.astype(float).astype(str)
+        plt.xticks(redshiftticks,redshiftlabels,rotation=90)
     # redshiftlabels[1::2] = ''
-    plt.xticks(redshiftticks,redshiftlabels)
+
     #plt.yticks('')
     #plt.ylabels(linelabels)
 
@@ -1381,10 +1389,14 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
 
     ax2 = ax.twiny()  # ax2 is responsible for "top" axis and "right" axis
     ax2.set_xticks(redshiftticks)
-    ax2.set_xticklabels(redshiftlabels)
+    if zspacing == np.round(zspacing):
+        ax2.set_xticklabels(redshiftlabels)
+    else:
+        ax2.set_xticklabels(redshiftlabels,rotation=90)
     # ax2.axis["right"].major_ticklabels.set_visible(False)
     # ax2.axis["top"].major_ticklabels.set_visible(True)
     ax2.set_xlabel(xlabel)
+    ax2.set_xlim(redshiftrange)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.savefig(outname)
