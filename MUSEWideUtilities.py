@@ -1,7 +1,8 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #                           Utilities for MUSE-Wide related stuff
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-import pyfits
+#import pyfits     KBS180118 -> import astropy.io.fits as pyfits
+import astropy.io.fits as pyfits
 import numpy as np
 import MUSEWideUtilities as mwu
 import sys
