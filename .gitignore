@@ -10,3 +10,7 @@
 *.xml
 
 *.xml
+
+.idea/misc.xml
+
+.idea/python.iml
