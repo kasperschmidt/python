@@ -820,4 +820,363 @@ def NIRISSsim_UDF():
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print('\n - Ran all commands successfully! ')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def NIRCAMsim_UDF():
+    """
+
+    Simulation on UDF for NIRCAM grisms
+
+    --- EXAMPLE OF USE ---
+    import grizli_wrappers as gw
+    gw.NIRCAMsim_UDF()
+
+    """
+    cwd = os.getcwd()
+    print('\n grizli version: %s' %(grizli.__version__))
+    print('Simulating NIRCAM grism exposure on UDF')
+
+    print(' - The 3D-HST catalog http://www.stsci.edu/~brammer/Grizli/Demos/udf_3dhst_cat.fits was manually download to cwd = '+cwd)
+    imagepath = '/Users/kschmidt/work/images_MAST/'
+
+    generatesimulation = True  # <------------------------------------------------------------ Keyword for skipping
+    if generatesimulation:
+        print(' - Generating simulations')
+        matchCatAndMakeSeg = True  # <------------------------------------------------------------ Keyword for skipping
+        if matchCatAndMakeSeg:
+            print(' - Make an object catalog / segmentation image with photutils')
+            print('   Loading XDF F140 images from '+imagepath)
+            sci = fits.open(imagepath+'hlsp_xdf_hst_wfc3ir-60mas_hudf_f140w_v1_sci.fits')
+            wht = fits.open(imagepath+'hlsp_xdf_hst_wfc3ir-60mas_hudf_f140w_v1_wht.fits')
+            rms = 1/np.sqrt(wht[0].data)
+            rms[~np.isfinite(rms)] = 1000
+            dq = rms > 900
+            wcs = astropy.wcs.WCS(sci[0].header)
+
+            print(' - Run the detection with the grizli / photutils wrapper')
+            cat, seg = detect_with_photutils(sci[0].data, err=rms, dq=dq, seg=None,
+                                             detect_thresh=1.4, npixels=6, grow_seg=3,
+                                             gauss_fwhm=2.0, gsize=3, wcs=wcs, save_detection=False,
+                                             root='udf_f140w_photutils', background=None, gain=None,
+                                             AB_zeropoint=26.452,
+                                             rename_columns={'ycentroid': 'y_flt', 'xcentroid': 'x_flt',
+                                                             'dec_icrs_centroid': 'dec',
+                                                             'ra_icrs_centroid': 'ra'},
+                                             clobber=True, verbose=True)
+
+            # code expects this columns later....
+            cat['NUMBER'] = cat['id']
+
+            print(' - Get matches from 3D-HST catalog')
+            ref_3dhst = fits.open('udf_3dhst_cat.fits')
+            ref_cat = Table.read(ref_3dhst[1])
+
+            gs = SkyCoord(ra=ref_cat['ra']*u.degree, dec=ref_cat['dec']*u.degree)
+            cat_rd = SkyCoord(ra=cat['ra'], dec=cat['dec'])
+
+            gs_idx, d2d, d3d = cat_rd.match_to_catalog_sky(gs)
+            has_gs_match = np.where(d2d < 2*u.arcsec)[0]
+
+            # Use 3D-HST mags because quick photutils catalog has some issues,
+            # perhaps related to background subtraction
+            gs_mag = 25-2.5*np.log10(ref_cat['F204'])
+            cat['MAG_AUTO'] = gs_mag[gs_idx]
+            cat.write('udf_f140w_photutils.cat', format='ascii.commented_header')
+
+            fits.writeto('udf_f140w_photutils_seg.fits', data=np.cast[int](seg),
+                         header=sci[0].header, clobber=True)
+
+
+        print(' - Setup fake (noise) images, centered in the UDF/XDF')
+        ra, dec = 53.1592277508136, -27.782056346146
+        pa_aper = 128.589
+
+        np.random.seed(1)
+        # Crude exposure parameters.  Rough read noise and backgrounds coded in
+        # grizli.fake_image to make some reasonable noise estimate
+        EXPTIME = 1.e4 # 10 ks ~ 4 HST orbits
+        NEXP = 10      # divided between 10 exposures
+
+        # JWST NIRCAM, three filters & two orients
+        for filt in ['F277W', 'F356W', 'F444W']:
+            for theta in [0,90]:
+                h, wcs = grizli.fake_image.nircam_header(filter=filt, ra=ra, dec=dec,
+                                                         pa_aper=pa_aper+theta)
+                print('Filter: {filter}, Background: {bg} e/s/pix, RN: {RN} e/exp'.format(filter=filt,
+                                                                bg=h['BACKGR'], RN=h['READN']))
+                output = 'nircam_{filt}_{theta:02d}_flt.fits'.format(filt=filt, theta=theta)
+                grizli.fake_image.make_fake_image(h, output=output, exptime=EXPTIME, nexp=NEXP)
+
+
+        print(' - Load GroupFLT for simulation, NB: input files are just noise')
+        sim = grizli.multifit.GroupFLT(grism_files=glob.glob('nircam_*flt.fits'), direct_files=[],
+                                       ref_file=imagepath+'hlsp_xdf_hst_wfc3ir-60mas_hudf_f140w_v1_sci.fits',
+                                       seg_file='udf_f140w_photutils_seg.fits',
+                                       catalog='udf_f140w_photutils.cat',
+                                       cpu_count=0, pad=200)
+
+        pdb.set_trace() # here 180126
+
+        print('   First pass, flat continuum ')
+        sim.compute_full_model(mag_limit=27)
+
+        print('   Compute model grism spectra for 3D-HST matches based on full photo-z templates')
+        detection_bp = pysynphot.ObsBandpass('wfc3,ir,f140w')
+        for ix in has_gs_match:
+            templ = ref_3dhst['WAVE'].data*(1+ref_cat['zbest'][gs_idx[ix]])
+            tempf = ref_3dhst['FLAMBDA'].data[gs_idx[ix],:]
+            # Needs to be normalized to unity in the detection band
+            spec = pysynphot.ArraySpectrum(wave=templ, flux=tempf, waveunits='angstroms', fluxunits='flam')
+            spec = spec.renorm(1., 'flam', detection_bp)
+
+            id = cat['id'][ix]
+            #print(id)
+            sim.compute_single_model(id, mag=cat['MAG_AUTO'][ix], size=-1, store=False,
+                                     spectrum_1d=[spec.wave, spec.flux], get_beams=None,
+                                     in_place=True)
+
+        print(' - Plot blotted reference image; "grism" exposures are still empty, just noise')
+        fig = plt.figure(figsize=[9,9*2./3])
+        for ix, i in enumerate([0,2,4,1,3,5]):
+            ax = fig.add_subplot(2,3,ix+1)
+            ax.imshow(sim.FLTs[i].direct['REF'], vmin=-0.01, vmax=0.05, cmap='viridis',
+                      origin='lower')
+            ax.set_xticklabels([]); ax.set_yticklabels([])
+            ax.grid(color='w', alpha=0.8)
+            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+        fig.tight_layout(pad=0.1)
+        plt.savefig('./blotted_reference_image.pdf')
+
+        print(' - Plot blotted segmentation image; "grism" exposures are still empty, just noise')
+        fig = plt.figure(figsize=[9,9*2./3])
+        for ix, i in enumerate([0,2,4,1,3,5]):
+            ax = fig.add_subplot(2,3,ix+1)
+            ax.imshow(sim.FLTs[i].seg, vmin=-0.01, vmax=3000, cmap='viridis', origin='lower')
+            ax.set_xticklabels([]); ax.set_yticklabels([])
+            ax.grid(color='w', alpha=0.8)
+            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+        fig.tight_layout(pad=0.1)
+        plt.savefig('./blotted_segmentation_image.pdf')
+
+        print(' - Plot "grism" exposures that are still empty, just noise')
+        fig = plt.figure(figsize=[9,9*2./3])
+        for ix, i in enumerate([0,2,4,1,3,5]):
+            ax = fig.add_subplot(2,3,ix+1)
+            ax.imshow(sim.FLTs[i].grism['SCI'], vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
+            ax.set_xticklabels([]); ax.set_yticklabels([])
+            ax.grid(color='w', alpha=0.8)
+            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+        fig.tight_layout(pad=0.1)
+        plt.savefig('./blotted_grismnoise_image.pdf')
+
+        print(' - Plot model stored in FLTs[i].model attribute')
+        fig = plt.figure(figsize=[9,9*2./3])
+        for ix, i in enumerate([0,2,4,1,3,5]):
+            ax = fig.add_subplot(2,3,ix+1)
+
+            # show as if it were the rotated grism
+            if (i % 2) > 0:
+                ax.imshow(np.rot90(sim.FLTs[i].model,-1), vmin=-0.01, vmax=0.05, cmap='viridis',
+                          origin='lower')
+            else:
+                ax.imshow(sim.FLTs[i].model, vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
+
+            ax.set_xticklabels([]); ax.set_yticklabels([])
+            ax.grid(color='w', alpha=0.8)
+            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+        fig.tight_layout(pad=0.1)
+        plt.savefig('./flt_model_attribute.pdf')
+
+        print(' - Update SCI extension of the fake FLT images with the models just computed')
+        for flt in sim.FLTs:
+            print('Update', flt.grism_file)
+            orig_flt = fits.open(flt.grism_file, mode='update')
+            orig_flt['SCI'].data += flt.model[flt.pad:-flt.pad, flt.pad:-flt.pad]
+            orig_flt.flush()
+
+        # to make sure that only sensible flux values are plotted us the following:
+        # fig = plt.figure(figsize=[5,5])
+        # ax = fig.add_subplot(1,1,1)
+        #
+        # #modimg  = sim.FLTs[i].direct['REF']
+        # modimg  = sim.FLTs[i].model
+        # goodent = (np.abs(modimg) < 1000.0)
+        # imgarr  = modimg*0.0
+        # imgarr[goodent]  = modimg[goodent]
+        #
+        # ax.imshow(imgarr, vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
+        # plt.show()
+
+    else:
+        print(' - Going directly to analysis of simulated data (assuming they exist)')
+
+    print(' - Analyze simulated data ')
+    print('   Now reloading simulations for fitting')
+    grp = grizli.multifit.GroupFLT(grism_files=glob.glob('niriss_*flt.fits'), direct_files=[],
+                                   ref_file=imagepath+'hlsp_xdf_hst_wfc3ir-60mas_hudf_f140w_v1_sci.fits',
+                                   seg_file='udf_f140w_photutils_seg.fits',
+                                   catalog='udf_f140w_photutils.cat',
+                                   cpu_count=0, pad=200)
+
+
+
+    print(' - First pass contamination model, flat continuum')
+    grp.compute_full_model(mag_limit=26)
+
+    print(' - Refine the (polynomial) continuum model for brighter objects')
+    grp.refine_list(poly_order=2, mag_limits=[16, 24], verbose=False)
+
+    # print(' - saving "grp" data')
+    # grp.save_full_data()
+
+    print(' - Fit parameters')
+    pzfit, pspec2, pline = grizli.multifit.get_redshift_fit_defaults()
+
+    # Redshift fit
+    pzfit ['zr'] = [0.5, 2.4]
+    pzfit['dz'] = [0.01, 0.001]
+
+    # Drizzled line maps
+    pline = {'kernel': 'square', 'pixfrac': 0.8, 'pixscale': 0.06, 'size': 10}
+
+    # Full rectified 2D spectrum
+    pspec2 = {'NY': 20, 'dlam': 50, 'spatial_scale': 1}
+
+    ## emission line object
+    id = 898 # ID in the detection catalog / segm image
+
+    print(' - Extract spectrum cutouts from individual FLTs of object '+str(id))
+    beams = grp.get_beams(id, size=40)
+
+    print('   Put them in a MultiBeam object')
+    mb = grizli.multifit.MultiBeam(beams, fcontam=1, group_name='niriss-udf')
+
+    print('   Run the redshift fit and generate the emission line map')
+    out = mb.run_full_diagnostics(pzfit=pzfit, pspec2=pspec2, pline=pline,
+                                  GroupFLT=grp, prior=None, verbose=False)
+
+    fit, fig, fig2, hdu2, hdu_line = out
+    cmap = 'viridis_r'
+
+    print(' - "Beams" are extracted for spectra of a given order.  Have attributes for contam, model etc.')
+    fig = plt.figure(figsize=[9,9*1.2/3])
+    for ix, i in enumerate([0,2,4,1,3,5]):
+        ax = fig.add_subplot(2,3,ix+1)
+        beam = mb.beams[i]
+        ax.imshow(beam.grism['SCI'], vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower',
+                  aspect='auto')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                transform=ax.transAxes, size=10, ha='left', va='bottom')
+
+    fig.axes[0].set_ylabel('Observed\nspectrum')
+    fig.tight_layout(pad=0.1)
+    plt.savefig('./extracted2Dregion.pdf')
+
+    print(' - Each beam carries with it a static contamination model extracted from the full field')
+    fig = plt.figure(figsize=[9,9*1.2/3])
+    for ix, i in enumerate([0,2,4,1,3,5]):
+        ax = fig.add_subplot(2,3,ix+1)
+        beam = mb.beams[i]
+        ax.imshow(beam.contam, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                transform=ax.transAxes, size=10, ha='left', va='bottom')
+
+    fig.axes[0].set_ylabel('Contamination model')
+    fig.tight_layout(pad=0.1)
+    plt.savefig('./contaminationModel.pdf')
+
+
+    print(' - Under the hood, the fitting is done by specifying a single 1D template, which')
+    print('   is used to generate model 2D spectra for each beam')
+    fig = plt.figure(figsize=[9,9*1.2/3])
+    for ix, i in enumerate([0,2,4,1,3,5]):
+        ax = fig.add_subplot(2,3,ix+1)
+        beam = mb.beams[i]
+        ax.imshow(beam.model, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                transform=ax.transAxes, size=10, ha='left', va='bottom')
+
+    fig.axes[0].set_ylabel('Spectrum Model')
+    fig.tight_layout(pad=0.1)
+    plt.savefig('./observedSpectrum_model.pdf')
+
+    print(' - Goodness of fit is computed by comparing the models in the full 2D pixel space')
+    fig = plt.figure(figsize=[9,9*1.2/3])
+    for ix, i in enumerate([0,2,4,1,3,5]):
+        ax = fig.add_subplot(2,3,ix+1)
+        beam = mb.beams[i]
+        ax.imshow(beam.grism['SCI'] - beam.contam - beam.model, vmin=-0.01, vmax=0.05, cmap=cmap,
+                  origin='lower', aspect='auto')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                transform=ax.transAxes, size=10, ha='left', va='bottom')
+
+    fig.axes[0].set_ylabel('Full residuals')
+    fig.tight_layout(pad=0.1)
+    plt.savefig('./fullresiduals.pdf')
+
+    print(' - Trivial demo model, dropout in the middle of the F115W filter')
+    xspec = np.arange(0.8,2.4,0.02)*1.e4
+    yspec = (xspec/1.4e4)**(-2) # Beta=-2
+    yspec[xspec < 1.2e4] = 0.
+    plt.plot(xspec, yspec)
+    mb.compute_model(spectrum_1d=[xspec, yspec])
+
+    fig = plt.figure(figsize=[9,9*1.2/3])
+    for ix, i in enumerate([0,2,4,1,3,5]):
+        ax = fig.add_subplot(2,3,ix+1)
+        beam = mb.beams[i]
+        ax.imshow(beam.beam.model, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                transform=ax.transAxes, size=10, ha='left', va='bottom')
+
+    fig.axes[0].set_ylabel('Observed\nspectrum')
+    fig.tight_layout(pad=0.1)
+    plt.savefig('./simpeldropoutdemo.pdf')
+
+
+    print(' - Emission line map')
+    #line = fits.open('niriss-udf_zfit_00898.line.fits')
+    line = fits.open('niriss-udf_00898.line.fits')
+    print(line[0].header['HASLINES'])
+    line.info()
+
+    cmap = 'cubehelix_r'
+    fig = plt.figure(figsize=[12,3])
+
+    ax = fig.add_subplot(141)
+    ax.imshow(line['DSCI'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
+    ax.text(5,5,'F140W direct image', ha='left', va='bottom')
+
+    ax = fig.add_subplot(142)
+    ax.imshow(line['LINE', 'Ha'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
+    ax.text(5,5,r'H$\alpha$', ha='left', va='bottom')
+
+    ax = fig.add_subplot(143)
+    ax.imshow(line['LINEWHT', 'Ha'].data, vmin=-0.01, vmax=20000, cmap='gray', origin='lower')
+    ax.text(5,5,r'H$\alpha$, weight', ha='left', va='bottom', color='w')
+
+    try:
+        ax = fig.add_subplot(144)
+        ax.imshow(line['LINE', 'OIII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'[OIII]$\lambda$4959,5007', ha='left', va='bottom')
+    except:
+        ax = fig.add_subplot(144)
+        ax.imshow(line['LINE', 'Hd'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'H$\delta$', ha='left', va='bottom')
+
+    for ax in fig.axes:
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+
+    fig.tight_layout(pad=0.1)
+
+    plt.savefig('./emissionlinemap_Ha.pdf')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    print('\n - Ran all commands successfully! ')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
