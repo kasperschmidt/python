@@ -1042,12 +1042,14 @@ def NIRISSsim_A2744(generatesimulation=True):
         print(' - Going directly to analysis of simulated data (assuming they exist)')
 
     print('   Now reloading simulations for fitting')
-    grp = grizli.multifit.GroupFLT(grism_files=glob.glob('niriss_*flt.fits'), direct_files=[],
+    sim = grizli.multifit.GroupFLT(grism_files=glob.glob('niriss_*flt.fits'), direct_files=[],
                                    ref_file=ref_hffimg, ref_ext=0,
                                    seg_file='hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v001_align-drz-seg.fits',
                                    catalog='a2744_f140w_glassmodified.cat',
                                    cpu_count=0, # <0 dont parallelize; =0 use all available; >0 CPUs to use
                                    pad=200)
+
+    grp = sim
 
     print('\n - Analyze simulated data ')
     print(' - First pass contamination model, flat continuum')
@@ -1056,7 +1058,7 @@ def NIRISSsim_A2744(generatesimulation=True):
     print(' - Refine the (polynomial) continuum model for brighter objects')
     grp.refine_list(poly_order=2, mag_limits=[16, 24], verbose=False)
 
-    # print(' - saving "grp" data')
+    # print(' - saving refined simulation output')
     # grp.save_full_data()
 
     print(' - Fit parameters')
@@ -1072,8 +1074,9 @@ def NIRISSsim_A2744(generatesimulation=True):
     # Full rectified 2D spectrum
     pspec2 = {'NY': 20, 'dlam': 50, 'spatial_scale': 1}
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## emission line object
-    extractid = 793 # GLASS Line emitter at 1.34000 with zQ = 4.00000
+    extractid = 793 # GLASS Line emitter at 1.34000 with zQ = 4.00000; ra,dec = 3.6061,-30.3920
     basename  = 'niriss-a2744_'+str("%.5d" % extractid)+'_'
 
     print(' - Extract spectrum cutouts from individual FLTs of object '+str(extractid))
@@ -1082,6 +1085,8 @@ def NIRISSsim_A2744(generatesimulation=True):
     print('   Put them in a MultiBeam object')
     mb = grizli.multifit.MultiBeam(beams, fcontam=1, group_name='niriss-a2744')
 
+    mb.write_master_fits(get_hdu=False) # Saving fits file with all beams for "extractid"
+
     print('   Run the redshift fit and generate the emission line map')
     out = mb.run_full_diagnostics(pzfit=pzfit, pspec2=pspec2, pline=pline,
                                   GroupFLT=grp, prior=None, verbose=False)
@@ -1089,21 +1094,24 @@ def NIRISSsim_A2744(generatesimulation=True):
     fit, fig, fig2, hdu2, hdu_line = out
     cmap = 'viridis_r'
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - "Beams" are extracted for spectra of a given order.  Have attributes for contam, model etc.')
     fig = plt.figure(figsize=[9,9*1.2/3])
     for ix, i in enumerate([0,2,4,1,3,5]):
         ax = fig.add_subplot(2,3,ix+1)
         beam = mb.beams[i]
-        ax.imshow(beam.grism['SCI'], vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower',
-                  aspect='auto')
+        ax.imshow(beam.grism['SCI'], vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
         ax.set_xticklabels([]); ax.set_yticklabels([])
         ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
                 transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-    fig.axes[0].set_ylabel('Observed\nspectrum')
+    fig.axes[0].set_ylabel('Extraction')
     fig.tight_layout(pad=0.1)
     plt.savefig('./'+basename+'extracted2Dregion.pdf')
+    plt.clf()
+    plt.close('all')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - Each beam carries with it a static contamination model extracted from the full field')
     fig = plt.figure(figsize=[9,9*1.2/3])
     for ix, i in enumerate([0,2,4,1,3,5]):
@@ -1114,11 +1122,13 @@ def NIRISSsim_A2744(generatesimulation=True):
         ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
                 transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-    fig.axes[0].set_ylabel('Contamination model')
+    fig.axes[0].set_ylabel('Contamination')
     fig.tight_layout(pad=0.1)
     plt.savefig('./'+basename+'contaminationModel.pdf')
+    plt.clf()
+    plt.close('all')
 
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - Under the hood, the fitting is done by specifying a single 1D template, which')
     print('   is used to generate model 2D spectra for each beam')
     fig = plt.figure(figsize=[9,9*1.2/3])
@@ -1130,10 +1140,13 @@ def NIRISSsim_A2744(generatesimulation=True):
         ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
                 transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-    fig.axes[0].set_ylabel('Spectrum Model')
+    fig.axes[0].set_ylabel('Spec. Model')
     fig.tight_layout(pad=0.1)
     plt.savefig('./'+basename+'observedSpectrum_model.pdf')
+    plt.clf()
+    plt.close('all')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - Goodness of fit is computed by comparing the models in the full 2D pixel space')
     fig = plt.figure(figsize=[9,9*1.2/3])
     for ix, i in enumerate([0,2,4,1,3,5]):
@@ -1145,31 +1158,13 @@ def NIRISSsim_A2744(generatesimulation=True):
         ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
                 transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-    fig.axes[0].set_ylabel('Full residuals')
+    fig.axes[0].set_ylabel('Residuals')
     fig.tight_layout(pad=0.1)
     plt.savefig('./'+basename+'fullresiduals.pdf')
+    plt.clf()
+    plt.close('all')
 
-    # print(' - Trivial demo model, dropout in the middle of the F115W filter')
-    # xspec = np.arange(0.8,2.4,0.02)*1.e4
-    # yspec = (xspec/1.4e4)**(-2) # Beta=-2
-    # yspec[xspec < 1.2e4] = 0.
-    # plt.plot(xspec, yspec)
-    # mb.compute_model(spectrum_1d=[xspec, yspec])
-    #
-    # fig = plt.figure(figsize=[9,9*1.2/3])
-    # for ix, i in enumerate([0,2,4,1,3,5]):
-    #     ax = fig.add_subplot(2,3,ix+1)
-    #     beam = mb.beams[i]
-    #     ax.imshow(beam.beam.model, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
-    #     ax.set_xticklabels([]); ax.set_yticklabels([])
-    #     ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
-    #             transform=ax.transAxes, size=10, ha='left', va='bottom')
-    #
-    # fig.axes[0].set_ylabel('Observed\nspectrum')
-    # fig.tight_layout(pad=0.1)
-    # plt.savefig('./simpeldropoutdemo.pdf')
-
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - Emission line map')
     #line = fits.open('niriss-a2744_zfit_00898.line.fits')
     line = fits.open('niriss-a2744_'+str("%.5d" % extractid)+'.line.fits')
@@ -1196,9 +1191,14 @@ def NIRISSsim_A2744(generatesimulation=True):
         ax.imshow(line['LINE', 'OIII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
         ax.text(5,5,r'[OIII]$\lambda$4959,5007', ha='left', va='bottom')
     except:
+        pass
+
+    try:
         ax = fig.add_subplot(144)
         ax.imshow(line['LINE', 'Hd'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
         ax.text(5,5,r'H$\delta$', ha='left', va='bottom')
+    except:
+        pass
 
     for ax in fig.axes:
         ax.set_xticklabels([]); ax.set_yticklabels([])
@@ -1206,8 +1206,9 @@ def NIRISSsim_A2744(generatesimulation=True):
     fig.tight_layout(pad=0.1)
 
     plt.savefig('./'+basename+'emissionlinemap_Ha.pdf')
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.clf()
+    plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print('\n - Ran all commands successfully! ')
 
 
@@ -1216,6 +1217,10 @@ def NIRCAMsim_UDF():
     """
 
     Simulation on UDF for NIRCAM grisms
+
+
+    ------- NOT TESTED 180206 -------
+
 
     --- EXAMPLE OF USE ---
     import grizli_wrappers as gw
