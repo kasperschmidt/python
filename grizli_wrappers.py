@@ -13,6 +13,7 @@ from grizli.multifit import GroupFLT, MultiBeam, get_redshift_fit_defaults
 import pdb
 from astropy.io import ascii
 from importlib import reload
+import JADESutilities as ju
 
 # plotting
 import matplotlib as mpl
@@ -1435,7 +1436,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True):
                         Jobj = 232519 # @ z = 4.4651 with HST F140W AB mag = 23.85
 
                         print('\n - Loading JADES spectrum for id '+str(id))
-                        JADESinfo, temp_lambda, temp_flux = gw.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=True)
+                        JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=True)
                         print('\n')
 
                         # Needs to be normalized to unity in the detection band
@@ -1784,58 +1785,4 @@ def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
 
     beamhdu.writeto(outname,overwrite=overwrite)
 
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_JADESspecAndInfo(JADESid,observedframe=True,verbose=True):
-    """
-    Assemble JADES spectrum and info
-
-    --- INPUT ---
-    JADESid        JADES mock object ID (Williams et al. 2018) to return info and spectrum for
-    observedframe  Return the spectrum in observed frame (shifting lambda and scaling Flambda)?
-    verbose        Toggle verbosity
-
-    --- EXAMPLE OF USE ---
-    import grizli_wrappers as gw
-    JADESinfo, spec_lam, spec_flux = gw.get_JADESspecAndInfo(189021,verbose=True)
-
-    """
-    JADESdir     = '/Users/kschmidt/work/catalogs/JADES_GTO/'
-    JADEScat     = fits.open(JADESdir+'JADES_SF_mock_r1_v1.0.fits')[1].data
-
-    objent       = np.where(JADEScat['ID'] == JADESid)[0]
-    JADESinfo    = JADEScat[objent]
-
-    if (JADESid > 0) & (JADESid < 50002):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_1_50001.fits'
-    elif (JADESid > 50001) & (JADESid < 100003):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_50002_100002.fits'
-    elif (JADESid > 100002) & (JADESid < 150004):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_100003_150003.fits'
-    elif (JADESid > 150003) & (JADESid < 200005):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_150004_200004.fits'
-    elif (JADESid > 200004) & (JADESid < 250013):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_200005_250012.fits'
-    elif (JADESid > 250012) & (JADESid < 300018):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_250013_300017.fits'
-    elif (JADESid > 300018) & (JADESid < 302515):
-        specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_300018_302514.fits'
-    else:
-        sys.exit(' Porvided ID is outside JADES id range ')
-
-    JADEShdu     = fits.open(JADESdir+specfile)
-    objent       = np.where(JADEShdu['OBJECT PROPERTIES'].data['ID'] == JADESid)
-    spec_lam     = JADEShdu['FULL SED WL'].data
-    spec_flux    = JADEShdu['FULL SED'].data[objent][0]
-
-    if observedframe:
-        spec_lam     = spec_lam  * (1 + JADESinfo['redshift'])
-        spec_flux    = spec_flux / (1 + JADESinfo['redshift'])
-
-    HSTF140Wmag  = -2.5 * np.log10(JADESinfo['HST_F140W_fnu']/1e9) + 8.90
-
-    if verbose:
-        print(' - Returning info and spec for JADESid = '+str(JADESid)+
-              ' @ z = '+str("%.4f" % JADESinfo['redshift'])+
-              ' with HST F140W AB mag = '+str("%.2f" % HSTF140Wmag))
-    return JADESinfo, spec_lam, spec_flux
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
