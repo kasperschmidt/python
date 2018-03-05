@@ -1784,5 +1784,219 @@ def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
         beamhdu[3+ext*6].header['EXTNAME'] = 'SCINOCONTAM'
 
     beamhdu.writeto(outname,overwrite=overwrite)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True):
+    """
+    Function generating file with pairings of the (GLASS) objects in the A2744 FoV with the mock spectra from
+    JADES.
 
+    MUSE redshift of objects are used when available, then GLASS redshifts and lastly ASTRODEEP photo-zs
+
+    --- INPUT ---
+    outfile         Name of output file to store list of matches to
+    overwrite       Overwrite existing file?
+    verbose         Toggle verbosity
+
+
+    --- EXAMPLE OF USE ---
+    import grizli_wrappers as gw
+    gw.determine_JADESmatchForA2744obj('A2744_JADESmatches.txt',overwrite=True,verbose=True)
+
+    """
+    if verbose: print(' - Loading GLASS catalog to get object IDs and coordinates')
+    glasscat   = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/a2744_f140w_glasscat_with_ASTRODEEP_f140w_mag.cat'
+    glassdat   = np.genfromtxt(glasscat,names=True,dtype=None)
+    id_GLASS   = glassdat['NUMBER']
+    mag_GLASS  = glassdat['MAG_AUTO']
+    ra_GLASS   = glassdat['X_WORLD']
+    dec_GLASS  = glassdat['Y_WORLD']
+
+    if verbose: print(' - Loading JADES data ')
+    JADESdir     = '/Users/kschmidt/work/catalogs/JADES_GTO/'
+    jadesinfo    = fits.open(JADESdir+'JADES_SF_mock_r1_v1.0.fits')[1].data
+
+    if verbose: print(' - Loading redshift catalogs ')
+    catdir = '/Users/kschmidt/work/catalogs/'
+
+    ADcat      = catdir + 'ASTRODEEP/fullrelease/A2744cl_26012016/A2744cl_ZPHOT.cat'
+    ADdat      = np.genfromtxt(ADcat,names=True,dtype=None)
+
+    ADcat_info = catdir + 'ASTRODEEP/fullrelease/A2744cl_26012016/A2744cl_A.cat'
+    ADdat_info = np.genfromtxt(ADcat_info,names=True,dtype=None)
+
+    glasszcat  = catdir + 'GLASSzcat/hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v002_redshiftcatalog.txt'
+    glasszdat  = np.genfromtxt(glasszcat,names=True,dtype=None)
+    glasszdat  = glasszdat[np.where(glasszdat['redshift'] > 0)]
+
+    MUSEcat    = catdir + 'Mahler18_A2744_redshifts_cat_final.fits'
+    MUSEdat    = fits.open(MUSEcat)[1].data
+
+
+    if verbose: print(' - Loading GALFIT size estiamtesb ')
+    sizedir = '/Users/kschmidt/work/observing/proposals_preparation/180406_JWSTcycle1_A2744/galfitFromTaka/'
+    size_info = np.genfromtxt(sizedir + 'f160w_01.cat',names=True,dtype=None,skip_header=27)
+    size_dat  = np.genfromtxt(sizedir + 'galfit_crs_01.cat',names=True,dtype=None)
+
+    size_id_info  = size_info['NUMBER']
+    size_ra       = size_info['X_WORLD']
+    size_dec      = size_info['Y_WORLD']
+
+    size_id  = size_dat['1ID']
+    size_r50 = size_dat['27r50_sext']
+    size_r90 = size_dat['28r90_sext']
+
+    if verbose: print(' - Setting up output file '+outfile)
+    if os.path.isfile(outfile) & (overwrite == False):
+        sys.exit(outfile+' already exists and "overwrite"=False ')
+    else:
+        nowstr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fout   = open(outfile,'w')
+        fout.write('# Best match JADES ids to GLASS objects detected in A2744. \n')
+        fout.write('# Generated with grizli_wrappers.determine_JADESmatchForA2744obj() on '+nowstr+' \n')
+        fout.write('#     \n')
+        fout.write('#    -99      set if no match to id_GLASS in any of redshift catalogs searched \n')
+        fout.write('#    -999     set if ASTRODEEP match has id > 100000 in whihc case there is not photo-z estimate \n')
+        fout.write('#    -9999    set if match in redshift catalogs but zrange (z+/-0.1) is below JADES redshift, i.e., z_max < 0.2 \n')
+        fout.write('#    -99999   set if no GALFIT results for matched (GALFIT) object \n')
+        fout.write('#     \n')
+        fout.write('# Catalog can be loaded with:   dat = np.genfromtxt("'+outfile+'",names=True,dtype=None,skip_header=10) \n')
+        fout.write('#     \n')
+        fout.write('# id_GLASS ra_GLASS dec_GLASS f140wmag_GLASS    '
+                   'cat_match id_match ra_match dec_match r_match redshift    '
+                   'JADESid  JADESz JADESf140wmag '
+                   'size_id_info   size_ra_match  size_dec_match  size_r_match  size_id_galfit  size_r50obj_arcsec  size_r90_arcsec\n')
+
+    if verbose: print(' - Loop over objects to get match to JADES mock catalog')
+    for oo, objid in enumerate(id_GLASS):
+        # if objid > 20: continue
+        if verbose:
+            infostr = '   matching and getting JADES info for id_GLASS = '+str(objid)+' ('+\
+                      str("%6.f" % (oo+1))+' / '+str("%6.f" % len(id_GLASS))+')          '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        f140wmag  = mag_GLASS[oo]
+        obj_radec = SkyCoord(ra=ra_GLASS[oo]*u.degree, dec=dec_GLASS[oo]*u.degree)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # if verbose: print(' - Crossmatch object to redshift catalogs ')
+        AD_radec    = SkyCoord(ra=ADdat_info['RA']*u.degree, dec=ADdat_info['DEC']*u.degree)
+        MUSE_radec  = SkyCoord(ra=MUSEdat['RA']*u.degree, dec=MUSEdat['DEC']*u.degree)
+        glass_radec = SkyCoord(ra=glasszdat['RA']*u.degree, dec=glasszdat['DEC']*u.degree)
+        size_radec = SkyCoord(ra=size_ra*u.degree, dec=size_dec*u.degree)
+
+        matchtol    = 0.1
+        # if verbose: print(' - Getting sources within '+str(matchtol)+' arc seconds of redshift catalogs ')
+        AD_idx, AD_d2d, AD_d3d          = obj_radec.match_to_catalog_sky(AD_radec)
+        MUSE_idx, MUSE_d2d, MUSE_d3d    = obj_radec.match_to_catalog_sky(MUSE_radec)
+        glass_idx, glass_d2d, glass_d3d = obj_radec.match_to_catalog_sky(glass_radec)
+        size_idx, size_d2d, size_d3d    = obj_radec.match_to_catalog_sky(size_radec)
+
+        AD_idx = np.atleast_1d(AD_idx)[np.where(AD_d2d < matchtol*u.arcsec)[0]]
+        AD_d2d = AD_d2d[np.where(AD_d2d < matchtol*u.arcsec)[0]]
+
+        MUSE_idx = np.atleast_1d(MUSE_idx)[np.where(MUSE_d2d < matchtol*u.arcsec)[0]]
+        MUSE_d2d = MUSE_d2d[np.where(MUSE_d2d < matchtol*u.arcsec)[0]]
+
+        glass_idx = np.atleast_1d(glass_idx)[np.where(glass_d2d < matchtol*u.arcsec)[0]]
+        glass_d2d = glass_d2d[np.where(glass_d2d < matchtol*u.arcsec)[0]]
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        # if verbose: print(' - Extract redshift for object (MUSE over GLASS over ASTRODEEP')
+        if len(MUSE_idx) > 0:
+            bestent    = np.where(MUSE_d2d.arcsec == np.min(MUSE_d2d.arcsec))
+            matchent   = MUSE_idx[bestent]
+            cat_match  = 'MUSE'
+            id_match   = MUSEdat['# ID'][matchent]
+            ra_match   = MUSEdat['RA'][matchent]
+            dec_match  = MUSEdat['DEC'][matchent]
+            r_match    = MUSE_d2d.arcsec[bestent]
+            redshift   = MUSEdat['Z'][matchent][0]
+        elif len(glass_idx) > 0:
+            bestent    = np.where(glass_d2d.arcsec == np.min(glass_d2d.arcsec))
+            matchent   = glass_idx[bestent]
+            cat_match  = 'GLASS'
+            id_match   = glasszdat['ID'][matchent]
+            ra_match   = glasszdat['RA'][matchent]
+            dec_match  = glasszdat['DEC'][matchent]
+            r_match    = glass_d2d.arcsec[bestent]
+            redshift   = glasszdat['redshift'][matchent][0]
+        elif len(AD_idx) > 0:
+            bestent    = np.where(AD_d2d.arcsec == np.min(AD_d2d.arcsec))
+            matchent   = AD_idx[bestent]
+            cat_match  = 'ASTRODEEP'
+            if ADdat_info['ID'][matchent] < 100000:
+                if ADdat_info['ID'][matchent] != ADdat['ID'][matchent]:
+                    sys.exit(' The IDs of the ASTRODEEP catalogs loaded do not match ')
+                else:
+                    id_match   = ADdat_info['ID'][matchent]
+                redshift   = ADdat['ZBEST'][matchent][0]
+            else:
+                redshift   = -999
+            ra_match   = ADdat_info['RA'][matchent]
+            dec_match  = ADdat_info['DEC'][matchent]
+            r_match    = AD_d2d.arcsec[bestent]
+        else:
+            # if verbose: print('   No match to id_GLASS = '+str(objid)+' in any of the redshift catalogs searched             ')
+            cat_match  = 'NONE'
+            id_match   = [-99]
+            ra_match   = [-99]
+            dec_match  = [-99]
+            r_match    = [-99]
+            redshift   = -99
+
+        if redshift > 0:
+            # if verbose: print(' - Select best JADES match (closest match to objects F140W magnitude within z_obj +/- 0.25)')
+            zrange    = [redshift-0.1,redshift+0.1]
+            JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=[f140wmag,-99],jadesinfo=jadesinfo,verbose=False)
+            if len(JADESinfo) == 0:
+                JADESid   = [-9999]
+                JADESz    = [-9999]
+                JADESmag  = [-9999]
+            else:
+                JADESid   = JADESinfo['ID']
+                JADESz    = JADESinfo['redshift']
+                JADESmag  = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
+        else:
+            JADESid   = [-99]
+            JADESz    = [-99]
+            JADESmag  = [-99]
+
+
+        # print(' - Add size of nearest object (to GLASS coordinates) from Takahiros estimates ')
+        size_bestent    = np.where(size_d2d.arcsec == np.min(size_d2d.arcsec))
+        size_matchent   = np.atleast_1d(size_idx)[size_bestent]
+        size_ent        = np.where(size_id == size_id_info[size_matchent])[0]
+        size_id1        = size_id_info[size_matchent]
+        size_ra_match   = size_dec[size_matchent][0]
+        size_dec_match  = size_ra[size_matchent][0]
+        size_r_match    = size_d2d.arcsec[size_bestent][0]
+
+        if len(size_ent) != 0:
+            size_id2        = size_id[size_ent][0]
+            size_r50obj     = size_r50[size_ent][0]
+            size_r90obj     = size_r90[size_ent][0]
+        else:
+            size_id2        = -99999
+            size_r50obj     = -99999
+            size_r90obj     = -99999
+
+        if size_r50obj < 0:
+            size_r50obj = -99999
+            size_r90obj = -99999
+        else:
+            size_r50obj = size_r50obj * 0.06
+            size_r90obj = size_r90obj * 0.06
+
+        # print(' - Store object information and JADES id to output file')
+        outstring = str(objid)+'  '+str(ra_GLASS[oo])+'  '+str(dec_GLASS[oo])+'  '+str("%.4f" % f140wmag)+'  '+\
+                    str("%10s" % cat_match)+'  '+str(id_match[0])+'  '+str(ra_match[0])+' '+\
+                    str(dec_match[0])+'  '+str(r_match[0])+'  '+str("%.4f" % redshift)+'  '+\
+                    str(JADESid[0])+'  '+str(JADESz[0])+'  '+str(JADESmag[0])+'  '+\
+                    str(size_id1[0])+'  '+str(size_ra_match)+'  '+str(size_dec_match)+'  '+\
+                    str(size_r_match)+'  '+str(size_id2)+'  '+str(size_r50obj)+'  '+str(size_r90obj)
+        fout.write(outstring+'\n')
+
+    fout.close()
+    if verbose: print(' - Stored JADES ID matches to '+outfile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
