@@ -105,7 +105,7 @@ def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=Non
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if mag_f140w is not None:
-        print(' - Converting F140W magnitudes to nJu fluxes')
+        if verbose: print(' - Converting F140W magnitudes to nJu fluxes')
         HST_F140W_fnu    = [0,0]
         if mag_f140w[1] == -99:
             HST_F140W_fnu[1] = -99
@@ -129,7 +129,7 @@ def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=Non
             else:
                 bestmatchinput = inputkey, inputs[inputkey]
 
-    if bestmatchinput is not None:
+    if (bestmatchinput is not None) & (len(goodindices) > 0):
         if verbose: print(' - Finding best match to "'+bestmatchinput[0]+'" value among remaining objects ')
         goodi = ju.get_subcat(jadesinfo[goodindices],bestmatchinput[0],bestmatchinput[1])
         outputinfo  = jadesinfo[goodindices.astype(int)][goodi]
