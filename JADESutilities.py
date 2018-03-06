@@ -52,7 +52,7 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,showspec=False,verbose=True)
     elif (JADESid > 300018) & (JADESid < 302515):
         specfile = 'JADES_SF_mock_r1_v1.0_spec_5A_ID_300018_302514.fits'
     else:
-        sys.exit(' Porvided ID is outside JADES id range ')
+        sys.exit(' Provided ID ('+str(JADESid)+') is outside JADES id range ')
 
     JADEShdu     = fits.open(JADESdir+specfile)
     objent       = np.where(JADEShdu['OBJECT PROPERTIES'].data['ID'] == JADESid)
