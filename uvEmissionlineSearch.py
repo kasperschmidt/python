@@ -1557,7 +1557,8 @@ def estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta, verbose=True):
 
     return f_wave
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colortype='redshift', showids=False,verbose=True):
+def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colortype='redshift', zoom = False,
+                ignoreSNlt3=False, showids=False, verbose=True):
     """
     Plotting the output from uves.estimate_limits()
 
@@ -1592,8 +1593,10 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
             beta.append(sourcedat['beta'][objent][0])
 
         # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print ' - Setting up and generating plot'
+        if verbose: print(' - Setting up and generating plot')
         plotname = namebase+'_'+key+'_EWlyaVSEW'+key+'.pdf'
+        if zoom: plotname = plotname.replace('.pdf','_zoom.pdf')
+        if ignoreSNlt3: plotname = plotname.replace('.pdf','_noSNlt3.pdf')
         fig = plt.figure(figsize=(7, 5))
         fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
         Fsize    = 10
@@ -1645,6 +1648,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
 
                     if SNval_Dlam_sum[ii] < 3.0:
                         mfc    = 'None'
+                        if ignoreSNlt3: continue
 
                     if (beta[ii] == -2.0) & (SNval_Dlam_sum[ii] > 3.0):
                         #marker = r'$\downarrow$'
@@ -1662,7 +1666,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
                                          markerfacecolor=mfc,ecolor=objcol,
                                          markeredgecolor=mec,zorder=10)
                         else:
-                            pass # not plotting S/N < 3 points
+                            pass # not plotting S/N < 0 points
 
         else:
             plt.errorbar(xvalues,yvalues,xerr=xerr,yerr=yerr,
@@ -1710,9 +1714,10 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         dy   = ymax-ymin
 
         plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
-        #plt.xlim([0,400])
         plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
-        #plt.ylim([0,30])
+        if zoom:
+            plt.xlim([0,400])
+            plt.ylim([0,30])
 
         # if logx:
         #     plt.xscale('log')
@@ -1739,15 +1744,16 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         leg.get_frame().set_alpha(0.7)
         #--------------------------
 
-        if verbose: print '   Saving plot to',plotname
+        if verbose: print('   Saving plot to',plotname)
         plt.savefig(plotname)
         plt.clf()
         plt.close('all')
 
 
         # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print ' - Setting up and generating plot'
+        if verbose: print(' - Setting up and generating plot')
         plotname = namebase+'_'+key+'_fluxVSs2n.pdf'
+        if zoom: plotname = plotname.replace('.pdf','_zoom.pdf')
         fig = plt.figure(figsize=(7, 5))
         fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
         Fsize    = 10
@@ -1761,7 +1767,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         plt.ioff()
         #plt.title(inforstr[:-2],fontsize=Fsize)
 
-        xvalues = np.asarray(SNval)
+        xvalues = np.asarray(SNval_Dlam_sum)
         yvalues = np.asarray(fluxval)
         xerr    = None
         yerr    = np.asarray(fluxerr)
@@ -1840,6 +1846,13 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
         plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
 
+        if zoom:
+            plt.xlim([-10,10])
+            plt.ylim([-100,100])
+            if key.lower() == 'lya':
+                plt.xlim([0,10])
+                plt.ylim([0,300])
+
         # if logx:
         #     plt.xscale('log')
         # if logy:
@@ -1858,7 +1871,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         leg.get_frame().set_alpha(0.7)
         #--------------------------
 
-        if verbose: print '   Saving plot to',plotname
+        if verbose: print('   Saving plot to '+plotname)
         plt.savefig(plotname)
         plt.clf()
         plt.close('all')
