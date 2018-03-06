@@ -26,7 +26,8 @@ import collections
 import uvEmissionlineSearch as uves
 import matplotlib
 import matplotlib.pyplot as plt
-import ciiiEmitterCandidates as cec
+import NEOGALmodels as nm
+import rxj2248_BooneBalestraSource as bbs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
     """
@@ -1393,6 +1394,15 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
             line_lams  = [1907.00,1909.00]
             use_sys    = True
             keys       = ['ciii1907','ciii1909']
+        elif line.lower() == 'heii':
+            line_lams  = [1640.420]
+            use_sys    = True
+            keys       = ['heii1640']
+        elif line.lower() == 'nv':
+            line_lams  = [1238.821,1242.804]
+            use_sys    = True
+            keys       = ['nv1239','nv1243']
+
         else:
             sys.exit(' Did not find any setups for the line designated '+line)
 
