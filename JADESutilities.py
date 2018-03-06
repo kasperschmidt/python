@@ -13,17 +13,21 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_JADESspecAndInfo(JADESid,observedframe=True,verbose=True):
+def get_JADESspecAndInfo(JADESid,observedframe=True,showspec=False,verbose=True):
     """
     Assemble JADES spectrum and info
 
     --- INPUT ---
     JADESid        JADES mock object ID (Williams et al. 2018) to return info and spectrum for
     observedframe  Return the spectrum in observed frame (shifting lambda and scaling Flambda)?
+    showspec       To show the JADES spectrum (in puplot window), set to true.
     verbose        Toggle verbosity
 
     --- EXAMPLE OF USE ---
     import JADESutilities as ju
+
+    # 274533 z=6.255485 F140Wmag = 25.4527
+
     JADESinfo, spec_lam, spec_flux = ju.get_JADESspecAndInfo(189021,verbose=True)
 
     """
@@ -65,6 +69,12 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,verbose=True):
         print(' - Returning info and spec for JADESid = '+str(JADESid)+
               ' @ z = '+str("%.4f" % JADESinfo['redshift'])+
               ' with HST F140W AB mag = '+str("%.2f" % HSTF140Wmag))
+
+    if showspec:
+        import pylab as plt
+        plt.plot(spec_lam,spec_flux)
+        plt.show()
+
     return JADESinfo, spec_lam, spec_flux
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
