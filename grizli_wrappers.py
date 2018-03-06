@@ -1215,7 +1215,8 @@ def NIRISSsim_A2744(generatesimulation=True):
     print('\n - Ran all commands successfully! ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True):
+def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_type='manual_lines',
+                    singlefilterrun=False, quickrun=False):
     """
 
     NIRCAM simulations of A2744 (based on grizli_wrappers.NIRISSsim_A2744()
@@ -1224,11 +1225,18 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True):
     generatesimulation    Generate the actual simulations (to save time for analysis and plotting,
                           only run this once to generate files etc.)
     runfulldiagnostics    Run the full redshift fits for objects to extract? Otherwise, only spectra extracted.
-
+    mockspec_type         What mock spectra to use in the simulation. Choose between:
+                             eazy_templates          The SED templates from the SED fits
+                             manual_lines            Manually add lines to flat continuum and assign JADES spectra to
+                                                     a few selected objects.
+                             jades_templatematches   Assign the best-fitting JADES templates (in terms of mF140W and
+                                                     redshift) to each of the objects reading matches from catalog
+    singlefilterrun       Only run simulation for F356W to speed up things
+    quickrun              If True corners are cut to make the modeling proceed faster (for testing)
 
     --- EXAMPLE OF USE ---
     import grizli_wrappers as gw
-    gw.NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=False)
+    gw.NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=False, mockspec_type='manual_lines')
 
     """
     Ncpu      = 1        # <0 dont parallelize; =0 use all available; >0 CPUs to use
@@ -1247,11 +1255,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True):
         print(' --- Started wrapper at:                       '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         print('\n - Using grizli version: %s' %(grizli.__version__))
 
-    singlefilterrun = False
     if singlefilterrun:
         print(' \n\n          NB - running a "singlefilterrun" \n\n')
 
-    quickrun        = False     # If True corners are cut to make the modeling proceed faster (for testing)
     if quickrun:
         print(' \n\n          NB - using the "quickrun" setup \n\n')
         matchtol  = 0.01      # arcsec
@@ -1366,93 +1372,21 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True):
         print('   Using wavelength and flux columns '+lamcol+' and '+fluxcol)
 
         detection_bp = pysynphot.ObsBandpass('wfc3,ir,'+HFFimgfilter)
-        useeazytemp = False
-        if useeazytemp:
-            print(' - Compute model spectra for ASTRODEEP matches based on full EAZY photo-z templates')
-            print('   In template SED directory '+temp_sed_dir)
-            for ii, ix in enumerate(has_AD_match):
-                AD_id = AD_cat['ID'][AD_idx[ix]]
-                id    = cat['NUMBER'][ix]
 
-                infostr = '   Computing model for id '+str(id)+' / ASTRODEEP '+str(AD_id)+' ('+\
-                          str("%6.f" % (ii+1))+' / '+str("%6.f" % Nmatches)+')          '
-                sys.stdout.write("%s\r" % infostr)
-                sys.stdout.flush()
-
-                EAZYtempsed = glob.glob(temp_sed_dir+'eazy_output_*_'+str(AD_id)+'.temp_sed')
-                if len(EAZYtempsed) == 1:
-                    temp_sed_dat = np.genfromtxt(EAZYtempsed[0],dtype=None,names=True,skip_header=0)
-                else:
-                    print(' Did not just find 1 EAZY template SED for ASTRODEEP object '+str(AD_id))
-                    pdb.set_trace()
-
-                temp_lambda = temp_sed_dat[lamcol]
-                temp_flux   = temp_sed_dat[fluxcol]
-
-                # Needs to be normalized to unity in the detection band
-                spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
-                spec = spec.renorm(1., 'flam', detection_bp)
-
-                #print(id)
-                sim.compute_single_model(id, mag=cat['MAG_AUTO'][ix], size=-1, store=False,
-                                         spectrum_1d=[spec.wave, spec.flux], get_beams=None,
-                                         in_place=True)
-        else:
-            print(' - Compute models using idealized template for all objects')
-            temp_lambda   = np.arange(1000,10000,0.5)
-
-            nocontinuum   = False
-            if nocontinuum:
-                print(' \n\n          NB - Removing continuum for all (but the JADES) sources \n\n')
-                temp_flux     = temp_lambda*0.0 + 1e-20
-                normval       = 1e-20
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        print('\n - Buildinfg and/or assembling models for individual objects in simulation ')
+        if mockspec_type.lower() == 'eazy_templates':
+            gw.compute_single_model_EAZY(cat,Nmatches,temp_sed_dir,sim,AD_cat,AD_idx,has_AD_match,lamcol,fluxcol,detection_bp)
+        elif mockspec_type == 'manual_lines':
+            gw.compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,Nmatches)
+        elif mockspec_type == 'jades_templatematches':
+            if quickrun:
+                quickrunIDs = AD_cat['ID'][AD_idx][has_AD_match]
             else:
-                temp_flux     = temp_lambda*0.0 + 0.25
-                normval       = 1.0
-
-            waveplateaus  = [[4860,4864],[4958,4960],[5006,5008]] # FWHM ~ 4A, 2A, 2A
-            plateaulevels = [6,3,9]
-            for ww, wp in enumerate(waveplateaus):
-                waveent            = np.where( (temp_lambda > wp[0]) & (temp_lambda < wp[1]))[0]
-                temp_flux[waveent] = plateaulevels[ww]
-
-            redshift       = 6.0
-            temp_lambda_z  = temp_lambda * (1.0+redshift)
-
-            # Needs to be normalized to unity in the detection band
-            spec = pysynphot.ArraySpectrum(wave=temp_lambda_z, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
-            spec = spec.renorm(normval, 'flam', detection_bp)
-
-            insertsinglemodels = True
-
-            if insertsinglemodels:
-                for ii, ix in enumerate(has_AD_match):
-                    AD_id = AD_cat['ID'][AD_idx[ix]]
-                    id    = cat['NUMBER'][ix]
-
-                    #if id > 1:
-                    if id in [233,754]:
-                        Jobj = 189021 # @ z = 3.3424 with HST F140W AB mag = 24.06
-                        Jobj = 232519 # @ z = 4.4651 with HST F140W AB mag = 23.85
-
-                        print('\n - Loading JADES spectrum for id '+str(id))
-                        JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=True)
-                        print('\n')
-
-                        # Needs to be normalized to unity in the detection band
-                        spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
-                        spec = spec.renorm(1., 'flam', detection_bp)
-
-                    infostr = '   Set idealized model for id '+str(id)+' / ASTRODEEP '+str(AD_id)+' ('+\
-                              str("%6.f" % (ii+1))+' / '+str("%6.f" % Nmatches)+')          '
-                    sys.stdout.write("%s\r" % infostr)
-                    sys.stdout.flush()
-
-                    #print(id)
-                    objmag = cat['MAG_AUTO'][ix]
-                    sim.compute_single_model(id, mag=objmag, size=-1, store=False,
-                                             spectrum_1d=[spec.wave, spec.flux], get_beams=None,
-                                             in_place=True)
+                quickrunIDs = False
+            gw.compute_single_model_JADES(sim,cat,detection_bp,quickrunIDs=quickrunIDs)
+        print('   Done buildinfg and/or assembling models for individual objects in simulation \n')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         subplot_indices = [0,2,4,1,3,5]
         if singlefilterrun:
@@ -1763,6 +1697,153 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True):
     print('\n - Ran all commands successfully at:               '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def compute_single_model_EAZY(cat,Nmatches,temp_sed_dir,sim,AD_cat,AD_idx,has_AD_match,lamcol,fluxcol,detection_bp):
+    """
+
+    """
+    print(' - Compute model spectra for ASTRODEEP matches based on full EAZY photo-z templates')
+    print('   In template SED directory '+temp_sed_dir)
+
+    for ii, ix in enumerate(has_AD_match):
+        AD_id = AD_cat['ID'][AD_idx[ix]]
+        id    = cat['NUMBER'][ix]
+
+        infostr = '   Computing model for id '+str(id)+' / ASTRODEEP '+str(AD_id)+' ('+\
+                  str("%6.f" % (ii+1))+' / '+str("%6.f" % Nmatches)+')          '
+        sys.stdout.write("%s\r" % infostr)
+        sys.stdout.flush()
+
+        EAZYtempsed = glob.glob(temp_sed_dir+'eazy_output_*_'+str(AD_id)+'.temp_sed')
+        if len(EAZYtempsed) == 1:
+            temp_sed_dat = np.genfromtxt(EAZYtempsed[0],dtype=None,names=True,skip_header=0)
+        else:
+            print(' Did not just find 1 EAZY template SED for ASTRODEEP object '+str(AD_id))
+            pdb.set_trace()
+
+        temp_lambda = temp_sed_dat[lamcol]
+        temp_flux   = temp_sed_dat[fluxcol]
+
+        # Needs to be normalized to unity in the detection band
+        spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
+        spec = spec.renorm(1., 'flam', detection_bp)
+
+        #print(id)
+        sim.compute_single_model(id, mag=cat['MAG_AUTO'][ix], size=-1, store=False,
+                                 spectrum_1d=[spec.wave, spec.flux], get_beams=None,
+                                 in_place=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,Nmatches):
+    """
+
+    """
+    print(' - Compute models using idealized template for all objects')
+    temp_lambda   = np.arange(1000,10000,0.5)
+
+    nocontinuum   = False
+    if nocontinuum:
+        print(' \n\n          NB - Removing continuum for all (but the JADES) sources \n\n')
+        temp_flux     = temp_lambda*0.0 + 1e-20
+        normval       = 1e-20
+    else:
+        temp_flux     = temp_lambda*0.0 + 0.25
+        normval       = 1.0
+
+    waveplateaus  = [[4860,4864],[4958,4960],[5006,5008]] # FWHM ~ 4A, 2A, 2A
+    plateaulevels = [6,3,9]
+    for ww, wp in enumerate(waveplateaus):
+        waveent            = np.where( (temp_lambda > wp[0]) & (temp_lambda < wp[1]))[0]
+        temp_flux[waveent] = plateaulevels[ww]
+
+    redshift       = 6.0
+    temp_lambda_z  = temp_lambda * (1.0+redshift)
+
+    # Needs to be normalized to unity in the detection band
+    spec = pysynphot.ArraySpectrum(wave=temp_lambda_z, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
+    spec = spec.renorm(normval, 'flam', detection_bp)
+
+    insertsinglemodels = True
+
+    if insertsinglemodels:
+        for ii, ix in enumerate(has_AD_match):
+            AD_id = AD_cat['ID'][AD_idx[ix]]
+            id    = cat['NUMBER'][ix]
+
+            #if id > 1:
+            if id in [233,754]:
+                Jobj = 189021 # @ z = 3.3424 with HST F140W AB mag = 24.06
+                Jobj = 232519 # @ z = 4.4651 with HST F140W AB mag = 23.85
+
+                print('\n - Loading JADES spectrum for id '+str(id))
+                JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=True)
+                print('\n')
+
+                # Needs to be normalized to unity in the detection band
+                spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
+                spec = spec.renorm(1., 'flam', detection_bp)
+
+            infostr = '   Set idealized model for id '+str(id)+' / ASTRODEEP '+str(AD_id)+' ('+\
+                      str("%6.f" % (ii+1))+' / '+str("%6.f" % Nmatches)+')          '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+            #print(id)
+            objmag = cat['MAG_AUTO'][ix]
+            sim.compute_single_model(id, mag=objmag, size=-1, store=False,
+                                     spectrum_1d=[spec.wave, spec.flux], get_beams=None,
+                                     in_place=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def compute_single_model_JADES(sim,cat,detection_bp,quickrunIDs=False):
+    """
+
+    """
+    JADESmatches = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_180305.txt'
+    print(' - Assigning JADES templates as models for individual objects using \n'+JADESmatches)
+
+    dat = np.genfromtxt(JADESmatches,names=True,dtype=None,skip_header=10)
+    # for ii, id in enumerate(dat['JADESid']):
+    #     if (id > 0) & (dat['JADESz'][ii] < 0.203):
+    #         print(str(id)+' '+str(dat['JADESz'][ii])+' '+str(dat['JADESf140wmag'][ii]))
+
+    for ii, id in enumerate(cat['NUMBER']):
+        if quickrunIDs is not False:
+            if id not in quickrunIDs: continue
+        catent = np.where(dat['id_GLASS'].astype(int) == id)[0]
+
+        if len(catent) == 0:
+            sys.exit(' Match to JADES catalog not performed for id_GLASS = '+str(id))
+
+        Jobj = dat['JADESid'][ii]
+
+        if Jobj == -99:
+            Jobj   = 274533
+            modstr = 'JADES template'+str("%9s" % Jobj)+' (Manual: z=6.255 & m140=25.45)'
+        elif Jobj == -9999:
+            Jobj   = 4
+            modstr = 'JADES template'+str("%9s" % Jobj)+' (Manual: z=0.200 & m140=27.26)'
+        else:
+            modstr = 'JADES template'+str("%9s" % Jobj)+' (ID assigned in z/JADES match)'
+
+        #print(' - Loading JADES spectrum for id_GLASS = '+str(id))
+        JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=False)
+
+        # Needs to be normalized to unity in the detection band
+        spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
+        spec = spec.renorm(1., 'flam', detection_bp)
+
+        infostr = '   Use '+modstr+' for id_GLASS '+str(id)+\
+                  ' ('+str("%6.f" % (ii+1))+' / '+str("%6.f" % len(cat['NUMBER']))+')             '
+        sys.stdout.write("%s\r" % infostr)
+        sys.stdout.flush()
+
+        objmag = dat['f140wmag_GLASS'][ii]
+        sim.compute_single_model(id, mag=objmag, size=-1, store=False,
+                                 spectrum_1d=[spec.wave, spec.flux], get_beams=None,
+                                 in_place=True)
+    print('\n   ... done')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
     """
 
@@ -1785,7 +1866,7 @@ def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
 
     beamhdu.writeto(outname,overwrite=overwrite)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True):
+def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbose=True):
     """
     Function generating file with pairings of the (GLASS) objects in the A2744 FoV with the mock spectra from
     JADES.
@@ -1868,7 +1949,7 @@ def determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True):
 
     if verbose: print(' - Loop over objects to get match to JADES mock catalog')
     for oo, objid in enumerate(id_GLASS):
-        # if objid > 20: continue
+        if (objid < 750) or (objid > 760): continue
         if verbose:
             infostr = '   matching and getting JADES info for id_GLASS = '+str(objid)+' ('+\
                       str("%6.f" % (oo+1))+' / '+str("%6.f" % len(id_GLASS))+')          '
@@ -1885,7 +1966,6 @@ def determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True):
         glass_radec = SkyCoord(ra=glasszdat['RA']*u.degree, dec=glasszdat['DEC']*u.degree)
         size_radec = SkyCoord(ra=size_ra*u.degree, dec=size_dec*u.degree)
 
-        matchtol    = 0.1
         # if verbose: print(' - Getting sources within '+str(matchtol)+' arc seconds of redshift catalogs ')
         AD_idx, AD_d2d, AD_d3d          = obj_radec.match_to_catalog_sky(AD_radec)
         MUSE_idx, MUSE_d2d, MUSE_d3d    = obj_radec.match_to_catalog_sky(MUSE_radec)
@@ -1996,6 +2076,7 @@ def determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True):
                     str(size_id1[0])+'  '+str(size_ra_match)+'  '+str(size_dec_match)+'  '+\
                     str(size_r_match)+'  '+str(size_id2)+'  '+str(size_r50obj)+'  '+str(size_r90obj)
         fout.write(outstring+'\n')
+    if verbose: print('\n   ... done')
 
     fout.close()
     if verbose: print(' - Stored JADES ID matches to '+outfile)
