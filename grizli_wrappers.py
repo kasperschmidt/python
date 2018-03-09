@@ -1499,7 +1499,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
     pzfit, pspec2, pline = grizli.multifit.get_redshift_fit_defaults()
 
     # Redshift fit
-    pzfit ['zr'] = [0.5, 2.4]
+    pzfit ['zr'] = [5.5, 7.0]
     pzfit['dz'] = [0.01, 0.001]
 
     # Drizzled line maps
@@ -1668,50 +1668,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         print(' - Plot emission line map?')
         if runfulldiagnostics:
             print('   -> Yes')
-            line = fits.open(base_name+'.line.fits')
-            print(line[0].header['HASLINES'])
-            line.info()
-
-            cmap = 'cubehelix_r'
-            fig = plt.figure(figsize=[12,3])
-
-            ax = fig.add_subplot(141)
-            ax.imshow(line['DSCI'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
-            ax.text(5,5,'F140W direct image', ha='left', va='bottom')
-
-            try:
-                ax = fig.add_subplot(142)
-                ax.imshow(line['LINE', 'Ha'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
-                ax.text(5,5,r'H$\alpha$', ha='left', va='bottom')
-
-                ax = fig.add_subplot(143)
-                ax.imshow(line['LINEWHT', 'Ha'].data, vmin=-0.01, vmax=20000, cmap='gray', origin='lower')
-                ax.text(5,5,r'H$\alpha$, weight', ha='left', va='bottom', color='w')
-            except:
-                pass
-
-            try:
-                ax = fig.add_subplot(144)
-                ax.imshow(line['LINE', 'OIII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-                ax.text(5,5,r'[OIII]$\lambda$4959,5007', ha='left', va='bottom')
-            except:
-                pass
-
-            try:
-                ax = fig.add_subplot(144)
-                ax.imshow(line['LINE', 'Hd'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-                ax.text(5,5,r'H$\delta$', ha='left', va='bottom')
-            except:
-                pass
-
-            for ax in fig.axes:
-                ax.set_xticklabels([]); ax.set_yticklabels([])
-
-            fig.tight_layout(pad=0.1)
-
-            plt.savefig('./objectsextracted_plots/'+base_name+'emissionlinemap_Ha.pdf')
-            plt.clf()
-            plt.close('all')
+            gw.plot_ELmaps(base_name+'.line.fits')
         else:
             print('   -> No')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1738,6 +1695,86 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
 
         print(' ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ')
     print('\n - Ran all commands successfully at:               '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_ELmaps(linefile):
+    """
+
+
+    """
+    line = fits.open(linefile)
+    print(line[0].header['HASLINES'])
+    line.info()
+
+    Nrows = 1
+    Ncols = 8
+
+    cmap = 'cubehelix_r'
+    cmap = 'rainbow'
+    cmap = 'rainbow'
+    fig = plt.figure(figsize=[12,3])
+
+    ax = fig.add_subplot(Nrows, Ncols, 1)
+    ax.imshow(line['DSCI'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
+    ax.text(5,5,'F140W direct image', ha='left', va='bottom')
+
+    try:
+        ax = fig.add_subplot(Nrows, Ncols, 2)
+        ax.imshow(line['LINE', 'Ha'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
+        ax.text(5,5,r'H$\alpha$', ha='left', va='bottom')
+
+        ax = fig.add_subplot(Nrows, Ncols, 3)
+        ax.imshow(line['LINEWHT', 'Ha'].data, vmin=-0.01, vmax=20000, cmap='gray', origin='lower')
+        ax.text(5,5,r'H$\alpha$, weight', ha='left', va='bottom', color='w')
+    except:
+        pass
+
+    try:
+        ax = fig.add_subplot(Nrows, Ncols, 4)
+        ax.imshow(line['LINE', 'OIII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'[OIII]$\lambda$5007', ha='left', va='bottom')
+    except:
+        pass
+
+    try:
+        ax = fig.add_subplot(Nrows, Ncols, 5)
+        ax.imshow(line['LINE', 'Hb'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'H$\beta$', ha='left', va='bottom')
+    except:
+        pass
+
+
+    try:
+        ax = fig.add_subplot(Nrows, Ncols, 6)
+        ax.imshow(line['LINE', 'OIII-4363'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'[OIII]$\lambda$4363', ha='left', va='bottom')
+    except:
+        pass
+
+
+
+    try:
+        ax = fig.add_subplot(Nrows, Ncols, 7)
+        ax.imshow(line['LINE', 'Hg'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'H$\gamma$', ha='left', va='bottom')
+    except:
+        pass
+
+    try:
+        ax = fig.add_subplot(Nrows, Ncols, 8)
+        ax.imshow(line['LINE', 'OII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
+        ax.text(5,5,r'[OII$\lambda$3726', ha='left', va='bottom')
+    except:
+        pass
+
+    for ax in fig.axes:
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+
+    fig.tight_layout(pad=0.1)
+
+    plt.savefig(linefile.replace('.fits','_emissionlinemaps.pdf'))
+    plt.clf()
+    plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def compute_single_model_EAZY(cat,Nmatches,temp_sed_dir,sim,AD_cat,AD_idx,has_AD_match,lamcol,fluxcol,detection_bp):
@@ -2123,4 +2160,82 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
 
     fout.close()
     if verbose: print(' - Stored JADES ID matches to '+outfile)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_matchAD2GLASS(matchtol=0.5,GLASSids=None,ASTRODEEPids=None,verbose=True):
+    """
+
+    --- INPUT ---
+    matchtol         Tolerance for mataches to return
+    GLASSids         List of GLASS IDs; matches only returned if GLASS id is in list.
+    ASTRODEEPids     List of ASTRODEEP IDs; matches only returned if ASTRODEEP id is in list.
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+
+    XWids = [12, 62, 73, 103, 145, 189, 203, 394, 437, 446, 466, 561, 585, 742, 834, 855, 952, 967, 1081, 1238, 1456, 1718, 1722, 2007, 2054, 2066, 2255, 2425, 2434, 2438, 2441, 2447, 2452, 2465, 2471, 2473, 2484, 2538, 2547, 2557, 2560, 2561, 2595, 20004, 20005, 20009, 20108, 20143, 20214, 20257, 20295, 20327, 20409, 20471, 20577, 20656, 20674, 20728, 20759, 20782, 20785, 20808, 20953, 21023, 21225, 21226, 21323, 21430, 21534, 21565, 21582, 21616, 21636, 21700, 21797, 21801, 21812, 21843, 21912, 22011, 22027, 22035, 22055, 22057, 22064, 22066, 22107, 22125, 22154, 22185, 22240, 22256, 22289, 22357, 22542, 23034, 23095, 23105, 23153, 23235, 23293, 23294, 23298, 23310, 23312, 23320, 23325, 23327, 23343, 23349, 23424, 23448, 23515, 23521]
+
+    matches = gw.get_matchAD2GLASS(matchtol=0.5,ASTRODEEPids=XWids,verbose=False)
+
+    """
+    if verbose: print(' - Get matches to ASTRODEEP catalog')
+    cat = np.genfromtxt('hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v001_glassmaster.txt',dtype=None,names=True)
+
+    ADpath  = '/Users/kschmidt/work/GLASS/LAEsearchFullGLASS/catalogs/ASTRODEEP/fullrelease/'
+    AD_cat  = np.genfromtxt(ADpath+'A2744cl_26012016/A2744cl_A.cat',dtype=None,names=True)
+
+    if verbose: print(' - Ignore ASTRODEEP objects with MAG_JH140 >= 99.0')
+    AD_cat  = AD_cat[AD_cat['MAG_JH140'] < 99.0]
+
+    AD_radec  = SkyCoord(ra=AD_cat['RA']*u.degree, dec=AD_cat['DEC']*u.degree)
+    cat_radec = SkyCoord(ra=cat['X_WORLD']*u.degree, dec=cat['Y_WORLD']*u.degree)
+
+    if verbose: print(' - Getting sources within the match toleracnce of '+str(matchtol)+' arc seconds')
+    AD_idx, d2d, d3d = cat_radec.match_to_catalog_sky(AD_radec)
+
+    if verbose: print(' - Printing ID matches:')
+    if verbose: print('   id_GLASS   id_ASTRODEEP   r_match_arcsec ')
+    outarr = np.array([])
+    for ii, id_GLASS in enumerate(cat['NUMBER']):
+        if d2d[ii] < matchtol*u.arcsec:
+            id_AD = AD_cat['ID'][AD_idx[ii]]
+
+            if ASTRODEEPids is not None:
+                if id_AD not in ASTRODEEPids: continue
+
+            if GLASSids is not None:
+                if id_GLASS not in GLASSids: continue
+
+            if verbose: print(str("%10s" % id_GLASS)+' '+str("%10s" % id_AD)+
+                              '        '+str("%.6f" % d2d[ii].arcsec))
+            if len(outarr) == 0:
+                outarr = np.array([int(id_GLASS),int(id_AD),float(d2d[ii].arcsec)])
+            else:
+                outarr = np.vstack([ outarr,np.array([int(id_GLASS),int(id_AD),float(d2d[ii].arcsec)]) ])
+
+    return outarr
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def print_JADESoutputFromFile(GLASSids,verbose=True):
+    """
+    GLASSids = [3.0,25.0,34.0,35.0,98.0,104.0,118.0,142.0,463.0,477.0,783.0,1014.0,1084.0,1517.0,1535.0,1627.0,1722.0,1744.0,1745.0,1787.0,1977.0,1987.0,2095.0,2113.0]
+
+    gw.print_JADESoutputFromFile(GLASSids)
+
+    """
+    # dat = np.genfromtxt("A2744_JADESmatches_180305.txt",names=True,dtype=None,skip_header=10)
+    #
+    # colnames = [name for name in  dat.dtype.names]
+
+    f = open("/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_180305.txt",'r')
+
+    for line in f:
+        if line.startswith('#'):
+            continue
+        else:
+            id = float(line.split()[0])
+            if id in GLASSids:
+                print(line)
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
