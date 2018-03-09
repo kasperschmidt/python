@@ -1216,7 +1216,8 @@ def NIRISSsim_A2744(generatesimulation=True):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_type='manual_lines',
-                    singlefilterrun=False, quickrun=False):
+                    singlefilterrun=False, quickrun=False, plotsingleobj=False,
+                    extractids=[65,476,726,233,754,755,793,848]):
     """
 
     NIRCAM simulations of A2744 (based on grizli_wrappers.NIRISSsim_A2744()
@@ -1233,17 +1234,24 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
                                                      redshift) to each of the objects reading matches from catalog
     singlefilterrun       Only run simulation for F356W to speed up things
     quickrun              If True corners are cut to make the modeling proceed faster (for testing)
+    plotsingleobj         Plot the beams of the extracted objects?
+    extractids            List of GLASS ids to extract.
 
     --- EXAMPLE OF USE ---
     import grizli_wrappers as gw
     gw.NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=False, mockspec_type='manual_lines')
+
+    objects2extract = [476]
+
+    gw.NIRCAMsim_A2744(generatesimulation=False, mockspec_type='jades_templatematches',singlefilterrun=False, quickrun=False, runfulldiagnostics=False,plotsingleobj=False,extractids=objects2extract)
 
     """
     Ncpu      = 1        # <0 dont parallelize; =0 use all available; >0 CPUs to use
     padval    = 2000     #
 
     # determine polynomial coeffficients for flat continuum model
-    polymodelcoeffs = [1.0, 0.0] # coeffs=[1.2, -0.5]))
+    polymodelcoeffs = [0.1, 0.05] # coeffs=[1.2, -0.5]))
+    polyxrange      = [2.0, 6.0]
 
     cwd = os.getcwd()+'/'
     if 'NIRCAM' not in cwd:
@@ -1257,6 +1265,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
 
     if singlefilterrun:
         print(' \n\n          NB - running a "singlefilterrun" \n\n')
+        filterloops  = ['F277W'] # ['F356W']
+        orientations = [0,90]
 
     if quickrun:
         print(' \n\n          NB - using the "quickrun" setup \n\n')
@@ -1265,8 +1275,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         mag_limits = [16, 19]
     else:
         matchtol  = 2.0      # arcsec
-        mag_limit  = 30.0     # Magnitude limit for traces to simulate and account for
-        mag_limits = [16, 24] # Magnitude range for bright objects to refine model for
+        mag_limit  = 26.0     # Magnitude limit for traces to simulate and account for
+        mag_limits = [10, 26] # Magnitude range for bright objects to refine model for
 
     print(' - Handle the GLASS object catalog and segmentation image ')
     print('   Define HST filter setup matching GLASS catalog')
@@ -1278,10 +1288,16 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
 
     if generatesimulation:
         ra, dec         = 3.588197688, -30.39784202 # Cluster center
-        # ra277R, dec277R = 3.581354231, -30.40372659 # Offset for 277 dispersion in row direction; ~30 arcsec from (ra, dec)
-        # ra277C, dec277C = 3.595044930, -30.40375511 # Offset for 277 dispersion in column direction; ~30 arcsec from (ra, dec)
-        ra277R, dec277R = 3.574423698, -30.40970039 # Offset for 277 dispersion in row direction; ~1 arcmin from (ra, dec)
-        ra277C, dec277C = 3.601881571, -30.40965939 # Offset for 277 dispersion in column direction; ~1 arcmin from (ra, dec)
+
+        ra277R, dec277R = 3.574423698, -30.40970039 # SW ~1 arcmin from (ra, dec)
+
+        #ra277C, dec277C = 3.601881571, -30.40965939 # Offset for 277 dispersion in column direction; ~1 arcmin from (ra, dec)
+        #ra277C, dec277C = 3.574515015, -30.38604164 # Offset for 277 dispersion in column direction; ~1 arcmin from (ra, dec)
+        ra277C, dec277C = 3.588197688, -30.39784202 # Cluster center
+        #ra277C, dec277C = 3.602111525, -30.38638374 # Offset for 277 dispersion in row direction (180); ~1 arcmin from (ra, dec)
+        #ra277C, dec277C = 3.594818398, -30.39189161 # NE ~30 arcsec from (ra, dec)
+        #ra277C, dec277C = 3.595044930, -30.40375511 # SE ~30 arcsec from (ra, dec)
+        #ra277C, dec277C = 3.580995897, -30.3917931  # NW ~30 arcsec from (ra, dec)
 
         pa_aper = 135      # Using GLASS PA_V3
         EXPTIME = 6012.591 # seconds exposure (GLASS NIRISS ERS is 5218.07)
@@ -1325,14 +1341,19 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         print('   Read noise and background in images scaled to NEXP = '+str(NEXP)+' and EXPTIME = '+str(EXPTIME)+' seconds')
         # JWST NIRCAM, three filters & two orients
         if singlefilterrun:
-            filterloops  = ['F356W']
-            orientations = [0]
+            filterloops  = filterloops
+            orientations = orientations
         else:
             filterloops  = ['F277W', 'F356W', 'F444W']
             orientations = [0,90]
 
         for filt in filterloops:
             for theta in orientations:
+                if theta == 0:
+                    grism_img = 'GRISMR'
+                elif theta == 90:
+                    grism_img = 'GRISMC'
+
                 if (filt == 'F277W') & (theta == 0): # offset f277w row disperion
                     pointra  = ra277R
                     pointdec = dec277R
@@ -1344,7 +1365,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
                     pointdec = dec
 
                 h, wcs = grizli.fake_image.nircam_header(filter=filt, ra=pointra, dec=pointdec,
-                                                         pa_aper=pa_aper+theta,grism='DFSR')
+                                                         pa_aper=pa_aper+theta,grism=grism_img)
                 print('Filter: {filter}, Background: {bg} e/s/pix, RN: {RN} e/exp'.format(filter=filt,
                                                                 bg=h['BACKGR'], RN=h['READN']))
                 output = 'nircam_{filt}_{theta:02d}_flt.fits'.format(filt=filt, theta=theta)
@@ -1358,7 +1379,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
                                        catalog=photcatout,
                                        cpu_count=Ncpu, # <0 dont parallelize; =0 use all available; >0 CPUs to use
                                        pad=padval,
-                                       polyx=[0.3, 5.0])
+                                       polyx=polyxrange)
 
         print(' - Compute full model (for simulation); started at:                    '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) # First pass, flat continuum
 
@@ -1391,6 +1412,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         subplot_indices = [0,2,4,1,3,5]
         if singlefilterrun:
             subplot_indices = [0]
+            if len(orientations) == 2:
+                subplot_indices = [0,1]
         print(' - Plot blotted reference image; "grism" exposures are still empty, just noise')
         fig = plt.figure(figsize=[9,9*2./3])
         for ix, i in enumerate(subplot_indices):
@@ -1460,16 +1483,16 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
                                    catalog=photcatout,
                                    cpu_count=Ncpu, # <0 dont parallelize; =0 use all available; >0 CPUs to use
                                    pad=padval,
-                                   polyx=[2.0, 6.0]) # range the polynomial model is calculated over in microns
+                                   polyx=polyxrange) # range the polynomial model is calculated over in microns
 
     print('\n - Computing model (for contam model); started at:                    '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print('   First pass to get contamination model, flat continuum')
     grp.compute_full_model(mag_limit=mag_limit, store=False, cpu_count=Ncpu, coeffs=polymodelcoeffs)
-    print('   Refine the (polynomial) continuum model for brighter objects')
-    grp.refine_list(poly_order=len(polymodelcoeffs), mag_limits=mag_limits, verbose=False)
+    # print('   Refine the (polynomial) continuum model for brighter objects')
+    # grp.refine_list(poly_order=len(polymodelcoeffs), mag_limits=mag_limits, verbose=False)
 
-    # print(' - saving refined simulation output')
-    # grp.save_full_data()
+    # print(' - saving refined contamination model')
+    grp.save_full_data()
 
     print('\n - Analyze simulated data; started at:             '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print(' - Get default fit parameters')
@@ -1487,15 +1510,29 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## emission line object
-    id233 = 233 # MUSE LAE                ID_00233 (RA,DEC) = (3.5778434,-30.3812148) MUSE ID = 14518; MUSE redshift = 3.3756
-    id754 = 754 # MUSE LAE 'arc'          ID_00754 (RA,DEC) = (3.5887928,-30.3938037) MUSE IDs = 8826 & 8789; MUSE redshift = 3.9803
-    id755 = 755 # Line emitter:           ID_00755 (RA,DEC) = (3.5874,-30.3933) GLASS redshift = 0.600 | redshift quality = 3.0
-    id793 = 793 # Line emitter:           ID_00793 (RA,DEC) = (3.6061,-30.3920) GLASS redshift = 1.340 | redshift quality = 4.0
     id848 = 848 # Bright central galaxy:  ID_00848 (RA,DEC) = (3.5877,-30.3964) GLASS redshift = 0.316 | redshift quality = 2.0
 
-    # radecs = [[3.6061,-30.3920],[3.5877,-30.3964],[3.5874,-30.3933]]
+    # ------ Vulcani Ha map (GLASS paper VII+VIII) ------
+    id065 = 65  # Pa-a in F277 ID_00065 (RA,DEC) = (3.5770,-30.3795) GLASS redshift = 0.496 | redshift quality = 4.0
+    id476 = 476 # BV Ha map; Pa-a in F277 ID_00476 (RA,DEC) = (3.6044,-30.3850) GLASS redshift = 0.300 | redshift quality = 4.0
+    id726 = 726 # BV Ha map; Pa-a in F277 ID_00726 (RA,DEC) = (3.5809,-30.3908) GLASS redshift = 0.292 | redshift quality = 4.0
 
-    extractids = [id233,id754,id755,id793,id848]
+    # A274400065      3.57700058 -30.37947795  0.496   20.3983
+    # A274400380      3.59327307 -30.38437748  0.2965  19.1761
+    # A274400476      3.60440483 -30.38495383  0.3     21.152
+    # A274400726      3.58094727 -30.39080141  0.2915  19.6931
+    # A274400983      3.57986591 -30.39523146  0.45    24.0103
+    # A274401110      3.58550641 -30.39715509  0.31    21.072
+    # A274401222      3.59032801 -30.40038939  0.498   19.3537
+    # A274401528      3.57572054 -30.40537791  0.6535  22.1135
+    # A274401669      3.59866354 -30.40493392  0.5     24.5403
+
+    id233 = 233 # MUSE LAE                ID_00233 (RA,DEC) = (3.5778434,-30.3812148) MUSE ID = 14518; MUSE redshift = 3.3756
+    id754 = 754 # MUSE LAE 'arc'          ID_00754 (RA,DEC) = (3.5887928,-30.3938037) MUSE IDs = 8826 & 8789; MUSE redshift = 3.9803
+
+    id755 = 755 # Line emitter:           ID_00755 (RA,DEC) = (3.5874,-30.3933) GLASS redshift = 0.600 | redshift quality = 3.0
+    id793 = 793 # Line emitter:           ID_00793 (RA,DEC) = (3.6061,-30.3920) GLASS redshift = 1.340 | redshift quality = 4.0
+
     for ee, extractid in enumerate(extractids):
         print('\n - Extract object '+str("%.5d" % extractid)+' (object '+str(ee+1)+'/'+str(len(extractids))+')     ')
         group_name = 'nircam-a2744'
@@ -1504,15 +1541,20 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         print(' - Get spectrum cutouts from individual FLTs ')
         beams = grp.get_beams(extractid, size=30) # , center_rd=radecs[ee]
 
+        if len(beams) == 0:
+            print('   WARNING: No beams for object '+str(extractid)+' so moving on ')
+            continue
+
         print('   Put them in a MultiBeam object')
         mb = grizli.multifit.MultiBeam(beams, fcontam=1, group_name=group_name)
 
-        mb.write_master_fits(get_hdu=False) # Saving fits file with all beams for "extractid"
+        mb.write_master_fits(get_hdu=False, strip=True) # Saving fits file with all beams for "extractid"
         beamfile  = './'+base_name+'.beams.fits'
         gw.gen_sci_nocontam_beams_file(beamfile,overwrite=True)
 
         print(' - Run the redshift fit and generate the emission line map?')
         if runfulldiagnostics:
+
             print('   -> Yes')
             out = mb.run_full_diagnostics(pzfit=pzfit, pspec2=pspec2, pline=pline,
                                           GroupFLT=grp, prior=None, verbose=True)
@@ -1521,105 +1563,106 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         else:
             print('   -> No')
 
-        cmap = 'viridis_r'
-        try:
-            subplot_indices = [0,2,4,1,3,5]
-            mb.beams[5]
-            print('   Checking for beams... six beams exist!')
-        except:
-            subplot_indices = [0,2,2,1,3,3]
-            print('   Checking for beams... did not find six beams')
+        if plotsingleobj:
+            cmap = 'viridis_r'
+            try:
+                subplot_indices = [0,2,4,1,3,5]
+                mb.beams[5]
+                print('   Checking for beams... six beams exist!')
+            except:
+                subplot_indices = [0,2,2,1,3,3]
+                print('   Checking for beams... did not find six beams')
 
-        if singlefilterrun:
-            subplot_indices = [0,0,0,0,0,0]
+            if singlefilterrun:
+                subplot_indices = [0,0,0,0,0,0]
 
-        Ngrism          = len(subplot_indices)/2
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        print(' - "Beams" are extracted for spectra of a given order.  Have attributes for contam, model etc.')
-        fig = plt.figure(figsize=[9,9*1.2/Ngrism])
-        for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,Ngrism,ix+1)
-            beam = mb.beams[i]
-            ax.imshow(beam.grism['SCI'], vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
-                    transform=ax.transAxes, size=10, ha='left', va='bottom')
+            Ngrism          = len(subplot_indices)/2
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            print(' - "Beams" are extracted for spectra of a given order.  Have attributes for contam, model etc.')
+            fig = plt.figure(figsize=[9,9*1.2/Ngrism])
+            for ix, i in enumerate(subplot_indices):
+                ax = fig.add_subplot(2,Ngrism,ix+1)
+                beam = mb.beams[i]
+                ax.imshow(beam.grism['SCI'], vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                        transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-        fig.axes[0].set_ylabel('Extraction')
-        fig.tight_layout(pad=0.1)
-        plt.savefig('./objectsextracted_plots/'+base_name+'_extracted2Dregion.pdf')
-        plt.clf()
-        plt.close('all')
+            fig.axes[0].set_ylabel('Extraction')
+            fig.tight_layout(pad=0.1)
+            plt.savefig('./objectsextracted_plots/'+base_name+'_extracted2Dregion.pdf')
+            plt.clf()
+            plt.close('all')
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        print(' - Each beam carries with it a static contamination model extracted from the full field')
-        fig = plt.figure(figsize=[9,9*1.2/Ngrism])
-        for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,Ngrism,ix+1)
-            beam = mb.beams[i]
-            ax.imshow(beam.contam, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
-                    transform=ax.transAxes, size=10, ha='left', va='bottom')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            print(' - Each beam carries with it a static contamination model extracted from the full field')
+            fig = plt.figure(figsize=[9,9*1.2/Ngrism])
+            for ix, i in enumerate(subplot_indices):
+                ax = fig.add_subplot(2,Ngrism,ix+1)
+                beam = mb.beams[i]
+                ax.imshow(beam.contam, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                        transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-        fig.axes[0].set_ylabel('Contamination')
-        fig.tight_layout(pad=0.1)
-        plt.savefig('./objectsextracted_plots/'+base_name+'_contaminationModel.pdf')
-        plt.clf()
-        plt.close('all')
+            fig.axes[0].set_ylabel('Contamination')
+            fig.tight_layout(pad=0.1)
+            plt.savefig('./objectsextracted_plots/'+base_name+'_contaminationModel.pdf')
+            plt.clf()
+            plt.close('all')
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        print(' - "Beams" are extracted for spectra of a given order.  Have attributes for contam, model etc.')
-        fig = plt.figure(figsize=[9,9*1.2/Ngrism])
-        for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,Ngrism,ix+1)
-            beam = mb.beams[i]
-            ax.imshow(beam.grism['SCI']-beam.contam, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
-                    transform=ax.transAxes, size=10, ha='left', va='bottom')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            print(' - "Beams" are extracted for spectra of a given order.  Have attributes for contam, model etc.')
+            fig = plt.figure(figsize=[9,9*1.2/Ngrism])
+            for ix, i in enumerate(subplot_indices):
+                ax = fig.add_subplot(2,Ngrism,ix+1)
+                beam = mb.beams[i]
+                ax.imshow(beam.grism['SCI']-beam.contam, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                        transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-        fig.axes[0].set_ylabel('Extraction')
-        fig.tight_layout(pad=0.1)
-        plt.savefig('./objectsextracted_plots/'+base_name+'_extracted2Dregion_contamremove.pdf')
-        plt.clf()
-        plt.close('all')
+            fig.axes[0].set_ylabel('Extraction')
+            fig.tight_layout(pad=0.1)
+            plt.savefig('./objectsextracted_plots/'+base_name+'_extracted2Dregion_contamremove.pdf')
+            plt.clf()
+            plt.close('all')
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        print(' - Under the hood, the fitting is done by specifying a single 1D template, which')
-        print('   is used to generate model 2D spectra for each beam')
-        fig = plt.figure(figsize=[9,9*1.2/Ngrism])
-        for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,Ngrism,ix+1)
-            beam = mb.beams[i]
-            ax.imshow(beam.model, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
-                    transform=ax.transAxes, size=10, ha='left', va='bottom')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            print(' - Under the hood, the fitting is done by specifying a single 1D template, which')
+            print('   is used to generate model 2D spectra for each beam')
+            fig = plt.figure(figsize=[9,9*1.2/Ngrism])
+            for ix, i in enumerate(subplot_indices):
+                ax = fig.add_subplot(2,Ngrism,ix+1)
+                beam = mb.beams[i]
+                ax.imshow(beam.model, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                        transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-        fig.axes[0].set_ylabel('Spec. Model')
-        fig.tight_layout(pad=0.1)
-        plt.savefig('./objectsextracted_plots/'+base_name+'_observedSpectrum_model.pdf')
-        plt.clf()
-        plt.close('all')
+            fig.axes[0].set_ylabel('Spec. Model')
+            fig.tight_layout(pad=0.1)
+            plt.savefig('./objectsextracted_plots/'+base_name+'_observedSpectrum_model.pdf')
+            plt.clf()
+            plt.close('all')
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        print(' - Goodness of fit is computed by comparing the models in the full 2D pixel space')
-        fig = plt.figure(figsize=[9,9*1.2/Ngrism])
-        for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,Ngrism,ix+1)
-            beam = mb.beams[i]
-            ax.imshow(beam.grism['SCI'] - beam.contam - beam.model, vmin=-0.01, vmax=0.05, cmap=cmap,
-                      origin='lower', aspect='auto')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
-                    transform=ax.transAxes, size=10, ha='left', va='bottom')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            print(' - Goodness of fit is computed by comparing the models in the full 2D pixel space')
+            fig = plt.figure(figsize=[9,9*1.2/Ngrism])
+            for ix, i in enumerate(subplot_indices):
+                ax = fig.add_subplot(2,Ngrism,ix+1)
+                beam = mb.beams[i]
+                ax.imshow(beam.grism['SCI'] - beam.contam - beam.model, vmin=-0.01, vmax=0.05, cmap=cmap,
+                          origin='lower', aspect='auto')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.text(0.1,0.1,beam.grism.parent_file, color='k', backgroundcolor='w',
+                        transform=ax.transAxes, size=10, ha='left', va='bottom')
 
-        fig.axes[0].set_ylabel('Residuals')
-        fig.tight_layout(pad=0.1)
-        plt.savefig('./objectsextracted_plots/'+base_name+'_fullresiduals.pdf')
-        plt.clf()
-        plt.close('all')
+            fig.axes[0].set_ylabel('Residuals')
+            fig.tight_layout(pad=0.1)
+            plt.savefig('./objectsextracted_plots/'+base_name+'_fullresiduals.pdf')
+            plt.clf()
+            plt.close('all')
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         print(' - Plot emission line map?')
@@ -1681,15 +1724,15 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         ds9cmd = '\n ds9 '
         for setup in np.arange(Nsetup):
             ds9cmd = ds9cmd + \
-                     beamfile+'['+str(1+setup*6)+'] '+ beamfile+'['+str(2+setup*6)+'] '+ \
-                     beamfile+'['+str(6+setup*6)+'] '+ beamfile+'['+str(3+setup*6)+'] '+ \
-                     beamfile_nocontam+'['+str(3+setup*6)+'] '
-        ds9cmd = ds9cmd + ' -lock frame image -tile grid layout 5 '+str(Nsetup)+' & '
+                     beamfile+'['+str(1+setup*7)+'] '+ beamfile+'['+str(2+setup*7)+'] '+ \
+                     beamfile+'['+str(6+setup*7)+'] '+ beamfile+'['+str(3+setup*7)+'] '+ \
+                     beamfile+'['+str(7+setup*7)+'] '+ beamfile_nocontam+'['+str(3+setup*7)+'] '
+        ds9cmd = ds9cmd + ' -lock frame image -tile grid layout 6 '+str(Nsetup)+' & '
         print(ds9cmd)
 
         ds9cmd = '\n ds9 '
         for setup in np.arange(Nsetup):
-            ds9cmd = ds9cmd + beamfile_nocontam+'['+str(3+setup*6)+'] '
+            ds9cmd = ds9cmd + beamfile_nocontam+'['+str(3+setup*7)+'] '
         ds9cmd = ds9cmd + ' -lock frame image -tile grid layout 1 '+str(Nsetup)+' & '
         print(ds9cmd)
 
@@ -1861,8 +1904,8 @@ def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
     Nsetup  = beamhdu[0].header['COUNT']
 
     for ext in np.arange(Nsetup):
-        beamhdu[3+ext*6].data              = beamhdu[3+ext*6].data - beamhdu[6+ext*6].data
-        beamhdu[3+ext*6].header['EXTNAME'] = 'SCINOCONTAM'
+        beamhdu[3+ext*7].data              = beamhdu[3+ext*7].data - beamhdu[6+ext*7].data
+        beamhdu[3+ext*7].header['EXTNAME'] = 'SCINOCONTAM'
 
     beamhdu.writeto(outname,overwrite=overwrite)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
