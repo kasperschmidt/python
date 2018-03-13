@@ -1215,7 +1215,7 @@ def NIRISSsim_A2744(generatesimulation=True):
     print('\n - Ran all commands successfully! ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_type='manual_lines',
+def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=[5.5, 7.0] , mockspec_type='manual_lines',
                     singlefilterrun=False, quickrun=False, plotsingleobj=False,
                     extractids=[65,476,726,233,754,755,793,848]):
     """
@@ -1226,6 +1226,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
     generatesimulation    Generate the actual simulations (to save time for analysis and plotting,
                           only run this once to generate files etc.)
     runfulldiagnostics    Run the full redshift fits for objects to extract? Otherwise, only spectra extracted.
+    zrangefit             Redshift range to fit objects in, if runfulldiagnostics=True
     mockspec_type         What mock spectra to use in the simulation. Choose between:
                              eazy_templates          The SED templates from the SED fits
                              manual_lines            Manually add lines to flat continuum and assign JADES spectra to
@@ -1499,7 +1500,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
     pzfit, pspec2, pline = grizli.multifit.get_redshift_fit_defaults()
 
     # Redshift fit
-    pzfit ['zr'] = [5.5, 7.0]
+    pzfit ['zr'] = zrangefit # [5.5, 7.0]
     pzfit['dz'] = [0.01, 0.001]
 
     # Drizzled line maps
@@ -1516,16 +1517,6 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
     id065 = 65  # Pa-a in F277 ID_00065 (RA,DEC) = (3.5770,-30.3795) GLASS redshift = 0.496 | redshift quality = 4.0
     id476 = 476 # BV Ha map; Pa-a in F277 ID_00476 (RA,DEC) = (3.6044,-30.3850) GLASS redshift = 0.300 | redshift quality = 4.0
     id726 = 726 # BV Ha map; Pa-a in F277 ID_00726 (RA,DEC) = (3.5809,-30.3908) GLASS redshift = 0.292 | redshift quality = 4.0
-
-    # A274400065      3.57700058 -30.37947795  0.496   20.3983
-    # A274400380      3.59327307 -30.38437748  0.2965  19.1761
-    # A274400476      3.60440483 -30.38495383  0.3     21.152
-    # A274400726      3.58094727 -30.39080141  0.2915  19.6931
-    # A274400983      3.57986591 -30.39523146  0.45    24.0103
-    # A274401110      3.58550641 -30.39715509  0.31    21.072
-    # A274401222      3.59032801 -30.40038939  0.498   19.3537
-    # A274401528      3.57572054 -30.40537791  0.6535  22.1135
-    # A274401669      3.59866354 -30.40493392  0.5     24.5403
 
     id233 = 233 # MUSE LAE                ID_00233 (RA,DEC) = (3.5778434,-30.3812148) MUSE ID = 14518; MUSE redshift = 3.3756
     id754 = 754 # MUSE LAE 'arc'          ID_00754 (RA,DEC) = (3.5887928,-30.3938037) MUSE IDs = 8826 & 8789; MUSE redshift = 3.9803
@@ -1668,7 +1659,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
         print(' - Plot emission line map?')
         if runfulldiagnostics:
             print('   -> Yes')
-            gw.plot_ELmaps(base_name+'.line.fits')
+            gw.plot_ELmaps(base_name+'.line.fits', map_vmin = -0.03, map_vmax = 0.08)
         else:
             print('   -> No')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1697,75 +1688,83 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, mockspec_t
     print('\n - Ran all commands successfully at:               '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_ELmaps(linefile):
+def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vmax=20000, colormap='rainbow'):
     """
+    Plot emission line maps in *.line.fits files
 
+    --- EXAMPLE OF USE ---
+    linefile = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/nircam-a2744_00783.line.fits'
+    linefile = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/nircam-a2744_00726.line.fits'
+    gw.plot_ELmaps(linefile, map_vmin = -0.03, map_vmax = 0.08)
 
     """
     line = fits.open(linefile)
-    print(line[0].header['HASLINES'])
+    maps = line[0].header['HASLINES'].split()
     line.info()
 
-    Nrows = 1
-    Ncols = 8
+    latexnames = {}
+    latexnames['PaA']       = [r'Pa$\alpha$',              r'Weight', r'Continuum', r'Contam']
+    latexnames['PaB']       = [r'Pa$\beta$',               r'Weight', r'Continuum', r'Contam']
+    latexnames['PaG']       = [r'Pa$\gamma$',              r'Weight', r'Continuum', r'Contam']
+    latexnames['BrG']       = [r'Br$\gamma$',              r'Weight', r'Continuum', r'Contam']
+    latexnames['FeII']      = [r'FeII$\lambda$16440',      r'Weight', r'Continuum', r'Contam']
+    latexnames['HeI-1083']  = [r'HeI$\lambda$1083',        r'Weight', r'Continuum', r'Contam']
+    latexnames['SIII']      = [r'SIII',                    r'Weight', r'Continuum', r'Contam']
+    latexnames['SII']       = [r'SII',                     r'Weight', r'Continuum', r'Contam']
+    latexnames['Ha']        = [r'H$\alpha$',               r'Weight', r'Continuum', r'Contam']
+    latexnames['OI-6302']   = [r'OI$\lambda$6302',         r'Weight', r'Continuum', r'Contam']
+    latexnames['OIII']      = [r'[OIII]$\lambda$5007',     r'Weight', r'Continuum', r'Contam']
+    latexnames['Hb']        = [r'H$\beta$',                r'Weight', r'Continuum', r'Contam']
+    latexnames['OIII-4363'] = [r'[OIII]$\lambda$4363',     r'Weight', r'Continuum', r'Contam']
+    latexnames['Hg']        = [r'H$\gamma$',               r'Weight', r'Continuum', r'Contam']
+    latexnames['Hd']        = [r'H$\delta$',               r'Weight', r'Continuum', r'Contam']
+    latexnames['NeIII']     = [r'NeIII',                   r'Weight', r'Continuum', r'Contam']
+    latexnames['OII']       = [r'OII$\lambda$3726',        r'Weight', r'Continuum', r'Contam']
+    latexnames['NeVI']      = [r'NeVI',                    r'Weight', r'Continuum', r'Contam']
+    latexnames['NeV']       = [r'NeV',                     r'Weight', r'Continuum', r'Contam']
+    latexnames['MgII']      = [r'MgII',                    r'Weight', r'Continuum', r'Contam']
+    latexnames['CIV-1549']  = [r'CIV$\lambda$1549',        r'Weight', r'Continuum', r'Contam']
+    latexnames['CIII-1908'] = [r'CIV$\lambda$1908',        r'Weight', r'Continuum', r'Contam']
+    latexnames['OIII-1663'] = [r'OIII$\lambda$1663',       r'Weight', r'Continuum', r'Contam']
+    latexnames['HeII-1640'] = [r'HeII$\lambda$1640',       r'Weight', r'Continuum', r'Contam']
+    latexnames['NIII-1750'] = [r'NIII$\lambda$1750',       r'Weight', r'Continuum', r'Contam']
+    latexnames['NIV-1487']  = [r'NIV$\lambda$1487',        r'Weight', r'Continuum', r'Contam']
+    latexnames['NV-1240']   = [r'NV$\lambda$1240',         r'Weight', r'Continuum', r'Contam']
+    latexnames['Lya']       = [r'Ly$\alpha$',              r'Weight', r'Continuum', r'Contam']
 
-    cmap = 'cubehelix_r'
-    cmap = 'rainbow'
-    cmap = 'rainbow'
-    fig = plt.figure(figsize=[12,3])
+    Nmaps    = len(maps)
+    Nrows    = Nmaps+1
+    Ncols    = 4
+    FS       = 8
+
+    # cmap = 'cubehelix_r'
+    # cmap = 'rainbow'
+    fig = plt.figure(figsize=[4,Nmaps+1])
 
     ax = fig.add_subplot(Nrows, Ncols, 1)
-    ax.imshow(line['DSCI'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
-    ax.text(5,5,'F140W direct image', ha='left', va='bottom')
+    ax.imshow(line['DSCI'].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+    ax.text(5,5,'Direct '+line['DSCI'].header['FILTER'], ha='left', va='bottom', fontsize=FS)
 
-    try:
-        ax = fig.add_subplot(Nrows, Ncols, 2)
-        ax.imshow(line['LINE', 'Ha'].data, vmin=-0.01, vmax=0.02, cmap=cmap, origin='lower')
-        ax.text(5,5,r'H$\alpha$', ha='left', va='bottom')
+    ax = fig.add_subplot(Nrows, Ncols, 2)
+    ax.imshow(line['DWHT'].data, vmin=wht_vmin, vmax=wht_vmax, cmap='gray', origin='lower')
+    ax.text(5,5,r'Direct weight', ha='left', va='bottom', color='w', fontsize=FS)
 
-        ax = fig.add_subplot(Nrows, Ncols, 3)
-        ax.imshow(line['LINEWHT', 'Ha'].data, vmin=-0.01, vmax=20000, cmap='gray', origin='lower')
-        ax.text(5,5,r'H$\alpha$, weight', ha='left', va='bottom', color='w')
-    except:
-        pass
+    for mm, map in enumerate(maps):
+        ax = fig.add_subplot(Nrows, Ncols, 1+4*(mm+1))
+        ax.imshow(line['LINE', map].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+        ax.text(5,5,latexnames[map][0], ha='left', va='bottom', fontsize=FS)
 
-    try:
-        ax = fig.add_subplot(Nrows, Ncols, 4)
-        ax.imshow(line['LINE', 'OIII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-        ax.text(5,5,r'[OIII]$\lambda$5007', ha='left', va='bottom')
-    except:
-        pass
+        ax = fig.add_subplot(Nrows, Ncols, 2+4*(mm+1))
+        ax.imshow(line['LINEWHT', map].data, vmin=wht_vmin, vmax=wht_vmax, cmap='gray', origin='lower')
+        ax.text(5,5,latexnames[map][1], ha='left', va='bottom', color='w', fontsize=FS)
 
-    try:
-        ax = fig.add_subplot(Nrows, Ncols, 5)
-        ax.imshow(line['LINE', 'Hb'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-        ax.text(5,5,r'H$\beta$', ha='left', va='bottom')
-    except:
-        pass
+        ax = fig.add_subplot(Nrows, Ncols, 3+4*(mm+1))
+        ax.imshow(line['CONTINUUM', map].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+        ax.text(5,5,latexnames[map][2], ha='left', va='bottom', fontsize=FS)
 
-
-    try:
-        ax = fig.add_subplot(Nrows, Ncols, 6)
-        ax.imshow(line['LINE', 'OIII-4363'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-        ax.text(5,5,r'[OIII]$\lambda$4363', ha='left', va='bottom')
-    except:
-        pass
-
-
-
-    try:
-        ax = fig.add_subplot(Nrows, Ncols, 7)
-        ax.imshow(line['LINE', 'Hg'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-        ax.text(5,5,r'H$\gamma$', ha='left', va='bottom')
-    except:
-        pass
-
-    try:
-        ax = fig.add_subplot(Nrows, Ncols, 8)
-        ax.imshow(line['LINE', 'OII'].data, vmin=-0.03, vmax=0.06, cmap=cmap, origin='lower')
-        ax.text(5,5,r'[OII$\lambda$3726', ha='left', va='bottom')
-    except:
-        pass
+        ax = fig.add_subplot(Nrows, Ncols, 4+4*(mm+1))
+        ax.imshow(line['CONTAM', map].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+        ax.text(5,5,latexnames[map][3], ha='left', va='bottom', fontsize=FS)
 
     for ax in fig.axes:
         ax.set_xticklabels([]); ax.set_yticklabels([])
