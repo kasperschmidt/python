@@ -1251,10 +1251,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     padval    = 2000     #
 
     # determine polynomial coeffficients for flat continuum model
-    polymodelcoeffs = [0.1, 0.05] # coeffs=[1.2, -0.5]))
+    #polymodelcoeffs = [0.1, 0.05] # coeffs=[1.2, -0.5]))
     #polymodelcoeffs = [0.2, -0.025]
-    #polymodelcoeffs = [[0.05, 0.0]]
-
+    polymodelcoeffs = [[0.05, 0.0]]
     polyxrange      = [1.0, 7.0]
 
     cwd = os.getcwd()+'/'
@@ -1278,6 +1277,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         pmc['F356W'] = [0.2, -0.025]
         pmc['F444W'] = [0.05, 0.0]
         polymodelcoeffs = pmc[filterloops[0]]
+
+    print(' - Polynomial coefficients to use for model: '+str(polymodelcoeffs))
+    print(' - Polynomial range to use for model:        '+str(polyxrange))
 
     if quickrun:
         print(' \n\n          NB - using the "quickrun" setup \n\n')
@@ -1591,7 +1593,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def run_zfit(beamfile,zrangefit=[0.1,10.0],grp=None,verbose=True):
+def run_zfit(beamfile,zrangefit=[0.1,10.0],grp=None,plotmaps=True,verbose=True):
     """
     Run redshift fit estimate on *.beams.fits files
 
@@ -1624,6 +1626,10 @@ def run_zfit(beamfile,zrangefit=[0.1,10.0],grp=None,verbose=True):
                                   GroupFLT=grp, prior=None, verbose=True)
 
     fit, fig, fig2, hdu2, hdu_line = out
+
+    if plotmaps:
+        gw.plot_ELmaps(beamfile.replace('.beams.','.line.'), map_vmin = -0.03, map_vmax = 0.08)
+
     return out
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_beams(beamfile,cmap='viridis_r',verbose=True):
