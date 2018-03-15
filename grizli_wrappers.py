@@ -1216,7 +1216,7 @@ def NIRISSsim_A2744(generatesimulation=True):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=[0.2, 8.0] , mockspec_type='manual_lines',
-                    singlefilterrun=False, quickrun=False, plotsingleobj=False,
+                    onlyreplaceextractIDs=False, singlefilterrun=False, quickrun=False, plotsingleobj=False,
                     extractids=[65,476,726,233,754,755,793,848]):
     """
 
@@ -1233,6 +1233,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                                                      a few selected objects.
                              jades_templatematches   Assign the best-fitting JADES templates (in terms of mF140W and
                                                      redshift) to each of the objects reading matches from catalog
+    onlyreplaceextractIDs For the JADES template replacement, to only replace the ids in "extractids" set this
+                          keyword to True.
     singlefilterrun       Only run simulation for F356W to speed up things
     quickrun              If True corners are cut to make the modeling proceed faster (for testing)
     plotsingleobj         Plot the beams of the extracted objects?
@@ -1251,9 +1253,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     padval    = 2000     #
 
     # determine polynomial coeffficients for flat continuum model
-    #polymodelcoeffs = [0.1, 0.05] # coeffs=[1.2, -0.5]))
+    polymodelcoeffs = [0.1, 0.05] # coeffs=[1.2, -0.5]))
     #polymodelcoeffs = [0.2, -0.025]
-    polymodelcoeffs = [[0.05, 0.0]]
+    #polymodelcoeffs = [0.05, 0.00]
     polyxrange      = [1.0, 7.0]
 
     cwd = os.getcwd()+'/'
@@ -1409,7 +1411,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         detection_bp = pysynphot.ObsBandpass('wfc3,ir,'+HFFimgfilter)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        print('\n - Buildinfg and/or assembling models for individual objects in simulation ')
+        print('\n - Building and/or assembling models for individual objects in simulation ')
         if mockspec_type.lower() == 'eazy_templates':
             gw.compute_single_model_EAZY(cat,Nmatches,temp_sed_dir,sim,AD_cat,AD_idx,has_AD_match,lamcol,fluxcol,detection_bp)
         elif mockspec_type == 'manual_lines':
@@ -1419,7 +1421,11 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                 quickrunIDs = AD_cat['ID'][AD_idx][has_AD_match]
             else:
                 quickrunIDs = False
-            gw.compute_single_model_JADES(sim,cat,detection_bp,quickrunIDs=quickrunIDs)
+
+            if onlyreplaceextractIDs:
+                quickrunIDs = extractids
+
+            gw.compute_single_model_JADES(sim,cat,detection_bp,selectIDs=quickrunIDs)
         print('   Done buildinfg and/or assembling models for individual objects in simulation \n')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1502,9 +1508,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     print('\n - Computing model (for contam model); started at:                    '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print('   First pass to get contamination model, flat continuum')
     grp.compute_full_model(mag_limit=mag_limit, store=False, cpu_count=Ncpu, coeffs=polymodelcoeffs)
-    # print('   Refine the (polynomial) continuum model for brighter objects')
+    #print('   Refine the (polynomial) continuum model for brighter objects')
     # grp.refine_list(poly_order=len(polymodelcoeffs), mag_limits=mag_limits, verbose=False, wave = np.linspace(0.2,6.0e4,100))
-    # grp.refine_list(poly_order=3, mag_limits=mag_limits, verbose=False, wave = np.linspace(0.2,6.0e4,100))
+    #grp.refine_list(poly_order=3, mag_limits=mag_limits, verbose=False, wave = np.linspace(0.2,6.0e4,100))
 
     # print(' - saving refined contamination model')
     grp.save_full_data()
@@ -1763,6 +1769,8 @@ def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vma
     latexnames['PaA']       = [r'Pa$\alpha$',              r'Weight', r'Continuum', r'Contam']
     latexnames['PaB']       = [r'Pa$\beta$',               r'Weight', r'Continuum', r'Contam']
     latexnames['PaG']       = [r'Pa$\gamma$',              r'Weight', r'Continuum', r'Contam']
+    latexnames['BrA']       = [r'Br$\alpha$',              r'Weight', r'Continuum', r'Contam']
+    latexnames['BrB']       = [r'Br$\beta$',               r'Weight', r'Continuum', r'Contam']
     latexnames['BrG']       = [r'Br$\gamma$',              r'Weight', r'Continuum', r'Contam']
     latexnames['FeII']      = [r'FeII$\lambda$16440',      r'Weight', r'Continuum', r'Contam']
     latexnames['HeI-1083']  = [r'HeI$\lambda$1083',        r'Weight', r'Continuum', r'Contam']
@@ -1898,6 +1906,10 @@ def compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,
     spec = pysynphot.ArraySpectrum(wave=temp_lambda_z, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
     spec = spec.renorm(normval, 'flam', detection_bp)
 
+    # adding a Gaussian emission line to spectrum
+    # EL = pysynphot.GaussianSource(flux=line_flux,center=line_center,fwhm=fwhm_observed,)
+    # spec += EL
+
     insertsinglemodels = True
 
     if insertsinglemodels:
@@ -1930,7 +1942,7 @@ def compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,
                                      in_place=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def compute_single_model_JADES(sim,cat,detection_bp,quickrunIDs=False):
+def compute_single_model_JADES(sim,cat,detection_bp,selectIDs=False):
     """
 
     """
@@ -1943,8 +1955,8 @@ def compute_single_model_JADES(sim,cat,detection_bp,quickrunIDs=False):
     #         print(str(id)+' '+str(dat['JADESz'][ii])+' '+str(dat['JADESf140wmag'][ii]))
 
     for ii, id in enumerate(cat['NUMBER']):
-        if quickrunIDs is not False:
-            if id not in quickrunIDs: continue
+        if selectIDs is not False:
+            if id not in selectIDs: continue
         catent = np.where(dat['id_GLASS'].astype(int) == id)[0]
 
         if len(catent) == 0:
@@ -1962,7 +1974,20 @@ def compute_single_model_JADES(sim,cat,detection_bp,quickrunIDs=False):
             modstr = 'JADES template'+str("%9s" % Jobj)+' (ID assigned in z/JADES match)'
 
         #print(' - Loading JADES spectrum for id_GLASS = '+str(id))
-        JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=False)
+        useJADESz = True
+        if useJADESz:
+            JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=False)
+        else:
+            print('\n   Not using JADES redshift (using z-obj) and fixing spectrum for GLASS Ha-map obj to JADES=695 to ensure Pa-a')
+            # fixing the JADES object to use
+            fixredshift  = dat['redshift'][ii]
+            GLASSmapsIDs = [65,380,476,726,983,1110,1222,1528,1669]
+            if id in GLASSmapsIDs:
+                Jobj = 695
+            JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=False,verbose=False)
+
+            temp_lambda  = temp_lambda  * (1 + fixredshift)
+            temp_flux    = temp_flux / (1 + fixredshift)
 
         # Needs to be normalized to unity in the detection band
         spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
@@ -2315,4 +2340,43 @@ def create_diffimg(fits1,ext1,fits2,ext2,outfile,overwrite=True,header=False,ver
 
     hdu = fits.PrimaryHDU(diffimage, header=hdr)
     hdu.writeto(outfile, overwrite=overwrite)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def check_coeffs(polycoeffs=[0.05, 0.01],polyxrange=[1.0, 7.0],verbose=True):
+    """
+    Function to generate and plot model polynomials
+
+    --- EXAMPLE OF USE ---
+    gw.check_coeffs(polycoeffs=[0.05, 0.00])
+
+    """
+    xspec_m1 = np.arange(polyxrange[0], polyxrange[1], 0.05)-1
+    yspec_co = [xspec_m1**o*polycoeffs[o] for o in range(len(polycoeffs))]
+    xspec    = (xspec_m1+1)*1.e4
+    yspec    = np.sum(yspec_co, axis=0)
+
+    plotname = './check_coeffs_plot.pdf'
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
+    Fsize    = 10
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    plt.title('polycoeffs: '+str(polycoeffs)+'    polyxrange: '+str(polyxrange))
+
+    plt.plot(xspec,yspec)
+
+    plt.xlabel(' Wavelength [A] ')
+    plt.ylabel(' ')
+    print(' - Saved plot to '+plotname)
+
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
