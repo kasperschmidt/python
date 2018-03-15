@@ -192,6 +192,7 @@ def linelistdic(listversion='full'):
     Line wavelength are taken from Morton 1991 when available
 
     # URLs of other linelists:
+    WikiPedia_H:     https://en.wikipedia.org/wiki/Hydrogen_spectral_series
     Nebular lines:   http://www.star.ucl.ac.uk/~msw/lines.html
     SDSS list:       http://www.sdss.org/dr7/algorithms/linestable.html
     Landt+08:        http://adsabs.harvard.edu/abs/2008ApJS..174..282L
@@ -251,8 +252,12 @@ def linelistdic(listversion='full'):
         linelist['pag']   = ['Pa$\gamma$ $\\lambda$10941'           , 10941.091,         'right'      , 'Nebular lines']
         linelist['pab']   = ['Pa$\\beta$ $\\lambda$12821'           , 12821.59 ,         'right'      , 'Nebular lines']
         linelist['paa']   = ['Pa$\\alpha$ $\\lambda$18756'          , 18756.13 ,         'right'      , 'Nebular lines']
+
         linelist['feii1p6']=['[FeII] $\\lambda$1.644$\mu$m'         , 16440.00 ,         'right'      , 'Nebular lines']
+
         linelist['brg']   = ['Br$\gamma$ $\\lambda$21661'           , 21661.20 ,         'right'      , 'Nebular lines']
+        linelist['brb']   = ['Br$\\beta$ $\\lambda$26250'           , 26250.00 ,         'right'      , 'WikiPedia_H']
+        linelist['bra']   = ['Br$\\alpha$ $\\lambda$40510'          , 40510.00 ,         'right'      , 'WikiPedia_H']
 
         # mid-IR lines from H. Inami (email 171121)   'pah6p2','h29p7','neii12p8'
         linelist['pah6p2']   = ['PAH 6.2$\mu$m'                     , 62000.   ,         'right'      , 'Inami']
