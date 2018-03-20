@@ -1272,8 +1272,8 @@ def matplotlib_colornames():
     return cnames
 
 #-------------------------------------------------------------------------------------------------------------
-def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresize_x=8,
-                      redshiftrange=[0.,17.],zspacing=1.0,verticalmarker=None,verbose=True):
+def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresize_x=8, Fsize=10,
+                      redshiftrange=[0.,17.],zspacing=1.0,markfilter=None,verticalmarker=None,verbose=True):
     """
 
     Plotting an overview of coverage of emission lines for given filters as a function of redshift
@@ -1283,9 +1283,11 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     filters         list of filter names to illustrate line location for in plot
     outname         name of output plot to generate
     figuresize_x    Size of figure in x direction
+    Fsize           Text font size
     redshiftrange   Range of redshift to include in plot
     zspacing        Spacing between redshift axis ticks
-    verticalmarker  Add a vertical line at a given redshift providing [redshift,name]
+    markfilter      List of filters to outline in black
+    verticalmarker  Add vertical lines at given redshifts providing [[redshift1,name1],[redshift2,name2],...]
     verbose         toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -1294,6 +1296,11 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     filters = ['muse','wfc3_g102','wfc3_g141','niriss_f115w','niriss_f150w','niriss_f200w','nirspec_g140h/F100lp','nirspec_g235h/F170lp','nirspec_g395h/F290lp','nirspec_prismclear','nircam_f277w','nircam_f356w','nircam_f444w','miri_lrs','miri_mrs']
     outname = '/Users/kschmidt/work/linecoverageplot.pdf'
     kbs.plot_linecoverage(lines,filters,outname=outname,verbose=True)
+
+    lines   = ['lya','oii2','hb','oiii2','ha','paa','brg','brb']
+    filters = ['muse','wfc3_g102','wfc3_g141','niriss_f115w','niriss_f150w','niriss_f200w','nircam_f277w','nircam_f356w','nircam_f444w']
+    markfilter = ['nircam_f277w','nircam_f356w','nircam_f444w']
+    kbs.plot_linecoverage(lines,filters,outname=outname,verbose=True,verticalmarker=[[0.308,'$z$(A2744) = 0.308','black'],[4.5,'$z$(MUSE LAE) = 4.5','gray'],[8.38,'$z$(YD4) = 8.38','lightgray']],markfilter=markfilter,redshiftrange=[0.0,13.0],figuresize_x=12,Fsize=15)
 
     """
     filterinfo = kbs.get_filterinfo()
@@ -1312,7 +1319,6 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     if verbose: print ' - Plotting figure '
     figuresize_y = len(lines) #6
     fig, ax      = plt.subplots(figsize=(figuresize_x,figuresize_y))
-    Fsize        = 10
     plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
     plt.rc('font', family='serif',size=Fsize)           # setting text font
     plt.rc('xtick', labelsize=Fsize)
@@ -1349,10 +1355,15 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
             yhigh   = [ll+1.5-ff*dy]*2
             ylow  = [ll+1.5-(ff+1)*dy]*2
 
-            if ll == 0:
-                plt.fill_between(zrange,yhigh,ylow,alpha=0.7,color=filtercolors[ff],label=label,zorder=20)
+            if filt in markfilter:
+                ecolor="black"
             else:
-                plt.fill_between(zrange,yhigh,ylow,alpha=0.7,color=filtercolors[ff],zorder=20)
+                ecolor=filtercolors[ff]
+
+            if ll == 0:
+                plt.fill_between(zrange,yhigh,ylow,alpha=0.7,facecolor=filtercolors[ff],label=label,zorder=20,edgecolor=ecolor)
+            else:
+                plt.fill_between(zrange,yhigh,ylow,alpha=0.7,facecolor=filtercolors[ff],zorder=20,edgecolor=ecolor)
 
         if ll < len(lines)-1:
             plt.plot(redshiftrange,[ll+1.5]*2,'k-',linewidth=1.0,zorder=30)
@@ -1361,7 +1372,8 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     plt.yticks(ylabelposition, linelabels)
 
     if verticalmarker is not None:
-        plt.plot([verticalmarker[0],verticalmarker[0]],yrange,'r-',label=verticalmarker[1],zorder=100)
+        for vm in verticalmarker:
+            plt.plot([vm[0],vm[0]],yrange,'-',color=vm[2],label=vm[1],zorder=100)
 
     redshiftticks        = np.arange(redshiftrange[0],redshiftrange[1]+1, zspacing)
     if zspacing == np.round(zspacing):
@@ -1417,8 +1429,8 @@ def get_filterinfo():
 
     filterinfo['mosfire']         = {'label':'MOSFIRE',          'waverange':[9000,25000]}
 
-    filterinfo['wfc3_g102']       = {'label':'WFC3 G102',        'waverange':[8000,11719]}
-    filterinfo['wfc3_g141']       = {'label':'WFC3 G141',        'waverange':[10404,17747]}
+    filterinfo['wfc3_g102']       = {'label':'HST WFC3 G102',        'waverange':[8000,11719]}
+    filterinfo['wfc3_g141']       = {'label':'HST WFC3 G141',        'waverange':[10404,17747]}
 
     # NIRSpec
     filterinfo['niriss_f090w']    = {'label':'NIRISS F090W',     'waverange':[9973,13061]}
