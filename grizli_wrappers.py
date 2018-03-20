@@ -1216,7 +1216,8 @@ def NIRISSsim_A2744(generatesimulation=True):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=[0.2, 8.0] , mockspec_type='manual_lines',
-                    onlyreplaceextractIDs=False, singlefilterrun=False, quickrun=False, plotsingleobj=False,
+                    onlyreplaceextractIDs=False, useJADESz=True, fixJADEStemplate=None,
+                    singlefilterrun=False, quickrun=False, plotsingleobj=False,
                     extractids=[65,476,726,233,754,755,793,848]):
     """
 
@@ -1235,6 +1236,10 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                                                      redshift) to each of the objects reading matches from catalog
     onlyreplaceextractIDs For the JADES template replacement, to only replace the ids in "extractids" set this
                           keyword to True.
+    useJADESz             For the JADES template replacement, to replace the JADES template redshift with the object
+                          GLASS/MUSE/ASTRODEEP redshift estimate, set to False. Otherwise JADES redshift is used.
+    fixJADEStemplate      For the JADES template replacement, to fix the JADES template (ignoring matches)
+                          provide JADES template id here
     singlefilterrun       Only run simulation for F356W to speed up things
     quickrun              If True corners are cut to make the modeling proceed faster (for testing)
     plotsingleobj         Plot the beams of the extracted objects?
@@ -1247,6 +1252,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     objects2extract = [476]
 
     gw.NIRCAMsim_A2744(generatesimulation=False, mockspec_type='jades_templatematches',singlefilterrun=False, quickrun=False, runfulldiagnostics=False,plotsingleobj=False,extractids=objects2extract)
+
+    objids = [65,380,476,726,983,1110,1222,1528,1669]
+    gw.NIRCAMsim_A2744(generatesimulation=True, singlefilterrun=False, quickrun=False, runfulldiagnostics=False,plotsingleobj=False, extractids=objids, mockspec_type='jades_templatematches', onlyreplaceextractIDs=True, useJADESz=False, fixJADEStemplate=695)
 
     """
     Ncpu      = 1        # <0 dont parallelize; =0 use all available; >0 CPUs to use
@@ -1425,7 +1433,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
             if onlyreplaceextractIDs:
                 quickrunIDs = extractids
 
-            gw.compute_single_model_JADES(sim,cat,detection_bp,selectIDs=quickrunIDs)
+            gw.compute_single_model_JADES(sim,cat,detection_bp,selectIDs=quickrunIDs,
+                                          useJADESz=useJADESz,fixJADEStemplate=fixJADEStemplate)
         print('   Done buildinfg and/or assembling models for individual objects in simulation \n')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1522,9 +1531,10 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     if extractids is not None:
         print('\n - Analyze simulated data; started at:             '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
         ## emission line object
         # Bright central galaxy:  ID_00848 (RA,DEC) = (3.5877,-30.3964) GLASS redshift = 0.316 | redshift quality = 2.0
-        # ------ Vulcani Ha map (GLASS paper VII+VIII) ------
         # Pa-a in F277 ID_00065 (RA,DEC) = (3.5770,-30.3795) GLASS redshift = 0.496 | redshift quality = 4.0
         # BV Ha map; Pa-a in F277 ID_00476 (RA,DEC) = (3.6044,-30.3850) GLASS redshift = 0.300 | redshift quality = 4.0
         # BV Ha map; Pa-a in F277 ID_00726 (RA,DEC) = (3.5809,-30.3908) GLASS redshift = 0.292 | redshift quality = 4.0
@@ -1532,6 +1542,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         # MUSE LAE 'arc'          ID_00754 (RA,DEC) = (3.5887928,-30.3938037) MUSE IDs = 8826 & 8789; MUSE redshift = 3.9803
         # Line emitter:           ID_00755 (RA,DEC) = (3.5874,-30.3933) GLASS redshift = 0.600 | redshift quality = 3.0
         # Line emitter:           ID_00793 (RA,DEC) = (3.6061,-30.3920) GLASS redshift = 1.340 | redshift quality = 4.0
+        # YD4:                    ID_00292 (RA,DEC) = (3.603853194,-30.382264279) confirmed z=8.32 galaxy (Schmidt+16 ID 2193)
+        # XinZmapCand:            ID_00783  with zASTRODEEP = 6.2093
 
         for ee, extractid in enumerate(extractids):
             print('\n - Extract object '+str("%.5d" % extractid)+' (object '+str(ee+1)+'/'+str(len(extractids))+')     ')
@@ -1599,7 +1611,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def run_zfit(beamfile,zrangefit=[0.1,10.0],grp=None,plotmaps=True,verbose=True):
+def run_zfit(beamfile,zrangefit=[0.1,10.0],dzfit=[0.01, 0.001],grp=None,plotmaps=True,verbose=True):
     """
     Run redshift fit estimate on *.beams.fits files
 
@@ -1620,7 +1632,7 @@ def run_zfit(beamfile,zrangefit=[0.1,10.0],grp=None,plotmaps=True,verbose=True):
 
     # Redshift fit params
     pzfit ['zr'] = zrangefit
-    pzfit['dz'] = [0.01, 0.001]
+    pzfit['dz'] = dzfit
 
     # Drizzled line maps params
     pline = {'kernel': 'square', 'pixfrac': 0.8, 'pixscale': 0.063, 'size': 10}
@@ -1942,7 +1954,7 @@ def compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,
                                      in_place=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def compute_single_model_JADES(sim,cat,detection_bp,selectIDs=False):
+def compute_single_model_JADES(sim,cat,detection_bp,useJADESz=True,fixJADEStemplate=None,selectIDs=False):
     """
 
     """
@@ -1964,6 +1976,12 @@ def compute_single_model_JADES(sim,cat,detection_bp,selectIDs=False):
 
         Jobj = dat['JADESid'][ii]
 
+        if fixJADEStemplate is not None:
+            GLASSmapsIDs = [65,380,476,726,983,1110,1222,1528,1669]
+            print('\n   Fixing JADES template to:')
+            Jobj = fixJADEStemplate
+            print('       idJADES  = '+str(Jobj))
+
         if Jobj == -99:
             Jobj   = 274533
             modstr = 'JADES template'+str("%9s" % Jobj)+' (Manual: z=6.255 & m140=25.45)'
@@ -1974,20 +1992,18 @@ def compute_single_model_JADES(sim,cat,detection_bp,selectIDs=False):
             modstr = 'JADES template'+str("%9s" % Jobj)+' (ID assigned in z/JADES match)'
 
         #print(' - Loading JADES spectrum for id_GLASS = '+str(id))
-        useJADESz = True
         if useJADESz:
             JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=True,verbose=False)
         else:
-            print('\n   Not using JADES redshift (using z-obj) and fixing spectrum for GLASS Ha-map obj to JADES=695 to ensure Pa-a')
             # fixing the JADES object to use
-            fixredshift  = dat['redshift'][ii]
-            GLASSmapsIDs = [65,380,476,726,983,1110,1222,1528,1669]
-            if id in GLASSmapsIDs:
-                Jobj = 695
+            fixredshift  = dat['redshift'][catent]
+            print('\n   Not using JADES redshift (using z-obj) fixing spectrum for GLASS Ha-map obj to:')
+            print('       idGLASS  = '+str(id))
+            print('       z-obj    = '+str(fixredshift))
             JADESinfo, temp_lambda, temp_flux = ju.get_JADESspecAndInfo(Jobj,observedframe=False,verbose=False)
 
             temp_lambda  = temp_lambda  * (1 + fixredshift)
-            temp_flux    = temp_flux / (1 + fixredshift)
+            temp_flux    = temp_flux    / (1 + fixredshift)
 
         # Needs to be normalized to unity in the detection band
         spec = pysynphot.ArraySpectrum(wave=temp_lambda, flux=temp_flux, waveunits='angstroms', fluxunits='flam')
