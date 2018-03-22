@@ -2459,3 +2459,101 @@ ID(Skelton)   = %s     dr = %s     (ra,dec) = (%s,%s)
     fmain.close()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_NEOGALmodels(limits_dictionary,plotnumbers=[99],cutSFmodels=False,smallsyms=False,verbose=True):
+    """
+    Commands to generate plots of the NEOGAL photo-ionization models with MUSE-Wide included
+
+    --- EXAMPLE OF USE ---
+    import rxj2248_BooneBalestraSource as bbs
+    bbs.plot_feltregutkinmodels_cmds(plotnumbers=[1,2],cutSFmodels=False,smallsyms=True)
+
+    """
+
+    modeldata  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
+    modeldata2 = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/AGN_NLR_nebular_feltre16/')
+
+    if cutSFmodels:
+        if verbose: print(' - Performing cut on model SF model grid')
+        xid     = 'dummy'
+        nh      = 'dummy'
+        COratio = 1.00
+        Mcutoff = 100
+    else:
+        if verbose: print(' - Showing all SF model grids, i.e., setting xid, nh, COratio and Mcutoff to dummy values')
+        xid     = 'dummy'
+        nh      = 'dummy'
+        COratio = 'dummy'
+        Mcutoff = 'dummy'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if (1 in plotnumbers) or (99 in plotnumbers):
+        namebase  = './photomodels_CIVdCIIIvsCIVdHeII'
+        line1     = 'CIV1550'
+        line2     = 'CIII1908'
+        line3     = 'CIV1550'
+        line4     = 'HeII1640'
+        xrange    = [2e-2,1e3]
+        yrange    = [2e-4,1.5e2]
+        boxranges = [0.7,1e99,0.5,1e99]
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,
+                                    varyparam='Zgas',logx=True,logy=True,logp1=True,
+                                    fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,
+                                    plotname=namebase+'_Zgas.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,
+                                    modeldata2=modeldata2,colormap='winter',boxranges=boxranges,legpos='lower right',
+                                    smallsyms=smallsyms)
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,
+                                    varyparam='logUs',logx=True,logy=True,logp1=False,
+                                    fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,
+                                    plotname=namebase+'_logUs.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,
+                                    modeldata2=modeldata2,colormap='spring',boxranges=boxranges,legpos='lower right',
+                                    smallsyms=smallsyms)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if (2 in plotnumbers) or (99 in plotnumbers):
+        line1='CIII1908'
+        line2='HeII1640'
+        line3='CIV1550'
+        line4='HeII1640'
+        xrange    = [1e-3,1e3]
+        yrange    = [2e-4,1.5e2]
+        boxranges = [1e-99,1e99,0.5,1e99]
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='Zgas',logx=True,logy=True,logp1=True,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_CIIIHeIIvsCIVdHeII_Zgas.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='winter',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='logUs',logx=True,logy=True,logp1=False,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_CIIIHeIIvsCIVdHeII_logUs.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='spring',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if (3 in plotnumbers) or (99 in plotnumbers):
+        pass
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if (4 in plotnumbers) or (99 in plotnumbers):
+        line1='NV1240'
+        line2='CIV1550'
+        line3='CIV1550'
+        line4='HeII1640'
+        xrange    = [5e-5,1e1]
+        yrange    = [2e-4,3e2]
+        boxranges = [2.05,1e99,0.5,1e99]
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='Zgas',logx=True,logy=True,logp1=True,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,
+plotname='./photomodels_NVCIVdvsCIVdHeII_Zgas.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='winter',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='logUs',logx=True,logy=True,logp1=False,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_NVCIVdvsCIVdHeII_logUs.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='spring',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if (5 in plotnumbers) or (99 in plotnumbers):
+        line1='NV1240'
+        line2='HeII1640'
+        line3='CIV1550'
+        line4='HeII1640'
+        xrange    = [1e-6,1e3]
+        yrange    = [1e-4,3e2]
+        boxranges = [1.02,1e99,0.5,1e99]
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='Zgas',logx=True,logy=True,logp1=True,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_NVHeIIvsCIVdHeII_Zgas.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='winter',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+
+        bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='logUs',logx=True,logy=True,logp1=False,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_NVHeIIvsCIVHeII_logUs.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='spring',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
