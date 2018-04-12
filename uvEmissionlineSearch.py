@@ -8,7 +8,7 @@ import sys
 import glob
 import astropy
 import MiGs
-import pyfits
+import astropy.io.fits as pyfits
 import datetime
 import numpy as np
 import shutil
@@ -28,6 +28,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import NEOGALmodels as nm
 import rxj2248_BooneBalestraSource as bbs
+import felis_build_template as fbt
+import felis
+import pickle
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
     """
@@ -2555,5 +2558,457 @@ plotname='./photomodels_NVCIVdvsCIVdHeII_Zgas.pdf', xid=xid, nh=nh, COratio=COra
         bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='Zgas',logx=True,logy=True,logp1=True,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_NVHeIIvsCIVdHeII_Zgas.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='winter',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
 
         bbs.plot_feltregutkinmodels(modeldata,line1=line1,line2=line2,line3=line3,line4=line4,verbose=verbose,varyparam='logUs',logx=True,logy=True,logp1=False,fixxrange=xrange,fixyrange=yrange,cutSFmodels=cutSFmodels,plotname='./photomodels_NVHeIIvsCIVHeII_logUs.pdf', xid=xid, nh=nh, COratio=COratio, Mcutoff=Mcutoff,modeldata2=modeldata2,colormap='spring',boxranges=boxranges,legpos='lower right',smallsyms=smallsyms)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_singlelinetemplate(outfits='./felis_testing/uves_felis_template_singleline.fits',verbose=True):
+    """
+    Wrapper to generate spectral template with a single line
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.gen_singlelinetemplate()
+    """
+    doubletlam  = [1907.0,1909.0]
+    rangeDlam   = [np.min(doubletlam)-5.0,np.max(doubletlam)+15.0,0.1]
+    tcdic = {}
+    tcdic['LINE1'] = ['GAUSS', 1907.0, 0.5/4.5, 0.0, 10.0/4.5, 'CIII]1907A mimicking line']
+    #tcdic['CONT']  = ['CONT', 1.0, 0.0, 1908.0,       'Continuum with flux 1.0 at 1908 + slope 0.0']
+    valstring = '_Singleline_sig_0p5_flux_10p0'
+    tempname = outfits.replace('.fits',valstring+'.fits')
+    fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
+    """
+    Wrapper to generate spectral templates for cross-correlation with spectra.
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    outdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+    uves.gen_felistemplates(outfits=outdir+'uves_felis_template.fits')
+
+    """
+    # - - - - - - - - - - - - - - - - - - CIII doublet - - - - - - - - - - - - - - - - - -
+    doubletlam  = [1907.0,1909.0]
+    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    fluxCIII1   = [2.0,4.0,6.0]
+    fluxratios  = [0.5,1.0,2.0]
+    sigmas      = [0.25,0.50,0.75]
+
+    Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the CIII doublet (varying fluxCIII, sigma and flux ratio)')
+
+    for fCIII1 in fluxCIII1:
+        for fr in fluxratios:
+            fCIII2 = fCIII1 * fr
+            for sig in sigmas:
+                tcdic = {}
+                tcdic['CIII1']                  = ['GAUSS', doubletlam[0], sig, 0.0, fCIII1, 'CIII]1907A']
+                tcdic['CIII2']                  = ['GAUSS', doubletlam[1], sig, 0.0, fCIII2,  'CIII]1909A']
+                valstring = '_CIIIdoublet'+\
+                            '_sig_'+str(sig).replace('.','p')+\
+                            '_fluxCIII1_'+str(fCIII1).replace('.','p')+\
+                            '_fluxratio_'+str(fr).replace('.','p')
+
+                tempname = outfits.replace('.fits',valstring+'.fits')
+                fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+    # - - - - - - - - - - - - - - - - - - CIV doublet - - - - - - - - - - - - - - - - - -
+    doubletlam  = [1548.195,1550.770]
+    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    fluxCIV1    = [2.0,4.0,6.0]
+    fluxratios  = [0.5,1.0,2.0]
+    sigmas      = [0.25,0.50,0.75]
+
+    Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the CIV doublet (varying fluxCIV, sigma and flux ratio)')
+
+    for fCIV1 in fluxCIV1:
+        for fr in fluxratios:
+            fCIV2 = fCIV1 * fr
+            for sig in sigmas:
+                tcdic = {}
+                tcdic['CIV1']                  = ['GAUSS', doubletlam[0], sig, 0.0, fCIV1, 'CIV1548A']
+                tcdic['CIV2']                  = ['GAUSS', doubletlam[1], sig, 0.0, fCIV2,  'CIV1551A']
+                valstring = '_CIVdoublet'+\
+                            '_sig_'+str(sig).replace('.','p')+\
+                            '_fluxCIV1_'+str(fCIV1).replace('.','p')+\
+                            '_fluxratio_'+str(fr).replace('.','p')
+
+                tempname = outfits.replace('.fits',valstring+'.fits')
+                fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5,
+                      zoomxplot=None,verbose=True):
+    """
+    Wrapper to generate a set of mock MUSE spectra to test FELIS on
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    outdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+    uves.gen_felismockspec(outfits=outdir+'uves_felis_mock_MUSEspectrum.fits',redshift=3.5,zoomxplot=np.array([1150,1250])*(1+3.5))
+
+    """
+    if verbose: print(' - Building mockspectra at redshift '+str(redshift)+' using FELIS tools')
+    tcdic = {}
+    #tcdic['CONT']                   = ['CONT',  1.0, 0.0, 0.0,          'Flat continuum at 1.0']
+
+    voffsetCIV = -200 #km/s
+    lam_obsCIV1, lam_offsetCIV1, dlamCIV1 = kbs.velocityoffset2dwave(redshift,voffsetCIV,1548.195,verbose=verbose)
+    tcdic['CIV1']  = ['GAUSS', lam_offsetCIV1, 0.5, 0.0, 10.0, 'CIV1548A']
+
+    lam_obsCIV2, lam_offsetCIV2, dlamCIV2 = kbs.velocityoffset2dwave(redshift,voffsetCIV,1550.770,verbose=verbose)
+    tcdic['CIV2']  = ['GAUSS', lam_offsetCIV2, 0.5, 0.0, 5.0,  'CIV1551A']
+
+    tcdic['CIII1'] = ['GAUSS', 1907.0 * (1+redshift), 0.5, 0.0, 10.0, 'CIII]1907A']
+
+    tcdic['CIII2'] = ['GAUSS', 1909.0 * (1+redshift), 0.5, 0.0, 5.0,  'CIII]1909A']
+
+    voffsetLYA = -500 #km/s
+    lam_obsLYA, lam_offsetLYA, dlamLYA = kbs.velocityoffset2dwave(redshift,voffsetLYA,1216.0,verbose=verbose)
+    tcdic['LYA']   = ['GAUSS', lam_offsetLYA, 20.0, 10.0, 100.0, 'Lya1216']
+
+    noisesigmas = [0.05,1.0,3.0]
+    for sigma in noisesigmas:
+        mockspec = outfits.replace('.fits','_noisesigma'+str(sigma).replace('.','p')+'.fits')
+        noise    = ['GAUSS', 2.0, sigma]
+        fbt.build_template([4800,9300,0.25],tcdic,tempfile=mockspec,noise=noise,overwrite=True,zoomxplot=zoomxplot)
+        if verbose: print(' - Wrote output spectrum to '+mockspec)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,generateplots=False,verbose=True):
+    """
+    Wrapper around match_templates2specs()
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    picklefileCIII = uves.match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,generateplots=False)
+    picklefileCIV  = uves.match_MUSEWideLAEs(zrange=[2.100,4.996],line='CIV',wave_restframe=1559.0,generateplots=False)
+
+    ccdicCIII      = uves.load_picklefile(picklefileCIII)
+    ccdicCIV       = uves.load_picklefile(picklefileCIV)
+
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Grabbing TDOSE spectra and loading object info ')
+    specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/Modelimg/tdose_spectra/'
+    specs_all  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
+
+    z_all      = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['redshift']
+    id_all     = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
+    vshift_all = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['red_peak_shift_AV17_kms']
+
+    specs     = []
+    objzs     = []
+    vshift    = []
+
+    #list of IDs of test objects
+    okayids = [213035139,104014050]#,115003085,214002011,123048186,123501191,121033078] # Known AGN and AGN candidates from TU
+
+    for spec in specs_all:
+        specid  = int(spec.split('_')[-1].split('-')[0])
+        goodent = np.where(id_all == specid)
+        if len(goodent) != 1:
+            sys.exit(' ERROR: found '+str(len(goodent))+' matches to id = '+str(specid))
+
+        zobj = z_all[goodent][0]
+        if (zobj > zrange[0]) & (zobj < zrange[1]):
+
+            # if specid not in okayids: # skipping objects not in "okayids" list
+            #     continue
+
+            specs.append(spec)
+            objzs.append(zobj)
+            vshift.append(vshift_all[goodent][0])
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Grabbing tempaltes ')
+    tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+    temps    = glob.glob(tempdir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_6p0_flux*.fits')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Getting wavelength range width (obs frame) corresponding to systemic velocity offset from AV15')
+    lamwidth  = []
+    wave_rest = [wave_restframe]*len(specs)
+    for ss, spec in enumerate(specs):
+        lam_obs, lam_offset, dlam = kbs.velocityoffset2dwave(objzs[ss],vshift[ss],wave_rest[ss])
+        if dlam > 2.0:
+            lamwidth.append(dlam*5.0)
+        else:
+            lamwidth.append(60.0)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
+    picklefile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEWideLAEs_CCresults180325_'+line+'_RENAME_.pkl'
+    if generateplots:
+        plotdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'
+    else:
+        plotdir    = None
+    ccdic      = uves.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
+                                            wavecen_restframe=wave_rest,vshift=vshift)
+    return picklefile
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],wavecen_restframe=[1908.0],
+                          vshift=None,plotdir=None,verbose=True):
+    """
+    Wrapper around felis cross-correlation template matching.
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    import glob
+
+    specdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+    #specs    = glob.glob(specdir+'uves_felis_mock_MUSEspectrum_noisesigma*3p0.fits')
+    specs    = glob.glob(specdir+'uves_felis_mock_MUSEspectrum_noisesigma*.fits')
+    speczs   = [3.5]*len(specs)
+
+    tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+    #temps    = glob.glob(specdir+'uves_felis_template_CIIIdoublet_sig_0p25_fluxCIII1_4p0_flux*.fits')
+    temps    = glob.glob(specdir+'uves_felis_template_CIIIdoublet_*fits')
+
+    plotdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/plots_CCresults180325/'
+
+    pickle   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/CCresults180325_RENAME_.pkl'
+
+    ccdic    = uves.match_templates2specs(temps,specs,speczs,pickle,wavewindow=[60]*len(specs),plotdir=plotdir,wavecen_restframe=[1908.0]*len(specs))
+
+    """
+    ccresultdic = {}
+
+    if verbose: print(' - Starting cross-correlation of the '+str(len(spectra))+' spectra and '+
+                      str(len(templates))+' templates')
+    startstring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+    if verbose: print('   '+startstring+'\n')
+    for ss, spec in enumerate(spectra):
+        # Nwave = pyfits.open(spec)[1].header['NAXIS2']
+        spec_namebase = spec.split('/')[-1].split('.fit')[0]
+        for tt, temp in enumerate(templates):
+            temp_namebase = temp.split('/')[-1].split('.fit')[0]
+            if plotdir is not None:
+                plotname = plotdir+spec_namebase+'_CCwith_'+temp_namebase+'.pdf'
+            else:
+                plotname = plotdir
+
+            wavecenter        = wavecen_restframe[ss]  * (1.0 + speczs[ss])
+            wave, ccresults, ccresults_norm, zCCmax = \
+                felis.cross_correlate(spec,temp,z_restframe=speczs[ss],plotresult=plotname,
+                                      waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]])
+
+            if tt == 0:
+                ccresultsarr  = ccresults
+                ccnormarr     = ccresults_norm
+                templatevec   = temp
+                zCCmaxvec     = zCCmax
+            else:
+                ccresultsarr  = np.vstack((ccresultsarr,ccresults))
+                ccnormarr     = np.vstack((ccnormarr,ccresults_norm))
+                templatevec   = np.append(templatevec,temp)
+                zCCmaxvec     = np.append(zCCmaxvec,zCCmax)
+
+        ccresultdic[spec]  = {'wavelengths':wave, 'templatevec':templatevec, 'zLya':speczs[ss],
+                              'zCCmaxvec':zCCmaxvec, 'ccresultsarray':ccresultsarr, 'ccnormarray':ccnormarr}
+        if vshift is not None:
+            ccresultdic[spec]['vshift'] = vshift[ss]
+
+    if verbose: print('\n - Finished cross-correlation of the '+str(len(spectra))+' spectra and '+
+                      str(len(templates))+' templates')
+    if verbose: print('   '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")+'  (started at '+startstring+')')
+
+    if verbose: print(' - Saving dictionary to '+picklename)
+    uves.save_dictionary(ccresultdic,picklename)
+
+    if verbose: print(' - Returning dictioniary with results ')
+    loaddic = uves.load_picklefile(picklename)
+    return  loaddic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def save_dictionary(dictionary, output='./saveddictionary_RENAME_.pkl'):
+    with open(output, 'wb') as f:
+        pickle.dump(dictionary, f, pickle.HIGHEST_PROTOCOL)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def load_picklefile(picklefile):
+    with open(picklefile, 'rb') as f:
+        return pickle.load(f)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,
+                          plotdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'):
+    """
+    Producing analytic plots based on a pickled output from match_templates2specs()
+
+    --- EXAMPLE OF USE ---
+    uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIII_9templaterun.pkl',line='CIII')
+    uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIV_9templaterun.pkl',line='CIV')
+
+    """
+    CCdic   = uves.load_picklefile(picklefile)
+
+    Nspecs  = len(CCdic.keys())
+    if verbose: print(' - Loaded pickle file and found cross-correlation results for '+str(Nspecs)+' spectra')
+
+    cr_arrmax        = []
+    cn_arrmax        = []
+    besttemp_fratios = []
+    besttemp_sigmas  = []
+    besttemp_zmax    = []
+    v_offsetCC       = []
+    v_offsetAH       = []
+
+    NaNcount     = 0
+    for ss, spec in enumerate(CCdic.keys()):
+        cr_arr = CCdic[spec]['ccresultsarray']
+        cr_arr = cr_arr[np.isfinite(cr_arr)]
+
+        if len(cr_arr) == 0:
+            if verbose: print(' WARNING No finite values in cross-correlation array for \n   '+spec)
+            NaNcount = NaNcount + 1.0
+            continue
+        else:
+            cr_arr = CCdic[spec]['ccresultsarray'] # need to re-define to get 2D
+            cn_arr = CCdic[spec]['ccnormarray']    # need to re-define to get 2D
+
+            try:
+                cr_maxent = np.where(cr_arr == np.max(cr_arr))
+                cn_maxent = np.where(cn_arr == np.max(cn_arr))
+
+                if cn_arr[cn_maxent][0] < 0.6:
+                    continue
+                else:
+                    cr_arrmax.append(cr_arr[cr_maxent][0])
+                    cn_arrmax.append(cn_arr[cn_maxent][0])
+            except:
+                print('---->problems... cr array has no proper max (even though NaN arrays are igored)')
+                pdb.set_trace()
+
+            cr_besttemp  = cr_maxent[0][0]
+            cn_besttemp  = cn_maxent[0][0]
+
+            if cr_besttemp != cn_besttemp:
+                print('---->problems... best temp do not match ')
+                print('     '+spec)
+                print('     Bestent: cr '+str(cr_maxent)+'  and cn '+str(cn_maxent)+'\n')
+                #pdb.set_trace()
+
+            besttemp = CCdic[spec]['templatevec'][cn_besttemp]
+
+            besttempt_hdr = pyfits.open(besttemp)[1].header
+
+            besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
+            besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
+
+            zSysCC = CCdic[spec]['zCCmaxvec'][cn_besttemp]
+            zLya    = CCdic[spec]['zLya']
+            cc      = 299792.458 # km/s
+            v_off   = ( (zLya - zSysCC) / (zSysCC + 1.0) ) * cc
+
+            besttemp_zmax.append(zSysCC)
+            v_offsetCC.append(v_off)
+            v_offsetAH.append(CCdic[spec]['vshift'])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_CCnormmax_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(cn_arrmax,color="r",bins=np.arange(-1,1,0.05),histtype="step",lw=1,label=r'')
+
+    plt.xlabel(' Maximum value of normalized cross-correlation for '+str(Nspecs-NaNcount)+' spectra ('+str(NaNcount)+
+               ' spectra with all-NaN cross correlation solutions)')
+    # plt.ylabel(' S/N ')
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_Fratio_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(besttemp_fratios,color="r",bins=30,histtype="step",lw=1,label=r'')
+
+    if line == 'CIII':
+        plt.xlabel(' Best matched template line flux ratio (CIII1907/CIII1909) ')
+    elif line == 'CIV':
+        plt.xlabel(' Best matched template line flux ratio (CIV1548/CIV1551) ')
+    # plt.ylabel(' S/N ')
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_linesigma_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(besttemp_sigmas,color="r",bins=30,histtype="step",lw=1,label=r'')
+
+    plt.xlabel(' Best matched template line width (Gauss sigma) of '+line+' components [A]')
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_voffset_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(v_offsetCC,color="r",bins=np.arange(-1000,1000,10.0),histtype="step",lw=1,label=r'Cross-Corr. prediction')
+    hist = plt.hist(v_offsetAH,color="k",bins=np.arange(-1000,1000,10.0),histtype="step",lw=1,label=r'Verhamme prediction')
+
+    plt.xlabel(' Velocity shift [km/s] ')
+
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
