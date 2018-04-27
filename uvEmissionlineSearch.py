@@ -2677,12 +2677,16 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
         if verbose: print(' - Wrote output spectrum to '+mockspec)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,generateplots=False,verbose=True):
+def match_MUSEWideLAEs(zrange=[1.516,3.874],datestr='dateofrun',line='CIII',wave_restframe=1908.0,generateplots=False,
+                       specificobj=None,verbose=True):
     """
     Wrapper around match_templates2specs()
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
+
+    #list of IDs of test objects
+    specificobj = [214002011,123048186,115003085]
 
     picklefileCIII = uves.match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,generateplots=False)
     picklefileCIV  = uves.match_MUSEWideLAEs(zrange=[2.100,4.996],line='CIV',wave_restframe=1559.0,generateplots=False)
@@ -2705,9 +2709,6 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,ge
     objzs     = []
     vshift    = []
 
-    #list of IDs of test objects
-    okayids = [213035139,104014050]#,115003085,214002011,123048186,123501191,121033078] # Known AGN and AGN candidates from TU
-
     for spec in specs_all:
         specid  = int(spec.split('_')[-1].split('-')[0])
         goodent = np.where(id_all == specid)
@@ -2717,8 +2718,9 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,ge
         zobj = z_all[goodent][0]
         if (zobj > zrange[0]) & (zobj < zrange[1]):
 
-            # if specid not in okayids: # skipping objects not in "okayids" list
-            #     continue
+            if specificobj is not None:
+                if specid not in specificobj: # skipping objects not in "specificobj" list
+                    continue
 
             specs.append(spec)
             objzs.append(zobj)
@@ -2726,7 +2728,7 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,ge
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Grabbing templates ')
     tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
-    temps    = glob.glob(tempdir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_6p0_flux*.fits')
+    temps    = glob.glob(tempdir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Getting wavelength range width (obs frame) corresponding to systemic velocity offset from AV15')
@@ -2741,17 +2743,17 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,ge
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
-    picklefile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEWideLAEs_CCresults180325_'+line+'_RENAME_.pkl'
+    picklefile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEWideLAEs_CCresults'+datestr+'_'+line+'_RENAME_.pkl'
     if generateplots:
         plotdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'
     else:
         plotdir    = None
     ccdic      = uves.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
-                                            wavecen_restframe=wave_rest,vshift=vshift)
+                                            wavecen_restframe=wave_rest,vshift=vshift,min_template_level=1e-4)
     return picklefile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],wavecen_restframe=[1908.0],
-                          vshift=None,plotdir=None,verbose=True,ccS2N=False):
+                          vshift=None,min_template_level=1e-4,plotdir=None,verbose=True,ccS2N=False):
     """
     Wrapper around felis cross-correlation template matching.
 
@@ -2816,8 +2818,9 @@ def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],
             #     zCCmaxvec              = np.append(zCCmaxvec,zCCmax)
 
             wave, ccresults, max_S2N, max_z = \
-                felis.cross_correlate_template(spec,temp,z_restframe=3.5,plotresult=plotname,spec_median_sub=True,
-                                               waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]])
+                felis.cross_correlate_template(spec,temp,z_restframe=speczs[ss],plotresult=plotname,spec_median_sub=True,
+                                               waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]],
+                                               min_template_level=min_template_level)
             # ccresults = flux_scale, flux_scale_variance, S2N, chi2_min, NgoodentChi2
             if tt == 0:
                 ccresultsarr_flux      = ccresults[:,0]
