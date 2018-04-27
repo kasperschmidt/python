@@ -2590,9 +2590,9 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
     # - - - - - - - - - - - - - - - - - - CIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1907.0,1909.0]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
-    fluxCIII1   = [2.0,4.0,6.0]
+    fluxCIII1   = [1.0]#2.0,4.0,6.0]
     fluxratios  = [0.5,1.0,2.0]
-    sigmas      = [0.25,0.50,0.75]
+    sigmas      = [0.10,0.25,0.50,0.75]
 
     Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CIII doublet (varying fluxCIII, sigma and flux ratio)')
@@ -2615,9 +2615,9 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
     # - - - - - - - - - - - - - - - - - - CIV doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1548.195,1550.770]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
-    fluxCIV1    = [2.0,4.0,6.0]
+    fluxCIV1    = [1.0]#2.0,4.0,6.0]
     fluxratios  = [0.5,1.0,2.0]
-    sigmas      = [0.25,0.50,0.75]
+    sigmas      = [0.1,0.25,0.50,0.75]
 
     Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CIV doublet (varying fluxCIV, sigma and flux ratio)')
@@ -2647,7 +2647,7 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
     import uvEmissionlineSearch as uves
 
     outdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
-    uves.gen_felismockspec(outfits=outdir+'uves_felis_mock_MUSEspectrum.fits',redshift=3.5,zoomxplot=np.array([1150,1250])*(1+3.5))
+    uves.gen_felismockspec(outfits=outdir+'uves_felis_mock_MUSEspectrum.fits',redshift=3.5,zoomxplot=np.array([1880,1940])*(1+3.5))
 
     """
     if verbose: print(' - Building mockspectra at redshift '+str(redshift)+' using FELIS tools')
@@ -2669,10 +2669,10 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
     lam_obsLYA, lam_offsetLYA, dlamLYA = kbs.velocityoffset2dwave(redshift,voffsetLYA,1216.0,verbose=verbose)
     tcdic['LYA']   = ['GAUSS', lam_offsetLYA, 20.0, 10.0, 100.0, 'Lya1216']
 
-    noisesigmas = [0.05,1.0,3.0]
+    noisesigmas = [0.05,0.5,1.0,3.0]
     for sigma in noisesigmas:
         mockspec = outfits.replace('.fits','_noisesigma'+str(sigma).replace('.','p')+'.fits')
-        noise    = ['GAUSS', 2.0, sigma]
+        noise    = ['GAUSS', 0.0, sigma]
         fbt.build_template([4800,9300,0.25],tcdic,tempfile=mockspec,noise=noise,overwrite=True,zoomxplot=zoomxplot)
         if verbose: print(' - Wrote output spectrum to '+mockspec)
 
@@ -2724,7 +2724,7 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,ge
             objzs.append(zobj)
             vshift.append(vshift_all[goodent][0])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Grabbing tempaltes ')
+    if verbose: print(' - Grabbing templates ')
     tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
     temps    = glob.glob(tempdir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_6p0_flux*.fits')
 
@@ -2751,7 +2751,7 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,ge
     return picklefile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],wavecen_restframe=[1908.0],
-                          vshift=None,plotdir=None,verbose=True):
+                          vshift=None,plotdir=None,verbose=True,ccS2N=False):
     """
     Wrapper around felis cross-correlation template matching.
 
@@ -2781,6 +2781,13 @@ def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],
                       str(len(templates))+' templates')
     startstring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     if verbose: print('   '+startstring+'\n')
+
+    if len(spectra) == 0:
+        sys.exit(' No spectra provided')
+
+    if len(templates) == 0:
+        sys.exit(' No templates provided')
+
     for ss, spec in enumerate(spectra):
         # Nwave = pyfits.open(spec)[1].header['NAXIS2']
         spec_namebase = spec.split('/')[-1].split('.fit')[0]
@@ -2792,23 +2799,45 @@ def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],
                 plotname = plotdir
 
             wavecenter        = wavecen_restframe[ss]  * (1.0 + speczs[ss])
-            wave, ccresults, ccresults_norm, zCCmax = \
-                felis.cross_correlate(spec,temp,z_restframe=speczs[ss],plotresult=plotname,
-                                      waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]])
+            # wave, ccresults_flux, ccresults_variance, ccresults_norm, zCCmax = \
+            #     felis.cross_correlate(spec,temp,z_restframe=speczs[ss],plotresult=plotname,ccS2N=ccS2N,
+            #                           waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]])
+            # if tt == 0:
+            #     ccresultsarr_flux      = ccresults_flux
+            #     ccresultsarr_variance  = ccresults_variance
+            #     ccnormarr              = ccresults_norm
+            #     templatevec            = temp
+            #     zCCmaxvec              = zCCmax
+            # else:
+            #     ccresultsarr_flux      = np.vstack((ccresultsarr_flux,ccresults_flux))
+            #     ccresultsarr_variance  = np.vstack((ccresultsarr_variance,ccresults_variance))
+            #     ccnormarr              = np.vstack((ccnormarr,ccresults_norm))
+            #     templatevec            = np.append(templatevec,temp)
+            #     zCCmaxvec              = np.append(zCCmaxvec,zCCmax)
 
+            wave, ccresults, max_S2N, max_z = \
+                felis.cross_correlate_template(spec,temp,z_restframe=3.5,plotresult=plotname,spec_median_sub=True,
+                                               waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]])
+            # ccresults = flux_scale, flux_scale_variance, S2N, chi2_min, NgoodentChi2
             if tt == 0:
-                ccresultsarr  = ccresults
-                ccnormarr     = ccresults_norm
-                templatevec   = temp
-                zCCmaxvec     = zCCmax
+                ccresultsarr_flux      = ccresults[:,0]
+                ccresultsarr_variance  = ccresults[:,1]
+                ccresultsarr_S2N       = ccresults[:,2]
+                ccnormarr              = 0
+                templatevec            = temp
+                zCCmaxvec              = max_z
             else:
-                ccresultsarr  = np.vstack((ccresultsarr,ccresults))
-                ccnormarr     = np.vstack((ccnormarr,ccresults_norm))
-                templatevec   = np.append(templatevec,temp)
-                zCCmaxvec     = np.append(zCCmaxvec,zCCmax)
+                ccresultsarr_flux      = np.vstack((ccresultsarr_flux,ccresults[:,0]))
+                ccresultsarr_variance  = np.vstack((ccresultsarr_variance,ccresults[:,1]))
+                ccresultsarr_S2N       = np.vstack((ccresultsarr_S2N,ccresults[:,2]))
+                ccnormarr              = np.vstack((ccnormarr,0))
+                templatevec            = np.append(templatevec,temp)
+                zCCmaxvec              = np.append(zCCmaxvec,max_z)
 
         ccresultdic[spec]  = {'wavelengths':wave, 'templatevec':templatevec, 'zLya':speczs[ss],
-                              'zCCmaxvec':zCCmaxvec, 'ccresultsarray':ccresultsarr, 'ccnormarray':ccnormarr}
+                              'zCCmaxvec':zCCmaxvec, 'ccresultsarray_flux':ccresultsarr_flux,
+                              'ccresultsarray_variance':ccresultsarr_variance,
+                              'ccresultsarr_S2N':ccresultsarr_S2N,'ccnormarray':ccnormarr}
         if vshift is not None:
             ccresultdic[spec]['vshift'] = vshift[ss]
 
