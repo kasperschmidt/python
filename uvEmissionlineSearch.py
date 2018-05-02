@@ -2821,25 +2821,30 @@ def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],
                 felis.cross_correlate_template(spec,temp,z_restframe=speczs[ss],plotresult=plotname,spec_median_sub=True,
                                                waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]],
                                                min_template_level=min_template_level)
+
             # ccresults = flux_scale, flux_scale_variance, S2N, chi2_min, NgoodentChi2
             if tt == 0:
-                ccresultsarr_flux      = ccresults[:,0]
+                ccresultsarr_flux      = np.array(ccresults[:,0])
                 ccresultsarr_variance  = ccresults[:,1]
                 ccresultsarr_S2N       = ccresults[:,2]
-                ccnormarr              = 0
-                templatevec            = temp
-                zCCmaxvec              = max_z
+                ccnormarr              = np.array([0])
+                templatevec            = np.array([temp])
+                S2NCCmaxvec            = np.array([max_S2N])
+                zCCmaxvec              = np.array([max_z])
+                #print('-------------------------->'+str(np.max(ccresultsarr_S2N))+'  '+str(max_S2N))
             else:
                 ccresultsarr_flux      = np.vstack((ccresultsarr_flux,ccresults[:,0]))
                 ccresultsarr_variance  = np.vstack((ccresultsarr_variance,ccresults[:,1]))
                 ccresultsarr_S2N       = np.vstack((ccresultsarr_S2N,ccresults[:,2]))
                 ccnormarr              = np.vstack((ccnormarr,0))
                 templatevec            = np.append(templatevec,temp)
+                S2NCCmaxvec            = np.append(S2NCCmaxvec,max_S2N)
                 zCCmaxvec              = np.append(zCCmaxvec,max_z)
+                #print('-------------------------->'+str(np.max(ccresultsarr_S2N[tt,:]))+'  '+str(S2NCCmaxvec[tt]))
 
         ccresultdic[spec]  = {'wavelengths':wave, 'templatevec':templatevec, 'zLya':speczs[ss],
                               'zCCmaxvec':zCCmaxvec, 'ccresultsarray_flux':ccresultsarr_flux,
-                              'ccresultsarray_variance':ccresultsarr_variance,
+                              'ccresultsarray_variance':ccresultsarr_variance,'S2NCCmaxvec':S2NCCmaxvec,
                               'ccresultsarr_S2N':ccresultsarr_S2N,'ccnormarray':ccnormarr}
         if vshift is not None:
             ccresultdic[spec]['vshift'] = vshift[ss]
@@ -2863,7 +2868,7 @@ def load_picklefile(picklefile):
     with open(picklefile, 'rb') as f:
         return pickle.load(f)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,
+def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
                           plotdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'):
     """
     Producing analytic plots based on a pickled output from match_templates2specs()
@@ -3037,6 +3042,212 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,
 
     leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
     leg.get_frame().set_alpha(0.7)
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only consider CC detections with S/N>S2Ncut
+                          plotdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'):
+    """
+    Producing analytic plots based on a pickled output from match_templates2specs()
+
+    --- EXAMPLE OF USE ---
+    uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIII_9templaterun.pkl',line='CIII')
+    uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIV_9templaterun.pkl',line='CIV')
+
+    """
+    CCdic   = uves.load_picklefile(picklefile)
+
+    Nspecs  = len(CCdic.keys())
+    if verbose: print(' - Loaded pickle file and found cross-correlation results for '+str(Nspecs)+' spectra')
+
+    spec_vec         = []
+    max_S2N_vec      = []
+    flux_vec         = []
+    variance_vec     = []
+    besttemp_fratios = []
+    besttemp_sigmas  = []
+    besttemp_zmax    = []
+    v_offsetCC       = []
+    v_offsetAH       = []
+
+    for ss, spec in enumerate(CCdic.keys()):
+        maxS2N   = np.max(CCdic[spec]['S2NCCmaxvec'])
+
+        if maxS2N > S2Ncut:
+            best_ent = np.where(CCdic[spec]['S2NCCmaxvec'] == maxS2N)[0]
+            if len(best_ent) > 1:
+                print('------> WARNING: More than one pixel with maximum S/N = '+str(maxS2N)+' -> choosing "first" template')
+                best_ent = best_ent[0]
+            besttemp = CCdic[spec]['templatevec'][best_ent][0]
+
+            cc_best_S2N      = CCdic[spec]['ccresultsarr_S2N'][best_ent][0]
+            cc_best_flux     = CCdic[spec]['ccresultsarray_flux'][best_ent][0]
+            cc_best_variance = CCdic[spec]['ccresultsarray_variance'][best_ent][0]
+
+            SNmax_ent        = np.where(cc_best_S2N == maxS2N)[0]
+
+            if len(SNmax_ent) == 0:
+                print('------> WARNING: No match to S/N in S/N vector. skipping data for key:')
+                print('       '+spec)
+            else:
+                best_flux        = cc_best_flux[SNmax_ent]
+                best_variance    = cc_best_variance[SNmax_ent]
+
+                besttempt_hdr = pyfits.open(besttemp)[1].header
+                besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
+                besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
+
+                zSysCC  = CCdic[spec]['zCCmaxvec'][best_ent]
+                zLya    = CCdic[spec]['zLya']
+                cc      = 299792.458 # km/s
+                v_off   = ( (zLya - zSysCC) / (zSysCC + 1.0) ) * cc
+
+                spec_vec.append(spec)
+                max_S2N_vec.append(maxS2N)
+                flux_vec.append(best_flux[0])
+                variance_vec.append(best_variance[0])
+                besttemp_zmax.append(zSysCC[0])
+                v_offsetCC.append(v_off[0])
+                v_offsetAH.append(CCdic[spec]['vshift'])
+
+    if len(max_S2N_vec) == 0:
+        sys.exit(' No detections passing the S/N cut of '+str(S2Ncut))
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_Fratio_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(besttemp_fratios,color="r",bins=30,histtype="step",lw=1,label=r'')
+
+    if line == 'CIII':
+        lineratiostring = '(CIII1907/CIII1909)'
+    elif line == 'CIV':
+        lineratiostring = '(CIV1548/CIV1551)'
+    plt.xlabel(' Template line flux ratio '+lineratiostring)
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_linesigma_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(besttemp_sigmas,color="r",bins=30,histtype="step",lw=1,label=r'')
+
+    plt.xlabel(' Template line width (Gauss sigma) of '+line+' components [A]')
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_voffset_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(v_offsetCC,color="r",bins=np.arange(-1000,1000,10.0),histtype="step",lw=1,label=r'Cross-Corr. prediction')
+    hist = plt.hist(v_offsetAH,color="k",bins=np.arange(-1000,1000,10.0),histtype="step",lw=1,label=r'Verhamme prediction')
+
+    plt.xlabel(' Velocity shift wrt. Ly$\\alpha$ [km/s] ')
+
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_S2Nmax_hist.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    hist = plt.hist(max_S2N_vec,color="r",bins=30,histtype="step",lw=1,label=r'')
+
+    plt.xlabel(' S/N ($>$'+str(S2Ncut)+' only)')
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_FluxmaxVSS2Nmax.pdf')
+    if verbose: print(' - Setting up and generating plot')
+    fig = plt.figure(figsize=(5, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.15, right=0.97, bottom=0.10, top=0.95)
+    Fsize    = 12
+    lthick   = 2
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    yerrbar = np.sqrt(variance_vec)
+    plt.errorbar(max_S2N_vec,flux_vec, yerr=yerrbar,fmt='o', markerfacecolor='red', markeredgecolor='black',
+                 ecolor='r', capthick=2)
+
+    plt.xlabel(' S/N ($>$'+str(S2Ncut)+' only)')
+
+    if line == 'CIII':
+        tempindicator = 'CIII1907 + CIII1909'
+
+    elif line == 'CIV':
+        tempindicator = 'CIV1548 + CIV1551'
+    plt.ylabel(' $F_\\textrm{tot}$/[1e-20cgs] scaling for ('+tempindicator+')')
 
     if verbose: print('   Saving plot to '+plotname)
     plt.savefig(plotname)
