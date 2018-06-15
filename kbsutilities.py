@@ -1425,6 +1425,7 @@ def get_filterinfo():
     """
     filterinfo = collections.OrderedDict()
 
+    filterinfo['bluemuse']        = {'label':'Blue-MUSE',        'waverange':[3700,6000]}
     filterinfo['muse']            = {'label':'MUSE',             'waverange':[4800,9300]}
 
     filterinfo['mosfire']         = {'label':'MOSFIRE',          'waverange':[9000,25000]}
