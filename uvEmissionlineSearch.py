@@ -2748,125 +2748,9 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],datestr='dateofrun',line='CIII',wave
         plotdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'
     else:
         plotdir    = None
-    ccdic      = uves.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
+    ccdic      = felis.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
                                             wavecen_restframe=wave_rest,vshift=vshift,min_template_level=1e-4)
     return picklefile
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def match_templates2specs(templates,spectra,speczs,picklename,wavewindow=[50.0],wavecen_restframe=[1908.0],
-                          vshift=None,min_template_level=1e-4,plotdir=None,verbose=True,ccS2N=False):
-    """
-    Wrapper around felis cross-correlation template matching.
-
-    --- EXAMPLE OF USE ---
-    import uvEmissionlineSearch as uves
-    import glob
-
-    specdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
-    #specs    = glob.glob(specdir+'uves_felis_mock_MUSEspectrum_noisesigma*3p0.fits')
-    specs    = glob.glob(specdir+'uves_felis_mock_MUSEspectrum_noisesigma*.fits')
-    speczs   = [3.5]*len(specs)
-
-    tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
-    #temps    = glob.glob(specdir+'uves_felis_template_CIIIdoublet_sig_0p25_fluxCIII1_4p0_flux*.fits')
-    temps    = glob.glob(specdir+'uves_felis_template_CIIIdoublet_*fits')
-
-    plotdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/plots_CCresults180325/'
-
-    pickle   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/CCresults180325_RENAME_.pkl'
-
-    ccdic    = uves.match_templates2specs(temps,specs,speczs,pickle,wavewindow=[60]*len(specs),plotdir=plotdir,wavecen_restframe=[1908.0]*len(specs))
-
-    """
-    ccresultdic = {}
-
-    if verbose: print(' - Starting cross-correlation of the '+str(len(spectra))+' spectra and '+
-                      str(len(templates))+' templates')
-    startstring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-    if verbose: print('   '+startstring+'\n')
-
-    if len(spectra) == 0:
-        sys.exit(' No spectra provided')
-
-    if len(templates) == 0:
-        sys.exit(' No templates provided')
-
-    for ss, spec in enumerate(spectra):
-        # Nwave = pyfits.open(spec)[1].header['NAXIS2']
-        spec_namebase = spec.split('/')[-1].split('.fit')[0]
-        for tt, temp in enumerate(templates):
-            temp_namebase = temp.split('/')[-1].split('.fit')[0]
-            if plotdir is not None:
-                plotname = plotdir+spec_namebase+'_CCwith_'+temp_namebase+'.pdf'
-            else:
-                plotname = plotdir
-
-            wavecenter        = wavecen_restframe[ss]  * (1.0 + speczs[ss])
-            # wave, ccresults_flux, ccresults_variance, ccresults_norm, zCCmax = \
-            #     felis.cross_correlate(spec,temp,z_restframe=speczs[ss],plotresult=plotname,ccS2N=ccS2N,
-            #                           waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]])
-            # if tt == 0:
-            #     ccresultsarr_flux      = ccresults_flux
-            #     ccresultsarr_variance  = ccresults_variance
-            #     ccnormarr              = ccresults_norm
-            #     templatevec            = temp
-            #     zCCmaxvec              = zCCmax
-            # else:
-            #     ccresultsarr_flux      = np.vstack((ccresultsarr_flux,ccresults_flux))
-            #     ccresultsarr_variance  = np.vstack((ccresultsarr_variance,ccresults_variance))
-            #     ccnormarr              = np.vstack((ccnormarr,ccresults_norm))
-            #     templatevec            = np.append(templatevec,temp)
-            #     zCCmaxvec              = np.append(zCCmaxvec,zCCmax)
-
-            wave, ccresults, max_S2N, max_z = \
-                felis.cross_correlate_template(spec,temp,z_restframe=speczs[ss],plotresult=plotname,spec_median_sub=True,
-                                               waverange=[wavecenter-wavewindow[ss],wavecenter+wavewindow[ss]],
-                                               min_template_level=min_template_level)
-
-            # ccresults = flux_scale, flux_scale_variance, S2N, chi2_min, NgoodentChi2
-            if tt == 0:
-                ccresultsarr_flux      = np.array(ccresults[:,0])
-                ccresultsarr_variance  = ccresults[:,1]
-                ccresultsarr_S2N       = ccresults[:,2]
-                ccnormarr              = np.array([0])
-                templatevec            = np.array([temp])
-                S2NCCmaxvec            = np.array([max_S2N])
-                zCCmaxvec              = np.array([max_z])
-                #print('-------------------------->'+str(np.max(ccresultsarr_S2N))+'  '+str(max_S2N))
-            else:
-                ccresultsarr_flux      = np.vstack((ccresultsarr_flux,ccresults[:,0]))
-                ccresultsarr_variance  = np.vstack((ccresultsarr_variance,ccresults[:,1]))
-                ccresultsarr_S2N       = np.vstack((ccresultsarr_S2N,ccresults[:,2]))
-                ccnormarr              = np.vstack((ccnormarr,0))
-                templatevec            = np.append(templatevec,temp)
-                S2NCCmaxvec            = np.append(S2NCCmaxvec,max_S2N)
-                zCCmaxvec              = np.append(zCCmaxvec,max_z)
-                #print('-------------------------->'+str(np.max(ccresultsarr_S2N[tt,:]))+'  '+str(S2NCCmaxvec[tt]))
-
-        ccresultdic[spec]  = {'wavelengths':wave, 'templatevec':templatevec, 'zLya':speczs[ss],
-                              'zCCmaxvec':zCCmaxvec, 'ccresultsarray_flux':ccresultsarr_flux,
-                              'ccresultsarray_variance':ccresultsarr_variance,'S2NCCmaxvec':S2NCCmaxvec,
-                              'ccresultsarr_S2N':ccresultsarr_S2N,'ccnormarray':ccnormarr}
-        if vshift is not None:
-            ccresultdic[spec]['vshift'] = vshift[ss]
-
-    if verbose: print('\n - Finished cross-correlation of the '+str(len(spectra))+' spectra and '+
-                      str(len(templates))+' templates')
-    if verbose: print('   '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")+'  (started at '+startstring+')')
-
-    if verbose: print(' - Saving dictionary to '+picklename)
-    uves.save_dictionary(ccresultdic,picklename)
-
-    if verbose: print(' - Returning dictioniary with results ')
-    loaddic = uves.load_picklefile(picklename)
-    return  loaddic
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def save_dictionary(dictionary, output='./saveddictionary_RENAME_.pkl'):
-    with open(output, 'wb') as f:
-        pickle.dump(dictionary, f, pickle.HIGHEST_PROTOCOL)
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def load_picklefile(picklefile):
-    with open(picklefile, 'rb') as f:
-        return pickle.load(f)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
                           plotdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'):
@@ -2878,7 +2762,7 @@ def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
     uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIV_9templaterun.pkl',line='CIV')
 
     """
-    CCdic   = uves.load_picklefile(picklefile)
+    CCdic   = felis.load_picklefile(picklefile)
 
     Nspecs  = len(CCdic.keys())
     if verbose: print(' - Loaded pickle file and found cross-correlation results for '+str(Nspecs)+' spectra')
@@ -3094,8 +2978,12 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
                 print('------> WARNING: No match to S/N in S/N vector. skipping data for key:')
                 print('       '+spec)
             else:
-                best_flux        = cc_best_flux[SNmax_ent]
-                best_variance    = cc_best_variance[SNmax_ent]
+                if len(np.atleast_1d(cc_best_flux)) == 1:
+                    print('WARNING: CC flux vector only contains 1 value for '+spec)
+                    continue
+                else:
+                    best_flux        = cc_best_flux[SNmax_ent]
+                    best_variance    = cc_best_variance[SNmax_ent]
 
                 besttempt_hdr = pyfits.open(besttemp)[1].header
                 besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
