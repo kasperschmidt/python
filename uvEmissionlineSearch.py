@@ -2591,8 +2591,8 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
     doubletlam  = [1907.0,1909.0]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
     fluxCIII1   = [1.0]#2.0,4.0,6.0]
-    fluxratios  = [0.5,1.0,2.0]
-    sigmas      = [0.10,0.25,0.50,0.75]
+    fluxratios  = [0.3,0.6,0.9,1.2,1.5,1.8] # 6 flux ratios
+    sigmas      = [0.10,0.30,0.50,0.70,0.90,1.10] # 6 sigmas
 
     Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CIII doublet (varying fluxCIII, sigma and flux ratio)')
@@ -2616,8 +2616,8 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
     doubletlam  = [1548.195,1550.770]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
     fluxCIV1    = [1.0]#2.0,4.0,6.0]
-    fluxratios  = [0.5,1.0,2.0]
-    sigmas      = [0.1,0.25,0.50,0.75]
+    fluxratios  = [0.5,1.0,1.5,2.0,2.5,3.0] # 6 flux ratios
+    sigmas      = [0.10,0.30,0.50,0.70,0.90,1.10] # 6 sigmas
 
     Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CIV doublet (varying fluxCIV, sigma and flux ratio)')
@@ -2677,8 +2677,8 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
         if verbose: print(' - Wrote output spectrum to '+mockspec)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def match_MUSEWideLAEs(zrange=[1.516,3.874],datestr='dateofrun',line='CIII',wave_restframe=1908.0,generateplots=False,
-                       specificobj=None,verbose=True):
+def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
+                       wave_restframe=1908.0,generateplots=False,specificobj=None,verbose=True):
     """
     Wrapper around match_templates2specs()
 
@@ -2688,8 +2688,10 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],datestr='dateofrun',line='CIII',wave
     #list of IDs of test objects
     specificobj = [214002011,123048186,115003085]
 
-    picklefileCIII = uves.match_MUSEWideLAEs(zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,generateplots=False)
-    picklefileCIV  = uves.match_MUSEWideLAEs(zrange=[2.100,4.996],line='CIV',wave_restframe=1559.0,generateplots=False)
+    tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+
+    picklefileCIII = uves.match_MUSEWideLAEs(tempdir,zrange=[1.516,3.874],line='CIII',wave_restframe=1908.0,generateplots=False)
+    picklefileCIV  = uves.match_MUSEWideLAEs(tempdir,zrange=[2.100,4.996],line='CIV',wave_restframe=1549.0,generateplots=False)
 
     ccdicCIII      = uves.load_picklefile(picklefileCIII)
     ccdicCIV       = uves.load_picklefile(picklefileCIV)
@@ -2727,8 +2729,7 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],datestr='dateofrun',line='CIII',wave
             vshift.append(vshift_all[goodent][0])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Grabbing templates ')
-    tempdir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
-    temps    = glob.glob(tempdir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
+    temps    = glob.glob(templatedir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Getting wavelength range width (obs frame) corresponding to systemic velocity offset from AV15')
@@ -2745,9 +2746,11 @@ def match_MUSEWideLAEs(zrange=[1.516,3.874],datestr='dateofrun',line='CIII',wave
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
     picklefile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEWideLAEs_CCresults'+datestr+'_'+line+'_RENAME_.pkl'
     if generateplots:
-        plotdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'
+        plotdir            = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'
+        plot_allCCresults  = True
     else:
-        plotdir    = None
+        plotdir            = None
+        plot_allCCresults  = False
     ccdic      = felis.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
                                             wavecen_restframe=wave_rest,vshift=vshift,min_template_level=1e-4)
     return picklefile
@@ -2943,7 +2946,7 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
     uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIV_9templaterun.pkl',line='CIV')
 
     """
-    CCdic   = uves.load_picklefile(picklefile)
+    CCdic   = felis.load_picklefile(picklefile)
 
     Nspecs  = len(CCdic.keys())
     if verbose: print(' - Loaded pickle file and found cross-correlation results for '+str(Nspecs)+' spectra')
