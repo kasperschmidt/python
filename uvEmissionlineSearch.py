@@ -2678,9 +2678,10 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
-                       wave_restframe=1908.0,generateplots=False,specificobj=None,verbose=True):
+                       wave_restframe=1908.0,generateplots=False,specificobj=None,
+                       lamwidth_restframe='dvoffset',verbose=True):
     """
-    Wrapper around match_templates2specs()
+    Wrapper around felis.match_templates2specs()
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
@@ -2732,15 +2733,24 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
     temps    = glob.glob(templatedir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Getting wavelength range width (obs frame) corresponding to systemic velocity offset from AV15')
-    lamwidth  = []
-    wave_rest = [wave_restframe]*len(specs)
-    for ss, spec in enumerate(specs):
-        lam_obs, lam_offset, dlam = kbs.velocityoffset2dwave(objzs[ss],vshift[ss],wave_rest[ss])
-        if dlam > 2.0:
-            lamwidth.append(dlam*5.0)
-        else:
-            lamwidth.append(60.0)
+    if lamwidth_restframe == 'dvoffset':
+        if verbose: print(' - Getting wavelength range width (obs frame) corresponding to systemic velocity offset from AV15')
+        lamwidth  = []
+        wave_rest = [wave_restframe]*len(specs)
+        for ss, spec in enumerate(specs):
+            lam_obs, lam_offset, dlam = kbs.velocityoffset2dwave(objzs[ss],vshift[ss],wave_rest[ss])
+            if dlam > 2.0:
+                lamwidth.append(dlam*5.0)
+            else:
+                lamwidth.append(60.0)
+    else:
+        if verbose: print(' - Convert fixed rest-frame wavelength width to obs frame widths')
+        lamwidth           = []
+        wave_rest = [wave_restframe]*len(specs)
+        for ss, spec in enumerate(specs):
+            waveobs_low  = (wave_rest[ss]-lamwidth_restframe) * (1.0 + objzs[ss-1])
+            waveobs_high = (wave_rest[ss]+lamwidth_restframe) * (1.0 + objzs[ss-1])
+            lamwidth.append( (waveobs_high - waveobs_low) / 2. )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
