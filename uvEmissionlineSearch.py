@@ -2679,7 +2679,7 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
-                       lamwidth_restframe='dvoffset',verbose=True):
+                       lamwidth_restframe='dvoffset',runonallspecs=False,verbose=True):
     """
     Wrapper around felis.match_templates2specs()
 
@@ -2702,7 +2702,13 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Grabbing TDOSE spectra and loading object info ')
     specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/Modelimg/tdose_spectra/'
-    specs_all  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
+    if runonallspecs:
+        specs_all  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
+    else:
+        specs_all  = [specdir+'tdose_spectrum_candels-cdfs-04_modelimg_0104014050-0104014050.fits',
+                      specdir+'tdose_spectrum_candels-cdfs-15_modelimg_0115003085-0115003085.fits',
+                      specdir+'tdose_spectrum_candels-cdfs-06_modelimg_0106004019-0106004019.fits',
+                      specdir+'tdose_spectrum_candels-cdfs-25_modelimg_0125042115-0125042115.fits']
 
     z_all      = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['redshift']
     id_all     = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
@@ -2762,7 +2768,8 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
         plotdir            = None
         plot_allCCresults  = False
     ccdic      = felis.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
-                                            wavecen_restframe=wave_rest,vshift=vshift,min_template_level=1e-4)
+                                             wavecen_restframe=wave_rest,vshift=vshift,min_template_level=1e-4,
+                                             plot_allCCresults=plot_allCCresults)
     return picklefile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
