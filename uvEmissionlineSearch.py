@@ -2679,7 +2679,7 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
-                       lamwidth_restframe='dvoffset',runonallspecs=False,verbose=True):
+                       lamwidth_restframe='dvoffset',runonallspecs=False,subtract_spec_median=True,verbose=True):
     """
     Wrapper around felis.match_templates2specs()
 
@@ -2769,7 +2769,7 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
         plot_allCCresults  = False
     ccdic      = felis.match_templates2specs(temps,specs,objzs,picklefile,wavewindow=lamwidth,plotdir=plotdir,
                                              wavecen_restframe=wave_rest,vshift=vshift,min_template_level=1e-4,
-                                             plot_allCCresults=plot_allCCresults)
+                                             plot_allCCresults=plot_allCCresults,subtract_spec_median=subtract_spec_median)
     return picklefile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
