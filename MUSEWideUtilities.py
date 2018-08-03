@@ -1,7 +1,7 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #                           Utilities for MUSE-Wide related stuff
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-#import pyfits     KBS180118 -> import astropy.io.fits as pyfits
+#import pyfits     # KBS180118 -> import astropy.io.fits as pyfits
 import astropy.io.fits as pyfits
 import numpy as np
 import MUSEWideUtilities as mwu
@@ -384,7 +384,7 @@ def gen_PSFasciiselectiontemplate(outname='./PSFselectionAsciiTemplate_RENAME_.t
 
     --- EXAMPLE OF USE ---
     import MUSEWideUtilities as mwu
-    campaigns = ['E24','E36','E40','E100']
+    campaigns = ['E24','E36','E40']
     for campaign in campaigns:
         output    = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/PSFselectionAsciiTemplate_'+campaign+'_TEMPLATE.txt'
         mwu.gen_PSFasciiselectiontemplate(outname=output,campaign=campaign,clobber=True)
@@ -460,6 +460,7 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
     mwu.gen_masterPSFcat(fitscatalogs,outcatname,psfselections=psfselections,clobber=False)
 
     """
+    import pyfits
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Gettting list of MUSE-Wide fields to look for')
     MWfields = mwu.E24fields() + mwu.E36fields() + mwu.E40fields()
@@ -470,7 +471,8 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
                'p0_comb_m', 'p1_comb_m', 'beta_comb', 'p0_comb_g', 'p1_comb_g',
                'p0_PM_m', 'p1_PM_m', 'beta_PM', 'p0_PM_g', 'p1_PM_g',
                'p0_S_g', 'p1_S_g',
-               'psf_sel','p0_sel_m','p1_sel_m','beta_sel','p0_sel_g','p1_sel_g']
+               'psf_sel_m','p0_sel_m','p1_sel_m','beta_sel',
+               'psf_sel_g','p0_sel_g','p1_sel_g']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     psfseldatadic = {}
@@ -504,6 +506,7 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
                     fieldentry[oo] = val
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                # Filling entries for Gauss PSF selection
                 if psfselections is not None:
                     for psfselfile in psfselections:
                         data_psfsel = psfseldatadic[psfselfile]
@@ -526,26 +529,48 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
                                     elif selcol == 'PSF_Sextractor':
                                         selstring = 'S'
 
-                                    fieldentry[-6] = selstring
-                                    try:
-                                        fieldentry[-5] = data['p0_'+selstring+'_m'][ff]# 'p0_sel_m'
-                                        fieldentry[-4] = data['p1_'+selstring+'_m'][ff]# 'p1_sel_m'
-                                        fieldentry[-3] = data['beta_'+selstring+''][ff]# 'beta_sel'
-                                    except:
-                                        fieldentry[-5] = -99# 'p0_sel_m'
-                                        fieldentry[-4] = -99# 'p1_sel_m'
-                                        fieldentry[-3] = -99# 'beta_sel'
+                                    fieldentry[-3] = selstring
                                     fieldentry[-2] = data['p0_'+selstring+'_g'][ff]# 'p0_sel_g'
                                     fieldentry[-1] = data['p1_'+selstring+'_g'][ff]# 'p1_sel_g'
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                # Filling entries for Moffat PSF selection
+                if ('psf_all_Converted_cleaned.fits' in cat) & ('cosmos' not in fieldentry[0]):
+                    if fieldentry[17] != 0: # Checking if PampelMUSE
+                        fieldentry[-7] = 'PM'
+                        fieldentry[-6] = data['p0_PM_m'][ff]# 'p0_sel_m'
+                        fieldentry[-5] = data['p1_PM_m'][ff]# 'p1_sel_m'
+                        fieldentry[-4] = data['beta_PM'][ff]# 'beta_sel'
+                    else:
+                        fieldentry[-7] = 'FFT'
+                        fieldentry[-6] = data['p0_FFT_m'][ff]# 'p0_sel_m'
+                        fieldentry[-5] = data['p1_FFT_m'][ff]# 'p1_sel_m'
+                        fieldentry[-4] = data['beta_FFT'][ff]# 'beta_sel'
+
+                elif 'psf_E40_final.fits' in cat:
+                    #if fieldentry[17] != 0: # Checking if PampelMUSE
+                    fieldentry[-7] = 'TBD'
+                    fieldentry[-6] = -99
+                    fieldentry[-5] = -99
+                    fieldentry[-4] = -99
+                else:
+                    #print(' - No PampelMUSE fits to check for in catalog '+cat)
+                    fieldentry[-7] = 'TBD'
+                    fieldentry[-6] = -99
+                    fieldentry[-5] = -99
+                    fieldentry[-4] = -99
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 if fieldname == 'cdfs-28':
-                    fieldentry[-6] = 'MeanSlopeAndAGfix'
-                    fieldentry[-5] = -99# 'p0_sel_m'
-                    fieldentry[-4] = -99# 'p1_sel_m'
-                    fieldentry[-3] = -99# 'beta_sel'
+                    fieldentry[-3] = 'MeanSlopeAndAGfix'
                     fieldentry[-2] = 0.963# 'p0_sel_g'
                     fieldentry[-1] = -4.4394e-05# 'p1_sel_g'
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                if fieldname == 'cdfs-37':
+                    fieldentry[-7] = 'FFTS'# 'psf_sel_m'
+                    fieldentry[-6] = data['p0_FFTS_m'][ff]# 'p0_sel_m'
+                    fieldentry[-5] = data['p1_FFTS_m'][ff]# 'p1_sel_m'
+                    fieldentry[-4] = data['beta_FFTS'][ff]# 'beta_sel'
+
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 for vv, val in enumerate(fieldentry):
                     if val == 0.0:
@@ -559,7 +584,7 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             else:
-                print ' WARNING The field '+fieldname+' from '+cat+' is not in the MUSE-Wide field list! '
+                print(' WARNING The field '+fieldname+' from '+cat+' is not in the MUSE-Wide field list! ')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Check for duplicate entries in catalog')
@@ -577,7 +602,7 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
     columndic = collections.OrderedDict()
 
     for cc, col in enumerate(columns):
-        if col in ['field','psf_sel']:
+        if col in ['field','psf_sel_g','psf_sel_m']:
             columndic[col]    =  pyfits.Column(name=col, format='A20', unit='', array=masterarray[:,cc].astype(str))
         elif 'beta' in col:
             columndic[col]    =  pyfits.Column(name=col+'_m', format='D', unit='', array=masterarray[:,cc].astype(float))
@@ -595,7 +620,7 @@ def gen_masterPSFcat(fitscatalogs,outcatname,psfselections=None,clobber=False,ve
     tbHDU   = pyfits.new_table(coldefs, header=head)
 
     tbHDU.writeto(outcatname, clobber=clobber)
-    if verbose: print '   Fits table stored in \n   '+outcatname
+    if verbose: print('   Fits table stored in \n   '+outcatname)
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
