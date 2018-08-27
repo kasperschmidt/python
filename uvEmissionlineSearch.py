@@ -2373,7 +2373,9 @@ def copy_singleobjsourcecats(outputdir='/Users/kschmidt/work/MUSE/uvEmissionline
             print cpout
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_overviewdocument(outdir,outfile,clobber=False):
+def gen_overviewdocument(outdir,outfile,clobber=False,
+                         specoverview='/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/overviewplots/idIIII*.pdf',
+                         FoVoverview='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVoverviews/FoVoverview_IIII.png'):
     """
     Generate LaTeX document summarizing objects (using figures and text) to ease inspections
 
@@ -2391,9 +2393,6 @@ def gen_overviewdocument(outdir,outfile,clobber=False):
     decs      = objdata['dec']
     redshifts = objdata['redshift']
     pointings = objdata['pointing']
-
-    specoverview = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/overviewplots/idIIII*.pdf'
-    FoVoverview  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVoverviews/FoVoverview_IIII.png'
 
     # - - - - - Generate main document - - - - -
     if os.path.isfile(outdir+outfile) & (clobber==False):
