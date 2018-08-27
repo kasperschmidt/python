@@ -1456,9 +1456,15 @@ def get_filterinfo():
     filterinfo['nirspec_prismclear']   = {'label':'NIRSpec PRISM/CLEAR',     'waverange':[6000,53000]}
 
     # MIRI
-    # x
-    # x
-    # x
+    filterinfo['miri_F560W']   = {'label':'MIRI F560W',     'waverange':[48847,64243]}
+    filterinfo['miri_F770W']   = {'label':'MIRI F770W',     'waverange':[64740,88353]}
+    filterinfo['miri_F1000W']  = {'label':'MIRI F1000W',    'waverange':[87628,111018]}
+    filterinfo['miri_F1130W']  = {'label':'MIRI F1130W',    'waverange':[106390,119837]}
+    filterinfo['miri_F1280W']  = {'label':'MIRI F1280W',    'waverange':[112516,143369]}
+    filterinfo['miri_F1500W']  = {'label':'MIRI F1500W',    'waverange':[131189,171411]}
+    filterinfo['miri_F1800W']  = {'label':'MIRI F1800W',    'waverange':[160279,202851]}
+    filterinfo['miri_F2100W']  = {'label':'MIRI F2100W',    'waverange':[178759,244051]}
+    filterinfo['miri_F2550W']  = {'label':'MIRI F2550W',    'waverange':[223391,299940]}
 
     # MIRI LRS https://jwst-docs.stsci.edu/display/JTI/MIRI+Low-Resolution+Spectroscopy
     filterinfo['miri_lrs']   = {'label':'MIRI LRS',     'waverange':[50000,120000]}
