@@ -2701,7 +2701,8 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Grabbing TDOSE spectra and loading object info ')
-    specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/Modelimg/tdose_spectra/'
+    #specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/Modelimg/tdose_spectra/'
+    specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/180822_TDOSEextraction/Modelimg/tdose_spectra/'
     if runonallspecs:
         specs_all  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
     else:
@@ -3161,5 +3162,52 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def check_neighbors(ids=[214063213],
+                    sourcecatdir='/Volumes/DATABCKUP1/TDOSEextractions/180822_TDOSEextraction_LAEs60fields/tdose_sourcecats/',
+                    modeldir='/Volumes/DATABCKUP1/TDOSEextractions/MW_LAEs_JKgalfitmodels/'):
+    """
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.check_neighbors()
+
+    """
+
+    for id in ids:
+
+        if str(id).startswith('2'):
+            field = 'cosmos'
+        else:
+            field = 'cdfs'
+
+        fieldno = str(id)[1:3]
+
+        sc_generated = sourcecatdir+'tdose_sourcecat_LAEs_candels-'+field+'-'+str(fieldno)+'_id'+\
+                       str(id)+'_cutout2p0x2p0arcsec.fits'
+        sc_JKmodel   = modeldir+'model_acs_814w_candels-'+field+'-'+str(fieldno)+'_cut_v1.0_id'+\
+                       str(id)+'_cutout2p0x2p0arcsec_sourcecatalog.fits'
+
+        sc_gen = pyfits.open(sc_generated)[1].data
+        sc_mod = pyfits.open(sc_JKmodel)[1].data
+
+        print(' - - - - - - - - - - '+str(id)+' - - - - - - - - - - - ')
+        print(" - SOURCE CATALOG GENERATED FROM CROSSMATCH TO MASTER SOURCE CAT")
+        print('   '+str(sc_gen['PARENT_ID']))
+        print('   '+str(sc_gen['ID']))
+        print(" - SOURCE CATALOG CONTENT BASED ON JOSIE'S MODEL")
+        print('   '+str(sc_mod['PARENT_ID']))
+        print('   '+str(sc_mod['ID']))
+        print(' ')
+        try:
+            print('   diff(PARENT_ID): '+str(sc_gen['PARENT_ID']-sc_mod['PARENT_ID']))
+        except:
+            print('   WARNING: mismatch in PARENT_ID source cats')
+        try:
+            print('   diff(ID): '+str(sc_gen['ID']-sc_mod['ID']))
+        except:
+            print('   WARNING: mismatch in ID source cats')
+        print(' ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
