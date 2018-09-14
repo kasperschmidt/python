@@ -2711,7 +2711,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
         tcdic = {}
         tcdic['HEII']                  = ['GAUSS', linelam, sig, 0.0, 1.0, 'HeII1640A']
 
-        valstring = '_HeII'+\
+        valstring = '_HEII'+\
                     '_sig_'+str(sig).replace('.','p')
 
         if addLSF:
@@ -3098,8 +3098,11 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
                     best_variance    = cc_best_variance[SNmax_ent]
 
                 besttempt_hdr = pyfits.open(besttemp)[1].header
-                besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
-                besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
+                if 'fluxratio' in besttemp:
+                    besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
+                    besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
+                else:
+                    besttemp_sigmas.append(besttempt_hdr['F'+line+'_2'])
 
                 zSysCC  = CCdic[spec]['zCCmaxvec'][best_ent]
                 zLya    = CCdic[spec][zkey]
@@ -3118,33 +3121,38 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
         sys.exit(' No detections passing the S/N cut of '+str(S2Ncut))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_Fratio_hist.pdf')
-    if verbose: print(' - Setting up and generating plot')
-    fig = plt.figure(figsize=(5, 5))
-    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
-    Fsize    = 12
-    lthick   = 2
-    marksize = 4
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif',size=Fsize)
-    plt.rc('xtick', labelsize=Fsize)
-    plt.rc('ytick', labelsize=Fsize)
-    plt.clf()
-    plt.ioff()
+    if 'fluxratio' in besttemp:
+        plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_Fratio_hist.pdf')
+        if verbose: print(' - Setting up and generating plot')
+        fig = plt.figure(figsize=(5, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
+        Fsize    = 12
+        lthick   = 2
+        marksize = 4
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
 
-    hist = plt.hist(besttemp_fratios,color="r",bins=30,histtype="step",lw=1,label=r'')
+        hist = plt.hist(besttemp_fratios,color="r",bins=30,histtype="step",lw=1,label=r'')
 
-    if line == 'CIII':
-        lineratiostring = '(CIII1907/CIII1909)'
-    elif line == 'CIV':
-        lineratiostring = '(CIV1548/CIV1551)'
-    plt.xlabel(' Template line flux ratio '+lineratiostring)
+        if line == 'CIII':
+            lineratiostring = '(CIII1907/CIII1909)'
+        elif line == 'CIV':
+            lineratiostring = '(CIV1548/CIV1551)'
+        elif line == 'OIII':
+            lineratiostring = '(OIII1661/OIII1666)'
+        elif line == 'NV':
+            lineratiostring = '(NV1239/NV1243)'
 
-    if verbose: print('   Saving plot to '+plotname)
-    plt.savefig(plotname)
-    plt.clf()
-    plt.close('all')
+        plt.xlabel(' Template line flux ratio '+lineratiostring)
 
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = plotdir+picklefile.split('/')[-1].replace('.pkl','_linesigma_hist.pdf')
     if verbose: print(' - Setting up and generating plot')
@@ -3244,9 +3252,15 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
 
     if line == 'CIII':
         tempindicator = 'CIII1907 + CIII1909'
-
     elif line == 'CIV':
         tempindicator = 'CIV1548 + CIV1551'
+    elif line == 'OIII':
+        tempindicator = 'OIII1661 + OIII1666'
+    elif line == 'NV':
+        tempindicator = 'NV1239 + NV1243'
+    elif line == 'HEII':
+        tempindicator = 'HeII1640'
+
     plt.ylabel(' $F_\\textrm{tot}$/[1e-20cgs] scaling for ('+tempindicator+')')
 
     if verbose: print('   Saving plot to '+plotname)
