@@ -2575,7 +2575,7 @@ def gen_singlelinetemplate(outfits='./felis_testing/uves_felis_template_singleli
     tempname = outfits.replace('.fits',valstring+'.fits')
     fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
+def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose=True):
     """
     Wrapper to generate spectral templates for cross-correlation with spectra.
 
@@ -2586,55 +2586,140 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',verbose=True):
     uves.gen_felistemplates(outfits=outdir+'uves_felis_template.fits')
 
     """
+    sigmas = [0.10,0.30,0.50,0.70,0.90,1.10] # "velocity braodening" of lines
+    # - - - - - - - - - - - - - - - - - - LSF setup  - - - - - - - - - - - - - - - - - - -
+    MUSELSFfwhm  = 1.0 #[A]
+    MUSELSFsigma = MUSELSFfwhm/2.354
+    LSFparam     = ['LSF', MUSELSFsigma,  'MUSE GAUSS LSF']
+
     # - - - - - - - - - - - - - - - - - - CIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1907.0,1909.0]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
-    fluxCIII1   = [1.0]#2.0,4.0,6.0]
-    fluxratios  = [0.3,0.6,0.9,1.2,1.5,1.8] # 6 flux ratios
-    sigmas      = [0.10,0.30,0.50,0.70,0.90,1.10] # 6 sigmas
+    fluxCIII1   = 1.0
+    fluxratios  = [0.3,0.6,0.9,1.2,1.5,1.8] # Osterbrock predicts CIII1/CIII2 < 1.6
 
-    Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
-    if verbose: print(' - generating '+str(Ntemps)+' templates for the CIII doublet (varying fluxCIII, sigma and flux ratio)')
+    Ntemps      = len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the CIII doublet (varying sigma and flux ratio)')
 
-    for fCIII1 in fluxCIII1:
-        for fr in fluxratios:
-            fCIII2 = fCIII1 * fr
-            for sig in sigmas:
-                tcdic = {}
-                tcdic['CIII1']                  = ['GAUSS', doubletlam[0], sig, 0.0, fCIII1, 'CIII]1907A']
-                tcdic['CIII2']                  = ['GAUSS', doubletlam[1], sig, 0.0, fCIII2,  'CIII]1909A']
-                valstring = '_CIIIdoublet'+\
-                            '_sig_'+str(sig).replace('.','p')+\
-                            '_fluxCIII1_'+str(fCIII1).replace('.','p')+\
-                            '_fluxratio_'+str(fr).replace('.','p')
+    for fr in fluxratios:
+        fluxCIII2 = fluxCIII1 / fr
+        for sig in sigmas:
+            tcdic = {}
+            tcdic['CIII1']                 = ['GAUSS', doubletlam[0], sig, 0.0, fluxCIII1, 'CIII]1907A']
+            tcdic['CIII2']                 = ['GAUSS', doubletlam[1], sig, 0.0, fluxCIII2,  'CIII]1909A']
 
-                tempname = outfits.replace('.fits',valstring+'.fits')
-                fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            valstring = '_CIIIdoublet'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
 
     # - - - - - - - - - - - - - - - - - - CIV doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1548.195,1550.770]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
-    fluxCIV1    = [1.0]#2.0,4.0,6.0]
-    fluxratios  = [0.5,1.0,1.5,2.0,2.5,3.0] # 6 flux ratios
-    sigmas      = [0.10,0.30,0.50,0.70,0.90,1.10] # 6 sigmas
+    fluxCIV1    = 1.0
+    fluxratios  = [0.5,1.0,1.5,2.0,2.5,3.0] # Feibelman 1983 predicts CIV1/CIV2=2 from theory (Mainali+17 used CIV1/CIV2=1)
 
-    Ntemps      = len(fluxCIII1)*len(fluxratios)*len(sigmas)
-    if verbose: print(' - generating '+str(Ntemps)+' templates for the CIV doublet (varying fluxCIV, sigma and flux ratio)')
+    Ntemps      = len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the CIV doublet (varying sigma and flux ratio)')
 
-    for fCIV1 in fluxCIV1:
-        for fr in fluxratios:
-            fCIV2 = fCIV1 * fr
-            for sig in sigmas:
-                tcdic = {}
-                tcdic['CIV1']                  = ['GAUSS', doubletlam[0], sig, 0.0, fCIV1, 'CIV1548A']
-                tcdic['CIV2']                  = ['GAUSS', doubletlam[1], sig, 0.0, fCIV2,  'CIV1551A']
-                valstring = '_CIVdoublet'+\
-                            '_sig_'+str(sig).replace('.','p')+\
-                            '_fluxCIV1_'+str(fCIV1).replace('.','p')+\
-                            '_fluxratio_'+str(fr).replace('.','p')
+    for fr in fluxratios:
+        fluxCIV2 = fluxCIV1 / fr
+        for sig in sigmas:
+            tcdic = {}
+            tcdic['CIV1']                  = ['GAUSS', doubletlam[0], sig, 0.0, fluxCIV1, 'CIV1548A']
+            tcdic['CIV2']                  = ['GAUSS', doubletlam[1], sig, 0.0, fluxCIV2,  'CIV1551A']
 
-                tempname = outfits.replace('.fits',valstring+'.fits')
-                fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            valstring = '_CIVdoublet'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+    # - - - - - - - - - - - - - - - - - - NV doublet - - - - - - - - - - - - - - - - - -
+    doubletlam  = [1238.821,1242.804]
+    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    fluxNV1     = 1.0
+    fluxratios  = [0.5,1.0,1.5,2.0,2.5,3.0] # Torres-Peimbert, S. & Pena, M. 1984; emissivity ratio of NV1/NV2~2 like CIV
+
+    Ntemps      = len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the NV doublet (varying sigma and flux ratio)')
+
+    for fr in fluxratios:
+        fluxNV2 = fluxNV1 / fr
+        for sig in sigmas:
+            tcdic = {}
+            tcdic['NV1']                   = ['GAUSS', doubletlam[0], sig, 0.0, fluxNV1, 'NV1239A']
+            tcdic['NV2']                   = ['GAUSS', doubletlam[1], sig, 0.0, fluxNV2, 'NV1243A']
+
+            valstring = '_NVdoublet'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+    # - - - - - - - - - - - - - - - - - - OIII doublet - - - - - - - - - - - - - - - - - -
+    doubletlam  = [1660.809,1666.150]
+    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    fluxOIII1   = 1.0
+    fluxratios  = [0.1,0.3,0.5,0.7,0.9,1.1] # Morton1991tab2 OIII1/OIII2~0.5 (can be lower and higher but 1666 strongest, see eg. Mainali+17, Vanzella+16, )
+
+    Ntemps      = len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the NV doublet (varying sigma and flux ratio)')
+
+    for fr in fluxratios:
+        fluxOIII2 = fluxOIII1 / fr
+        for sig in sigmas:
+            tcdic = {}
+            tcdic['OIII1']  = ['GAUSS', doubletlam[0], sig, 0.0, fluxOIII1, 'OIII1661A']
+            tcdic['OIII2']  = ['GAUSS', doubletlam[1], sig, 0.0, fluxOIII2, 'OIII1666A']
+
+            valstring = '_OIIIdoublet'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+    # - - - - - - - - - - - - - - - - - - HeII gauss - - - - - - - - - - - - - - - - - -
+    linelam     = 1640.420
+    rangeDlam   = [linelam-10.0,linelam+10.0,0.1]
+
+    Ntemps      = len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the HeII line (varying sigma)')
+
+    for sig in sigmas:
+        tcdic = {}
+        tcdic['HEII']                  = ['GAUSS', linelam, sig, 0.0, 1.0, 'HeII1640A']
+
+        valstring = '_HeII'+\
+                    '_sig_'+str(sig).replace('.','p')
+
+        if addLSF:
+            tcdic['LSF']        = LSFparam
+            valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+        tempname = outfits.replace('.fits',valstring+'.fits')
+        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5,
@@ -2736,7 +2821,8 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
             vshift.append(vshift_all[goodent][0])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Grabbing templates ')
-    temps    = glob.glob(templatedir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
+    #temps    = glob.glob(templatedir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
+    temps    = glob.glob(templatedir+'uves_felis_template_'+line+'*_sig_*.fits')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if lamwidth_restframe == 'dvoffset':
