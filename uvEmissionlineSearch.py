@@ -2701,7 +2701,7 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Grabbing TDOSE spectra and loading object info ')
     #specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/171201_TDOSEextraction/Modelimg/tdose_spectra/'
-    specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/180822_TDOSEextraction/Modelimg/tdose_spectra/'
+    specdir    = '/Volumes/DATABCKUP1/TDOSEextractions/180824_TDOSEextraction_LAEs60fields/modelimg/tdose_spectra/'
     if runonallspecs:
         specs_all  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
     else:
@@ -2954,7 +2954,8 @@ def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only consider CC detections with S/N>S2Ncut
-                          plotdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/'):
+                          plotdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/MUSEwideLAE_FELISplots/',
+                          zspecISzLya=False):
     """
     Producing analytic plots based on a pickled output from match_templates2specs()
 
@@ -2963,6 +2964,11 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
     uves.plot_FELISmatchOutput('MUSEWideLAEs_CCresults180325_CIV_9templaterun.pkl',line='CIV')
 
     """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # Ensure compatibility with FELIS output dictionaries from before 180912
+    zkey = 'zspec'
+    if zspecISzLya: zkey = 'zLya'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     CCdic   = felis.load_picklefile(picklefile)
 
     Nspecs  = len(CCdic.keys())
@@ -3010,7 +3016,7 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
                 besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
 
                 zSysCC  = CCdic[spec]['zCCmaxvec'][best_ent]
-                zLya    = CCdic[spec]['zLya']
+                zLya    = CCdic[spec][zkey]
                 cc      = 299792.458 # km/s
                 v_off   = ( (zLya - zSysCC) / (zSysCC + 1.0) ) * cc
 
@@ -3209,4 +3215,229 @@ def check_neighbors(ids=[214063213],
             print('   WARNING: mismatch in ID source cats')
         print(' ')
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,100.0], zspecrange=[0.0,10.0],
+                        voffsetrange=[-1500.0,1500.0], onesigmalimit=100.0, plotdir=None, verbose=True):
+    """
+    Function to calculate the flux and line ratios for a selection of objects with FELIS template matches
+    satisfying a set of criteria based on the FELIS output pickle.
+
+    --- INPUT ---
+    outputfile       The ascii file to write results to
+    S2Nmaxrange      Range of S/N template matches to unclude
+    zspecrange       The range of redshifts for objects to include
+    voffsetrange     Estimated velocity offset of line to include
+    onesigmalimit    1 sigma flux limit to use for ratio limits (in units of spectra 10.0)
+    plotdir          Provide path to output directory, to plot selected tempalte matches.
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,100.0], zspecrange=[0.0,10.0], voffsetrange=[-1500.0,1500.0], onesigmalimit=100.0)
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - The estimated line flux ratios will be based on the following FELIS outputs ')
+    picklepath  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    pickleCIII  = picklepath+'MUSEWideLAEs_CCresults180827_CIII_all575specX36templates.pkl'
+    pickleCIV   = picklepath+'MUSEWideLAEs_CCresults180827_CIV_all575specX36templates.pkl'
+    zspecISzLya = True
+    if verbose: print('   '+pickleCIII)
+    if verbose: print('   '+pickleCIV)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Performing selection on FELIS output ')
+
+    goodkeysCIII    = felis.selection_from_picklefile(pickleCIII, S2Nmaxrange=S2Nmaxrange, zspecrange=zspecrange,
+                                                    voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
+    goodkeysCIV     = felis.selection_from_picklefile(pickleCIV, S2Nmaxrange=S2Nmaxrange, zspecrange=zspecrange,
+                                                    voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
+    goodkeysHeII    = []
+
+    loaddicCIII     = felis.load_picklefile(pickleCIII)
+    loaddicCIV      = felis.load_picklefile(pickleCIV)
+    loaddicHeII     = {}
+
+    goodkeys_unique = np.unique(goodkeysCIV+goodkeysCIII)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if os.path.isfile(outputfile):
+        sys.exit('Ouptut file '+outputfile+' already exists')
+
+    if verbose: print(' - Initializing the output file '+outputfile)
+    fout = open(outputfile,'w')
+    fout.write('# Flux and line ratios estimated based on FELIS template match results.\n')
+    fout.write('# \n')
+    fout.write('# Each template match was narrowed down to only contain matches with \n')
+    fout.write('#   - z_spec         :  ['+str(zspecrange[0])+','+str(zspecrange[1])+']\n')
+    fout.write('#   - max(S/N)       :  ['+str(S2Nmaxrange[0])+','+str(S2Nmaxrange[1])+']\n')
+    fout.write('#   - voffset[km/s]  :  ['+str(voffsetrange[0])+','+str(voffsetrange[1])+']\n')
+    fout.write('# \n')
+    fout.write('# The selection was performed on the following pickle files outputted by FELIS \n')
+    fout.write('#   - CIII: '+pickleCIII+'\n')
+    fout.write('#     ('+str(len(goodkeysCIII))+' satisfying the cuts)\n')
+    fout.write('#   - CIV: '+pickleCIV+'\n')
+    fout.write('#     ('+str(len(goodkeysCIV))+' satisfying the cuts)\n')
+    fout.write('# \n')
+    fout.write('# In total '+str(len(goodkeys_unique))+' template matches satisfied the cuts and are included in this file \n')
+    fout.write('# \n')
+    fout.write('# Upper and lower limits are given as negative values with uncertainty of +99 or -99, respectively. \n')
+    fout.write('# For the limits a 1sigma limit of '+str(onesigmalimit)+' was used \n')
+    fout.write('# \n')
+    fout.write('# This file contains the following columns:\n')
+
+    fluxratiodic = collections.OrderedDict()
+    fluxratiodic['f_ciii1908']           = 999
+    fluxratiodic['ferr_ciii1908']        = 999
+    # fluxratiodic['S2N_ciii1908_calc']    = 999
+    fluxratiodic['S2N_ciii1908']         = 999
+    fluxratiodic['sigma_ciii1908']       = 999
+
+    fluxratiodic['f_civ1550']            = 999
+    fluxratiodic['ferr_civ1550']         = 999
+    # fluxratiodic['S2N_civ1550_calc']     = 999
+    fluxratiodic['S2N_civ1550']          = 999
+    fluxratiodic['sigma_civ1550']        = 999
+
+    fluxratiodic['f_heii1640']           = 999
+    fluxratiodic['ferr_heii1640']        = 999
+    # fluxratiodic['S2N_heii1640_calc']    = 999
+    fluxratiodic['S2N_heii1640']         = 999
+    fluxratiodic['sigma_heii1640']       = 999
+
+    fluxratiodic['ciii1907ciii1909']     = 999
+    fluxratiodic['ciii1907ciii1909err']  = 999
+    fluxratiodic['civ1549civ1551']       = 999
+    fluxratiodic['civ1549civ1551err']    = 999
+    fluxratiodic['civ1550ciii1908']      = 999
+    fluxratiodic['civ1550ciii1908err']   = 999
+    fluxratiodic['ciii1908he1640']       = 999
+    fluxratiodic['ciii1908he1640err']    = 999
+    fluxratiodic['civ1550he1640']        = 999
+    fluxratiodic['civ1550he1640err']     = 999
+
+    hdrstr = '# id_musewide '
+    for col in fluxratiodic.keys():
+        hdrstr = hdrstr+col+' '
+    hdrstr = hdrstr+'\n'
+    fout.write(hdrstr)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Calculating line ratios based on FELIS template matches')
+    for goodkey in goodkeys_unique:
+        template_ciii1908, f_ciii1908, ferr_ciii1908, S2Nmax_ciii1908, Ngoodent_ciii1908, chi2_ciii1908 = \
+            felis.getresult4maxS2N(loaddicCIII,goodkey)
+        template_civ1550, f_civ1550, ferr_civ1550, S2Nmax_civ1550, Ngoodent_civ1550, chi2_civ1550 = \
+            felis.getresult4maxS2N(loaddicCIV,goodkey)
+        template_heii1640, f_heii1640, ferr_heii1640, S2Nmax_heii1640, Ngoodent_heii1640, chi2_heii1640 = \
+            felis.getresult4maxS2N(loaddicHeII,'dummy')
+
+        if template_ciii1908 is 'None':
+            f_ciii1908    = -1.0 * onesigmalimit
+            ferr_ciii1908 = +99
+        if template_civ1550 is 'None':
+            f_civ1550     = -1.0 * onesigmalimit
+            ferr_civ1550  = +99
+        if template_heii1640 is 'None':
+            f_heii1640    = -1.0 * onesigmalimit
+            ferr_heii1640 = +99
+
+        fluxratiodic['f_ciii1908']           = f_ciii1908
+        fluxratiodic['ferr_ciii1908']        = ferr_ciii1908
+        # fluxratiodic['S2N_ciii1908_calc']    = f_ciii1908/ferr_ciii1908
+        fluxratiodic['S2N_ciii1908']         = S2Nmax_ciii1908
+
+        fluxratiodic['f_civ1550']            = f_civ1550
+        fluxratiodic['ferr_civ1550']         = ferr_civ1550
+        # fluxratiodic['S2N_civ1550_calc']     = f_civ1550/ferr_civ1550
+        fluxratiodic['S2N_civ1550']          = S2Nmax_civ1550
+
+        fluxratiodic['f_heii1640']           = f_heii1640
+        fluxratiodic['ferr_heii1640']        = ferr_heii1640
+        # fluxratiodic['S2N_heii1640_calc']    = f_heii1640/ferr_heii1640
+        fluxratiodic['S2N_heii1640']         = S2Nmax_heii1640
+
+        if template_ciii1908 is 'None':
+            fluxratiodic['ciii1907ciii1909']     = -99
+            fluxratiodic['ciii1907ciii1909err']  = -99
+            fluxratiodic['sigma_ciii1908']       = -99
+        else:
+            fluxratiodic['ciii1907ciii1909']     = float(template_ciii1908.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
+            fluxratiodic['ciii1907ciii1909err']  = ferr_ciii1908
+            temp_sigma_ciii1908                  = float(template_ciii1908.split('sig_')[-1].split('_flux')[0].replace('p','.'))
+            fluxratiodic['sigma_ciii1908']       = 299792.458 * 2.354 * temp_sigma_ciii1908 / 1908.0
+
+        if template_ciii1908 is 'None':
+            fluxratiodic['civ1549civ1551']       = -99
+            fluxratiodic['civ1549civ1551err']    = -99
+            fluxratiodic['sigma_civ1550']        = -99
+        else:
+            fluxratiodic['civ1549civ1551']       = float(template_civ1550.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
+            fluxratiodic['civ1549civ1551err']    = ferr_civ1550
+            temp_sigma_civ1550                   = float(template_civ1550.split('sig_')[-1].split('_flux')[0].replace('p','.'))
+            fluxratiodic['sigma_civ1550']        = 299792.458 * 2.354 * temp_sigma_civ1550 / 1550.0
+
+        if template_heii1640 is 'None':
+            fluxratiodic['sigma_heii1640']       = -99
+        else:
+            temp_sigma_heii1640                  = float(template_heii1640.split('sig_')[-1].split('_flux')[0].replace('p','.'))
+            fluxratiodic['sigma_heii1640']       = 299792.458 * 2.354 * temp_sigma_heii1640 / 1640.0
+
+        fluxratiodic['civ1550ciii1908'], fluxratiodic['civ1550ciii1908err'] = \
+            uves.set_ratios(template_civ1550,template_ciii1908,f_civ1550,ferr_civ1550,f_ciii1908,ferr_ciii1908)
+
+        fluxratiodic['ciii1908he1640'], fluxratiodic['ciii1908he1640err'] = \
+            uves.set_ratios(template_ciii1908,template_heii1640,f_ciii1908,ferr_ciii1908,f_heii1640,ferr_heii1640)
+
+        fluxratiodic['civ1550he1640'], fluxratiodic['civ1550he1640err'] = \
+            uves.set_ratios(template_civ1550,template_heii1640,f_civ1550,ferr_civ1550,f_heii1640,ferr_heii1640)
+
+        outstr = ' '
+        outstr = outstr+goodkey.split('-')[-1].split('.')[0][1:]+' '
+        for col in fluxratiodic.keys():
+            outstr = outstr+str("%12.2f" % fluxratiodic[col])+' '
+        outstr = outstr+'\n'
+        fout.write(outstr)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Wrote results to '+outputfile)
+    fout.close()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if plotdir is not None:
+        if verbose: print(' - plotobjects=True so plotting selections to the directory:\n    '+plotdir)
+        goodkeys = [goodkeysCIII,goodkeysCIV]
+        picklefiles = [pickleCIII,pickleCIV]
+        lines = ['CIII1908','CIV1549']
+
+        for gg in [0,1]:
+            plotnames = []
+            plotnameinput = []
+            for key in goodkeys[gg]:
+                fname = key.split('/')[-1]
+                plotnameinput.append(key.replace('.fits','_maxS2Ntemplatematch_'+lines[gg]+'.pdf'))
+                plotnames.append(plotdir+fname.replace('.fits','_maxS2Ntemplatematch_'+lines[gg]+'.pdf'))
+
+            felis.plot_picklefilecontent(goodkeys[gg], picklefiles[gg], plotdir=plotdir, plotnames=plotnameinput,
+                                         showspecerr=False, zspecISzLya=zspecISzLya)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def set_ratios(tempnum,tempdenom,numerator,numeratorerr,denominator,denominatorerr):
+    """
+
+    """
+    if (tempnum is 'None') & (tempdenom is 'None' ):
+        ratio      = -99
+        ratioerr   = -99
+    elif (tempnum is not 'None') & (tempdenom is not 'None' ):
+        ratio      = numerator/denominator
+        ratioerr   = np.sqrt(numerator**2+denominatorerr**2)
+    elif (tempnum is 'None') & (tempdenom is not 'None' ):
+        ratio      = numerator/denominator
+        ratioerr   = -99
+    elif (tempnum is not 'None') & (tempdenom is 'None' ):
+        ratio      = numerator/denominator
+        ratioerr   = +99
+    else:
+        print(' Something went wrong in uves.set_ratios() - setting trace to investigate')
+        pdb.set_trace()
+
+    return ratio, ratioerr
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
