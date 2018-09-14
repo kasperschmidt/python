@@ -11,6 +11,7 @@ import tdose_utilities as tu
 from astropy import wcs
 from astropy.coordinates import SkyCoord
 import datetime
+import felis
 import glob
 import pdb
 import collections
@@ -660,4 +661,47 @@ def E40fields():
               'hudf09-1-01', 'hudf09-1-02', 'hudf09-1-03', 'hudf09-1-04',
               'hudf09-2-01', 'hudf09-2-02', 'hudf09-2-03', 'hudf09-2-04']
     return fields
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def match_templates2JosiesStack(spec,outfile, templatedir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_templates/',
+                                verbose=True):
+    """
+    Wrapper around felis.match_templates2specs() to template to the potential lines in Josie's stack of LyC candidates
+
+    --- EXAMPLE OF USE ---
+
+    spec    = '/Users/kschmidt/work/MUSE/KeruttLyCstack/comb_median_all_zcomb_with_cands.fits'
+    outfile = spec.replace('.fits','_tdoseformat.fits')
+
+    import MUSEWideUtilities as mwu
+    mwu.match_templates2JosiesStack(spec,outfile)
+
+
+    """
+
+    JKspec  = pyfits.open(spec)[1].data
+    wave    = JKspec['Wavelength']
+    flux    = JKspec['Spectrum']
+    fluxerr = JKspec['Error']
+
+    print(' - Saving spectrum in the FELIS/TDOSE format: \n   '+outfile)
+    felis.save_spectrum(outfile,wave,flux,fluxerr,headerinfo=None,overwrite=True,verbose=verbose)
+    datestr = '180907'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Grabbing templates from '+templatedir)
+    waverests   = {'CIII':1908.0, 'CIV':1549.0, 'HEII':1640.420}
+
+
+    for line in ['CIII','CIV','HEII']:
+        temps    = glob.glob(templatedir+'uves_felis_template_'+line+'doublet_sig_*_flux'+line+'1_1p0_flux*.fits')
+
+        plotdir  = '/Users/kschmidt/work/MUSE/KeruttLyCstack/'
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
+        picklefile = '/Users/kschmidt/work/MUSE/KeruttLyCstack/CCresults'+datestr+'_'+line+'_RENAME_.pkl'
+
+        ccdic      = felis.match_templates2specs(temps,[outfile],[0.0],picklefile,wavewindow=[15],plotdir=plotdir,
+                                                 wavecen_restframe=[waverests[line]],vshift=[0],min_template_level=1e-4,
+                                                 plot_allCCresults=True,subtract_spec_median=True)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
