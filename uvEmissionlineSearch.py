@@ -3339,9 +3339,13 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - The estimated line flux ratios will be based on the following FELIS outputs ')
     picklepath  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
-    pickleCIII  = picklepath+'MUSEWideLAEs_CCresults180827_CIII_all575specX36templates.pkl'
-    pickleCIV   = picklepath+'MUSEWideLAEs_CCresults180827_CIV_all575specX36templates.pkl'
-    zspecISzLya = True
+    pickleCIII  = picklepath+'MUSEWideLAEs_CCresultsdateofrun_CIII_all575specX180914templates.pkl'
+    pickleCIV   = picklepath+'MUSEWideLAEs_CCresultsdateofrun_CIV_all575specX180914templates.pkl'
+    pickleHeII  = picklepath+'MUSEWideLAEs_CCresultsdateofrun_HEII_all575specX180914templates.pkl'
+    pickleOIII  = picklepath+'MUSEWideLAEs_CCresultsdateofrun_OIII_all575specX180914templates.pkl'
+    pickleNV    = picklepath+'MUSEWideLAEs_CCresultsdateofrun_NV_all575specX180914templates.pkl'
+    zspecISzLya = False
+
     if verbose: print('   '+pickleCIII)
     if verbose: print('   '+pickleCIV)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3351,13 +3355,20 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
                                                     voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
     goodkeysCIV     = felis.selection_from_picklefile(pickleCIV, S2Nmaxrange=S2Nmaxrange, zspecrange=zspecrange,
                                                     voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
-    goodkeysHeII    = []
+    goodkeysHeII    = felis.selection_from_picklefile(pickleHeII, S2Nmaxrange=S2Nmaxrange, zspecrange=zspecrange,
+                                                    voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
+    goodkeysOIII    = felis.selection_from_picklefile(pickleOIII, S2Nmaxrange=S2Nmaxrange, zspecrange=zspecrange,
+                                                    voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
+    goodkeysNV      = felis.selection_from_picklefile(pickleNV, S2Nmaxrange=S2Nmaxrange, zspecrange=zspecrange,
+                                                    voffsetrange=voffsetrange, zspecISzLya=zspecISzLya)
+
+    goodkeys_unique = np.unique(goodkeysCIV+goodkeysCIII+goodkeysHeII+goodkeysOIII+goodkeysNV)
 
     loaddicCIII     = felis.load_picklefile(pickleCIII)
     loaddicCIV      = felis.load_picklefile(pickleCIV)
-    loaddicHeII     = {}
-
-    goodkeys_unique = np.unique(goodkeysCIV+goodkeysCIII)
+    loaddicHeII     = felis.load_picklefile(pickleHeII)
+    loaddicOIII     = felis.load_picklefile(pickleOIII)
+    loaddicNV       = felis.load_picklefile(pickleNV)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if os.path.isfile(outputfile):
         sys.exit('Ouptut file '+outputfile+' already exists')
@@ -3376,6 +3387,12 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
     fout.write('#     ('+str(len(goodkeysCIII))+' satisfying the cuts)\n')
     fout.write('#   - CIV: '+pickleCIV+'\n')
     fout.write('#     ('+str(len(goodkeysCIV))+' satisfying the cuts)\n')
+    fout.write('#   - HeII: '+pickleHeII+'\n')
+    fout.write('#     ('+str(len(goodkeysHeII))+' satisfying the cuts)\n')
+    fout.write('#   - OIII: '+pickleOIII+'\n')
+    fout.write('#     ('+str(len(goodkeysOIII))+' satisfying the cuts)\n')
+    fout.write('#   - NV: '+pickleNV+'\n')
+    fout.write('#     ('+str(len(goodkeysNV))+' satisfying the cuts)\n')
     fout.write('# \n')
     fout.write('# In total '+str(len(goodkeys_unique))+' template matches satisfied the cuts and are included in this file \n')
     fout.write('# \n')
@@ -3385,34 +3402,59 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
     fout.write('# This file contains the following columns:\n')
 
     fluxratiodic = collections.OrderedDict()
+    fluxratiodic['vshift_AV18']          = 999
+    fluxratiodic['vshift_ciii1908']      = 999
+    fluxratiodic['vshift_civ1550']       = 999
+    fluxratiodic['vshift_heii1640']      = 999
+    fluxratiodic['vshift_oiii1663']      = 999
+    fluxratiodic['vshift_nv1241']        = 999
+
     fluxratiodic['f_ciii1908']           = 999
     fluxratiodic['ferr_ciii1908']        = 999
-    # fluxratiodic['S2N_ciii1908_calc']    = 999
     fluxratiodic['S2N_ciii1908']         = 999
     fluxratiodic['sigma_ciii1908']       = 999
 
     fluxratiodic['f_civ1550']            = 999
     fluxratiodic['ferr_civ1550']         = 999
-    # fluxratiodic['S2N_civ1550_calc']     = 999
     fluxratiodic['S2N_civ1550']          = 999
     fluxratiodic['sigma_civ1550']        = 999
 
     fluxratiodic['f_heii1640']           = 999
     fluxratiodic['ferr_heii1640']        = 999
-    # fluxratiodic['S2N_heii1640_calc']    = 999
     fluxratiodic['S2N_heii1640']         = 999
     fluxratiodic['sigma_heii1640']       = 999
+
+    fluxratiodic['f_oiii1663']           = 999
+    fluxratiodic['ferr_oiii1663']        = 999
+    fluxratiodic['S2N_oiii1663']         = 999
+    fluxratiodic['sigma_oiii1663']       = 999
+
+    fluxratiodic['f_nv1241']             = 999
+    fluxratiodic['ferr_nv1241']          = 999
+    fluxratiodic['S2N_nv1241']           = 999
+    fluxratiodic['sigma_nv1241']         = 999
 
     fluxratiodic['ciii1907ciii1909']     = 999
     fluxratiodic['ciii1907ciii1909err']  = 999
     fluxratiodic['civ1549civ1551']       = 999
     fluxratiodic['civ1549civ1551err']    = 999
+    fluxratiodic['oiii1661oiii1666']     = 999
+    fluxratiodic['oiii1661oiii1666err']  = 999
+    fluxratiodic['nv1239nv1243']         = 999
+    fluxratiodic['nv1239nv1243err']      = 999
+
     fluxratiodic['civ1550ciii1908']      = 999
     fluxratiodic['civ1550ciii1908err']   = 999
-    fluxratiodic['ciii1908he1640']       = 999
-    fluxratiodic['ciii1908he1640err']    = 999
-    fluxratiodic['civ1550he1640']        = 999
-    fluxratiodic['civ1550he1640err']     = 999
+    fluxratiodic['ciii1908heii1640']     = 999
+    fluxratiodic['ciii1908heii1640err']  = 999
+    fluxratiodic['civ1550heii1640']      = 999
+    fluxratiodic['civ1550heii1640err']   = 999
+    fluxratiodic['oiii1663heii1640']     = 999
+    fluxratiodic['oiii1663heii1640err']  = 999
+    fluxratiodic['nv1241heii1640']       = 999
+    fluxratiodic['nv1241heii1640err']    = 999
+    fluxratiodic['nv1241civ1550']        = 999
+    fluxratiodic['nv1241civ1550err']     = 999
 
     hdrstr = '# id_musewide '
     for col in fluxratiodic.keys():
@@ -3423,12 +3465,31 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Calculating line ratios based on FELIS template matches')
     for goodkey in goodkeys_unique:
-        template_ciii1908, f_ciii1908, ferr_ciii1908, S2Nmax_ciii1908, Ngoodent_ciii1908, chi2_ciii1908 = \
+        template_ciii1908, vshift_V18_ciii1908, vshift_ciii1908, f_ciii1908, \
+        ferr_ciii1908, S2Nmax_ciii1908, Ngoodent_ciii1908, chi2_ciii1908 = \
             felis.getresult4maxS2N(loaddicCIII,goodkey)
-        template_civ1550, f_civ1550, ferr_civ1550, S2Nmax_civ1550, Ngoodent_civ1550, chi2_civ1550 = \
+        template_civ1550, vshift_V18_civ1550, vshift_civ1550, f_civ1550, \
+        ferr_civ1550, S2Nmax_civ1550, Ngoodent_civ1550, chi2_civ1550 = \
             felis.getresult4maxS2N(loaddicCIV,goodkey)
-        template_heii1640, f_heii1640, ferr_heii1640, S2Nmax_heii1640, Ngoodent_heii1640, chi2_heii1640 = \
-            felis.getresult4maxS2N(loaddicHeII,'dummy')
+        template_heii1640, vshift_V18_heii1640, vshift_heii1640, f_heii1640, \
+        ferr_heii1640, S2Nmax_heii1640, Ngoodent_heii1640, chi2_heii1640 = \
+            felis.getresult4maxS2N(loaddicHeII,goodkey)
+        template_oiii1663, vshift_V18_oiii1663, vshift_oiii1663, f_oiii1663, \
+        ferr_oiii1663, S2Nmax_oiii1663, Ngoodent_oiii1663, chi2_oiii1663 = \
+            felis.getresult4maxS2N(loaddicOIII,goodkey)
+        template_nv1241, vshift_V18_nv1241, vshift_nv1241, f_nv1241, \
+        ferr_nv1241, S2Nmax_nv1241, Ngoodent_nv1241, chi2_nv1241 = \
+            felis.getresult4maxS2N(loaddicNV,goodkey)
+
+        fluxratiodic['vshift_AV18']          = np.max(np.array([vshift_V18_ciii1908, vshift_V18_civ1550,
+                                                                vshift_V18_heii1640, vshift_V18_oiii1663,
+                                                                vshift_V18_nv1241])) # max to handle -99 values
+        fluxratiodic['vshift_ciii1908']      = vshift_ciii1908
+        fluxratiodic['vshift_civ1550']       = vshift_civ1550
+        fluxratiodic['vshift_heii1640']      = vshift_heii1640
+        fluxratiodic['vshift_oiii1663']      = vshift_oiii1663
+        fluxratiodic['vshift_nv1241']        = vshift_nv1241
+
 
         if template_ciii1908 is 'None':
             f_ciii1908    = -1.0 * onesigmalimit
@@ -3439,6 +3500,12 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
         if template_heii1640 is 'None':
             f_heii1640    = -1.0 * onesigmalimit
             ferr_heii1640 = +99
+        if template_oiii1663 is 'None':
+            f_oiii1663    = -1.0 * onesigmalimit
+            ferr_oiii1663 = +99
+        if template_nv1241 is 'None':
+            f_nv1241      = -1.0 * onesigmalimit
+            ferr_nv1241   = +99
 
         fluxratiodic['f_ciii1908']           = f_ciii1908
         fluxratiodic['ferr_ciii1908']        = ferr_ciii1908
@@ -3455,40 +3522,79 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
         # fluxratiodic['S2N_heii1640_calc']    = f_heii1640/ferr_heii1640
         fluxratiodic['S2N_heii1640']         = S2Nmax_heii1640
 
-        if template_ciii1908 is 'None':
-            fluxratiodic['ciii1907ciii1909']     = -99
-            fluxratiodic['ciii1907ciii1909err']  = -99
-            fluxratiodic['sigma_ciii1908']       = -99
-        else:
-            fluxratiodic['ciii1907ciii1909']     = float(template_ciii1908.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
-            fluxratiodic['ciii1907ciii1909err']  = ferr_ciii1908
-            temp_sigma_ciii1908                  = float(template_ciii1908.split('sig_')[-1].split('_flux')[0].replace('p','.'))
-            fluxratiodic['sigma_ciii1908']       = 299792.458 * 2.354 * temp_sigma_ciii1908 / 1908.0
+        fluxratiodic['f_oiii1663']           = f_oiii1663
+        fluxratiodic['ferr_oiii1663']        = ferr_oiii1663
+        # fluxratiodic['S2N_oiii1663_calc']    = f_oiii1663/ferr_oiii1663
+        fluxratiodic['S2N_oiii1663']         = S2Nmax_oiii1663
+
+        fluxratiodic['f_nv1241']           = f_nv1241
+        fluxratiodic['ferr_nv1241']        = ferr_nv1241
+        # fluxratiodic['S2N_nv1241_calc']    = f_nv1241/ferr_nv1241
+        fluxratiodic['S2N_nv1241']         = S2Nmax_nv1241
 
         if template_ciii1908 is 'None':
-            fluxratiodic['civ1549civ1551']       = -99
-            fluxratiodic['civ1549civ1551err']    = -99
-            fluxratiodic['sigma_civ1550']        = -99
+            fluxratiodic['ciii1907ciii1909']    = -99
+            fluxratiodic['ciii1907ciii1909err'] = -99
+            fluxratiodic['sigma_ciii1908']      = -99
         else:
-            fluxratiodic['civ1549civ1551']       = float(template_civ1550.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
-            fluxratiodic['civ1549civ1551err']    = ferr_civ1550
-            temp_sigma_civ1550                   = float(template_civ1550.split('sig_')[-1].split('_flux')[0].replace('p','.'))
-            fluxratiodic['sigma_civ1550']        = 299792.458 * 2.354 * temp_sigma_civ1550 / 1550.0
+            fluxratiodic['ciii1907ciii1909']    = float(template_ciii1908.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
+            fluxratiodic['ciii1907ciii1909err'] = ferr_ciii1908
+            temp_sigma_ciii1908                 = float(template_ciii1908.split('sig_')[-1].split('_')[0].replace('p','.'))
+            fluxratiodic['sigma_ciii1908']      = 299792.458 * 2.354 * temp_sigma_ciii1908 / 1908.0
+
+        if template_civ1550 is 'None':
+            fluxratiodic['civ1549civ1551']     = -99
+            fluxratiodic['civ1549civ1551err']  = -99
+            fluxratiodic['sigma_civ1550']      = -99
+        else:
+            fluxratiodic['civ1549civ1551']     = float(template_civ1550.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
+            fluxratiodic['civ1549civ1551err']  = ferr_civ1550
+            temp_sigma_civ1550                 = float(template_civ1550.split('sig_')[-1].split('_')[0].replace('p','.'))
+            fluxratiodic['sigma_civ1550']      = 299792.458 * 2.354 * temp_sigma_civ1550 / 1550.0
+
+        if template_oiii1663 is 'None':
+            fluxratiodic['oiii1661oiii1666']    = -99
+            fluxratiodic['oiii1661oiii1666err'] = -99
+            fluxratiodic['sigma_oiii1663']      = -99
+        else:
+            fluxratiodic['oiii1661oiii1666']    = float(template_oiii1663.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
+            fluxratiodic['oiii1661oiii1666err'] = ferr_oiii1663
+            temp_sigma_oiii1663                 = float(template_oiii1663.split('sig_')[-1].split('_')[0].replace('p','.'))
+            fluxratiodic['sigma_oiii1663']      = 299792.458 * 2.354 * temp_sigma_oiii1663 / 1550.0
+
+        if template_nv1241 is 'None':
+            fluxratiodic['nv1239nv1243']     = -99
+            fluxratiodic['nv1239nv1243err']  = -99
+            fluxratiodic['sigma_nv1241']     = -99
+        else:
+            fluxratiodic['nv1239nv1243']     = float(template_nv1241.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
+            fluxratiodic['nv1239nv1243err']  = ferr_nv1241
+            temp_sigma_nv1241                = float(template_nv1241.split('sig_')[-1].split('_')[0].replace('p','.'))
+            fluxratiodic['sigma_nv1241']     = 299792.458 * 2.354 * temp_sigma_nv1241 / 1550.0
 
         if template_heii1640 is 'None':
             fluxratiodic['sigma_heii1640']       = -99
         else:
-            temp_sigma_heii1640                  = float(template_heii1640.split('sig_')[-1].split('_flux')[0].replace('p','.'))
+            temp_sigma_heii1640                  = float(template_heii1640.split('sig_')[-1].split('.fi')[0].replace('p','.'))
             fluxratiodic['sigma_heii1640']       = 299792.458 * 2.354 * temp_sigma_heii1640 / 1640.0
 
         fluxratiodic['civ1550ciii1908'], fluxratiodic['civ1550ciii1908err'] = \
             uves.set_ratios(template_civ1550,template_ciii1908,f_civ1550,ferr_civ1550,f_ciii1908,ferr_ciii1908)
 
-        fluxratiodic['ciii1908he1640'], fluxratiodic['ciii1908he1640err'] = \
+        fluxratiodic['ciii1908heii1640'], fluxratiodic['ciii1908heii1640err'] = \
             uves.set_ratios(template_ciii1908,template_heii1640,f_ciii1908,ferr_ciii1908,f_heii1640,ferr_heii1640)
 
-        fluxratiodic['civ1550he1640'], fluxratiodic['civ1550he1640err'] = \
+        fluxratiodic['civ1550heii1640'], fluxratiodic['civ1550heii1640err'] = \
             uves.set_ratios(template_civ1550,template_heii1640,f_civ1550,ferr_civ1550,f_heii1640,ferr_heii1640)
+
+        fluxratiodic['oiii1663heii1640'], fluxratiodic['oiii1663heii1640err'] = \
+            uves.set_ratios(template_oiii1663,template_heii1640,f_oiii1663,ferr_oiii1663,f_heii1640,ferr_heii1640)
+
+        fluxratiodic['nv1241heii1640'], fluxratiodic['nv1241heii1640err'] = \
+            uves.set_ratios(template_nv1241,template_heii1640,f_nv1241,ferr_nv1241,f_heii1640,ferr_heii1640)
+
+        fluxratiodic['nv1241civ1550'], fluxratiodic['nv1241civ1550err'] = \
+            uves.set_ratios(template_nv1241,template_civ1550,f_nv1241,ferr_nv1241,f_civ1550,ferr_civ1550)
 
         outstr = ' '
         outstr = outstr+goodkey.split('-')[-1].split('.')[0][1:]+' '
@@ -3503,19 +3609,19 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if plotdir is not None:
         if verbose: print(' - plotobjects=True so plotting selections to the directory:\n    '+plotdir)
-        goodkeys = [goodkeysCIII,goodkeysCIV]
-        picklefiles = [pickleCIII,pickleCIV]
-        lines = ['CIII1908','CIV1549']
+        goodkeysall = [goodkeysCIII,goodkeysCIV,goodkeysHeII,goodkeysOIII,goodkeysNV]
+        picklefiles = [pickleCIII,pickleCIV,pickleHeII,pickleOIII,pickleNV]
+        lines = ['CIII1908','CIV1549','HeII1640','OIII1663','NV1241']
 
-        for gg in [0,1]:
+        for gg, goodkeys in enumerate(goodkeysall):
             plotnames = []
             plotnameinput = []
-            for key in goodkeys[gg]:
+            for key in goodkeys:
                 fname = key.split('/')[-1]
                 plotnameinput.append(key.replace('.fits','_maxS2Ntemplatematch_'+lines[gg]+'.pdf'))
                 plotnames.append(plotdir+fname.replace('.fits','_maxS2Ntemplatematch_'+lines[gg]+'.pdf'))
 
-            felis.plot_picklefilecontent(goodkeys[gg], picklefiles[gg], plotdir=plotdir, plotnames=plotnameinput,
+            felis.plot_picklefilecontent(goodkeys, picklefiles[gg], plotdir=plotdir, plotnames=plotnameinput,
                                          showspecerr=False, zspecISzLya=zspecISzLya)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
