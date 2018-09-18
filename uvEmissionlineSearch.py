@@ -107,61 +107,61 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loading fits catalogs for LAEs:'
+    if verbose: print(' - Loading fits catalogs for LAEs:')
     catPSF            = '/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits'
     catE24eltab       = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_emline_table_v3.2.fits'
 
-    if verbose: print '   '+catPSF
+    if verbose: print('   '+catPSF)
     datPSF      = pyfits.open(catPSF)[1].data
-    if verbose: print '   Columns: '+str(datPSF.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datPSF.dtype.names)+'\n')
 
-    if verbose: print '   '+catE24eltab
+    if verbose: print('   '+catE24eltab)
     datE24eltab = pyfits.open(catE24eltab)[1].data
-    if verbose: print '   Columns: '+str(datE24eltab.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datE24eltab.dtype.names)+'\n')
 
     catE24main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_main_table_v3.2.fits'
     catE36main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v1.0.fits'
 
-    if verbose: print '   '+catE24main
+    if verbose: print('   '+catE24main)
     datE24main  = pyfits.open(catE24main)[1].data
-    if verbose: print '   Columns: '+str(datE24main.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datE24main.dtype.names)+'\n')
 
-    if verbose: print '   '+catE36main
+    if verbose: print('   '+catE36main)
     datE36main  = pyfits.open(catE36main)[1].data
-    if verbose: print '   Columns: '+str(datE36main.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datE36main.dtype.names)+'\n')
 
     catE24lineprops   = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_v3.1_LAEs_line_props.fits'
     # catE24lineprops = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_v3.1_LAEs_line_props_kschmidt.fits'
     catE36lineprops   = '/Users/kschmidt/work/catalogs/MUSE_GTO/e36_emline_master_v1.0_LAEs_line_props.fits'
     # catE36lineprops = '/Users/kschmidt/work/catalogs/MUSE_GTO/e36_emline_master_v1.0_LAEs_line_props_kschmidt.fits'
 
-    if verbose: print '   '+catE24lineprops
+    if verbose: print('   '+catE24lineprops)
     datE24lp  = pyfits.open(catE24lineprops)[1].data
-    if verbose: print '   Columns: '+str(datE24lp.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datE24lp.dtype.names)+'\n')
 
-    if verbose: print '   '+catE36lineprops
+    if verbose: print('   '+catE36lineprops)
     datE36lp    = pyfits.open(catE36lineprops)[1].data
-    if verbose: print '   Columns: '+str(datE36lp.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datE36lp.dtype.names)+'\n')
 
     catLyaEW          = '/Users/kschmidt/work/catalogs/MUSE_GTO/fluxes_EWs_line_props.fits'
-    if verbose: print '   '+catLyaEW
+    if verbose: print('   '+catLyaEW)
     datLyaEW  = pyfits.open(catLyaEW)[1].data
-    if verbose: print '   Columns: '+str(datLyaEW.dtype.names)+'\n'
+    if verbose: print('   Columns: '+str(datLyaEW.dtype.names)+'\n')
 
     catGuo     = '/Users/kschmidt/work/catalogs/guo/CANDELS.GOODSS.F160W.v1.fits'
-    if verbose: print '   '+catGuo
+    if verbose: print('   '+catGuo)
     datGuo     = pyfits.open(catGuo)[1].data
 
     catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
-    if verbose: print '   '+catSkeltonGS
+    if verbose: print('   '+catSkeltonGS)
     datSkeltonGS  = pyfits.open(catSkeltonGS)[1].data
 
     catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
-    if verbose: print '   '+catSkeltonCOS
+    if verbose: print('   '+catSkeltonCOS)
     datSkeltonCOS = pyfits.open(catSkeltonCOS)[1].data
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Counting LAEs and putting together ID list'
+    if verbose: print(' - Counting LAEs and putting together ID list')
     e24_ids  = datE24main['UNIQUE_ID']
     e36_ids  = datE36main['ID']
     objids   = []
@@ -177,7 +177,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     objids = np.sort(np.asarray(objids).astype(int))
     NLAEs  = len(objids)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Assembling info for the '+str(NLAEs)+' LAEs found'
+    if verbose: print(' - Assembling info for the '+str(NLAEs)+' LAEs found')
     galfitmodeldir  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/imgblocks_josieGALFITmodels/'
     redshifts       = []
     ras             = []
@@ -215,10 +215,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     sum_lsdcat          = []
     sum_lsdcat_std      = []
 
-    red_peak_shift_AV17_kms      = []  # Red peak shift estimate based on A. Verhamme et al. (2017) relations
-    red_peak_shift_AV17_kms_err  = []
-    z_sys_AV17                   = []  # Systemic redshift estimate based on A. Verhamme et al. (2017) relations
-    z_sys_AV17_err               = []
+    red_peak_shift_V18_kms      = []  # Red peak shift estimate based on A. Verhamme et al. (2017) relations
+    red_peak_shift_V18_kms_err  = []
+    z_sys_V18                   = []  # Systemic redshift estimate based on A. Verhamme et al. (2017) relations
+    z_sys_V18_err               = []
 
     # v v v    Lya EW props  v v v
     EW_0                 = []
@@ -249,8 +249,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
 
     for ii,id in enumerate(objids): # enumerate([106003018,106004019,206004030,101005016]):
         if verbose:
-            infostr = '   Getting info for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
-            if verbose: print '\n'+infostr,
+            infostr = '  >Getting info for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
+            if verbose: print('\n'+infostr)
             # sys.stdout.write("%s\r" % infostr)
             # sys.stdout.flush()
         pointingname = mu.gen_pointingname(id)
@@ -283,14 +283,14 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
         modelfile = glob.glob(galfitmodeldir+'imgblock_'+str("%.9d" % id)+'.fits')
 
         if len(modelfile) == 0:
-            if verbose: print 'No model found; ',
-            name_model.append("NoModelFoundIn_"+galfitmodeldir)
-            N_model_comp.append(0)
-            ras_model.append(0)
-            decs_model.append(0)
-            delta_coords.append(0)
-            x_image_model.append(0)
-            y_image_model.append(0)
+            if verbose: print('   No model found; '+
+                              str(name_model.append("NoModelFoundIn_"+galfitmodeldir))+', '+
+                              str(N_model_comp.append(0))+', '+
+                              str(ras_model.append(0))+', '+
+                              str(decs_model.append(0))+', '+
+                              str(delta_coords.append(0))+', '+
+                              str(x_image_model.append(0))+', '+
+                              str(y_image_model.append(0)))
         elif len(modelfile) > 1:
             sys.exit('Found more than one model file for '+str("%.9d" % id)+'; Found the models '+modelfile)
         else:
@@ -311,13 +311,13 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 if len(xstr) > 1:
                     xpix    = int(float(xstr[0]))
                 else:
-                    if verbose: print 'Model xpix has no err; ',
+                    if verbose: print('   Model xpix has no err; ')
                     xpix    = int(float(xstr[0][1:-1]))
 
                 if len(ystr) > 1:
                     ypix    = int(float(ystr[0]))
                 else:
-                    if verbose: print 'Model ypix has no err; ',
+                    if verbose: print('   Model ypix has no err; ')
                     ypix    = int(float(ystr[0][1:-1]))
             else:
                 fit_region     = model_hdr['FITSECT']
@@ -369,10 +369,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             sum_fit_red_std.append(0.0)
             sum_lsdcat.append(0.0)
             sum_lsdcat_std.append(0.0)
-            red_peak_shift_AV17_kms.append(0.0)
-            red_peak_shift_AV17_kms_err.append(0.0)
-            z_sys_AV17.append(0.0)
-            z_sys_AV17_err.append(0.0)
+            red_peak_shift_V18_kms.append(0.0)
+            red_peak_shift_V18_kms_err.append(0.0)
+            z_sys_V18.append(0.0)
+            z_sys_V18_err.append(0.0)
         else:
             if str(id) in e24_ids:
                 objent = np.where(datE24lp['UNIQUE_ID'] == str(id))[0]
@@ -422,28 +422,28 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sys.exit('Weird... ID not found in E24 or E36 id-list...')
 
             if peak_sep_kms[ii] != 0.0:
-                rp_shift_AV17_kms     = 1.00 * peak_sep_kms[ii]/2.
-                rp_shift_AV17_kms_err = np.abs(rp_shift_AV17_kms) * \
+                rp_shift_V18_kms     = 1.00 * peak_sep_kms[ii]/2.
+                rp_shift_V18_kms_err = np.abs(rp_shift_V18_kms) * \
                                         np.sqrt( (peak_sep_kms_std[ii]/peak_sep_kms[ii])**2 + (0.04/1.00)**2)
             else:
-                rp_shift_AV17_kms     = 0.86 * fwhm_kms[ii]
-                rp_shift_AV17_kms_err = np.abs(rp_shift_AV17_kms) * \
+                rp_shift_V18_kms     = 0.86 * fwhm_kms[ii]
+                rp_shift_V18_kms_err = np.abs(rp_shift_V18_kms) * \
                                         np.sqrt( (fwhm_kms_std[ii]/fwhm_kms[ii])**2 + (0.04/0.86)**2)
 
             # Estimate systemic redshift using Lya offest from Verhamme+17 and Eq. (5) Erb+14 relating this to z_sys
             c_val           = astropy.constants.c.value/1000.
-            numerator       = ( z_vac_red[ii] - rp_shift_AV17_kms/c_val)
-            numerator_err   = np.sqrt( z_vac_error[ii]**2.0 + (rp_shift_AV17_kms_err/rp_shift_AV17_kms)**2.0 )
-            denominator     = (rp_shift_AV17_kms/c_val + 1.0)
-            denominator_err = rp_shift_AV17_kms_err/np.abs(rp_shift_AV17_kms)
+            numerator       = ( z_vac_red[ii] - rp_shift_V18_kms/c_val)
+            numerator_err   = np.sqrt( z_vac_error[ii]**2.0 + (rp_shift_V18_kms_err/rp_shift_V18_kms)**2.0 )
+            denominator     = (rp_shift_V18_kms/c_val + 1.0)
+            denominator_err = rp_shift_V18_kms_err/np.abs(rp_shift_V18_kms)
             z_sys           = numerator / denominator
             z_sys_err       = np.abs(z_sys) * \
                               np.sqrt( (numerator_err/numerator)**2.0 + (denominator_err/denominator)**2.0 )
 
-            red_peak_shift_AV17_kms.append(rp_shift_AV17_kms)
-            red_peak_shift_AV17_kms_err.append(rp_shift_AV17_kms_err)
-            z_sys_AV17.append(z_sys)
-            z_sys_AV17_err.append(z_sys_err)
+            red_peak_shift_V18_kms.append(rp_shift_V18_kms)
+            red_peak_shift_V18_kms_err.append(rp_shift_V18_kms_err)
+            z_sys_V18.append(z_sys)
+            z_sys_V18_err.append(z_sys_err)
 
         # - - - - - - - - - - ADD INFO FROM EW LINE PROPS TABLE - - - - - - - - - -
         if len(modelfile) == 0:
@@ -508,10 +508,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasSkelton.append(datSkeltonCOS['RA'][entSkelton])
             decsSkelton.append(datSkeltonCOS['DEC'][entSkelton])
 
-    if verbose: print '\n   done...'
+    if verbose: print('\n   done...')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Defining fits table and filling it with data'
+    if verbose: print(' - Defining fits table and filling it with data')
     c1  = pyfits.Column(name='id', format='J', unit='', array=objids)
     c2  = pyfits.Column(name='pointing', format='A30', unit='', array=pointing)
     c3  = pyfits.Column(name='ra', format='D', unit='DEF', array=ras)
@@ -549,10 +549,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     c33 = pyfits.Column(name='sum_lsdcat', format='D', unit='1e-20*ERG/S/CM**2', array=sum_lsdcat)
     c34 = pyfits.Column(name='sum_lsdcat_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_lsdcat_std)
 
-    c35 = pyfits.Column(name='red_peak_shift_AV17_kms', format='D', unit='KM/S', array=red_peak_shift_AV17_kms)
-    c36 = pyfits.Column(name='red_peak_shift_AV17_kms_err', format='D', unit='KM/S', array=red_peak_shift_AV17_kms_err)
-    c37 = pyfits.Column(name='z_sys_AV17', format='D', unit='', array=z_sys_AV17)
-    c38 = pyfits.Column(name='z_sys_AV17_err', format='D', unit='', array=z_sys_AV17_err)
+    c35 = pyfits.Column(name='red_peak_shift_V18_kms', format='D', unit='KM/S', array=red_peak_shift_V18_kms)
+    c36 = pyfits.Column(name='red_peak_shift_V18_kms_err', format='D', unit='KM/S', array=red_peak_shift_V18_kms_err)
+    c37 = pyfits.Column(name='z_sys_V18', format='D', unit='', array=z_sys_V18)
+    c38 = pyfits.Column(name='z_sys_V18_err', format='D', unit='', array=z_sys_V18_err)
 
     c39 = pyfits.Column(name='EW_0', format='D', unit='A', array=EW_0)
     c40 = pyfits.Column(name='EW_0_err', format='D', unit='A', array=EW_0_err)
@@ -592,10 +592,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     head    = th.header
     tbHDU   = pyfits.new_table(coldefs, header=head)
     tbHDU.writeto(fitsname, clobber=clobber)
-    if verbose: print '   Fits table stored in \n   '+fitsname
+    if verbose: print('   Fits table stored in \n   '+fitsname)
 
     if genDS9region:
-        if verbose: print ' - Generating DS9 region file'
+        if verbose: print(' - Generating DS9 region file')
         regionname = fitsname.replace('.fits','.reg')
         kbs.create_DS9region(regionname,ras,decs,color='magenta',circlesize=0.5,textlist=objids.astype(str),clobber=clobber)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1441,7 +1441,10 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                 objent   = np.where(sourcecat['id'] == objid)[0]
 
                 if use_sys:
-                    z_lam    = sourcecat['z_sys_AV17'][objent] # using systemic redshift
+                    try:
+                        z_lam    = sourcecat['z_sys_AV17'][objent] # using systemic redshift
+                    except:
+                        z_lam    = sourcecat['z_sys_V18'][objent] # using systemic redshift
                 else:
                     z_lam    = sourcecat['z_vac_red'][objent]  # using Lya redshiftfrom red peak
 
@@ -1466,7 +1469,10 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                 # - - - - -  Estimate EW  - - - - -
                 objent        = np.where(sourcecat['id'] == int(id))[0]
                 beta          = sourcecat['beta'][objent][0]
-                bandswithLya  = uves.wavelength_in_bands( 1216 * (sourcecat['z_sys_AV17'][objent][0] + 1))
+                try:
+                    bandswithLya  = uves.wavelength_in_bands( 1216 * (sourcecat['z_sys_AV17'][objent][0] + 1))
+                except:
+                    bandswithLya  = uves.wavelength_in_bands( 1216 * (sourcecat['z_sys_V18'][objent][0] + 1))
                 bandswithline = uves.wavelength_in_bands( line_wave )
 
                 f_cont        = []
@@ -1599,7 +1605,10 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
 
         for ii,id in enumerate(ids):
             objent = np.where(sourcedat['id'] == int(id))[0]
-            z_sys.append(sourcedat['z_sys_AV17'][objent][0])
+            try:
+                z_sys.append(sourcedat['z_sys_AV17'][objent][0])
+            except:
+                z_sys.append(sourcedat['z_sys_V18'][objent][0])
             z_lya.append(sourcedat['z_vac_red'][objent][0])
             EW_lya.append(sourcedat['EW_0'][objent][0])
             EW_lya_err.append(sourcedat['EW_0_err'][objent][0])
@@ -2224,8 +2233,12 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
         fluxcols_sky = TDOSEskyF  + PSFskyF  + grismskyF
 
         zLya         = LAEinfo['redshift'][objent][0]
-        zsys         = LAEinfo['z_sys_AV17'][objent][0]
-        voffset      = LAEinfo['red_peak_shift_AV17_kms'][objent][0]
+        try:
+            zsys         = LAEinfo['z_sys_AV17'][objent][0]
+            voffset      = LAEinfo['red_peak_shift_AV17_kms'][objent][0]
+        except:
+            zsys         = LAEinfo['z_sys_V18'][objent][0]
+            voffset      = LAEinfo['red_peak_shift_V18_kms'][objent][0]
 
         spectraplottet[idstr] = spectra
         if verbose:
@@ -2795,9 +2808,13 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
                       specdir+'tdose_spectrum_candels-cdfs-06_modelimg_0106004019-0106004019.fits',
                       specdir+'tdose_spectrum_candels-cdfs-25_modelimg_0125042115-0125042115.fits']
 
-    z_all      = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['redshift']
-    id_all     = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
-    vshift_all = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['red_peak_shift_AV17_kms']
+    uvlinesdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    z_all      = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['redshift']
+    id_all     = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['id']
+    try:
+        vshift_all = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['red_peak_shift_AV17_kms']
+    except:
+        vshift_all = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['red_peak_shift_V18_kms']
 
     specs     = []
     objzs     = []
