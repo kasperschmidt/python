@@ -49,9 +49,15 @@ def gen_pointingname(id):
 
     # get field
     if idstr[0] == '1':
-        pointingname = pointingname+'cdfs-'
+        pointingname = 'candels-cdfs-'
     elif idstr[0] == '2':
-        pointingname = pointingname+'cosmos-'
+        pointingname = 'candels-cosmos-'
+    elif idstr[0] == '3':
+        pointingname = 'hudf09-1-'
+    elif idstr[0] == '4':
+        pointingname = 'hudf09-2-'
+    elif idstr[0] == '5':
+        pointingname = 'udf-'
     else:
         sys.exit(' mu.gen_pointingname(): Field corresponding to ID[0]='+str(idstr[0])+' not known')
 
