@@ -9,6 +9,7 @@ import glob
 import astropy
 import MiGs
 import astropy.io.fits as pyfits
+import pyfits as pyfitsOLD
 import datetime
 import numpy as np
 import shutil
@@ -121,6 +122,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
 
     catE24main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_main_table_v3.2.fits'
     catE36main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v1.0.fits'
+    catE40main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e40_v0.9.fits'
+    catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_mosaic_shallow_v0.9.fits'
 
     if verbose: print('   '+catE24main)
     datE24main  = pyfits.open(catE24main)[1].data
@@ -130,10 +133,18 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     datE36main  = pyfits.open(catE36main)[1].data
     if verbose: print('   Columns: '+str(datE36main.dtype.names)+'\n')
 
+    if verbose: print('   '+catE40main)
+    datE40main  = pyfits.open(catE40main)[1].data
+    if verbose: print('   Columns: '+str(datE40main.dtype.names)+'\n')
+
+    if verbose: print('   '+catUDFmain)
+    datUDFmain  = pyfits.open(catUDFmain)[1].data
+    if verbose: print('   Columns: '+str(datUDFmain.dtype.names)+'\n')
+
     catE24lineprops   = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_v3.1_LAEs_line_props.fits'
-    # catE24lineprops = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_v3.1_LAEs_line_props_kschmidt.fits'
     catE36lineprops   = '/Users/kschmidt/work/catalogs/MUSE_GTO/e36_emline_master_v1.0_LAEs_line_props.fits'
-    # catE36lineprops = '/Users/kschmidt/work/catalogs/MUSE_GTO/e36_emline_master_v1.0_LAEs_line_props_kschmidt.fits'
+    catE40lineprops   = 'None'
+    catUDFlineprops   = 'None'
 
     if verbose: print('   '+catE24lineprops)
     datE24lp  = pyfits.open(catE24lineprops)[1].data
@@ -160,21 +171,42 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     if verbose: print('   '+catSkeltonCOS)
     datSkeltonCOS = pyfits.open(catSkeltonCOS)[1].data
 
+    catRafelski = '/Users/kschmidt/work/catalogs/uvudf_rafelski_2015.fits'
+    if verbose: print('   '+catRafelski)
+    datRafelski = pyfits.open(catRafelski)[1].data
+
+    catLaigle = '/Users/kschmidt/work/catalogs/COSMOS2015_Laigle_v1.1.fits'
+    if verbose: print('   '+catLaigle )
+    datLaigle  = pyfits.open(catLaigle)[1].data
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Counting LAEs and putting together ID list')
     e24_ids  = datE24main['UNIQUE_ID']
     e36_ids  = datE36main['ID']
+    e40_ids  = datE40main['ID']
+    udf_ids  = datUDFmain['ID']
     objids   = []
+
+    zcut     = 2.7
     # - - - - - - - - - - - - - E24 - - - - - - - - - - - - - -
     for ii,id in enumerate(e24_ids):
-        if datE24main['Z'][ii] > 2.7:
+        if datE24main['Z'][ii] > zcut:
             objids.append( id )
     # - - - - - - - - - - - - - E36 - - - - - - - - - - - - - -
     for ii,id in enumerate(e36_ids):
-        if datE36main['REDSHIFT'][ii] > 2.7:
+        if datE36main['REDSHIFT'][ii] > zcut:
+            objids.append( id )
+    # - - - - - - - - - - - - - E40 - - - - - - - - - - - - - -
+    for ii,id in enumerate(e40_ids):
+        if datE40main['REDSHIFT'][ii] > zcut:
+            objids.append( id )
+    # - - - - - - - - - - - - - UDF - - - - - - - - - - - - - -
+    for ii,id in enumerate(udf_ids):
+        if datUDFmain['REDSHIFT'][ii] > zcut:
             objids.append( id )
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     objids = np.sort(np.asarray(objids).astype(int))
+    objids = np.array([106003018,131016105,153024080,206004030,302038138,404010192,509084195])
     NLAEs  = len(objids)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Assembling info for the '+str(NLAEs)+' LAEs found')
@@ -247,10 +279,20 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     rasSkelton  = []
     decsSkelton = []
 
-    for ii,id in enumerate(objids): # enumerate([106003018,106004019,206004030,101005016]):
+    idsRafelski  = []
+    sepsRafelski = []
+    rasRafelski  = []
+    decsRafelski = []
+
+    idsLaigle  = []
+    sepsLaigle = []
+    rasLaigle  = []
+    decsLaigle = []
+
+    for ii,id in enumerate(objids):
         if verbose:
             infostr = '  >Getting info for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
-            if verbose: print('\n'+infostr)
+            if verbose: print(infostr)
             # sys.stdout.write("%s\r" % infostr)
             # sys.stdout.flush()
         pointingname = mu.gen_pointingname(id)
@@ -277,20 +319,40 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             x_image.append(ximg)
             y_image.append(yimg)
 
+        elif id in e40_ids:
+            objent = np.where(datE40main['ID'] == id)[0]
+            redshifts.append(datE40main['REDSHIFT'][objent][0])
+            ras.append(datE40main['RA'][objent][0])
+            decs.append(datE40main['DEC'][objent][0])
+            ximg, yimg = mu.get_pixelpos(datE40main['RA'][objent],datE40main['DEC'][objent],pointingname,
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,verbose=False)
+            x_image.append(ximg)
+            y_image.append(yimg)
+
+        elif id in udf_ids:
+            objent = np.where(datUDFmain['ID'] == id)[0]
+            redshifts.append(datUDFmain['REDSHIFT'][objent][0])
+            ras.append(datUDFmain['RA'][objent][0])
+            decs.append(datUDFmain['DEC'][objent][0])
+            ximg, yimg = mu.get_pixelpos(datUDFmain['RA'][objent],datUDFmain['DEC'][objent],pointingname,
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,verbose=False)
+            x_image.append(ximg)
+            y_image.append(yimg)
+
         else:
-            sys.exit('Weird... ID not found in E24 or E36 id-list...')
+            sys.exit('Weird... ID not found in E24, E36, E40 or UDF id-list...')
         # - - - - - - - - - - GET MODEL COORDINATES - - - - - - - - - -
         modelfile = glob.glob(galfitmodeldir+'imgblock_'+str("%.9d" % id)+'.fits')
 
         if len(modelfile) == 0:
-            if verbose: print('   No model found; '+
-                              str(name_model.append("NoModelFoundIn_"+galfitmodeldir))+', '+
-                              str(N_model_comp.append(0))+', '+
-                              str(ras_model.append(0))+', '+
-                              str(decs_model.append(0))+', '+
-                              str(delta_coords.append(0))+', '+
-                              str(x_image_model.append(0))+', '+
-                              str(y_image_model.append(0)))
+            if verbose: print('   No model found; ')
+            name_model.append("NoModelFoundIn_"+galfitmodeldir)
+            N_model_comp.append(0)
+            ras_model.append(0)
+            decs_model.append(0)
+            delta_coords.append(0)
+            x_image_model.append(0)
+            y_image_model.append(0)
         elif len(modelfile) > 1:
             sys.exit('Found more than one model file for '+str("%.9d" % id)+'; Found the models '+modelfile)
         else:
@@ -418,27 +480,55 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sum_fit_red_std.append(datE36lp['sum_fit_red_std'][objent][0])
                 sum_lsdcat.append(datE36lp['sum_lsdcat'][objent][0])
                 sum_lsdcat_std.append(datE36lp['sum_lsdcat_std'][objent][0])
+            elif (id in e40_ids) or (id in udf_ids):
+                z_vac_red.append(-99)
+                z_vac_error.append(-99)
+                z_vac_mean.append(-99)
+                num_peaks.append(-99)
+                fwhm_A.append(-99)
+                fwhm_A_std.append(-99)
+                fwhm_kms.append(-99)
+                fwhm_kms_std.append(-99)
+                peak_sep_A.append(-99)
+                peak_sep_A_std.append(-99)
+                peak_sep_kms.append(-99)
+                peak_sep_kms_std.append(-99)
+                sum_fit.append(-99)
+                sum_fit_std.append(-99)
+                sum_fit_blue.append(-99)
+                sum_fit_blue_std.append(-99)
+                sum_fit_red.append(-99)
+                sum_fit_red_std.append(-99)
+                sum_lsdcat.append(-99)
+                sum_lsdcat_std.append(-99)
             else:
-                sys.exit('Weird... ID not found in E24 or E36 id-list...')
+                sys.exit('Weird... ID not found in E24, E36, E40 or UDF id-list...')
 
             if peak_sep_kms[ii] != 0.0:
                 rp_shift_V18_kms     = 1.00 * peak_sep_kms[ii]/2.
                 rp_shift_V18_kms_err = np.abs(rp_shift_V18_kms) * \
                                         np.sqrt( (peak_sep_kms_std[ii]/peak_sep_kms[ii])**2 + (0.04/1.00)**2)
+            elif peak_sep_kms[ii] == -99:
+                rp_shift_V18_kms     = -99
+                rp_shift_V18_kms_err = -99
             else:
                 rp_shift_V18_kms     = 0.86 * fwhm_kms[ii]
                 rp_shift_V18_kms_err = np.abs(rp_shift_V18_kms) * \
                                         np.sqrt( (fwhm_kms_std[ii]/fwhm_kms[ii])**2 + (0.04/0.86)**2)
 
             # Estimate systemic redshift using Lya offest from Verhamme+17 and Eq. (5) Erb+14 relating this to z_sys
-            c_val           = astropy.constants.c.value/1000.
-            numerator       = ( z_vac_red[ii] - rp_shift_V18_kms/c_val)
-            numerator_err   = np.sqrt( z_vac_error[ii]**2.0 + (rp_shift_V18_kms_err/rp_shift_V18_kms)**2.0 )
-            denominator     = (rp_shift_V18_kms/c_val + 1.0)
-            denominator_err = rp_shift_V18_kms_err/np.abs(rp_shift_V18_kms)
-            z_sys           = numerator / denominator
-            z_sys_err       = np.abs(z_sys) * \
-                              np.sqrt( (numerator_err/numerator)**2.0 + (denominator_err/denominator)**2.0 )
+            if rp_shift_V18_kms == -99:
+                z_sys           = -99
+                z_sys_err       = -99
+            else:
+                c_val           = astropy.constants.c.value/1000.
+                numerator       = ( z_vac_red[ii] - rp_shift_V18_kms/c_val)
+                numerator_err   = np.sqrt( z_vac_error[ii]**2.0 + (rp_shift_V18_kms_err/rp_shift_V18_kms)**2.0 )
+                denominator     = (rp_shift_V18_kms/c_val + 1.0)
+                denominator_err = rp_shift_V18_kms_err/np.abs(rp_shift_V18_kms)
+                z_sys           = numerator / denominator
+                z_sys_err       = np.abs(z_sys) * \
+                                  np.sqrt( (numerator_err/numerator)**2.0 + (denominator_err/denominator)**2.0 )
 
             red_peak_shift_V18_kms.append(rp_shift_V18_kms)
             red_peak_shift_V18_kms_err.append(rp_shift_V18_kms_err)
@@ -481,116 +571,160 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
         # - - - - - - - - - - ADD MATCHES TO PHOTOMETRIC CATALOGS - - - - - - - - - -
         coordMUSE = SkyCoord(ra=ras[ii]*u.degree, dec=decs[ii]*u.degree)
 
-        if str(id).startswith('1'): # <------- GOODS-S
+        if str(id)[0] in ['1','5']: # <------- Match to Guo catalog
             coordGuo  = SkyCoord(ra=datGuo['RA']*u.degree, dec=datGuo['DEC']*u.degree)
             entGuo, match_2DGuo, match_3DGuo = coordMUSE.match_to_catalog_sky(coordGuo)
             idsGuo.append(datGuo['ID'][entGuo])
             sepsGuo.append(match_2DGuo.value[0] * 3600.0)
             rasGuo.append(datGuo['RA'][entGuo])
             decsGuo.append(datGuo['DEC'][entGuo])
+        else:
+            idsGuo.append(0.0)
+            sepsGuo.append(0.0)
+            rasGuo.append(0.0)
+            decsGuo.append(0.0)
 
+        if str(id)[0] in ['1','3','4','5']: # <------- Match to Skelton GOODS-SOUTH catalog
             coordSkelton  = SkyCoord(ra=datSkeltonGS['RA']*u.degree, dec=datSkeltonGS['DEC']*u.degree)
             entSkelton, match_2DSkelton, match_3DSkelton = coordMUSE.match_to_catalog_sky(coordSkelton)
             idsSkelton.append(datSkeltonGS['ID'][entSkelton])
             sepsSkelton.append(match_2DSkelton.value[0] * 3600.0)
             rasSkelton.append(datSkeltonGS['RA'][entSkelton])
             decsSkelton.append(datSkeltonGS['DEC'][entSkelton])
-        elif str(id).startswith('2'): # <------- COSMOS
-            idsGuo.append(0.0)
-            sepsGuo.append(0.0)
-            rasGuo.append(0.0)
-            decsGuo.append(0.0)
-
+        elif str(id)[0] in ['2']: # <------- Match to Skelton COSMOS catalog
             coordSkelton  = SkyCoord(ra=datSkeltonCOS['RA']*u.degree, dec=datSkeltonCOS['DEC']*u.degree)
             entSkelton, match_2DSkelton, match_3DSkelton = coordMUSE.match_to_catalog_sky(coordSkelton)
             idsSkelton.append(datSkeltonCOS['ID'][entSkelton])
             sepsSkelton.append(match_2DSkelton.value[0] * 3600.0)
             rasSkelton.append(datSkeltonCOS['RA'][entSkelton])
             decsSkelton.append(datSkeltonCOS['DEC'][entSkelton])
+        else:
+            idsSkelton.append(0.0)
+            sepsSkelton.append(0.0)
+            rasSkelton.append(0.0)
+            decsSkelton.append(0.0)
+
+        if str(id)[0] in ['1','5']: # <------- Match to Rafelski catalog
+            coordRafelski  = SkyCoord(ra=datRafelski['RA']*u.degree, dec=datRafelski['DEC']*u.degree)
+            entRafelski, match_2DRafelski, match_3DRafelski = coordMUSE.match_to_catalog_sky(coordRafelski)
+            idsRafelski.append(datRafelski['ID'][entRafelski])
+            sepsRafelski.append(match_2DRafelski.value[0] * 3600.0)
+            rasRafelski.append(datRafelski['RA'][entRafelski])
+            decsRafelski.append(datRafelski['DEC'][entRafelski])
+        else:
+            idsRafelski.append(0.0)
+            sepsRafelski.append(0.0)
+            rasRafelski.append(0.0)
+            decsRafelski.append(0.0)
+
+        if str(id)[0] in ['2']: # <------- Match to Laigle catalog
+            coordLaigle  = SkyCoord(ra=datLaigle['ALPHA_J2000']*u.degree, dec=datLaigle['DELTA_J2000']*u.degree)
+            entLaigle, match_2DLaigle, match_3DLaigle = coordMUSE.match_to_catalog_sky(coordLaigle)
+            idsLaigle.append(datLaigle['NUMBER'][entLaigle])
+            sepsLaigle.append(match_2DLaigle.value[0] * 3600.0)
+            rasLaigle.append(datLaigle['ALPHA_J2000'][entLaigle])
+            decsLaigle.append(datLaigle['DELTA_J2000'][entLaigle])
+        else:
+            idsLaigle.append(0.0)
+            sepsLaigle.append(0.0)
+            rasLaigle.append(0.0)
+            decsLaigle.append(0.0)
 
     if verbose: print('\n   done...')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Defining fits table and filling it with data')
-    c1  = pyfits.Column(name='id', format='J', unit='', array=objids)
-    c2  = pyfits.Column(name='pointing', format='A30', unit='', array=pointing)
-    c3  = pyfits.Column(name='ra', format='D', unit='DEF', array=ras)
-    c4  = pyfits.Column(name='dec', format='D', unit='DEG', array=decs)
-    c5  = pyfits.Column(name='redshift', format='D', unit='', array=redshifts)
-    c6  = pyfits.Column(name='x_image_F814W', format='D', unit='PIXEL', array=x_image)
-    c7  = pyfits.Column(name='y_image_F814W', format='D', unit='PIXEL', array=y_image)
+    c1  = pyfitsOLD.Column(name='id', format='J', unit='', array=objids)
+    c2  = pyfitsOLD.Column(name='pointing', format='A30', unit='', array=pointing)
+    c3  = pyfitsOLD.Column(name='ra', format='D', unit='DEF', array=ras)
+    c4  = pyfitsOLD.Column(name='dec', format='D', unit='DEG', array=decs)
+    c5  = pyfitsOLD.Column(name='redshift', format='D', unit='', array=redshifts)
+    c6  = pyfitsOLD.Column(name='x_image_F814W', format='D', unit='PIXEL', array=x_image)
+    c7  = pyfitsOLD.Column(name='y_image_F814W', format='D', unit='PIXEL', array=y_image)
 
-    c8  = pyfits.Column(name='modelname', format='A110', unit='', array=name_model)
-    c9  = pyfits.Column(name='Nmodelcomponents', format='D', unit='DEF', array=N_model_comp)
-    c10 = pyfits.Column(name='ra_model', format='D', unit='DEF', array=ras_model)
-    c11 = pyfits.Column(name='dec_model', format='D', unit='DEG', array=decs_model)
-    c12 = pyfits.Column(name='deltacoord', format='D', unit='DEG', array=delta_coords)
-    c13 = pyfits.Column(name='x_image_model', format='D', unit='PIXEL', array=x_image_model)
-    c14 = pyfits.Column(name='y_image_model', format='D', unit='PIXEL', array=y_image_model)
+    c8  = pyfitsOLD.Column(name='modelname', format='A110', unit='', array=name_model)
+    c9  = pyfitsOLD.Column(name='Nmodelcomponents', format='D', unit='DEF', array=N_model_comp)
+    c10 = pyfitsOLD.Column(name='ra_model', format='D', unit='DEF', array=ras_model)
+    c11 = pyfitsOLD.Column(name='dec_model', format='D', unit='DEG', array=decs_model)
+    c12 = pyfitsOLD.Column(name='deltacoord', format='D', unit='DEG', array=delta_coords)
+    c13 = pyfitsOLD.Column(name='x_image_model', format='D', unit='PIXEL', array=x_image_model)
+    c14 = pyfitsOLD.Column(name='y_image_model', format='D', unit='PIXEL', array=y_image_model)
 
-    c15 = pyfits.Column(name='z_vac_red', format='D', unit='', array=z_vac_red)
-    c16 = pyfits.Column(name='z_vac_error', format='D', unit='', array=z_vac_error)
-    c17 = pyfits.Column(name='z_vac_mean', format='D', unit='', array=z_vac_mean)
-    c18 = pyfits.Column(name='num_peaks', format='D', unit='', array=num_peaks)
-    c19 = pyfits.Column(name='fwhm_A', format='D', unit='A', array=fwhm_A)
-    c20 = pyfits.Column(name='fwhm_A_std', format='D', unit='A', array=fwhm_A_std)
-    c21 = pyfits.Column(name='fwhm_kms', format='D', unit='KM/S', array=fwhm_kms)
-    c22 = pyfits.Column(name='fwhm_kms_std', format='D', unit='KM/S', array=fwhm_kms_std)
-    c23 = pyfits.Column(name='peak_sep_A', format='D', unit='A', array=peak_sep_A)
-    c24 = pyfits.Column(name='peak_sep_A_std', format='D', unit='A', array=peak_sep_A_std)
-    c25 = pyfits.Column(name='peak_sep_kms', format='D', unit='KM/S', array=peak_sep_kms)
-    c26 = pyfits.Column(name='peak_sep_kms_std', format='D', unit='KM/S', array=peak_sep_kms_std)
-    c27 = pyfits.Column(name='sum_fit', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit)
-    c28 = pyfits.Column(name='sum_fit_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_std)
-    c29 = pyfits.Column(name='sum_fit_blue', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_blue)
-    c30 = pyfits.Column(name='sum_fit_blue_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_blue_std)
-    c31 = pyfits.Column(name='sum_fit_red', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_red)
-    c32 = pyfits.Column(name='sum_fit_red_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_red_std)
-    c33 = pyfits.Column(name='sum_lsdcat', format='D', unit='1e-20*ERG/S/CM**2', array=sum_lsdcat)
-    c34 = pyfits.Column(name='sum_lsdcat_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_lsdcat_std)
+    c15 = pyfitsOLD.Column(name='z_vac_red', format='D', unit='', array=z_vac_red)
+    c16 = pyfitsOLD.Column(name='z_vac_error', format='D', unit='', array=z_vac_error)
+    c17 = pyfitsOLD.Column(name='z_vac_mean', format='D', unit='', array=z_vac_mean)
+    c18 = pyfitsOLD.Column(name='num_peaks', format='D', unit='', array=num_peaks)
+    c19 = pyfitsOLD.Column(name='fwhm_A', format='D', unit='A', array=fwhm_A)
+    c20 = pyfitsOLD.Column(name='fwhm_A_std', format='D', unit='A', array=fwhm_A_std)
+    c21 = pyfitsOLD.Column(name='fwhm_kms', format='D', unit='KM/S', array=fwhm_kms)
+    c22 = pyfitsOLD.Column(name='fwhm_kms_std', format='D', unit='KM/S', array=fwhm_kms_std)
+    c23 = pyfitsOLD.Column(name='peak_sep_A', format='D', unit='A', array=peak_sep_A)
+    c24 = pyfitsOLD.Column(name='peak_sep_A_std', format='D', unit='A', array=peak_sep_A_std)
+    c25 = pyfitsOLD.Column(name='peak_sep_kms', format='D', unit='KM/S', array=peak_sep_kms)
+    c26 = pyfitsOLD.Column(name='peak_sep_kms_std', format='D', unit='KM/S', array=peak_sep_kms_std)
+    c27 = pyfitsOLD.Column(name='sum_fit', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit)
+    c28 = pyfitsOLD.Column(name='sum_fit_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_std)
+    c29 = pyfitsOLD.Column(name='sum_fit_blue', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_blue)
+    c30 = pyfitsOLD.Column(name='sum_fit_blue_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_blue_std)
+    c31 = pyfitsOLD.Column(name='sum_fit_red', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_red)
+    c32 = pyfitsOLD.Column(name='sum_fit_red_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_fit_red_std)
+    c33 = pyfitsOLD.Column(name='sum_lsdcat', format='D', unit='1e-20*ERG/S/CM**2', array=sum_lsdcat)
+    c34 = pyfitsOLD.Column(name='sum_lsdcat_std', format='D', unit='1e-20*ERG/S/CM**2', array=sum_lsdcat_std)
 
-    c35 = pyfits.Column(name='red_peak_shift_V18_kms', format='D', unit='KM/S', array=red_peak_shift_V18_kms)
-    c36 = pyfits.Column(name='red_peak_shift_V18_kms_err', format='D', unit='KM/S', array=red_peak_shift_V18_kms_err)
-    c37 = pyfits.Column(name='z_sys_V18', format='D', unit='', array=z_sys_V18)
-    c38 = pyfits.Column(name='z_sys_V18_err', format='D', unit='', array=z_sys_V18_err)
+    c35 = pyfitsOLD.Column(name='red_peak_shift_V18_kms', format='D', unit='KM/S', array=red_peak_shift_V18_kms)
+    c36 = pyfitsOLD.Column(name='red_peak_shift_V18_kms_err', format='D', unit='KM/S', array=red_peak_shift_V18_kms_err)
+    c37 = pyfitsOLD.Column(name='z_sys_V18', format='D', unit='', array=z_sys_V18)
+    c38 = pyfitsOLD.Column(name='z_sys_V18_err', format='D', unit='', array=z_sys_V18_err)
 
-    c39 = pyfits.Column(name='EW_0', format='D', unit='A', array=EW_0)
-    c40 = pyfits.Column(name='EW_0_err', format='D', unit='A', array=EW_0_err)
-    c41 = pyfits.Column(name='beta', format='D', unit='', array=beta)
-    c42 = pyfits.Column(name='beta_err', format='D', unit='', array=beta_err)
-    c43 = pyfits.Column(name='flux_acs_606w', format='D', unit='ERG/S/CM**2', array=flux_acs_606w)
-    c44 = pyfits.Column(name='flux_err_acs_606w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_606w)
-    c45 = pyfits.Column(name='flux_acs_775w', format='D', unit='ERG/S/CM**2', array=flux_acs_775w)
-    c46 = pyfits.Column(name='flux_err_acs_775w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_775w)
-    c47 = pyfits.Column(name='flux_acs_814w', format='D', unit='ERG/S/CM**2', array=flux_acs_814w)
-    c48 = pyfits.Column(name='flux_err_acs_814w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_814w)
-    c49 = pyfits.Column(name='flux_wfc3_125w', format='D', unit='ERG/S/CM**2', array=flux_wfc3_125w)
-    c50 = pyfits.Column(name='flux_err_wfc3_125w', format='D', unit='ERG/S/CM**2', array=flux_err_wfc3_125w)
-    c51 = pyfits.Column(name='flux_wfc3_160w', format='D', unit='ERG/S/CM**2', array=flux_wfc3_160w)
-    c52 = pyfits.Column(name='flux_err_wfc3_160w', format='D', unit='ERG/S/CM**2', array=flux_err_wfc3_160w)
+    c39 = pyfitsOLD.Column(name='EW_0', format='D', unit='A', array=EW_0)
+    c40 = pyfitsOLD.Column(name='EW_0_err', format='D', unit='A', array=EW_0_err)
+    c41 = pyfitsOLD.Column(name='beta', format='D', unit='', array=beta)
+    c42 = pyfitsOLD.Column(name='beta_err', format='D', unit='', array=beta_err)
+    c43 = pyfitsOLD.Column(name='flux_acs_606w', format='D', unit='ERG/S/CM**2', array=flux_acs_606w)
+    c44 = pyfitsOLD.Column(name='flux_err_acs_606w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_606w)
+    c45 = pyfitsOLD.Column(name='flux_acs_775w', format='D', unit='ERG/S/CM**2', array=flux_acs_775w)
+    c46 = pyfitsOLD.Column(name='flux_err_acs_775w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_775w)
+    c47 = pyfitsOLD.Column(name='flux_acs_814w', format='D', unit='ERG/S/CM**2', array=flux_acs_814w)
+    c48 = pyfitsOLD.Column(name='flux_err_acs_814w', format='D', unit='ERG/S/CM**2', array=flux_err_acs_814w)
+    c49 = pyfitsOLD.Column(name='flux_wfc3_125w', format='D', unit='ERG/S/CM**2', array=flux_wfc3_125w)
+    c50 = pyfitsOLD.Column(name='flux_err_wfc3_125w', format='D', unit='ERG/S/CM**2', array=flux_err_wfc3_125w)
+    c51 = pyfitsOLD.Column(name='flux_wfc3_160w', format='D', unit='ERG/S/CM**2', array=flux_wfc3_160w)
+    c52 = pyfitsOLD.Column(name='flux_err_wfc3_160w', format='D', unit='ERG/S/CM**2', array=flux_err_wfc3_160w)
 
-    c53 = pyfits.Column(name='id_guo'     , format='D', unit='', array=idsGuo)
-    c54 = pyfits.Column(name='sep_guo'    , format='D', unit='ARCSEC', array=sepsGuo)
-    c55 = pyfits.Column(name='ra_guo'     , format='D', unit='DEG', array=rasGuo)
-    c56 = pyfits.Column(name='dec_guo'    , format='D', unit='DEG', array=decsGuo)
-    c57 = pyfits.Column(name='id_skelton' , format='D', unit='', array=idsSkelton)
-    c58 = pyfits.Column(name='sep_skelton', format='D', unit='ARCSEC', array=sepsSkelton)
-    c59 = pyfits.Column(name='ra_skelton' , format='D', unit='DEG', array=rasSkelton)
-    c60 = pyfits.Column(name='dec_skelton', format='D', unit='DEG', array=decsSkelton)
+    c53 = pyfitsOLD.Column(name='id_guo'     , format='D', unit='', array=idsGuo)
+    c54 = pyfitsOLD.Column(name='sep_guo'    , format='D', unit='ARCSEC', array=sepsGuo)
+    c55 = pyfitsOLD.Column(name='ra_guo'     , format='D', unit='DEG', array=rasGuo)
+    c56 = pyfitsOLD.Column(name='dec_guo'    , format='D', unit='DEG', array=decsGuo)
 
-    coldefs = pyfits.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,
+    c57 = pyfitsOLD.Column(name='id_skelton' , format='D', unit='', array=idsSkelton)
+    c58 = pyfitsOLD.Column(name='sep_skelton', format='D', unit='ARCSEC', array=sepsSkelton)
+    c59 = pyfitsOLD.Column(name='ra_skelton' , format='D', unit='DEG', array=rasSkelton)
+    c60 = pyfitsOLD.Column(name='dec_skelton', format='D', unit='DEG', array=decsSkelton)
+
+    c61 = pyfitsOLD.Column(name='id_rafelski' , format='D', unit='', array=idsRafelski)
+    c62 = pyfitsOLD.Column(name='sep_rafelski', format='D', unit='ARCSEC', array=sepsRafelski)
+    c63 = pyfitsOLD.Column(name='ra_rafelski' , format='D', unit='DEG', array=rasRafelski)
+    c64 = pyfitsOLD.Column(name='dec_rafelski', format='D', unit='DEG', array=decsRafelski)
+
+    c65 = pyfitsOLD.Column(name='id_Laigle' , format='D', unit='', array=idsLaigle)
+    c66 = pyfitsOLD.Column(name='sep_Laigle', format='D', unit='ARCSEC', array=sepsLaigle)
+    c67 = pyfitsOLD.Column(name='ra_Laigle' , format='D', unit='DEG', array=rasLaigle)
+    c68 = pyfitsOLD.Column(name='dec_Laigle', format='D', unit='DEG', array=decsLaigle)
+
+    coldefs = pyfitsOLD.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,
                               c9,c10,c11,c12,c13,c14,
                               c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,
                               c35,c36,c37,c38,
                               c39,c40,c41,c42,c43,c44,c45,c46,c47,c48,c49,c50,c51,c52,
-                              c53,c54,c55,c56,c57,c58,c59,c60])
-    th      = pyfits.new_table(coldefs) # creating default header
+                              c53,c54,c55,c56,c57,c58,c59,c60,
+                              c61,c62,c63,c64,c65,c66,c67,c68])
+    th      = pyfitsOLD.new_table(coldefs) # creating default header
 
     # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
     #th.header.append(('MAG     ' , spec2D[0].header['MAG']   ,'MAG_AUTO from interlaced catalog'),end=True)
 
     head    = th.header
-    tbHDU   = pyfits.new_table(coldefs, header=head)
+    tbHDU   = pyfitsOLD.new_table(coldefs, header=head)
     tbHDU.writeto(fitsname, clobber=clobber)
     if verbose: print('   Fits table stored in \n   '+fitsname)
 
