@@ -711,3 +711,180 @@ def match_templates2JosiesStack(spec,outfile, templatedir='/Users/kschmidt/work/
                                                  plot_allCCresults=True,subtract_spec_median=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID'):
+    """
+    Building setup files that can be loaded by /Users/kschmidt/work/galfit_wrapper/galfit_wrapper_obj.py
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    outdir    = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/galfit_wrapper_setups/'
+    mwu.build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID')
+
+    """
+    if build == 'DR1objWOskeltonID':
+        maindir   = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/'
+        imagedir  = '/Users/kschmidt/work/images_MAST/MUSEWidePointings/'
+        sigmadir  = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/hst_galfit_sigma_images/'
+        pstampdir = 'PPPPPP'
+
+        cat     = 'MW_44fields_emission_woskeltoncp_no_LAEs.fits'
+        catpath = maindir+cat
+        fitsdat = pyfits.open(catpath)[1].data
+
+        areas  = [fn.split('-')[0] for fn in np.unique(fitsdat['field_name'])]
+        fields = [fn.replace(fn.split('-')[0]+'-','') for fn in np.unique(fitsdat['field_name'])]
+        #bands  = ['acs_775w', 'acs_814w']
+        bands  = ['acs_435w', 'acs_606w', 'acs_775w', 'acs_814w', 'wfc3_105w', 'wfc3_125w', 'wfc3_160w'] # no PSF for 'acs_850lp'
+
+        for ff, field in enumerate(fields):
+            for band in bands:
+                setupfile = outdir+'galfit_wrapper_setup_'+field+'_'+band+'.txt'
+
+                if os.path.isfile(setupfile):
+                    sys.exit(setupfile+' already exists')
+
+                inputimage    = imagedir+band+'_'+areas[ff]+'-'+field+'_cut_v1.0.fits'
+                sigmaimage    = sigmadir+band+'_'+areas[ff]+'-'+field+'_wht_cut_sigma_smooth.fits'
+                outlogdir     = 'galfit_wrapper_output_logs/'
+                outputdir     = 'galfit_wrapper_output_fits/'
+                outputimg     = outputdir+'imgblock_'+band # .fits automatically appended
+                outputcat     = 'galfit_wrapper_output_cat_'+areas[ff]+'-'+field+'_'+band+'_'+build+'.fits'
+                resultsdir    = 'galfit_wrapper_results/'
+                psfimage      = 'PSF_models/'+band+'/imgblock_6475.fits[2]'
+                resultsfinal  = 'galfit_wrapper_results_final/' #+areas[ff]+'-'+band+'_parameters_with_sky/'
+                inputparamdir = 'galfit_wrapper_input_params/'
+                inputparams   = inputparamdir+'params_'+band
+
+                fout = open(setupfile,'w')
+                fout.write("""# Setup file to load in galfit_wrapper_obj.py to overwrite hard-coded parameters
+# name  parameter
+use_for                    %s
+field                      %s
+band                       %s
+catalogue                  %s
+area                       %s
+input_catalogue            %s
+input_image                %s
+sigma_image                %s
+out_log_dir                %s
+image_dir                  %s
+output_image               %s
+output_catalogue           %s
+Guo_catalogue              /Users/kschmidt/work/galfit_wrapper/examples/CANDELS.GOODSS.F160W.v1_1.photom.cat
+counterparts_catalogue     None
+counterparts_imgs          None # XXX/work1/josie/galfit/Tanya_cutouts/postage/
+counterparts_suff          None # XXX_cutout.jpg
+galfit_path                /usr/local/bin/galfit
+result_folder              %s
+psf_image                  %s
+psf_sampling               1
+bad_pixel                  None
+param_constr               None
+save_stuff                 True
+results_final              %s
+file_comments              None
+use_shape_params           None
+placeholder_bombed         /Users/kschmidt/work/galfit_wrapper/examples/empty.fits
+input_params_dir           %s
+input_params               %s
+                """ % ('obj',field,band,cat,areas[ff],catpath,inputimage,sigmaimage,
+                       outlogdir,outputdir,outputimg,outputcat,resultsdir,
+                       psfimage,resultsfinal,inputparamdir,inputparams))
+                fout.close()
+
+    elif build == 'JKexample':
+        sys.exit('build option "'+build+'" not enabled yet')
+        # write 'psf' (for fitting a star with a moffat) or 'obj'
+        use_for = 'obj'
+
+        field = 'cdfs-16' # the PSF star 6475 is in field 16
+        band  = 'acs_435w'
+
+        catalogue = 'MW_1-24_v3.1_LAEs.fits'
+        #catalogue = 'e36_emline_master_v1.0_LAEs.fits'
+        area = 'candels'
+        #KBS input_catalogue = '/work1/josie/MUSE_WIDE/catalogs/'+catalogue
+        input_catalogue = '/Users/kschmidt/work/galfit_wrapper/examples/'+catalogue
+        #input_catalogue = 'PSF_objs.fits'
+
+        # directory with the HST data
+        #KBS input_image_pref = '/work1/josie/MUSE_WIDE/HST_images/cut/'+band+'_'+area+'-'
+        input_image_pref = '/Users/kschmidt/work/galfit_wrapper/examples/'+band+'_'+area+'-'
+        input_image_suff = '_cut.fits'
+        input_image = input_image_pref+field+input_image_suff
+
+        # KBS ->  /Users/kschmidt/work/images_MAST/MUSEWidePointings
+
+        # write a file name or None, but it is always better to have sigma images!
+        sigma_image = '/Users/kschmidt/work/galfit_wrapper/examples/acs_435w_candels-cdfs-16_wht_cut_sigma_smooth.fits'
+        # sigma_image_pref = '/work1/josie/MUSE_WIDE/HST_images/sigma/smooth/'\
+        #                    +band+'_'+area+'-'
+        # if 'candels' in area and 'cdfs' in field or 'cosmos' in field:
+        #     sigma_image_suff = '_wht_cut_sigma_smooth.fits'
+        # else:
+        #     sigma_image_suff = '_cut_wht_sigma_smooth.fits'
+        # sigma_image = sigma_image_pref+field+sigma_image_suff
+
+        output_image = 'output_fits/imgblock' # .fits will be added automatically
+
+        if area == 'candels':
+            #KBS Guo_catalogue = '/home/josie/MUSE_WIDE/Guo_catalogue/CANDELS.GOODSS.F160W.v1_1.photom.cat'
+            Guo_catalogue = '/Users/kschmidt/work/galfit_wrapper/examples/CANDELS.GOODSS.F160W.v1_1.photom.cat'
+
+        # catalogue with counterparts (by Tanya), or write None
+        #KBS: counterparts_catalogue ='/work1/josie/galfit/Tanya_cutouts/counterparts2.fits'
+        counterparts_catalogue ='/Users/kschmidt/work/galfit_wrapper/examples/counterparts2.fits'
+
+        # cutouts of HST showing the counterparts (by Tanya)
+        #KBS counterparts_imgs = '/work1/josie/galfit/Tanya_cutouts/postage/'
+        counterparts_imgs = '/Users/kschmidt/work/galfit_wrapper/examples/'
+        counterparts_suff = '_cutout.jpg'
+
+        output_catalogue = 'cat_ident_'+area+'-'+field+'_rid_galfit_'+band+'.fits'
+
+        # path to where you installed galfit
+        #KBS galfit_path = '/work1/josie/Programs/./galfit'
+        galfit_path = '/usr/local/bin/galfit'
+        #KBS galfit_path = '/Users/kschmidt/work/galfit/galfit'
+
+        # directory where you want to store your ouput images
+        image_dir = 'output_fits/'
+        # directory where you want to store the output log files
+        out_log_dir = 'fit_logs/'
+        # directory where you want to store the final output images
+        result_folder = image_dir+'results_'+band+"/"
+
+        # PSF image, optional, write a file name or None
+        #KBS psf_image    = 'output_fits/PSF_models/'+band+'/imgblock_6475.fits[2]'#'psfJ.fits'
+        psf_image    = '/Users/kschmidt/work/galfit_wrapper/examples/imgblock_6475.fits[2]'
+        if '336' in band:
+            psf_image = 'output_fits/PSF_models/'+band+'/imgblock_9836.fits[2]'
+        psf_sampling = '1' # if no file name was given, this is ignored
+
+        bad_pixel    = None # Bad pixel mask (FITS image or ASCII coord list)
+        param_constr = None # File with parameter constraints (ASCII file)
+
+        save_stuff = False
+
+        # folder for all final results
+        results_final = 'results/acs_814w_parameters_with_sky/'+band+'/'
+
+        # file with comments, write None if there is none yet
+        #KBS file_comments = 'comments_objects.txt'
+        file_comments = 'comments_objectsKBS.txt'
+
+        # if you want to use parameters from 814, enter directory, otherwise write None
+        #KBS use_shape_params = 'results/acs_814w_parameters/acs_814w/cat_ident_candels-'+field+'_rid_galfit_acs_814w.fits'
+        use_shape_params = None #'/Users/kschmidt/work/galfit_wrapper/examples/cat_ident_candels-'+field+'_rid_galfit_acs_814w.fits'
+
+        # in case galfit crashed you need something to display
+        #KBS placeholder_bombed = "empty.fits"
+        placeholder_bombed = "/Users/kschmidt/work/galfit_wrapper/examples/empty.fits"
+
+        # folder with input parameters
+        input_params_dir = 'input_params/'
+        input_params = input_params_dir+'params' # file name for input parameters
+    else:
+        sys.exit('Invalid build option "'+build+'"')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
