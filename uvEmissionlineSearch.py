@@ -206,7 +206,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             objids.append( id )
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     objids = np.sort(np.asarray(objids).astype(int))
-    objids = np.array([106003018,131016105,153024080,206004030,302038138,404010192,509084195])
+    #objids = np.array([106003018,131016105,153024080,206004030,302038138,404010192,509084195])
     NLAEs  = len(objids)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Assembling info for the '+str(NLAEs)+' LAEs found')
@@ -291,7 +291,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
 
     for ii,id in enumerate(objids):
         if verbose:
-            infostr = '  >Getting info for '+str(id)+' ('+str("%.5d" % ii)+' / '+str("%.5d" % NLAEs)+')  '
+            infostr = '  >Getting info for '+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % NLAEs)+')  '
             if verbose: print(infostr)
             # sys.stdout.write("%s\r" % infostr)
             # sys.stdout.flush()
