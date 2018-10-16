@@ -720,6 +720,10 @@ def build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID'):
     outdir    = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/galfit_wrapper_setups/'
     mwu.build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID')
 
+    import MUSEWideUtilities as mwu
+    outdir    = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_setups/'
+    mwu.build_galfit_wrapper_setups(outdir,build='OIIemitters')
+
     """
     if build == 'DR1objWOskeltonID':
         maindir   = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/'
@@ -733,7 +737,7 @@ def build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID'):
 
         areas  = [fn.split('-')[0] for fn in np.unique(fitsdat['field_name'])]
         fields = [fn.replace(fn.split('-')[0]+'-','') for fn in np.unique(fitsdat['field_name'])]
-        #bands  = ['acs_775w', 'acs_814w']
+        #bands  = ['acs_775w','acs_814w']
         bands  = ['acs_435w', 'acs_606w', 'acs_775w', 'acs_814w', 'wfc3_105w', 'wfc3_125w', 'wfc3_160w'] # no PSF for 'acs_850lp'
 
         for ff, field in enumerate(fields):
@@ -754,6 +758,11 @@ def build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID'):
                 resultsfinal  = 'galfit_wrapper_results_final/' #+areas[ff]+'-'+band+'_parameters_with_sky/'
                 inputparamdir = 'galfit_wrapper_input_params/'
                 inputparams   = inputparamdir+'params_'+band
+
+                if band == 'acs_814w':
+                    shapeparam    = 'None'
+                else:
+                    shapeparam    = maindir+resultsfinal+outputcat.replace(band,'acs_814w')
 
                 fout = open(setupfile,'w')
                 fout.write("""# Setup file to load in galfit_wrapper_obj.py to overwrite hard-coded parameters
@@ -783,13 +792,96 @@ param_constr               None
 save_stuff                 True
 results_final              %s
 file_comments              None
-use_shape_params           None
+use_shape_params           %s
 placeholder_bombed         /Users/kschmidt/work/galfit_wrapper/examples/empty.fits
 input_params_dir           %s
 input_params               %s
                 """ % ('obj',field,band,cat,areas[ff],catpath,inputimage,sigmaimage,
                        outlogdir,outputdir,outputimg,outputcat,resultsdir,
-                       psfimage,resultsfinal,inputparamdir,inputparams))
+                       psfimage,resultsfinal,shapeparam,inputparamdir,inputparams))
+                fout.close()
+
+    elif build == 'OIIemitters':
+        maindir      = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/'
+        imagedir     = '/Users/kschmidt/work/images_MAST/MUSEWidePointings/'
+        sigmadir     = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/hst_galfit_sigma_images/'
+        pstampdir    = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/cutouts/'
+
+        cat     = 'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
+        catpath = maindir+cat
+        fitsdat = pyfits.open(catpath)[1].data
+
+        areas  = [fn.split('-')[0] for fn in np.unique(fitsdat['field_name'])]
+        fields = [fn.replace(fn.split('-')[0]+'-','') for fn in np.unique(fitsdat['field_name'])]
+        bands  = ['acs_814w']
+        #bands  = ['acs_435w', 'acs_606w', 'acs_775w', 'acs_814w', 'wfc3_105w', 'wfc3_125w', 'wfc3_160w']
+
+        for ff, field in enumerate(fields):
+            for band in bands:
+                setupfile = outdir+'galfit_wrapper_setup_'+field+'_'+band+'.txt'
+
+                if os.path.isfile(setupfile):
+                    sys.exit(setupfile+' already exists')
+
+                inputimage    = imagedir+band+'_'+areas[ff]+'-'+field+'_cut_v1.0.fits'
+                sigmaimage    = sigmadir+band+'_'+areas[ff]+'-'+field+'_wht_cut_sigma_smooth.fits'
+                outlogdir     = 'galfit_wrapper_output_logs/'
+                outputdir     = 'galfit_wrapper_output_fits/'
+                outputimg     = outputdir+'imgblock_'+band # .fits automatically appended
+                outputcat     = 'galfit_wrapper_output_cat_'+areas[ff]+'-'+field+'_'+band+'_'+build+'.fits'
+                resultsdir    = 'galfit_wrapper_results/'
+                psfimage      = 'PSF_models/'+band+'/imgblock_6475.fits[2]'
+                resultsfinal  = 'galfit_wrapper_results_final/' #+areas[ff]+'-'+band+'_parameters_with_sky/'
+                inputparamdir = 'galfit_wrapper_input_params/'
+                inputparams   = inputparamdir+'params_'+band
+                pstampsuffix  = band+'_'+areas[ff]+'-'+field+'_cut_v1p0_MUSEWideIII_4p0X4p0arcseccut.png'
+
+                if band == 'acs_814w':
+                    shapeparam    = 'None'
+                else:
+                    shapeparam    = maindir+resultsfinal+outputcat.replace(band,'acs_814w')
+
+                fout = open(setupfile,'w')
+                fout.write("""# Setup file to load in galfit_wrapper_obj.py to overwrite hard-coded parameters
+# name  parameter
+use_for                    %s
+field                      %s
+band                       %s
+catalogue                  %s
+area                       %s
+#
+out_log_dir                %s     # empty dir to fill
+image_dir                  %s     # empty dir to fill
+result_folder              %s     # empty dir to fill
+results_final              %s     # empty dir to fill
+input_params_dir           %s     # empty dir to fill
+#
+output_image               %s
+input_params               %s
+output_catalogue           %s
+input_catalogue            %s
+#
+input_image                %s
+sigma_image                %s
+Guo_catalogue              /Users/kschmidt/work/galfit_wrapper/examples/CANDELS.GOODSS.F160W.v1_1.photom.cat
+psf_image                  %s  # THE SINNER FOR THE ABORT TRAP BREAK IF FULL PATH INCLUDED
+placeholder_bombed         /Users/kschmidt/work/galfit_wrapper/examples/empty.fits
+#
+counterparts_catalogue     %s
+counterparts_imgs          %s
+counterparts_suff          %s
+galfit_path                /usr/local/bin/galfit
+psf_sampling               1
+bad_pixel                  None
+param_constr               None
+save_stuff                 True
+file_comments              None
+use_shape_params           %s
+                """ % ('obj',field,band,cat,areas[ff],
+                       outlogdir,outputdir,resultsdir,resultsfinal,inputparamdir,
+                       outputimg,inputparams,outputcat,catpath,
+                       inputimage,sigmaimage,psfimage,
+                       catpath,pstampdir,pstampsuffix,shapeparam))
                 fout.close()
 
     elif build == 'JKexample':
