@@ -53,6 +53,7 @@ import matplotlib.pyplot as plt
 from PyPDF2 import PdfFileReader, PdfFileMerger
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+import astropy.table as atab
 import collections
 #-------------------------------------------------------------------------------------------------------------
 def test4float(str): 
@@ -1473,6 +1474,41 @@ def get_filterinfo():
     filterinfo['miri_mrs']   = {'label':'MIRI MRS IFU',       'waverange':[49000,288000]}
 
     return filterinfo
+#-------------------------------------------------------------------------------------------------------------
+def combine_fits_tables(fitstables,outputtable,genDS9reg=True,racol='RA',deccol='DEC',idcol=None):
+    """
+    combine a set of fits tables into a new fits table.
+    Assumes that input table contain the same columns.
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    import glob
+
+    tabdir    = '/Users/kschmidt/work/MUSE/MWDR1galfitmodeling/galfit_wrapper_results_final/'
+    magtables = glob.glob(tabdir+'galfit_wrapper*cdfs*775w*.fits')
+    outtable  = tabdir+'galfit_wrapper_output_cat_acs_775w_DR1objWOskeltonID.fits'
+    kbs.combine_fits_tables(magtables,outtable,genDS9reg=True,idcol='UNIQUE_ID')
+
+    """
+    if os.path.isfile(outputtable):
+        sys.exit(' The output already exists - not overwriting the file \n'+outputtable)
+    else:
+        print(' - Will attempt to combine (append) the '+str(len(fitstables))+' fits table provided ')
+    newtable = atab.Table.read(fitstables[0], format='fits')
+    for fitstab in fitstables[1:]:
+        addtab   = atab.Table.read(fitstab, format='fits')
+        newtable = atab.vstack([newtable, addtab])
+
+    newtable.write(outputtable)
+    print(' - Wrote new table to \n   '+outputtable)
+
+    if genDS9reg:
+        if idcol is None:
+            textlist = None
+        else:
+            textlist = newtable[idcol]
+        kbs.create_DS9region(outputtable.replace('.fits','.reg'),newtable[racol],newtable[deccol],
+                             color='red',circlesize=0.5,textlist=textlist,clobber=False)
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
