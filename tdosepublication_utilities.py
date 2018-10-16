@@ -5,6 +5,7 @@ import astropy.io.fits as afits
 import os
 import glob
 import aplpy
+import shutil
 import tdose_utilities as tu
 import matplotlib.pyplot as plt
 import tdose_extract_spectra as tes
@@ -407,4 +408,91 @@ def extractGOODSS_cutoouts(dataarray,mwidcol='UNIQUE_ID',cutsize=5.0,racol='RA',
             fig.tick_labels.set_font(size='large')
             fig.add_grid()
             fig.save(outname.replace('.fits','.png'))
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_CopyAndRenameModels():
+    """
+    copy and rename galfit model imgblocks of OII emitters
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_CopyAndRenameModels()
+
+    """
+    galfitresultsdir    = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    models              = glob.glob(galfitresultsdir+'imgblocks/imgblock_acs_814w_*.fits')
+
+    outdir              = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
+    for model in models:
+        id       = model.split('814w_')[-1].split('.fit')[0]
+        newfile  = outdir+'model_acs_814w_candels-cdfs-01_cut_v1.0_idIII_cutout4p0x4p0arcsec.fits'.replace('III',id)
+        shutil.copy(model, newfile)
+        tu.galfit_model_ds9region([newfile],clobber=True)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_ConvertGALFITmodels2Cubes():
+    """
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_ConvertGALFITmodels2Cubes()
+
+    """
+    modeldir = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
+    models   = glob.glob(modeldir+'model_acs_814w_candels-cdfs-01_cut_v1.0_id*_cutout4p0x4p0arcsec.fits')
+    Nmodels  = len(models)
+
+    componentinfo = '/Users/kschmidt/work/TDOSE/181016_MWDR1_OIIemitters/OIIemitter_componentinfo_edited181016.txt'
+
+    PSFmodel = afits.open('/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/PSF_models/acs_814w/imgblock_6475.fits')[2].data
+    convkernel = np.zeros([133,133])
+    convkernel[6:127,6:127] = PSFmodel
+
+
+    print(' - Converting the '+str(Nmodels)+' models found in \n   '+modeldir)
+    tu.galfit_convertmodel2cube(models,savecubesumimg=True,includewcs=True,sourcecat_compinfo=componentinfo,
+                                convkernels=[convkernel]*Nmodels,normalizecomponents=False)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_GenerateComponentInfo():
+    """
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_GenerateComponentInfo()
+
+    """
+    modeldir = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
+    models   = glob.glob(modeldir+'model_acs_814w_candels-cdfs-01_cut_v1.0_id*_cutout4p0x4p0arcsec.fits')
+
+    compinfofile = '/Users/kschmidt/work/TDOSE/181016_MWDR1_OIIemitters/OIIemitter_componentinfo_RENAME.txt'
+    fout = open(compinfofile,'w')
+    fout.write("""# TDOSE source catalog components keys for 4x4 arcsec GALFIT models of MUSE-Wide DR OII emitters from
+# /Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits
+#
+# --- TEMPLATE --- generated with tdosepublication_utilities.OIIemitters_GenerateComponentInfo() on %s
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# modelfilename        Path and name of model file
+# id                   MUSE-Wide object ID
+# componentinfo        Information on the model components given as ComponentNumber:InfoKey
+#                      where the info keys are:  1 = object, 2 = contaminant and 3 = sky
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# modefilename  id  componentinfo
+""" % tu.get_now_string())
+
+    for mm, GFmodel in enumerate(models):
+        objid       = GFmodel.split('/')[-1].split('_id')[-1].split('_cutout')[0]
+        modelheader = afits.open(GFmodel)[2].header
+        compstring  = ' '
+        for key in modelheader.keys():
+            if 'COMP_' in key:
+                compNo = key.split('OMP_')[-1]
+                if modelheader[key] == 'sky':
+                    compstring = compstring + compNo + ':3  '
+                else:
+                    compstring = compstring + compNo + ':?  '
+
+        outstring = GFmodel.split('/')[-1]+'  '+objid+'  '+compstring.ljust(50)
+        fout.write(outstring+' \n')
+    fout.close()
+    print(' - Wrote component info to: '+compinfofile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
