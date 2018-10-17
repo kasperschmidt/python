@@ -424,7 +424,8 @@ def OIIemitters_CopyAndRenameModels():
     outdir              = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
     for model in models:
         id       = model.split('814w_')[-1].split('.fit')[0]
-        newfile  = outdir+'model_acs_814w_candels-cdfs-01_cut_v1.0_idIII_cutout4p0x4p0arcsec.fits'.replace('III',id)
+        field    = id[1:3]
+        newfile  = outdir+'model_acs_814w_candels-cdfs-CC_cut_v1.0_idIII_cutout4p0x4p0arcsec.fits'.replace('III',id).replace('CC',field)
         shutil.copy(model, newfile)
         tu.galfit_model_ds9region([newfile],clobber=True)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -437,7 +438,7 @@ def OIIemitters_ConvertGALFITmodels2Cubes():
 
     """
     modeldir = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
-    models   = glob.glob(modeldir+'model_acs_814w_candels-cdfs-01_cut_v1.0_id*_cutout4p0x4p0arcsec.fits')
+    models   = glob.glob(modeldir+'model_acs_814w_candels-cdfs-*_cut_v1.0_id*_cutout4p0x4p0arcsec.fits')
     Nmodels  = len(models)
 
     componentinfo = '/Users/kschmidt/work/TDOSE/181016_MWDR1_OIIemitters/OIIemitter_componentinfo_edited181016.txt'
@@ -461,7 +462,7 @@ def OIIemitters_GenerateComponentInfo():
 
     """
     modeldir = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
-    models   = glob.glob(modeldir+'model_acs_814w_candels-cdfs-01_cut_v1.0_id*_cutout4p0x4p0arcsec.fits')
+    models   = glob.glob(modeldir+'model_acs_814w_candels-cdfs-*_cut_v1.0_id*_cutout4p0x4p0arcsec.fits')
 
     compinfofile = '/Users/kschmidt/work/TDOSE/181016_MWDR1_OIIemitters/OIIemitter_componentinfo_RENAME.txt'
     fout = open(compinfofile,'w')
@@ -495,4 +496,44 @@ def OIIemitters_GenerateComponentInfo():
         fout.write(outstring+' \n')
     fout.close()
     print(' - Wrote component info to: '+compinfofile)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def print_TDOSEsetup_PSFparameter(fields,printresults=True):
+    """
+    Function loading main PSF catalog and printing the 3 paramaters needed for the TDOSE setup files
+
+    --- INPUT ---
+    fields       list of fields to print PSF parameters for
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    fields   = ['cdfs-02','cdfs-03','cdfs-04','cdfs-04','cdfs-04','cdfs-42']
+    psfparam = tsu.print_TDOSEsetup_PSFparameter(fields)
+
+    """
+    PSFcat = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/MUSEWide_PSF_Catalog_180723.fits'
+    PSFdat = afits.open(PSFcat)[1].data
+
+    psfparam = np.zeros([len(fields)],
+                        dtype=[('field', 'S20'),('psf_FWHMp0', 'f4'), ('psf_FWHMp1', 'f4'), ('psf_FWHMp2', 'f4')])
+    for ff, field in enumerate(fields):
+        psfent = np.where(PSFdat['field'] == field)[0]
+
+        if len(psfent) != 1:
+            print(' WARNING: Found '+str(len(psfent))+' entries in PSF catalog for field = '+str(field))
+        else:
+            psfparam['field'][ff]      = field
+            psfparam['psf_FWHMp0'][ff] = PSFdat['p0_sel_g'][psfent]
+            psfparam['psf_FWHMp1'][ff] = PSFdat['p1_sel_g'][psfent]
+            psfparam['psf_FWHMp2'][ff] = 7050.00
+
+    if printresults:
+        print('#            field              psf_FWHMp0            psf_FWHMp1              psf_FWHMp2 ')
+        for pp in xrange(len(psfparam)):
+            pstr = str("%20s" % psfparam['field'][pp])+'  '+\
+                   str("%20s" % psfparam['psf_FWHMp0'][pp])+'  '+\
+                   str("%20s" % psfparam['psf_FWHMp1'][pp])+'  '+\
+                   str("%20s" % psfparam['psf_FWHMp2'][pp])
+            print(pstr)
+
+    return psfparam
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
