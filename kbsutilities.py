@@ -55,6 +55,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 import astropy.table as atab
 import collections
+from scipy import odr
 #-------------------------------------------------------------------------------------------------------------
 def test4float(str): 
     """testing whehter a string contains letters (i.e. whether it can be converted to a float)"""
@@ -1509,6 +1510,97 @@ def combine_fits_tables(fitstables,outputtable,genDS9reg=True,racol='RA',deccol=
             textlist = newtable[idcol]
         kbs.create_DS9region(outputtable.replace('.fits','.reg'),newtable[racol],newtable[deccol],
                              color='red',circlesize=0.5,textlist=textlist,clobber=False)
+#-------------------------------------------------------------------------------------------------------------
+def odr_fitfunction_linear(p, x):
+    a, b = p
+    return a*x + b
+def odr_fitfunction_quad(p, x):
+    a, b, c = p
+    return a * x*x + b*x + c
+def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunction='linear',plotresults='./ODRfit2data.pdf'):
+    """
+    Use scipy's Orthogonal Distance Regression (ODR) to fit a function to data with errors on both axes.
+    Essential a 2D leas squares, where the diagonal convariance matrices of the data is accounted for.
+
+    Example taken from https://micropore.wordpress.com/2017/02/07/python-fit-with-error-on-both-axis/
+
+    --- INPUT ---
+
+
+    --- EXAMPLE OF USE ---
+
+
+    """
+    print(' - Setting up model to fit ('+fitfunction+')')
+    if fitfunction == 'linear':
+        quad_model = odr.Model(kbs.odr_fitfunction_linear)
+        initguess  = [0., 1.]
+    elif fitfunction == 'quadratic':
+        quad_model = odr.Model(kbs.odr_fitfunction_quad)
+        initguess  = [0., 1., 1.]
+    else:
+        sys.exit(' - fitfunction='+str(fitfunction)+' is not a valid choice')
+
+    print(' - Making sure all inputs are float arrays ')
+    xval = np.asarray(xval).astype(float)
+    yval = np.asarray(yval).astype(float)
+    xerr = np.asarray(xerr).astype(float)
+    yerr = np.asarray(yerr).astype(float)
+
+    print(' - Create a ReadData object from the provided data ')
+    data = odr.RealData(xval, yval, sx=xerr, sy=yerr)
+
+    print(' - Set up ODR with the mode and the data ')
+    odrclass = odr.ODR(data, quad_model, beta0=initguess)
+
+    print(' - Run the Orthogonal Distance Regression on the data ')
+    fitresults = odrclass.run()
+
+    print(' - The 1sigma parameter estimates of the '+fitfunction+' from the ODR fit are ')
+    popt = fitresults.beta
+    perr = fitresults.sd_beta
+    for i in range(len(popt)):
+        print('   '+str(popt[i])+' +/- '+str(perr[i]))
+
+    if plotresults:
+        nstd = 5. # to draw 5-sigma intervals
+        popt_up = popt + nstd * perr
+        popt_dw = popt - nstd * perr
+
+        x_fit = np.linspace(min(xval), max(xval), 100)
+        if fitfunction == 'linear':
+            fit = kbs.odr_fitfunction_linear(popt, x_fit)
+            fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+            fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+        elif fitfunction == 'quadratic':
+            fit = kbs.odr_fitfunction_quad(popt, x_fit)
+            fit_up = kbs.odr_fitfunction_quad(popt_up, x_fit)
+            fit_dw= kbs.odr_fitfunction_quad(popt_dw, x_fit)
+
+        fig = plt.figure(figsize=(5,5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+        lthick = 1
+        Fsize  = 12
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        plt.title('Orthogonal Distance Regression fit to data w. error on both axes', fontsize=Fsize)
+
+        plt.errorbar(xval, yval, yerr=yerr, xerr=xerr, hold=True, ecolor='k', fmt='none', label='data')
+        plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='5-sigma interval',color='red')
+        plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+
+        plt.xlabel('x values', fontsize=Fsize)
+        plt.ylabel('y values', fontsize=Fsize)
+
+        leg = plt.legend(fancybox=True, loc='lower right',prop={'size':Fsize},ncol=1,numpoints=1)
+        leg.get_frame().set_alpha(0.7)
+
+        plt.savefig(plotresults)
+    return fitresults
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
