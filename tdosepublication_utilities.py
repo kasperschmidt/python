@@ -3,10 +3,12 @@ import numpy as np
 import pdb
 import astropy.io.fits as afits
 import os
+import sys
 import glob
 import aplpy
 import shutil
 import tdose_utilities as tu
+import kbsutilities as kbs
 import matplotlib.pyplot as plt
 import tdose_extract_spectra as tes
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -352,7 +354,7 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
     return goodsubcat, mags814
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def extractGOODSS_cutoouts(dataarray,mwidcol='UNIQUE_ID',cutsize=5.0,racol='RA',deccol='DEC',clobber=True,
-                           generatepng=False,outdir='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/cutouts/'):
+                           generatepng=False,outdir='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/cutoutsTEMP/'):
     """
     Extract cutouts of a set of objects from an input data array
     Build to make cutouts of selection from tsu.getOIIemitters()
@@ -497,6 +499,532 @@ def OIIemitters_GenerateComponentInfo():
     fout.close()
     print(' - Wrote component info to: '+compinfofile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_GenerateMWcoordinateSorcecats():
+    """
+    Generate source catalogs for the OII emitters based on the MW coordinates for generating cutouts
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_GenerateMWcoordinateSorcecats()
+
+    """
+    outdir       = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_sourcecats_MWcoord/'
+    modeldir     = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    fitscatalog  = modeldir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
+    fitsdat      = afits.open(fitscatalog)[1].data
+
+    for oo, objid in enumerate(fitsdat['UNIQUE_ID']):
+
+        imgheader  = afits.open('/Users/kschmidt/work/images_MAST/MUSEWidePointings/acs_814w_'+
+                                fitsdat['FIELD_NAME'][oo]+'_cut_v1.0.fits')[0].header
+        sourcecatcenter = [fitsdat['RA'][oo],  fitsdat['DEC'][oo]]
+        sourcecatradius = 45.0
+        outname         = outdir+'tdose_sourcecat_MWcoordinates-'+str(int(objid))+'.txt'
+
+        sourcecat    = tu.gen_sourcecat_from_FitsCat(fitscatalog,'UNIQUE_ID','RA','DEC',sourcecatcenter,
+                                                     sourcecatradius ,imgheader,outname=outname,clobber=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), fontsize=12, logaxes=True,
+                                namebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_comparisons'):
+    """
+    Plotting comparison of extractions of OII emitters to evaluate performance.
+
+    --- INPUT ---
+    N/A
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_plotcomparisons()
+
+    """
+    specdir        = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_spectra/'
+    files_modelimg = glob.glob(specdir+'tdose_spectrum_modelimg*.fits')
+    files_migauss  = glob.glob(specdir+'tdose_spectrum_gauss*.fits')
+
+    galfitdir      = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    objcatalog     = afits.open(galfitdir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits')[1].data
+
+    MWDR1dir       = '/Users/kschmidt/work/TDOSE/OIIemitter_MWDR1spectra/'
+
+    print(' - Looping over objects and pulling out maximum OII flux and S/N from spectra')
+    ids         = []
+    SNsersic    = []
+    SNgauss     = []
+    Fsersic     = []
+    Ferrsersic  = []
+    Fgauss      = []
+    Ferrgauss   = []
+
+    SNlsdcat    = []
+
+    SNmwdr1el   = []
+    SNmwdr1td   = []
+    Fmwdr1el    = []
+    Fmwdr1td    = []
+    Ferrmwdr1el = []
+    Ferrmwdr1td = []
+
+    for ff, file_mi in enumerate(files_modelimg):
+        if '116004061' in file_mi:  # Ignore duplicated object
+            continue
+        objid       = file_mi.split('modelimg_0')[-1][:9]
+        objid_check = files_migauss[ff].split('gauss_0')[-1][:9]
+        if objid != objid_check:
+            sys.exit('mismatch in ids... objid='+str(objid)+' and objid_check='+str(objid_check))
+        else:
+            ids.append(objid)
+
+        infostr = ' - Getting info for object '+str(objid)+' ( file '+\
+                  str("%3.f" % (ff+1))+' / '+str("%3.f" % len(files_modelimg)+')')
+        sys.stdout.write("%s\r" % infostr)
+        sys.stdout.flush()
+
+        catent          = np.where(objcatalog['UNIQUE_ID'].astype(str) == objid)[0]
+        objz            = objcatalog['Z'][catent]
+        waveOII         = (1+objz)*3726.0
+        SNlsdcat.append(objcatalog['SN'][catent])
+
+        # - - - - - - - - - MODELIMG EXTRACTIONS - - - - - - - - -
+        dat_modelimg    = afits.open(file_mi)[1].data
+        dat_gauss       = afits.open(files_migauss[ff])[1].data
+
+        wavediff        = np.abs(dat_modelimg['wave']-waveOII)
+        waveent         = np.where(wavediff == np.min(wavediff))[0]
+
+        dwave           = 10
+        subdat_S2N_ser  = dat_modelimg['s2n'][waveent[0]-dwave:waveent[0]+dwave]
+        subdat_S2N_gau  = dat_gauss['s2n'][waveent[0]-dwave:waveent[0]+dwave]
+        subdat_F_ser    = dat_modelimg['flux'][waveent[0]-dwave:waveent[0]+dwave]
+        subdat_F_gau    = dat_gauss['flux'][waveent[0]-dwave:waveent[0]+dwave]
+        fmaxent_ser     = np.where(subdat_F_ser == np.max(subdat_F_ser))[0]
+        fmaxent_gau     = np.where(subdat_F_gau == np.max(subdat_F_gau))[0]
+        subdat_Ferr_ser = dat_modelimg['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent_ser]
+        subdat_Ferr_gau = dat_gauss['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent_gau]
+
+        SNsersic.append(np.max(subdat_S2N_ser))
+        SNgauss.append(np.max(subdat_S2N_gau))
+        Fsersic.append(np.max(subdat_F_ser))
+        Fgauss.append(np.max(subdat_F_gau))
+        Ferrsersic.append(subdat_Ferr_ser[0])
+        Ferrgauss.append(subdat_Ferr_gau[0])
+
+        # - - - - - - - - - MWDR1 EXTRACTIONS - EMISSION LINES - - - - - - - - -
+        file_MWDR1el  = MWDR1dir+'spectrum_'+objid+'.fits'
+        spec_MWDR1el  = afits.open(file_MWDR1el)[1].data
+
+        wavediff        = np.abs(spec_MWDR1el['WAVE_AIR']-waveOII)
+        waveent         = np.where(wavediff == np.min(wavediff))[0]
+        dwave           = 10
+
+        SNvec           = spec_MWDR1el['FLUX']/spec_MWDR1el['FLUXERR']
+        subdat_S2N      = SNvec[waveent[0]-dwave:waveent[0]+dwave]
+        subdat_F        = spec_MWDR1el['FLUX'][waveent[0]-dwave:waveent[0]+dwave]
+        fmaxent         = np.where(subdat_F == np.max(subdat_F))[0]
+        Ferrmax         = spec_MWDR1el['FLUXERR'][waveent[0]-dwave:waveent[0]+dwave][fmaxent]
+
+        SNmwdr1el.append(np.max(subdat_S2N))
+        Fmwdr1el.append(np.max(subdat_F))
+        Ferrmwdr1el.append(Ferrmax[0])
+
+        # - - - - - - - - - MWDR1 EXTRACTIONS - TDOSE GUO - - - - - - - - -
+        guoidstr        = str("%.10d" % objcatalog['GUO_ID'][catent])
+        file_MWDR1td    = MWDR1dir+'tdose_spectrum_'+objcatalog['FIELD_NAME'][catent][0]+'_gauss_'+guoidstr+'.fits'
+        if guoidstr == '0000005408':
+            file_MWDR1td = file_MWDR1td.replace(objcatalog['FIELD_NAME'][catent][0],'candels-cdfs-05')
+        if guoidstr == '0000006034':
+            file_MWDR1td = file_MWDR1td.replace(objcatalog['FIELD_NAME'][catent][0],'candels-cdfs-09')
+        if guoidstr == '0000006561':
+            file_MWDR1td = file_MWDR1td.replace(objcatalog['FIELD_NAME'][catent][0],'candels-cdfs-14')
+        if guoidstr == '0000005499':
+            file_MWDR1td = file_MWDR1td.replace(objcatalog['FIELD_NAME'][catent][0],'candels-cdfs-16')
+        if guoidstr == '0000013882':
+            file_MWDR1td = file_MWDR1td.replace(objcatalog['FIELD_NAME'][catent][0],'candels-cdfs-46')
+        if guoidstr == '0000013882':
+            file_MWDR1td = file_MWDR1td.replace(objcatalog['FIELD_NAME'][catent][0],'candels-cdfs-45')
+
+        spec_MWDR1td    = afits.open(file_MWDR1td)[1].data
+
+        wavediff        = np.abs(spec_MWDR1td['wave']-waveOII)
+        waveent         = np.where(wavediff == np.min(wavediff))[0]
+        dwave           = 10
+
+        subdat_S2N      = spec_MWDR1td['s2n'][waveent[0]-dwave:waveent[0]+dwave]
+        subdat_F        = spec_MWDR1td['flux'][waveent[0]-dwave:waveent[0]+dwave]
+        fmaxent         = np.where(subdat_F == np.max(subdat_F))[0]
+        Ferrmax         = spec_MWDR1td['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent]
+
+        SNmwdr1td.append(np.max(subdat_S2N))
+        Fmwdr1td.append(np.max(subdat_F))
+        Ferrmwdr1td.append(Ferrmax[0])
+
+    print('\n   ... done')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    odrfit = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Fmwdr1td,Ferrsersic,Ferrmwdr1td,
+                                                               fitfunction='linear',plotresults=namebase+'_ODRfit2data.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2N.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.plot(SNsersic,SNgauss,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/SNgauss[ii] > outliercut):
+                plt.text(SNsersic[ii],SNgauss[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (SNgauss[ii]/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNgauss[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) TDOSE multicomponent Gauss model', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+    #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2Nlsdcat.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    scalefactor = 1.5
+    plt.plot(SNsersic,np.asarray(SNlsdcat)/scalefactor,'.r',label='S/N LSDcat scaled by '+str(scalefactor))
+
+    plt.plot(SNsersic,SNlsdcat,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/(SNlsdcat[ii]/scalefactor) > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if ((SNlsdcat[ii]/scalefactor)/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('S/N MW DR1 LSDcat measurements', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+                     bbox_to_anchor=(0.01, 0.99))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2Nmwdr1el.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    scalefactor = 1.0
+    if scalefactor != 1.0:
+        plt.plot(SNsersic,np.asarray(SNmwdr1el)/scalefactor,'.r',label='S/N EL spectrum scaled by '+str(scalefactor))
+
+    plt.plot(SNsersic,SNmwdr1el,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/SNmwdr1el[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (SNmwdr1el[ii]/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,50]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) MW DR1 EL spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    if scalefactor != 1.0:
+        leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+                         bbox_to_anchor=(0.01, 0.99))  # add the legend
+        leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2Nmwdr1td.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    scalefactor = 1.0
+    if scalefactor != 1.0:
+        plt.plot(SNsersic,np.asarray(SNmwdr1td)/scalefactor,'.r',label='S/N TDOSE spectrum scaled by '+str(scalefactor))
+
+    plt.plot(SNsersic,SNmwdr1td,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/SNmwdr1td[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (SNmwdr1td[ii]/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,50]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) MW DR1 TDOSE spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    if scalefactor != 1.0:
+        leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+                         bbox_to_anchor=(0.01, 0.99))  # add the legend
+        leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_flux.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.errorbar(Fsersic,Fgauss, yerr=Ferrgauss, xerr=Ferrsersic,fmt='ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (Fsersic[ii]/Fgauss[ii] > outliercut):
+                plt.text(Fsersic[ii],Fgauss[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (Fgauss[ii]/Fsersic[ii] > outliercut):
+                plt.text(Fsersic[ii],Fgauss[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [50,6000]
+    else:
+        axisrange = [0,5000]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[cgs]) TDOSE multicomponent Gauss model', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+    #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_flux_mwdr1el.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    scalefactor = 2.0
+    if scalefactor != 1.0:
+        plt.plot(Fsersic,np.asarray(Fmwdr1el)/scalefactor,'.r',label='S/N MW DR1 EL spectrum scaled by '+str(scalefactor))
+
+    plt.errorbar(Fsersic,Fmwdr1el, yerr=Ferrgauss, xerr=Ferrsersic,fmt='ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (Fsersic[ii]/(Fmwdr1el[ii]/scalefactor) > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if ((Fmwdr1el[ii]/scalefactor)/Fsersic[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [100,4000]
+    else:
+        axisrange = [0,3000]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[cgs]) MW DR1 EL spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    if scalefactor != 1.0:
+        leg = plt.legend(fancybox=True, loc='lower right',prop={'size':Fsize},ncol=1,numpoints=1)
+        leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_flux_mwdr1td.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.errorbar(Fsersic,Fmwdr1td, yerr=Ferrgauss, xerr=Ferrsersic,fmt='ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (Fsersic[ii]/Fmwdr1td[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (Fmwdr1td[ii]/Fsersic[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit.beta
+    perr = odrfit.sd_beta
+    nstd = 5. # draw 5-sigma intervals
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='5-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [100,4000]
+    else:
+        axisrange = [0,1500]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[cgs]) MW DR1 TDOSE spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def print_TDOSEsetup_PSFparameter(fields,printresults=True):
     """
     Function loading main PSF catalog and printing the 3 paramaters needed for the TDOSE setup files
@@ -536,4 +1064,47 @@ def print_TDOSEsetup_PSFparameter(fields,printresults=True):
             print(pstr)
 
     return psfparam
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_minosDownloadCMDs(outdir='/Users/kschmidt/work/TDOSE/OIIemitter_MWDR1spectra/'):
+    """
+    Function generating text file with download commands for minos.aip.de to grab MW DR1 spectra.
+
+    --- INPUT ---
+
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_minosDownloadCMDs()
+
+    """
+    modeldir     = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    fitscatalog  = modeldir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
+
+    objdat = afits.open(fitscatalog)[1].data
+
+    outcmdfile = outdir+'minos_downloadcommands.txt'
+    fout = open(outcmdfile,'w')
+    fout.write('# Command for grabbing spectra of OII emitters in:\n')
+    fout.write('# '+fitscatalog+'\n')
+    fout.write('# from minos.aip.de. These are the spectra in the MW DR1 at https://musewide.aip.de/dr1\n')
+
+    for ii, mwid in enumerate(objdat['UNIQUE_ID']):
+        fout.write('# >>>>>>>>>> SPECTRA FOR MUSE-Wide '+str(mwid)+' <<<<<<<<<<\n')
+
+        ELcmd = 'scp kasper@minos.aip.de:/store/vo/musewide/musewide/emission_spectra_dr1/*'+\
+                str(mwid)+'*  '+outdir
+
+        TDcmd = 'scp kasper@minos.aip.de:/store/vo/musewide/musewide/guo_photometric_catalog_spectra/*'+\
+                str("%.10d" % objdat['GUO_ID'][ii])+'*  '+outdir
+
+        if str(mwid) == '116004061': # Ignore download of duplicate object
+            ELcmd = '# '+ELcmd
+            TDcmd = '# '+TDcmd
+
+        fout.write(ELcmd+'\n')
+        fout.write(TDcmd+'\n')
+
+    fout.close()
+    print(' - Wrote commands to:\n   '+outcmdfile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
