@@ -2,10 +2,11 @@
 #                           Utilities for MUSE-Wide related stuff
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #import pyfits     # KBS180118 -> import astropy.io.fits as pyfits
-import astropy.io.fits as pyfits
+import astropy.io.fits as afits
 import numpy as np
 import MUSEWideUtilities as mwu
 import sys
+import stacking
 import scipy.ndimage
 import tdose_utilities as tu
 from astropy import wcs
@@ -26,11 +27,11 @@ def get_pixelpos(ra,dec,pointingname,imgdir='/Users/kschmidt/work/images_MAST/MU
     searchstr = imgdir+'*'+pointingname+'*.fits'
     img = glob.glob(searchstr)
     if len(img) == 1:
-        imghdr = pyfits.open(img[0])[imgext].header
+        imghdr = afits.open(img[0])[imgext].header
     else:
         sys.exit(' Found '+str(len(img))+' images looking for '+searchstr)
 
-    if verbose: print ' Getting pixel position in '+img[0]
+    if verbose: print(' Getting pixel position in '+img[0])
     imgwcs    = wcs.WCS(tu.strip_header(imghdr.copy()))
 
     pixcoord  = wcs.utils.skycoord_to_pixel(SkyCoord(ra, dec, unit=radecunit),imgwcs,origin=pixorigin)
@@ -85,15 +86,15 @@ def convert_wht2sigma(wht_file,wht_units='ivar',wht_ext=0,
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loading inverse variance wheight map'
-    wht_data            = pyfits.open(wht_file)[wht_ext].data
+    if verbose: print(' - Loading inverse variance wheight map')
+    wht_data            = afits.open(wht_file)[wht_ext].data
     wht_data_shape      = wht_data.shape
 
     if wht_units == 'ivar':
-        if verbose: print ' - Weight image is in units "ivar", i.e., inverser variamce. Turning map into sigmas'
+        if verbose: print(' - Weight image is in units "ivar", i.e., inverser variamce. Turning map into sigmas')
         sigma_img = np.sqrt(1.0/wht_data)
     elif (wht_units == 'sigma') or (wht_units == 'stddev'):
-        if verbose: print ' - Weight image already in sigma units "sigma" or "stddev". No conversion applied'
+        if verbose: print(' - Weight image already in sigma units "sigma" or "stddev". No conversion applied')
         sigma_img = wht_data
     else:
         sys.exit(' ---> Invalid choice of wht_units="'+wht_units+'" ')
@@ -120,8 +121,8 @@ def convert_wht2sigma(wht_file,wht_units='ivar',wht_ext=0,
         outfile = output_file
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Updating fits header with conversion information '
-    sigma_hdr  = pyfits.open(wht_file)[wht_ext].header
+    if verbose: print(' - Updating fits header with conversion information ')
+    sigma_hdr  = afits.open(wht_file)[wht_ext].header
     removekeys = ['FILENAME']
     for key in removekeys:
         if key in sigma_hdr.keys():
@@ -141,17 +142,17 @@ def save_img(imagedata,header,filename,clobber=False,verbose=True):
     Saving image to fits file
 
     """
-    if verbose: print ' - Saving image to \n   '+filename
+    if verbose: print(' - Saving image to \n   '+filename)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if 'XTENSION' in header.keys():
-        hduprim        = pyfits.PrimaryHDU()  # default HDU with default minimal header
-        hducube        = pyfits.ImageHDU(imagedata,header=header)
+        hduprim        = afits.PrimaryHDU()  # default HDU with default minimal header
+        hducube        = afits.ImageHDU(imagedata,header=header)
         hdus           = [hduprim,hducube]
     else:
-        hducube = pyfits.PrimaryHDU(imagedata,header=header)
+        hducube = afits.PrimaryHDU(imagedata,header=header)
         hdus           = [hducube]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    hdulist = pyfits.HDUList(hdus)             # turn header into to hdulist
+    hdulist = afits.HDUList(hdus)             # turn header into to hdulist
     hdulist.writeto(filename,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def insert_PSFfits_into_TDOSEinfofile(TDOSEinfofile='/Users/kschmidt/work/TDOSE/muse_tdose_setups/MUSEWide_infofile_arche.txt',
@@ -170,10 +171,10 @@ def insert_PSFfits_into_TDOSEinfofile(TDOSEinfofile='/Users/kschmidt/work/TDOSE/
     infofile   = np.genfromtxt(TDOSEinfofile,skip_header=2,names=True,dtype=fmt)
 
     outfile    = TDOSEinfofile.replace('.txt','_PSFupdate.txt')
-    if verbose: print ' - Will store the updated infofile in \n   '+outfile
+    if verbose: print(' - Will store the updated infofile in \n   '+outfile)
     fout       = open(outfile,'w')
 
-    PSFinfo    = pyfits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits')[1].data
+    PSFinfo    = afits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/psf_all_Converted_cleaned.fits')[1].data
 
     fieldnames = [nn.split('candels-')[-1] for nn in infofile['setupname']]
 
@@ -272,14 +273,14 @@ def launch_bluebumpGUI():
     mu.launch_bluebumpGUI()
 
     """
-    print 'ERROR: Cannot be run within ipython using import. Run by simply typing "python determine_bb.py',pdb.set_trace()
-    print ' - Assuming positioned in /Users/kschmidt/work/MUSE/Josie_DoublePeakInspection/'
-    print ' - Importing determine_bb.py (remember to edit file and catalog info '
+    print('ERROR: Cannot be run within ipython using import. Run by simply typing "python determine_bb.py'),pdb.set_trace()
+    print(' - Assuming positioned in /Users/kschmidt/work/MUSE/Josie_DoublePeakInspection/')
+    print(' - Importing determine_bb.py (remember to edit file and catalog info ')
     import determine_bb
-    print ' - Launching inspection GUI; happy inspecting... '
+    print(' - Launching inspection GUI; happy inspecting... ')
     determine_bb.main()
 
-    print ' - GUI existed after inspections'
+    print(' - GUI existed after inspections')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,outputdir,
@@ -326,13 +327,13 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
     Nsubcubes = len(ras)
     if len(decs) != Nsubcubes:
         sys.exit(' The number of RAs does not match the number of Decs. Make sure they do ')
-    if verbose: print ' - Found '+str(Nsubcubes)+' coordinate sets to generate sub cubes for '
+    if verbose: print(' - Found '+str(Nsubcubes)+' coordinate sets to generate sub cubes for ')
 
     if (type(dras) == float) & (type(ddecs) == float):
         dras  = [dras] * Nsubcubes
         ddecs = [ddecs] * Nsubcubes
 
-    cubehdr = pyfits.open(datacube)[cube_ext[0]].header
+    cubehdr = afits.open(datacube)[cube_ext[0]].header
     wavevec = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
 
     for ii in xrange(Nsubcubes):
@@ -344,12 +345,12 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
             subcubename = subcubename.replace('iiiiii',str("%.5d" % (ii+1)))
 
         if os.path.isfile(subcubename) & (clobber == False):
-            if verbose: print ' - '+subcubename+' exists and clobber=False so skipping...'
+            if verbose: print(' - '+subcubename+' exists and clobber=False so skipping...')
         else:
             tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=cube_ext,
                                clobber=clobber,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
 
-            subcube = pyfits.open(subcubename)['DATA_DCBGC'].data
+            subcube = afits.open(subcubename)['DATA_DCBGC'].data
 
             for ww, cwave in enumerate(wavecenters[ii]):
                 dwave = dwaves[ii][ww]
@@ -362,23 +363,23 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
                 goodent = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
 
                 if len(goodent) >= 2:
-                    if verbose: print ' - Saving model cube to \n   '+narrowbandname
+                    if verbose: print(' - Saving model cube to \n   '+narrowbandname)
                     narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
 
-                    imghdr = tu.strip_header(pyfits.open(subcubename)[cube_ext[0]].header.copy())
+                    imghdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
                     for key in imghdr.keys():
                         if '3' in key:
                             del imghdr[key]
                         if 'ZAP' in key:
                             del imghdr[key]
 
-                    hduimg   = pyfits.PrimaryHDU(narrowbandimage,header=imghdr)
+                    hduimg   = afits.PrimaryHDU(narrowbandimage,header=imghdr)
                     hdus     = [hduimg]
-                    hdulist  = pyfits.HDUList(hdus)                  # turn header into to hdulist
+                    hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
                     hdulist.writeto(narrowbandname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
                 else:
-                    if verbose: print ' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate'
-                    if verbose: print '   '+narrowbandname
+                    if verbose: print(' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate')
+                    if verbose: print('   '+narrowbandname)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_PSFasciiselectiontemplate(outname='./PSFselectionAsciiTemplate_RENAME_.txt',campaign='E40',clobber=False,verbose=True):
     """
@@ -684,7 +685,7 @@ def match_templates2JosiesStack(spec,outfile, templatedir='/Users/kschmidt/work/
 
     """
 
-    JKspec  = pyfits.open(spec)[1].data
+    JKspec  = afits.open(spec)[1].data
     wave    = JKspec['Wavelength']
     flux    = JKspec['Spectrum']
     fluxerr = JKspec['Error']
@@ -733,7 +734,7 @@ def build_galfit_wrapper_setups(outdir,build='DR1objWOskeltonID'):
 
         cat     = 'MW_44fields_emission_woskeltoncp_no_LAEs.fits'
         catpath = maindir+cat
-        fitsdat = pyfits.open(catpath)[1].data
+        fitsdat = afits.open(catpath)[1].data
 
         areas  = [fn.split('-')[0] for fn in np.unique(fitsdat['field_name'])]
         fields = [fn.replace(fn.split('-')[0]+'-','') for fn in np.unique(fitsdat['field_name'])]
@@ -809,7 +810,7 @@ input_params               %s
 
         cat     = 'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
         catpath = maindir+cat
-        fitsdat = pyfits.open(catpath)[1].data
+        fitsdat = afits.open(catpath)[1].data
 
         areas  = [fn.split('-')[0] for fn in np.unique(fitsdat['field_name'])]
         fields = [fn.replace(fn.split('-')[0]+'-','') for fn in np.unique(fitsdat['field_name'])]
@@ -978,5 +979,66 @@ use_shape_params           %s
         input_params = input_params_dir+'params' # file name for input parameters
     else:
         sys.exit('Invalid build option "'+build+'"')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60',runallspecs=False,
+                        outfile = './MUSEWideStack_RENAME.fits', verbose=True):
+    """
+    Wrapper around stacking.stack_1D() to stack the MUSE-Wide spectra
+
+    --- INPUT ---
+    stacktype       keyword tellong stacking.stack_1D() how to stack
+    stackobjects    keyword deciding what spectra to load and stack
+    runallspecs     whether to run on all spectra, or just a small subset of selection (good for testing/setting up)
+    verbose         toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    outfile = '/Users/kschmidt/work/MUSE/spectral_stacking/TDOSEgalfitextractionsE60_meanstack_181029.fits'
+    mwu.stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60',outfile=outfile,runallspecs=False)
+
+    """
+
+    if verbose: print(' - Grabbing spectra for "'+stackobjects+'" to be stacked ')
+    if verbose: print('   and building lists of wavelengths, fluxes and variances')
+    if stackobjects == 'TDOSEgalfitextractionsE60':
+        infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_100fields_UDFshallow.fits'
+        LAEinfo   = afits.open(infofile)[1].data
+        z_Lya     = LAEinfo['redshift']
+        z_sys_V18 = LAEinfo['z_sys_V18']
+        id_all    = LAEinfo['id']
+        specdir   = '/Volumes/DATABCKUP1/TDOSEextractions/180824_TDOSEextraction_LAEs60fields/modelimg/tdose_spectra/'
+        if runallspecs:
+            spectra  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
+        else:
+            spectra  = [specdir+'tdose_spectrum_candels-cdfs-04_modelimg_0104014050-0104014050.fits',
+                        specdir+'tdose_spectrum_candels-cdfs-15_modelimg_0115003085-0115003085.fits',
+                        specdir+'tdose_spectrum_candels-cdfs-06_modelimg_0106004019-0106004019.fits',
+                        specdir+'tdose_spectrum_candels-cdfs-25_modelimg_0125042115-0125042115.fits']
+
+        wavelengths  = []
+        fluxes       = []
+        variances    = []
+        z_systemic   = []
+        for spectrum in spectra:
+            data        = afits.open(spectrum)[1].data
+            wavelengths.append(data['wave'])
+            fluxes.append(data['flux'])
+            variances.append(data['fluxerror']**2.0)
+
+            objid       = spectrum.split('-0')[-1].split('.fit')[0]
+            objinfoent  = np.where(id_all == int(objid))[0]
+            z_sys_obj   = z_sys_V18[objinfoent]
+            if z_sys_obj == 0.0:
+                z_sys_obj   = z_Lya[objinfoent]
+            z_systemic  = np.append(z_systemic , z_sys_obj[0])
+
+    else:
+        sys.exit('No setup available for stackobjects = "TDOSEgalfitextractionsE60"')
+
+    if verbose: print(' - Stack spectra')
+    wave_out, flux_out, variance_out, Nspecstack = \
+        stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=z_systemic,
+                          stacktype=stacktype, wavemin=1200, wavemax=1600,
+                          deltawave=4.0, outfile=outfile, verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
