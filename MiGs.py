@@ -222,8 +222,11 @@ def linelistdic(listversion='full'):
         linelist['heii']     = ['HeII $\\lambda$1640'               , 1640.420 ,         'right'      , 'vandenberk+2001']
         linelist['oiiib1']   = ['OIII] $\\lambda$1661'              , 1660.809 ,         'right'      , 'Morton1991tab2']
         linelist['oiiib2']   = ['OIII] $\\lambda$1666'              , 1666.150 ,         'left'       , 'Morton1991tab2']
-        linelist['ciii1']    = ['[CIII] $\\lambda$1907'             , 1907.    ,         'right'      , 'stark+2015']
-        linelist['ciii2']    = ['CIII] $\\lambda$1909'              , 1909.    ,         'left'       , 'stark+2015']
+        linelist['niii']     = ['NIII  $\\lambda$1749'              , 1749.000 ,         'left'       , 'A. Feltre email']
+        linelist['siiii1']   = ['SiIII $\\lambda$1883'              , 1882.71  ,         'left'       , 'A. Feltre email']
+        linelist['siiii2']   = ['SiIII $\\lambda$1892'              , 1892.03  ,         'left'       , 'A. Feltre email']
+        linelist['ciii1']    = ['[CIII] $\\lambda$1907'             , 1906.68  ,         'right'      , 'A. Feltre email']
+        linelist['ciii2']    = ['CIII] $\\lambda$1909'              , 1908.73  ,         'left'       , 'A. Feltre email']
         linelist['ciib']     = ['CII] $\\lambda$2326'               , 2326.113 ,         'right'      , 'Morton1991tab5']
         linelist['mgii1']    = ['MgII $\\lambda$2796'              , 2795.528 ,         'right'      , 'Morton1991tab5']
         linelist['mgii2']    = ['MgII $\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
@@ -297,6 +300,22 @@ def linelistdic(listversion='full'):
         # linelist['mgii2']  = ['MgII $\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
         # linelist['oii1']   = ['[OII] $\\lambda$3726'              , 3726.    ,         'right'      , 'Pradhan2006']
         # linelist['oii2']   = ['[OII] $\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
+    elif listversion == 'full_absorption':
+        #                         name                           wavelength[A]  horizontalalignment      lineref
+        linelist['siii']     = ['SiII  $\\lambda$1261'              , 1261.000 ,         'left'       , 'A. Feltre email']
+        linelist['siiioi']   = ['SiII+OI  $\\lambda$1304'           , 1304.000 ,         'left'       , 'A. Feltre email']
+        linelist['cii']      = ['CII  $\\lambda$1335'               , 1334.5323,         'left'       , 'A. Feltre email']
+        linelist['siiv']     = ['SiIV  $\\lambda$1403'              , 1402.7729,         'left'       , 'A. Feltre email']
+        linelist['siii']     = ['SiII  $\\lambda$1528'              , 1527.7070,         'left'       , 'A. Feltre email']
+        linelist['feii1']    = ['FeII  $\\lambda$1608'              , 1608.4511,         'left'       , 'A. Feltre email']
+        linelist['feii2']    = ['FeII  $\\lambda$1611'              , 1611.2005,         'right'      , 'A. Feltre email']
+        linelist['aliii']    = ['AlIII $\\lambda$1671'              , 1670.7886,         'right'      , 'A. Feltre email']
+    elif listversion == 'full_finestructure':
+        #                         name                           wavelength[A]  horizontalalignment      lineref
+        linelist['siii1']     = ['SiII  $\\lambda$1265'              , 1265     ,         'left'       , 'A. Feltre email']
+        linelist['siii2']     = ['SiII  $\\lambda$1309'              , 1309.2757,         'left'       , 'A. Feltre email']
+        linelist['siii3']     = ['SiII  $\\lambda$1533'              , 1533.4312,         'left'       , 'A. Feltre email']
+        linelist['cii']       = ['CII  $\\lambda$1335'               , 1335.6627,         'right'      , 'A. Feltre email']
     else:
         sys.exit('invalid "listversion" provided ('+listversion+')')
 
