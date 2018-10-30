@@ -993,8 +993,8 @@ def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60
 
     --- EXAMPLE OF USE ---
     import MUSEWideUtilities as mwu
-    outfile = '/Users/kschmidt/work/MUSE/spectral_stacking/TDOSEgalfitextractionsE60_meanstack_181029.fits'
-    mwu.stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60',outfile=outfile,runallspecs=False)
+    outfile = '/Users/kschmidt/work/MUSE/spectral_stacking/TDOSEgalfitextractionsE60_meanstack_181030.fits'
+    mwu.stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60',outfile=outfile,runallspecs=True)
 
     """
 
@@ -1019,6 +1019,7 @@ def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60
         fluxes       = []
         variances    = []
         z_systemic   = []
+        if verbose: print(' - Found '+str(len(spectra))+' spectra to stack')
         for spectrum in spectra:
             data        = afits.open(spectrum)[1].data
             wavelengths.append(data['wave'])
@@ -1038,7 +1039,37 @@ def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60
     if verbose: print(' - Stack spectra')
     wave_out, flux_out, variance_out, Nspecstack = \
         stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=z_systemic,
-                          stacktype=stacktype, wavemin=1200, wavemax=1600,
+                          stacktype=stacktype, wavemin=1100, wavemax=3000,
                           deltawave=4.0, outfile=outfile, verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_MUSEWideSpecs_plot(plotmultiple=False):
+    """
+    Plotting MUSEWide LAE stack created with stack_MUSEWideSpecs_plot()
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    mwu.stack_MUSEWideSpecs_plot()
+
+    """
+    stackfile_test = '/Users/kschmidt/work/MUSE/spectral_stacking/MUSEWideStack_test181030.fits'
+    stackfile      = '/Users/kschmidt/work/MUSE/spectral_stacking/TDOSEgalfitextractionsE60_meanstack_181030.fits'
+    if plotmultiple:
+        spectra = [stackfile,stackfile_test]
+        labels  = ['674 obj stack','4 obj stack test']
+    else:
+        spectra = [stackfile]
+        labels  = ['MUSE-Wide 60 Fields Ly$\\alpha$ emitter stack']
+
+    Nspec   = len(spectra)
+    plotname = stackfile.replace('.fits','_overview.pdf')
+
+    xrangefull = [np.min(afits.open(stackfile)[1].data['wave']),np.max(afits.open(stackfile)[1].data['wave'])]
+
+    zoomwindows=[[1180,1280,'Lya'],[1530,1570,'CIV'],[1620,1660,'HeII'],[1900,1920,'CIII'],[2780,2830,'MgII']]
+
+
+    stacking.plot_1DspecOverview(spectra,labels,['wave']*Nspec,['flux']*Nspec,['fluxerror']*Nspec,
+                                 plotname,xrangefull=xrangefull,zoomwindows=zoomwindows)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
