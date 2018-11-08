@@ -59,29 +59,36 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
         oldx            = wave / (1.0 + z_systemic[ww])
 
         # interpolate fluxes:
-        oldy            = fluxes[ww] * (1.0 + z_systemic[ww])
+        oldy            = fluxes[ww] #* (1.0 + z_systemic[ww])
         newy            = interp1d(oldx, oldy, kind='linear', fill_value=np.nan, bounds_error=False)(newx)
         fluxarr[:,ww]   = newy
 
         # interpolate variances:
-        oldy            = variances[ww] * (1.0 + z_systemic[ww])
+        oldy            = variances[ww] #* (1.0 + z_systemic[ww])
         newy            = interp1d(oldx, oldy, kind='linear', fill_value=np.nan, bounds_error=False)(newx)
         vararr[:,ww]    = newy
 
     if verbose: print(' - Performing stacking using stacktype = "'+str(stacktype)+'"')
     if stacktype.lower() == 'mean':
-        fluxarr_ma      = np.ma.masked_array(fluxarr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
+        mask_NaN       = np.ma.masked_invalid(fluxarr).mask
+        mask_HighErr   = (np.sqrt(vararr) > 100.0) # cut on standard deviation of spectra
+        combined_mask  = (mask_NaN | mask_HighErr)
+
+        fluxarr_ma      = np.ma.masked_array(fluxarr,mask=combined_mask,fill_value = np.nan)
         flux_out_ma     = np.mean(fluxarr_ma,axis=1)
         flux_out        = flux_out_ma.filled(fill_value=np.nan)
 
         fluxarr_ones    = fluxarr * 0.0 + 1.0
-        Nspecstack_ma   = np.ma.masked_array(fluxarr_ones,mask=~np.isfinite(fluxarr_ones),fill_value = np.nan)
+        Nspecstack_ma   = np.ma.masked_array(fluxarr_ones,mask=combined_mask,fill_value = np.nan)
         Nspecstack_ma   = np.sum(Nspecstack_ma,axis=1)
         Nspecstack      = Nspecstack_ma.filled(fill_value=0.0)
 
-        vararr_ma       = np.ma.masked_array(vararr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
+        vararr_ma       = np.ma.masked_array(vararr,mask=combined_mask,fill_value = np.nan)
         variance_out_ma = np.sum(vararr_ma,axis=1)
-        variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack
+        # standard error on the mean, i.e., std scales as 1/sqrt(n)
+        variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack**2.0
+    elif stacktype.lower() == 'ivarwhtmean':
+        pdb.set_trace()
 
     elif stacktype.lower() == 'median':
         fluxarr_ma      = np.ma.masked_array(fluxarr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
@@ -194,7 +201,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, outnam
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Plotting figure ')
     figuresize_x = 10
-    figuresize_y = 6
+    figuresize_y = 7
     fig          = plt.figure(figsize=(figuresize_x,figuresize_y))
     Fsize        = 10
     LW           = 2
@@ -301,22 +308,21 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, outnam
     #leg.get_frame().set_alpha(0.7)
     #--------------------------
 
-
-    plt.xlim(xrangefull)
-    plt.ylim(yrangefull)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-
     for ss, specname in enumerate(spectra):
         if datadic[specname]['Nspecstack'] is not None:
             ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
             ax2.plot(datadic[specname]['spec_wave'],
-                     datadic[specname]['Nspecstack'], color=speccols[ss],zorder=1, drawstyle='steps' )
+                     datadic[specname]['Nspecstack'],alpha=0.5, color=speccols[ss],zorder=1, drawstyle='steps' )
             ax2.tick_params(axis='y',labelcolor=speccols[ss])
-            ax2.set_ylabel('Number of spectra in stack',color=speccols[ss])
+            ax2.set_ylabel('Spectra per pixel',alpha=0.5,color=speccols[ss])
             ax2.set_xlabel(xlabel)
             ax2.set_xlim(xrangefull)
 
+
+    ax1.set_xlim(xrangefull)
+    ax1.set_ylim(yrangefull)
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.savefig(specfigure) # dpi = dot per inch for rasterized points
@@ -349,19 +355,16 @@ def plot_1DspecOverview_subplot(nrows,ncols,plotindex,datadic,spectra,speccols,p
 
             waveent = (datadic[specname]['spec_wave'] > xrange[0]) & (datadic[specname]['spec_wave'] < xrange[1])
             ax2.plot(datadic[specname]['spec_wave'][waveent],
-                     datadic[specname]['Nspecstack'][waveent], color=speccols[ss],zorder=1, drawstyle='steps' )
+                     datadic[specname]['Nspecstack'][waveent], alpha=0.5, color=speccols[ss],zorder=1, drawstyle='steps' )
             ax2.tick_params(axis='y',labelcolor=speccols[ss])
-            # ax2.set_ylabel('Number of spectra in stack', alpha=0.5,color=speccols[ss])
+            ax2.set_ylabel('Spectra per pixel', alpha=0.5,color=speccols[ss])
             ax2.set_xlabel(xlabel)
             ax2.set_xlim(xrange)
     else:
         ax1.set_xlabel(xlabel)
         ax1.set_xlim(xrange)
 
-
-
     return list(xrange), list(yrange)
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_genbox(boxstring,xrange,yrange,LW,boxzorder,Dyrangefull,col_linemarker,Fsize):
     """
@@ -384,16 +387,18 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,colors,xrange,plotSN=False,lab
     yrangecomb = [0,10]
 
     for ss, specname in enumerate(spectra):
+
         waveent = (datadic[specname]['spec_wave'] > xrange[0]) & (datadic[specname]['spec_wave'] < xrange[1])
 
         if plotSN:
-            plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
+            plt.plot(datadic[specname]['spec_wave'][waveent],
+                     datadic[specname]['spec_S2N'][waveent],
+                     '-',alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
 
             try:
                 specvals = datadic[specname]['spec_S2N'][waveent]
                 fluxmin  = np.min(np.asarray( [0,  np.min(specvals[np.isfinite(specvals)])] ))
-                fluxmax  = np.max(np.asarray( [10, np.max(specvals[np.isfinite(specvals)])] ))
+                fluxmax  = np.max(np.asarray( [5, np.max(specvals[np.isfinite(specvals)])] ))
                 if tightyrange:
                     yrange  = [fluxmin,fluxmax*1.1]
                 else:
@@ -403,16 +408,10 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,colors,xrange,plotSN=False,lab
                 yrange = [0,10]
 
         else:
-            plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_flux'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
-
-            plt.fill_between(datadic[specname]['spec_wave'],datadic[specname]['spec_filllow'],datadic[specname]['spec_fillhigh'],
-                             alpha=0.20,color=colors[ss],zorder=100)
-
             try:
                 specvals = datadic[specname]['spec_flux'][waveent]
                 fluxmin  = np.min(np.asarray( [0,  np.min(specvals[np.isfinite(specvals)])] ))
-                fluxmax  = np.max(np.asarray( [10, np.max(specvals[np.isfinite(specvals)])] ))
+                fluxmax  = np.max(np.asarray( [5, np.max(specvals[np.isfinite(specvals)])] ))
                 if tightyrange:
                     yrange  = [fluxmin,fluxmax*1.1]
                 else:
@@ -420,6 +419,16 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,colors,xrange,plotSN=False,lab
                     yrange  = [fluxmin-np.abs(dy*0.2),fluxmax+np.abs(dy*0.5)]
             except:
                 yrange = [0,100]
+
+            xvalues = datadic[specname]['spec_wave'][waveent]
+            yvalues = datadic[specname]['spec_flux'][waveent]
+            plt.plot(xvalues,yvalues,'-',alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
+
+            ylow  = datadic[specname]['spec_filllow'][waveent]
+            yhigh = datadic[specname]['spec_fillhigh'][waveent]
+            yhigh[yhigh > yrange[1]] = yrange[1]
+            ylow[ylow  < yrange[0]] = yrange[0]
+            plt.fill_between(xvalues,ylow,yhigh,alpha=0.20,color=colors[ss],zorder=100)
 
         if yrange[0] < yrangecomb[0]:
             yrangecomb[0] = yrange[0]
@@ -434,6 +443,7 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,colors,xrange,plotSN=False,lab
         else:
             meanerr = 1.0
 
+    # if yrangecomb == [0,100]: pdb.set_trace()
     return yrangecomb
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_plotlines(llistdic,windowwidth,Fsize,col_linemarker,xrange,yrange,textypos,redshift,LW,wavetype='vac'):
