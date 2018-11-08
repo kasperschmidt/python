@@ -8,6 +8,7 @@ import glob
 import aplpy
 import shutil
 import tdose_utilities as tu
+import tdosepublication_utilities as tsu
 import kbsutilities as kbs
 import matplotlib.pyplot as plt
 import tdose_extract_spectra as tes
@@ -565,6 +566,10 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     Ferrmwdr1el = []
     Ferrmwdr1td = []
 
+    Fsersic_filtered     = []
+    Ferrsersic_filtered  = []
+    SNsersic_filtered    = []
+
     for ff, file_mi in enumerate(files_modelimg):
         if '116004061' in file_mi:  # Ignore duplicated object
             continue
@@ -583,7 +588,7 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         catent          = np.where(objcatalog['UNIQUE_ID'].astype(str) == objid)[0]
         objz            = objcatalog['Z'][catent]
         waveOII         = (1+objz)*3726.0
-        SNlsdcat.append(objcatalog['SN'][catent])
+        SNlsdcat.append(objcatalog['SN'][catent][0])
 
         # - - - - - - - - - MODELIMG EXTRACTIONS - - - - - - - - -
         dat_modelimg    = afits.open(file_mi)[1].data
@@ -608,6 +613,19 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         Fgauss.append(np.max(subdat_F_gau))
         Ferrsersic.append(subdat_Ferr_ser[0])
         Ferrgauss.append(subdat_Ferr_gau[0])
+
+        # v v v v LSDCatify spectrum and pull out S/N, flux and variance v v v v
+        wave, flux_filtered, variance_filtered = tsu.LSDCatify_spectrum(file_mi,verbose=False)
+        s2n_filtered         = flux_filtered / np.sqrt(variance_filtered)
+        subdat_S2N_serfilt   = s2n_filtered[waveent[0]-dwave:waveent[0]+dwave]
+        subdat_F_serfilt     = flux_filtered[waveent[0]-dwave:waveent[0]+dwave]
+        fmaxent_serfilt      = np.where(subdat_F_serfilt == np.max(subdat_F_serfilt))[0]
+        subdat_Ferr_serfilt  = np.sqrt(variance_filtered)[waveent[0]-dwave:waveent[0]+dwave][fmaxent_serfilt]
+
+        SNsersic_filtered.append(np.max(subdat_S2N_serfilt))
+        Fsersic_filtered.append(np.max(subdat_F_serfilt))
+        Ferrsersic_filtered.append(subdat_Ferr_serfilt[0])
+        # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
 
         # - - - - - - - - - MWDR1 EXTRACTIONS - EMISSION LINES - - - - - - - - -
         file_MWDR1el  = MWDR1dir+'spectrum_'+objid+'.fits'
@@ -660,8 +678,25 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
 
     print('\n   ... done')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    odrfit = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Fmwdr1td,Ferrsersic,Ferrmwdr1td,
+    odrfit_F = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Fmwdr1td,Ferrsersic,Ferrmwdr1td,
                                                                fitfunction='linear',plotresults=namebase+'_ODRfit2data.pdf')
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1td))  = '+
+          str(np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1td))))
+    print('   -> np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1td))  = '+
+          str(np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1td))))
+
+    # pdb.set_trace() #... 181107 why does the ODR not work? Funky shape of input arrays?
+    odrfit_SN = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic_filtered,SNlsdcat,
+                                                                  np.asarray(SNlsdcat)*0.0+1.0,np.asarray(SNlsdcat)*0.0+1.0,
+                                                                  fitfunction='linear',
+                                                                  plotresults=namebase+'_ODRfit2data_SN.pdf')
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))  = '+
+          str(np.median(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))))
+    print('   -> np.std(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))  = '+
+          str(np.std(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))))
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = namebase+'_S2N.pdf'
     if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
@@ -756,6 +791,73 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
                      bbox_to_anchor=(0.01, 0.99))  # add the legend
     leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2Nlsdcat_filtered.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # scalefactor = 1.5
+    # plt.plot(SNsersic,np.asarray(SNlsdcat)/scalefactor,'.r',label='S/N LSDcat scaled by '+str(scalefactor))
+    # plt.plot(SNsersic_filtered,SNlsdcat,'.g',label='LSDcatified TDOSE S/N')
+
+    plt.plot(SNsersic_filtered,SNlsdcat,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/(SNlsdcat[ii]/scalefactor) > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if ((SNlsdcat[ii]/scalefactor)/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_SN.beta
+    perr = odrfit_SN.sd_beta
+    nstd = 3. # draw 5-sigma intervals
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic_filtered), max(SNsersic_filtered), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model (filtered)', fontsize=Fsize)
+    plt.ylabel('S/N MW DR1 LSDcat measurements', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+    #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
+    # leg.get_frame().set_alpha(0.7)
     print(' - Saving plot to '+plotname)
     plt.savefig(plotname)
     fig.clf()
@@ -989,9 +1091,9 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # overplot ODR fit
-    popt = odrfit.beta
-    perr = odrfit.sd_beta
-    nstd = 5. # draw 5-sigma intervals
+    popt = odrfit_F.beta
+    perr = odrfit_F.sd_beta
+    nstd = 3. # draw 5-sigma intervals
     popt_up = popt + nstd * perr
     popt_dw = popt - nstd * perr
     x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
@@ -999,7 +1101,7 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='5-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1107,4 +1209,218 @@ def OIIemitters_minosDownloadCMDs(outdir='/Users/kschmidt/work/TDOSE/OIIemitter_
 
     fout.close()
     print(' - Wrote commands to:\n   '+outcmdfile)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def LSDCatify_spectrum(specfile,plot_comparison=False,xrange=None,yranges=None,verbose=True):
+    """
+    Apply matrix filtering to spectrum, to make the S/N values comparable to the LSDCat detections
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+
+    specdir  = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_spectra/'
+    specfile = specdir+'tdose_spectrum_modelimg_0101014030-0101014030.fits'
+    specfile = specdir+'tdose_spectrum_modelimg_0103024094-0103024094.fits'
+    wave, flux_filtered, variance_filtered = tsu.LSDCatify_spectrum(specfile,plot_comparison='/Users/kschmidt/work/MUSE/notes/181119/LSDCatify_comparison.pdf',xrange=[6150,6350],yranges=[[-220,320],[-3,13]])
+
+    """
+    specdat = afits.open(specfile)[1].data
+    # if verbose: print(' - Convert spectrum to observed frame (if already observed frame set "redshift=0.0" ')
+    wave      = specdat['wave'] #* (1.0 + redshift)
+    flux      = specdat['flux']
+    variance  = specdat['fluxerror']**2.0
+
+    if verbose: print(' - Defining the filter matrix for the LDSCat filtering ')
+    velocity       = 250.00 # FWHM[km/s] cf. Urrutia et al. MWDR1 section 4.1
+    lambda_start   = wave[0]
+    cdelt          = np.median(np.diff(wave))
+    lMax           = len(wave)
+    filter_matrix  = tsu.create_filter_matrix_vel(velocity,lambda_start=lambda_start,cdelt=cdelt,lMax=lMax)
+
+    if verbose: print(' - Inserting flux and variance into dummy cube to filter spectrum and variance ')
+    fluxcube               = np.zeros([lMax,1])
+    fluxcube[:,0]          = flux
+    variancecube           = np.zeros([lMax,1])
+    variancecube[:,0]      = variance
+    fluxcube_filtered      = tsu.filter_spectrum(filter_matrix,fluxcube)
+    variancecube_filtered  = tsu.filter_spectrum(filter_matrix**2,variancecube)
+    flux_filtered          = fluxcube_filtered[:,0]
+    variance_filtered      = variancecube_filtered[:,0]
+
+    if plot_comparison:
+        figsize  = (5, 5)
+        fontsize = 12
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plotname = plot_comparison
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+        Fsize  = fontsize
+        lthick = 1
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        plt.title('Gaussian filter with FWHM = '+str(velocity)+'km/s applied',fontsize=Fsize)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plt.plot(wave,flux,'-k',alpha=1.0,lw=lthick,label='Intrinsic')
+        plt.fill_between(wave,flux-np.sqrt(variance),flux+np.sqrt(variance), alpha=0.4, label='+/-sqrt(variance)',
+                         color='black')
+
+        #plt.plot(wave,flux_filtered[:-10],'-g',alpha=1.0,lw=lthick,label='Filtered[:-10]')
+        plt.plot(wave,flux_filtered[8:-8],'-r',alpha=1.0,lw=lthick,label='Filtered[8:-8]')
+        plt.fill_between(wave,flux_filtered[8:-8]-np.sqrt(variance_filtered[8:-8]),
+                         flux_filtered[8:-8]+np.sqrt(variance_filtered[8:-8]),
+                         alpha=0.4, label='+/-sqrt(variance)', color='red')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plt.xlabel('wavelength', fontsize=Fsize)
+        plt.ylabel('flux', fontsize=Fsize)
+        leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize},ncol=2,numpoints=1)
+        leg.get_frame().set_alpha(0.7)
+        if xrange is not None:
+            plt.xlim(xrange)
+        if yranges is not None:
+            plt.ylim(yranges[0])
+
+        print(' - Saving plot to '+plotname)
+        plt.savefig(plotname)
+        fig.clf()
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plotname = plot_comparison.replace('.pdf','_S2N.pdf')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+        Fsize  = fontsize
+        lthick = 1
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        plt.title('Gaussian filter with FWHM = '+str(velocity)+'km/s applied',fontsize=Fsize)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plt.plot(wave,flux/np.sqrt(variance),'-k',alpha=1.0,lw=lthick,label='Intrinsic')
+        s2n_filtered = flux_filtered/np.sqrt(variance_filtered)
+        #plt.plot(wave,s2n_filtered[:-10],'-g',alpha=1.0,lw=lthick,label='Filtered[:-10]')
+        plt.plot(wave,s2n_filtered[8:-8],'-r',alpha=1.0,lw=lthick,label='Filtered[8:-8]')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plt.xlabel('wavelength', fontsize=Fsize)
+        plt.ylabel('flux', fontsize=Fsize)
+        leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize},ncol=2,numpoints=1)
+        leg.get_frame().set_alpha(0.7)
+        if xrange is not None:
+            plt.xlim(xrange)
+        if yranges is not None:
+            plt.ylim(yranges[1])
+
+        print(' - Saving plot to '+plotname)
+        plt.savefig(plotname)
+        fig.clf()
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    return wave, flux_filtered[8:-8], variance_filtered[8:-8]
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+# v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
+#
+# A few functions to smooth spectrum as done by LSDCat when filtering cubes to determine S/N of emission lines
+# Taken from wavelength_smooth_lib.py (author C. Herenz) available at:
+# https://bitbucket.org/Knusper2000/lsdcat/src/master/lib/wavelength_smooth_lib.py
+# For details on create_filter_matrix_vel see Appendix A.2 in:
+# https://ttt.astro.su.se/~ehere/pdf/Herenz_MASTER_THESIS.pdf
+import math as m
+import pylab as p
+from scipy import signal
+from scipy.sparse import csr_matrix
+import getopt
+import sys
+#from . import line_em_funcs as lef # my own library with convenience functions
+import multiprocessing
+import warnings
+warnings.filterwarnings("ignore",category=FutureWarning)
+
+def create_filter_matrix_vel(velocity,lambda_start=4800,cdelt=1.3,lMax=3463):
+    """
+    filter_matrix = create_filter_matrix_vel(velocity,
+                                             lambda_start=4800,
+                                             cdelt=1.3,lMax=3463)
+    ---
+
+    Creates the filter matrix which will then be multiplied to
+    a vector containing the spectrum.
+
+    <velocity> = linewidth in velocity space (i.e. constant rest-frame)
+                 of emission line (FWHM, in km/s) for which the filter
+                 will be optimized
+    <lambda_start> =  wavelength corresponding to 1st spectral pixel (in Angstrom)
+                      (default: 4800 Angstrom)
+    <cdelt> = wavelength interval corresponding to each pixel (in Angstrom)
+              (stored in CD3_3 in QSim Datacube-Header), default 1.3 Angstrom
+    <lMax> = No. of spectral elements (stored in NAXIS3 in Qsim Datacube-Header)
+    """
+    # same as create_filter_matrix but this time uses velocity as input -
+    # instead of \delta_\lambda and \lambda_0
+    # to understand the source see create_filter_matrix function
+    speedoflight = 299792.458 # speed of light in km/s (with
+                              # sufficient accuracy...)
+    C = 4 #truncation length
+    sqrt2pi_reci = 1./m.sqrt(2*m.pi)
+    fwhm_factor = 2*m.sqrt(2*m.log(2))
+    velocity=float(velocity); lambda_start=float(lambda_start);
+    cdelt = float(cdelt); lMax = float(lMax)
+
+    # this is the the first line which differs from  create_filter_matrix
+    #  lambda / delta_lambda -> velocity / speedoflight
+    tMax = abs(
+        ((velocity / speedoflight) * ((lambda_start / cdelt)+lMax))\
+            /fwhm_factor
+              )
+
+    M = C*m.sqrt(tMax)+1  # should be big enough...
+    M = int(m.ceil(2*M))
+    lambda_start = lambda_start - cdelt*(M/2)
+    if M % 2 == 0:
+        M = M + 1
+    h_l = p.zeros((int(lMax)+M-1,M))
+    for i in range(int(lMax)+M-1):
+        t = abs(
+            ((velocity / speedoflight) * ((lambda_start / cdelt) + i))\
+                /fwhm_factor
+               )
+        h_l[i,:] = (sqrt2pi_reci/t)*signal.gaussian(M,t)
+    filter_matrix = p.zeros((int(lMax)+M-1,int(lMax)))
+    for i in range(int(lMax)+M-1):
+        if i < M:
+            filter_matrix[i,0:i+1] = h_l[i,M-i-1:M]
+        elif i >= M and i < int(lMax):
+            filter_matrix[i,i+1-M:i+1] = h_l[i,:]
+        elif i >= int(lMax):
+            filter_matrix[i,i+1-M:int(lMax)] = h_l[i,0:M-(i+1-int(lMax))]
+    return filter_matrix
+
+# the loop which does the actual filtering on the array of spectra
+def filter_spectrum(filter_matrix,data):
+    """
+    filtered_data = filter_spectrum(filter_matrix,data):
+    the loop which does the actual filtering on the array of spectra
+    """
+    length = data.shape[1]
+    filtered_data = p.zeros((filter_matrix.shape[0],length))
+    filter_matrix_sparse = csr_matrix(filter_matrix)
+    for i in range(length):
+        # filtering implemented as matrix multiplication see my
+        # Masters-Thesis for more description
+        # https://ttt.astro.su.se/~ehere/pdf/Herenz_MASTER_THESIS.pdf
+        # - Appendix A.2
+        filtered_data[:,i] = filter_matrix_sparse.dot(data[:,i])
+
+    return filtered_data
+#
+# ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
