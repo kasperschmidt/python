@@ -1010,10 +1010,12 @@ def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60
         if runallspecs:
             spectra  = glob.glob(specdir+'tdose_spectrum_candels-*.fits')
         else:
-            spectra  = [specdir+'tdose_spectrum_candels-cdfs-04_modelimg_0104014050-0104014050.fits',
-                        specdir+'tdose_spectrum_candels-cdfs-15_modelimg_0115003085-0115003085.fits',
-                        specdir+'tdose_spectrum_candels-cdfs-06_modelimg_0106004019-0106004019.fits',
-                        specdir+'tdose_spectrum_candels-cdfs-25_modelimg_0125042115-0125042115.fits']
+            # spectra  = [specdir+'tdose_spectrum_candels-cdfs-04_modelimg_0104014050-0104014050.fits',
+            #             specdir+'tdose_spectrum_candels-cdfs-15_modelimg_0115003085-0115003085.fits',
+            #             specdir+'tdose_spectrum_candels-cdfs-06_modelimg_0106004019-0106004019.fits',
+            #             specdir+'tdose_spectrum_candels-cdfs-25_modelimg_0125042115-0125042115.fits']
+
+            spectra  = [specdir+'tdose_spectrum_candels-cdfs-15_modelimg_0115003085-0115003085.fits']*100
 
         wavelengths  = []
         fluxes       = []
@@ -1032,7 +1034,6 @@ def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60
             if z_sys_obj == 0.0:
                 z_sys_obj   = z_Lya[objinfoent]
             z_systemic  = np.append(z_systemic , z_sys_obj[0])
-
     else:
         sys.exit('No setup available for stackobjects = "TDOSEgalfitextractionsE60"')
 
@@ -1040,10 +1041,10 @@ def stack_MUSEWideSpecs(stacktype='mean',stackobjects='TDOSEgalfitextractionsE60
     wave_out, flux_out, variance_out, Nspecstack = \
         stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=z_systemic,
                           stacktype=stacktype, wavemin=1100, wavemax=3000,
-                          deltawave=4.0, outfile=outfile, verbose=verbose)
+                          deltawave=0.1, outfile=outfile, verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_MUSEWideSpecs_plot(plotmultiple=False):
+def stack_MUSEWideSpecs_plot(plotmultiple=False,plotSN=False):
     """
     Plotting MUSEWide LAE stack created with stack_MUSEWideSpecs_plot()
 
@@ -1053,10 +1054,11 @@ def stack_MUSEWideSpecs_plot(plotmultiple=False):
 
     """
     stackfile_test = '/Users/kschmidt/work/MUSE/spectral_stacking/MUSEWideStack_test181030.fits'
+    spec_AGN       = '/Volumes/DATABCKUP1/TDOSEextractions/180824_TDOSEextraction_LAEs60fields/modelimg/tdose_spectra/tdose_spectrum_candels-cdfs-15_modelimg_0115003085-0115003085.fits'
     stackfile      = '/Users/kschmidt/work/MUSE/spectral_stacking/TDOSEgalfitextractionsE60_meanstack_181030.fits'
     if plotmultiple:
-        spectra = [stackfile,stackfile_test]
-        labels  = ['674 obj stack','4 obj stack test']
+        spectra = [stackfile,stackfile_test,spec_AGN]
+        labels  = ['674 obj stack','4 obj stack test','115003085 (AGN)']
     else:
         spectra = [stackfile]
         labels  = ['MUSE-Wide 60 Fields Ly$\\alpha$ emitter stack']
@@ -1065,11 +1067,20 @@ def stack_MUSEWideSpecs_plot(plotmultiple=False):
     plotname = stackfile.replace('.fits','_overview.pdf')
 
     xrangefull = [np.min(afits.open(stackfile)[1].data['wave']),np.max(afits.open(stackfile)[1].data['wave'])]
+    yrangefull = [-100,900]
 
-    zoomwindows=[[1180,1280,'Lya'],[1530,1570,'CIV'],[1620,1660,'HeII'],[1900,1920,'CIII'],[2780,2830,'MgII']]
+    zoomwindows=[[1190,1250,'Lya'],
+                 [1300,1360,'CII'],
+                 [1375,1410,'OIV'],
+                 [1540,1555,'CIV'],
+                 [1520,1540,'SiII'],
+                 [1590,1650,'HeII'],
+                 [1650,1675,'OIII'],
+                 [1880,1900,'SiIII'],
+                 [1900,1915,'CIII']]
+                 # [2750,2900,'MgII']
 
-
-    stacking.plot_1DspecOverview(spectra,labels,['wave']*Nspec,['flux']*Nspec,['fluxerror']*Nspec,
-                                 plotname,xrangefull=xrangefull,zoomwindows=zoomwindows)
+    stacking.plot_1DspecOverview(spectra,labels,['wave']*Nspec,['flux']*Nspec,['fluxerror']*Nspec,plotname,
+                                 plotSN=plotSN,xrangefull=xrangefull,yrangefull=yrangefull,zoomwindows=zoomwindows)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
