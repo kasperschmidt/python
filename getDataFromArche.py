@@ -74,6 +74,18 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filelist.append(field+'-'+str(pointing)+'_mfs-and-effvar-cube.fits')
         #filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
         #filelist.append('DATACUBE_'+dirname+'_v1.0_dcbgc_effnoised.fits')
+    elif collection== 'QtClassifyUDFmosaic':
+        outputdir = outputdir[:-1]+'-mosaic/'
+        basedcmd  = basedcmd.replace('musewide/','udf-mosaic/')
+
+        filelist = []
+        filelist.append('cat_opt_v250_'+dirname+SNstr+'_fluxes.fits')
+        filelist.append('acs_'+acsimg+'_'+dirname+'_cut_rot.fits')
+        filelist.append('s2n_mod_'+dirname+'.fits')
+        filelist.append(dirname+'_mfs-and-effvar-cube.fits')
+        # not required by QtClassify to run:
+        filelist.append('cat_opt_v250_'+dirname+SNstr+'_fluxes.reg')
+        filelist.append('white_'+dirname+'.fits')
     else:
         if verbose: print(" - WARNING didn't recognize the collection="+collection+" so returning empty list ")
         return []
@@ -101,12 +113,12 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filecounter = len(filesALL)
         filelist    = filesALL
     if download:
-        if verbose: print(' - Succesfullt downloaded '+str(filecounter)+' / '+str(len(filelist)-skipcounter)+\
+        if verbose: print(' - Succesfully downloaded '+str(filecounter)+' / '+str(len(filelist)-skipcounter)+\
                           ' (skipping '+str(skipcounter)+') files from arche ')
     else:
         if verbose: print(' - Download=False so no files downloaded from arche')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if collection == 'QtClassify' or collection == 'QtClassifyE40' :
+    if (collection == 'QtClassify') or (collection == 'QtClassifyE40') or (collection == 'QtClassifyUDFmosaic'):
         if verbose:
             LSDCat    = filelist[0]
             HSTimg    = filelist[1]
@@ -115,7 +127,7 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
 
         if collection == 'QtClassify':
             fluxhdu = 0
-        if collection == 'QtClassifyE40':
+        if (collection == 'QtClassifyE40') or (collection == 'QtClassifyUDFmosaic'):
             fluxhdu = 1
 
             print ('\n - To run QtClassify move to outputdir ('+outputdir+') and execute (in your shell):')
