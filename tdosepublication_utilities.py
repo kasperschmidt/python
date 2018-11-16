@@ -531,6 +531,9 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     """
     Plotting comparison of extractions of OII emitters to evaluate performance.
 
+    with the introduction of tsu.get_maxvalues(), tsu.extractMaxValues() and tsu.plot_maxvalues_OIIemitters()
+    this routine is now obsolete...
+
     --- INPUT ---
     N/A
 
@@ -607,7 +610,7 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         subdat_Ferr_ser = dat_modelimg['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent_ser]
         subdat_Ferr_gau = dat_gauss['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent_gau]
 
-        SNsersic.append(np.max(subdat_S2N_ser))
+        SNgauss.append(np.max(subdat_S2N_ser))
         SNgauss.append(np.max(subdat_S2N_gau))
         Fsersic.append(np.max(subdat_F_ser))
         Fgauss.append(np.max(subdat_F_gau))
@@ -1225,11 +1228,28 @@ def LSDCatify_spectrum(specfile,plot_comparison=False,xrange=None,yranges=None,v
     wave, flux_filtered, variance_filtered = tsu.LSDCatify_spectrum(specfile,plot_comparison='/Users/kschmidt/work/MUSE/notes/181119/LSDCatify_comparison.pdf',xrange=[6150,6350],yranges=[[-220,320],[-3,13]])
 
     """
-    specdat = afits.open(specfile)[1].data
+    spechdu = afits.open(specfile)
+    specdat = spechdu[1].data
     # if verbose: print(' - Convert spectrum to observed frame (if already observed frame set "redshift=0.0" ')
-    wave      = specdat['wave'] #* (1.0 + redshift)
-    flux      = specdat['flux']
-    variance  = specdat['fluxerror']**2.0
+
+    if 'wave' in spechdu[1].columns.names:
+        wavevec = specdat['wave']
+    else:
+        wavevec = specdat['wave_air']
+
+    if 'flux' in spechdu[1].columns.names:
+        fluxvec = specdat['flux']
+    else:
+        fluxvec = specdat['FLUX']
+
+    if 'fluxerror' in spechdu[1].columns.names:
+        fluxerrvec = specdat['fluxerror']
+    else:
+        fluxerrvec = specdat['FLUXERR']
+
+    wave      = wavevec #* (1.0 + redshift)
+    flux      = fluxvec
+    variance  = fluxerrvec ** 2.0
 
     if verbose: print(' - Defining the filter matrix for the LDSCat filtering ')
     velocity       = 250.00 # FWHM[km/s] cf. Urrutia et al. MWDR1 section 4.1
@@ -1326,6 +1346,746 @@ def LSDCatify_spectrum(specfile,plot_comparison=False,xrange=None,yranges=None,v
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     return wave, flux_filtered[8:-8], variance_filtered[8:-8]
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def rename_MWDR1specs(objcatalog,speclist,outdir,idswap='GUO_ID',verbose=True):
+    """
+    Function to replace Guo ID with the MUSE-Wide id in spectra extracted with TDOSE based on Guo IDs (MW DR1)
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    import glob
+
+    galfitdir      = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    objcatalog     = galfitdir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
+
+    speclist       = glob.glob('/Users/kschmidt/work/TDOSE/OIIemitter_MWDR1spectra/tdose_spectrum_*.fits')
+
+    outdir         = '/Users/kschmidt/work/TDOSE/OIIemitter_MWDR1spectra/renamed_TDOSEGuoSpec/'
+
+    tsu.rename_MWDR1specs(objcatalog,speclist,outdir,idswap='GUO_ID')
+
+    """
+    objdat   = afits.open(objcatalog)[1].data
+    MWids    = objdat['UNIQUE_ID']
+    swapids  = objdat[idswap]
+
+    if verbose: print(' - Copying spectra to '+outdir+'\n   replaceing the '+idswap+
+                      ' ids with the MUSE-Wide ids in the catalog\n'+objcatalog)
+    for spec in speclist:
+        specid  = int(spec.split('_')[-1].split('.fit')[0])
+        swapent = np.where(swapids.astype('int') == specid)[0]
+        MWid    = MWids[swapent]
+
+        if len(swapent) >1:
+            print ('\n\nWARNING multiple matches to swapid '+str(specid)+
+                   ' using first MUSE-Wide ID for renaming: '+str(MWids[swapent]))
+            MWid    = MWid[0]
+        newname = outdir+spec.split('/')[-1].replace(str("%.10d" % specid),str("%.10d" % MWid))
+        #if verbose: print(' - copying '+spec+' to '+newname)
+        shutil.copyfile(spec,newname)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_maxvalues(tablename,specdirstrings,objcatalog,IDandRedshiftCol=['UNIQUE_ID','Z'],catalog=None,
+                  colnames='SN',waveline=3726.0,dwave=10,namerefs='default',overwrite=False,verbose=True):
+    """
+    Function to pull out the max fluxes and S/N for a given range around an emission feature (line)
+    for comparison of different extraction methods.
+
+    --- INPUT ---
+    tablename           Path and name of fits binary table to contain the results
+    specdirstrings      List of strings to be used for collecting the spectra.
+                        III will be replaced with IDs from objcatalog.
+    objcatalog          Catalog containing IDs and redshifts of objects to include in table
+    IDandRedshiftCol    Name of columns containing the ID and redshifts of objects in "objcatalog"
+    catalog             Catalog with further information (e.g. LSDCat information) to add to output fits table
+    colnames            Names of columns in "catalog" to include in output fits table
+    waveline            Rest-frame wavelength of emission feature (emission line) to extract value from.
+    dwave               Rest-frame wavelength size of region to extract values from (waveline +/- dwave).
+    namerefs            Reference names to use for column name of the spectra found when searching the
+                        "specdirstrings".
+    overwrite           Overwrite existing output fits table
+    verbose             Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+
+    specdir        = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_spectra/'
+    MWDR1dir       = '/Users/kschmidt/work/TDOSE/OIIemitter_MWDR1spectra/'
+    specdirstrings = [specdir+'tdose_spectrum_modelimg_0III-0III.fits',specdir+'tdose_spectrum_gauss_0III-0III.fits',MWDR1dir+'spectrum_III.fits',MWDR1dir+'renamed_TDOSEGuoSpec/tdose_spectrum_*III.fits']
+
+    galfitdir      = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    objcatalog     = galfitdir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
+
+    tablename      = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/test181116_maxvalues.fits'
+    tsu.get_maxvalues(tablename,specdirstrings,objcatalog,IDandRedshiftCol=['UNIQUE_ID','Z'],catalog=objcatalog, colnames=['UNIQUE_ID','SN'],waveline=3726.0,dwave=10,namerefs=['modelimg','gauss','mwdr1el','mwdr1td'])
+
+    """
+    Nstrings = len(specdirstrings)
+    objdat   = afits.open(objcatalog)[1].data
+    obj_ids  = objdat[IDandRedshiftCol[0]]
+    obj_zs   = objdat[IDandRedshiftCol[1]]
+    Nobj     = len(obj_ids)
+    if verbose: print(' - Found '+str(Nobj)+' objects in the provided catalog to pull out spectral values for ')
+
+    if catalog is None:
+        Nxtracol = 0
+    else:
+        Nxtracol    = len(colnames)
+        catalogdat  = afits.open(catalog)[1].data
+
+    # outarray will have columns:
+    # ID, z, [f,ferr,fs2n,s2n]*Nstrings, [f_filtered,ferr_filtered,fs2n_filt,s2n_filtered]*Nstrings, colnames
+    Ncolperspec = 8
+    outarray    = np.zeros([Nobj,2 + Nstrings*8 + Nxtracol])
+
+    if verbose: print(' - Looping over objects to fill output array with extracted and (LSDCat) filtered values')
+    for oo, objid in enumerate(obj_ids):
+        infostr = ' - Getting info for object '+str(objid)+' ( file '+\
+                  str("%3.f" % (oo+1))+' / '+str("%3.f" % len(obj_ids)+')')
+        sys.stdout.write("%s\r" % infostr)
+        sys.stdout.flush()
+
+        waveobs  = (1+obj_zs[oo])*waveline
+        outarray[oo,0] = objid
+        outarray[oo,1] = obj_zs[oo]
+
+        for ss, sstring in enumerate(specdirstrings):
+            spec  = glob.glob(sstring.replace('III',str(objid)))
+            Nspec = len(spec)
+            if Nspec == 1:
+                specfile = spec[0]
+                spechdu  = afits.open(specfile)
+                specdat  = spechdu[1].data
+                if 's2n' in spechdu[1].columns.names:
+                    s2nvec = specdat['s2n']
+                else:
+                    s2nvec = specdat['flux']/specdat['fluxerr']
+
+                if 'wave' in spechdu[1].columns.names:
+                    wavevec = specdat['wave']
+                else:
+                    wavevec = specdat['wave_air']
+
+                if 'flux' in spechdu[1].columns.names:
+                    fluxvec = specdat['flux']
+                else:
+                    fluxvec = specdat['FLUX']
+
+                if 'fluxerror' in spechdu[1].columns.names:
+                    fluxerrvec = specdat['fluxerror']
+                else:
+                    fluxerrvec = specdat['FLUXERR']
+
+                maxF, maxFerr, maxFs2n, maxs2n = \
+                    tsu.extractMaxValues(wavevec,fluxvec,fluxerrvec,s2nvec,waveobs,dwave)
+
+                outarray[oo,2+ss*Ncolperspec] = maxF
+                outarray[oo,3+ss*Ncolperspec] = maxFerr
+                outarray[oo,4+ss*Ncolperspec] = maxFs2n
+                outarray[oo,5+ss*Ncolperspec] = maxs2n
+
+                wave_filt, flux_filt, variance_filt = tsu.LSDCatify_spectrum(specfile,verbose=False)
+                s2n_filt       = flux_filt / np.sqrt(variance_filt)
+
+                maxF_filt, maxFerr_filt, maxFs2n_filt, maxs2n_filt = \
+                    tsu.extractMaxValues(wave_filt,flux_filt,np.sqrt(variance_filt),s2n_filt,waveobs,dwave)
+
+                outarray[oo,6+ss*Ncolperspec] = maxF_filt
+                outarray[oo,7+ss*Ncolperspec] = maxFerr_filt
+                outarray[oo,8+ss*Ncolperspec] = maxFs2n_filt
+                outarray[oo,9+ss*Ncolperspec] = maxs2n_filt
+            else:
+                if verbose: print('\n - Found '+str(Nspec)+' spectra for object '+str(objid)+' storing NaNs     \n')
+                outarray[oo,2:2+8*Nstrings] = [None]*8*Nstrings
+            if colnames is not None:
+                objcatent = np.where(catalogdat[IDandRedshiftCol[0]] == objid)[0]
+                if len(objcatent) == 1:
+                    outarray[oo,2+8*Nstrings:] = [catalogdat[cc][objcatent][0] for cc in colnames]
+                else:
+                    outarray[oo,2+8*Nstrings:] = [None]*len(colnames)
+    if verbose: print('\n   ... done')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Saving output array to fits file')
+    mainHDU = afits.PrimaryHDU()       # primary HDU
+
+    c0 = afits.Column(name='id',                    format='D', unit='' , array=outarray[:,0])
+    c1 = afits.Column(name='redshift',              format='D',   unit='' , array=outarray[:,1])
+
+    collist = [c0,c1]
+
+    for ss, sstring in enumerate(specdirstrings):
+        c2 = afits.Column(name='max_flux_'+namerefs[ss],          format='D',   unit='' , array=outarray[:,2+ss*8])
+        c3 = afits.Column(name='max_fluxerror_'+namerefs[ss],     format='D',   unit='' , array=outarray[:,3+ss*8])
+        c4 = afits.Column(name='max_flux_s2n_'+namerefs[ss],      format='D',   unit='' , array=outarray[:,4+ss*8])
+        c5 = afits.Column(name='max_s2n_'+namerefs[ss],           format='D',   unit='' , array=outarray[:,5+ss*8])
+        c6 = afits.Column(name='max_flux_filt_'+namerefs[ss],     format='D',   unit='' , array=outarray[:,6+ss*8])
+        c7 = afits.Column(name='max_fluxerror_filt_'+namerefs[ss],format='D',   unit='' , array=outarray[:,7+ss*8])
+        c8 = afits.Column(name='max_flux_s2n_filt_'+namerefs[ss], format='D',   unit='' , array=outarray[:,8+ss*8])
+        c9 = afits.Column(name='max_s2n_filt_'+namerefs[ss],      format='D',   unit='' , array=outarray[:,9+ss*8])
+
+        collist = collist+[c2,c3,c4,c5,c6,c7,c8,c9]
+    if colnames is not None:
+        xtra_collist = []
+        for cc, cname in enumerate(colnames):
+            cX = afits.Column(name=cname, format='D', unit='' , array=outarray[:,2+Nstrings*8+cc])
+            xtra_collist.append(cX)
+
+        collist = collist + xtra_collist
+
+    tbHDU   = afits.BinTableHDU.from_columns(collist)#, header=head)
+    hdulist = afits.HDUList([mainHDU,tbHDU])
+    hdulist.writeto(tablename, overwrite=overwrite)
+    if verbose: print('   Saved to '+tablename)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def extractMaxValues(wave,flux,fluxerror,s2n,wavecenter,dwave):
+    """
+    Function to return the extracted max-values
+    """
+    wavediff    = np.abs(wave-wavecenter)
+    waveent     = np.where(wavediff == np.min(wavediff))[0]
+
+    subdat_S2N  = s2n[waveent[0]-dwave:waveent[0]+dwave]
+    subdat_F    = flux[waveent[0]-dwave:waveent[0]+dwave]
+    fmaxent     = np.where(subdat_F == np.max(subdat_F))[0]
+    subdat_Ferr = fluxerror[waveent[0]-dwave:waveent[0]+dwave][fmaxent]
+
+    maxF        = np.max(subdat_F)
+    maxFerr     = subdat_Ferr[0]
+    maxFs2n     = np.max(subdat_F)/subdat_Ferr[0]
+    maxs2n      = np.max(subdat_S2N)
+
+    return maxF, maxFerr, maxFs2n, maxs2n
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsize=12, logaxes=True, showids=False,
+                   nstd = 3.0, # The number of sigma shown as region around for ODR fitted lines
+                   namebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/maxval_comparison_fitscat'):
+    """
+    Plotting comparison of extractions of max values.
+    Based on tsu.OIIemitters_plotcomparisons() making this function obsolete.
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+
+    fitstab  = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_spectra_maxvalues_181116.fits'
+    namebase = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/maxval_comparison_fitscat'
+    tsu.plot_maxvalues_OIIemitters(fitstab,namebase=namebase,logaxes=False)
+
+    """
+    maxvaldat   = afits.open(maxvalfitstable)[1].data
+    goodent     = np.isfinite(maxvaldat['max_s2n_modelimg'])
+    maxvaldat   = maxvaldat[goodent]
+
+    ids         = maxvaldat['id']
+    redshift    = maxvaldat['redshift']
+
+    SNsersic    = maxvaldat['max_s2n_modelimg']
+    Fsersic     = maxvaldat['max_flux_modelimg']
+    Ferrsersic  = maxvaldat['max_fluxerror_modelimg']
+
+    SNsersic_filtered    = maxvaldat['max_s2n_filt_modelimg']
+    Fsersic_filtered     = maxvaldat['max_flux_filt_modelimg']
+    Ferrsersic_filtered  = maxvaldat['max_fluxerror_filt_modelimg']
+
+    SNgauss    = maxvaldat['max_s2n_gauss']
+    Fgauss     = maxvaldat['max_flux_gauss']
+    Ferrgauss  = maxvaldat['max_fluxerror_gauss']
+
+    SNgauss_filtered    = maxvaldat['max_s2n_filt_gauss']
+    Fgauss_filtered     = maxvaldat['max_flux_filt_gauss']
+    Ferrgauss_filtered  = maxvaldat['max_fluxerror_filt_gauss']
+
+    SNmwdr1td    = maxvaldat['max_s2n_mwdr1td']
+    Fmwdr1td     = maxvaldat['max_flux_mwdr1td']
+    Ferrmwdr1td  = maxvaldat['max_fluxerror_mwdr1td']
+
+    SNmwdr1td_filtered    = maxvaldat['max_s2n_filt_mwdr1td']
+    Fmwdr1td_filtered     = maxvaldat['max_flux_filt_mwdr1td']
+    Ferrmwdr1td_filtered  = maxvaldat['max_fluxerror_filt_mwdr1td']
+
+    SNmwdr1el    = maxvaldat['max_s2n_mwdr1el']
+    Fmwdr1el     = maxvaldat['max_flux_mwdr1el']
+    Ferrmwdr1el  = maxvaldat['max_fluxerror_mwdr1el']
+
+    SNmwdr1el_filtered    = maxvaldat['max_s2n_filt_mwdr1el']
+    Fmwdr1el_filtered     = maxvaldat['max_flux_filt_mwdr1el']
+    Ferrmwdr1el_filtered  = maxvaldat['max_fluxerror_filt_mwdr1el']
+
+
+    IDlsdcat    = maxvaldat['UNIQUE_ID']
+    SNlsdcat    = maxvaldat['SN']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_ODRfit2data_fluxtd.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_Fsersic_Fmwdr1td = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Fmwdr1td,Ferrsersic,Ferrmwdr1td,
+                                                                              fitfunction='linear',
+                                                                              plotresults=plotname)
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1td))  = '+
+          str(np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1td))))
+    print('   -> np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1td))  = '+
+          str(np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1td))))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_ODRfit2data_fluxel.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_Fsersic_Fmwdr1el = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Fmwdr1el,Ferrsersic,Ferrmwdr1el,
+                                                                              fitfunction='linear',
+                                                                              plotresults=plotname)
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1el))  = '+
+          str(np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1el))))
+    print('   -> np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1el))  = '+
+          str(np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1el))))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_ODRfit2data_SN.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_SNsersic_SNlsdcat = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic_filtered,SNlsdcat,
+                                                                                 np.asarray(SNlsdcat)*0.0+1.0,
+                                                                                 np.asarray(SNlsdcat)*0.0+1.0,
+                                                                                 fitfunction='linear',
+                                                                                 plotresults=namebase+'_ODRfit2data_SN.pdf')
+
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))  = '+
+          str(np.median(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))))
+    print('   -> np.std(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))  = '+
+          str(np.std(np.asarray(SNsersic_filtered)/np.asarray(SNlsdcat))))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_ODRfit2data_SNtd.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_SNsersic_SNmwdr1td = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic,SNmwdr1td,
+                                                                                 np.asarray(SNmwdr1td)*0.0+1.0,
+                                                                                 np.asarray(SNmwdr1td)*0.0+1.0,
+                                                                                 fitfunction='linear',
+                                                                                 plotresults=plotname)
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(SNsersic)/np.asarray(SNmwdr1td))  = '+
+          str(np.median(np.asarray(SNsersic)/np.asarray(SNmwdr1td))))
+    print('   -> np.std(np.asarray(SNsersic)/np.asarray(SNmwdr1td))  = '+
+          str(np.std(np.asarray(SNsersic)/np.asarray(SNmwdr1td))))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_ODRfit2data_SNel.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_SNsersic_SNmwdr1el = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic,SNmwdr1el,
+                                                                                 np.asarray(SNmwdr1el)*0.0+1.0,
+                                                                                 np.asarray(SNmwdr1el)*0.0+1.0,
+                                                                                 fitfunction='linear',
+                                                                                 plotresults=plotname)
+    print(' - A bit of stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(SNsersic)/np.asarray(SNmwdr1el))  = '+
+          str(np.median(np.asarray(SNsersic)/np.asarray(SNmwdr1el))))
+    print('   -> np.std(np.asarray(SNsersic)/np.asarray(SNmwdr1el))  = '+
+          str(np.std(np.asarray(SNsersic)/np.asarray(SNmwdr1el))))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2N.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.plot(SNsersic,SNgauss,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/SNgauss[ii] > outliercut):
+                plt.text(SNsersic[ii],SNgauss[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (SNgauss[ii]/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNgauss[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) TDOSE multicomponent Gauss model', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+    #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2Nlsdcat.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    scalefactor = 1.5
+    plt.plot(SNsersic,np.asarray(SNlsdcat)/scalefactor,'.r',label='S/N LSDcat scaled by '+str(scalefactor))
+
+    plt.plot(SNsersic,SNlsdcat,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/(SNlsdcat[ii]/scalefactor) > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if ((SNlsdcat[ii]/scalefactor)/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('S/N MW DR1 LSDcat measurements', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+                     bbox_to_anchor=(0.01, 0.99))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2Nlsdcat_filtered.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # scalefactor = 1.5
+    # plt.plot(SNsersic,np.asarray(SNlsdcat)/scalefactor,'.r',label='S/N LSDcat scaled by '+str(scalefactor))
+    # plt.plot(SNsersic_filtered,SNlsdcat,'.g',label='LSDcatified TDOSE S/N')
+
+    plt.plot(SNsersic_filtered,SNlsdcat,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/(SNlsdcat[ii]/scalefactor) > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if ((SNlsdcat[ii]/scalefactor)/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNlsdcat[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_SNsersic_SNlsdcat.beta
+    perr = odrfit_SNsersic_SNlsdcat.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic_filtered), max(SNsersic_filtered), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    plt.plot([5,5],axisrange,'--k',lw=lthick)
+    plt.plot(axisrange,[5,5],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model (filtered)', fontsize=Fsize)
+    plt.ylabel('S/N MW DR1 LSDcat measurements', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_flux_mwdr1td.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.errorbar(Fsersic,Fmwdr1td, yerr=Ferrgauss, xerr=Ferrsersic,fmt='ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (Fsersic[ii]/Fmwdr1td[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (Fmwdr1td[ii]/Fsersic[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_Fsersic_Fmwdr1td.beta
+    perr = odrfit_Fsersic_Fmwdr1td.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [100,4000]
+    else:
+        axisrange = [0,1500]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[cgs]) MW DR1 TDOSE spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_flux_mwdr1el.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    scalefactor = 2.0
+    if scalefactor != 1.0:
+        plt.plot(Fsersic,Fmwdr1el/scalefactor,'.r',label='S/N MW DR1 EL spectrum scaled by '+str(scalefactor))
+
+    plt.errorbar(Fsersic,Fmwdr1el, yerr=Ferrgauss, xerr=Ferrsersic,fmt='ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (Fsersic[ii]/Fmwdr1el[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (Fmwdr1el[ii]/Fsersic[ii] > outliercut):
+                plt.text(Fsersic[ii],Fmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_Fsersic_Fmwdr1el.beta
+    perr = odrfit_Fsersic_Fmwdr1el.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [100,4000]
+    else:
+        axisrange = [0,1500]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[cgs]) MW DR1 PSF weighted spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2N_mwdr1td.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.plot(SNsersic,SNmwdr1td,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/SNmwdr1td[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (SNmwdr1td[ii]/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1td[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_SNsersic_SNmwdr1td.beta
+    perr = odrfit_SNsersic_SNmwdr1td.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic), max(SNsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) MW DR1 TDOSE spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2N_mwdr1el.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.plot(SNsersic,SNmwdr1el,'ok',alpha=0.5)
+    if showids:
+        for ii, id in enumerate(ids):
+            if (SNsersic[ii]/SNmwdr1el[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='left')
+            if (SNmwdr1el[ii]/SNsersic[ii] > outliercut):
+                plt.text(SNsersic[ii],SNmwdr1el[ii],id,fontsize=Fsize-5,horizontalalignment='right')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_SNsersic_SNmwdr1el.beta
+    perr = odrfit_SNsersic_SNmwdr1el.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic), max(SNsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [2,100]
+    else:
+        axisrange = [0,70]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) MW DR1 PSF weighted spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
 #
@@ -1421,6 +2181,7 @@ def filter_spectrum(filter_matrix,data):
         filtered_data[:,i] = filter_matrix_sparse.dot(data[:,i])
 
     return filtered_data
+
 #
 # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
