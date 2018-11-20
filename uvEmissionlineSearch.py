@@ -289,6 +289,9 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     rasLaigle  = []
     decsLaigle = []
 
+    leadline    = []
+    leadlineSN  = []
+
     for ii,id in enumerate(objids):
         if verbose:
             infostr = '  >Getting info for '+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % NLAEs)+')  '
@@ -297,7 +300,6 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             # sys.stdout.flush()
         pointingname = mu.gen_pointingname(id)
         pointing.append(pointingname)
-
         # - - - - - - - - - - GET LSDCAT COORDINATES - - - - - - - - - -
         if str(id) in e24_ids:
             objent = np.where(datE24main['UNIQUE_ID'] == str(id))[0]
@@ -305,40 +307,51 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             ras.append(datE24main['RA'][objent][0])
             decs.append(datE24main['DEC'][objent][0])
             ximg, yimg = mu.get_pixelpos(datE24main['RA'][objent],datE24main['DEC'][objent],pointingname,pixorigin=0,
-                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,verbose=False)
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*814*',
+                                         imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
-
+            leadline.append(datE24main['LEAD_LINE'][objent][0])
+            leadlineSN.append(datE24main['SN'][objent][0])
         elif id in e36_ids:
             objent = np.where(datE36main['ID'] == id)[0]
             redshifts.append(datE36main['REDSHIFT'][objent][0])
             ras.append(datE36main['RA'][objent][0])
             decs.append(datE36main['DEC'][objent][0])
             ximg, yimg = mu.get_pixelpos(datE36main['RA'][objent],datE36main['DEC'][objent],pointingname,
-                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,verbose=False)
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*814*',
+                                         imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
-
+            leadline.append(datE36main['LINE_ID'][objent][0])
+            leadlineSN.append(datE36main['S2N'][objent][0])
         elif id in e40_ids:
             objent = np.where(datE40main['ID'] == id)[0]
             redshifts.append(datE40main['REDSHIFT'][objent][0])
             ras.append(datE40main['RA'][objent][0])
             decs.append(datE40main['DEC'][objent][0])
+            if str(id).startswith('1') or str(id).startswith('2'):
+                imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*814*'
+            else:
+                imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*775*'
             ximg, yimg = mu.get_pixelpos(datE40main['RA'][objent],datE40main['DEC'][objent],pointingname,
-                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,verbose=False)
+                                         imgdir=imgdir,imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
-
+            leadline.append(datE40main['LINE_ID'][objent][0])
+            leadlineSN.append(datE40main['S2N'][objent][0])
         elif id in udf_ids:
             objent = np.where(datUDFmain['ID'] == id)[0]
             redshifts.append(datUDFmain['REDSHIFT'][objent][0])
             ras.append(datUDFmain['RA'][objent][0])
             decs.append(datUDFmain['DEC'][objent][0])
             ximg, yimg = mu.get_pixelpos(datUDFmain['RA'][objent],datUDFmain['DEC'][objent],pointingname,
-                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,verbose=False)
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*775*',
+                                         imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
-
+            leadline.append(datUDFmain['LINE_ID'][objent][0])
+            leadlineSN.append(datUDFmain['S2N'][objent][0])
         else:
             sys.exit('Weird... ID not found in E24, E36, E40 or UDF id-list...')
         # - - - - - - - - - - GET MODEL COORDINATES - - - - - - - - - -
@@ -711,13 +724,17 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     c67 = pyfitsOLD.Column(name='ra_Laigle' , format='D', unit='DEG', array=rasLaigle)
     c68 = pyfitsOLD.Column(name='dec_Laigle', format='D', unit='DEG', array=decsLaigle)
 
+    c69 = pyfitsOLD.Column(name='leadline', format='10A', unit='', array=leadline)
+    c70 = pyfitsOLD.Column(name='leadlineS2N', format='D', unit='', array=leadlineSN)
+
     coldefs = pyfitsOLD.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,
-                              c9,c10,c11,c12,c13,c14,
-                              c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,
-                              c35,c36,c37,c38,
-                              c39,c40,c41,c42,c43,c44,c45,c46,c47,c48,c49,c50,c51,c52,
-                              c53,c54,c55,c56,c57,c58,c59,c60,
-                              c61,c62,c63,c64,c65,c66,c67,c68])
+                                 c9,c10,c11,c12,c13,c14,
+                                 c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,
+                                 c35,c36,c37,c38,
+                                 c39,c40,c41,c42,c43,c44,c45,c46,c47,c48,c49,c50,c51,c52,
+                                 c53,c54,c55,c56,c57,c58,c59,c60,
+                                 c61,c62,c63,c64,c65,c66,c67,c68,
+                                 c69,c70])
     th      = pyfitsOLD.new_table(coldefs) # creating default header
 
     # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
