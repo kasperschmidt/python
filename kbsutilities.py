@@ -54,6 +54,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import astropy.table as atab
+from astropy.cosmology import FlatLambdaCDM, z_at_value
 import collections
 from scipy import odr
 #-------------------------------------------------------------------------------------------------------------
@@ -1601,6 +1602,60 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunctio
 
         plt.savefig(plotresults)
     return fitresults
+#-------------------------------------------------------------------------------------------------------------
+def UniverseEpochsInFractionsOfHumaLifetime(humanlifetime=80,zevaluate=["MACS J1149",0.54],H0=70, Omega_m0=0.3, T_CMB0=2.725):
+    """
+    Function printing important times and epochs in the evolution of the universe in terms of a human lifetime.
+
+    --- INPUT ___
+    humanlifetime    Assumed human lifetime in years
+    universeage      Total age of universe in Gyr
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    kbs.UniverseEpochsInFractionsOfHumaLifetime(humanlifetime=80)
+
+    """
+    print(' - Setting up cosmological calculator for input H0='+str(H0)+', Omega_m0='+str(Omega_m0)+
+          ' and T_CMB0='+str(T_CMB0))
+    cosmo               = FlatLambdaCDM(H0=H0, Om0=Omega_m0, Tcmb0=T_CMB0)
+    TotalAgeUniverse    = cosmo.age(0.0)
+    print('   This results in an Universe age of '+str(TotalAgeUniverse))
+
+    print(' - Defining parameters')
+    secINmin            = 60.0              # sec
+    secINhour           = secINmin * 60.0   # min/hour
+    secINday            = secINhour * 24.0  # hour/day
+    secINmonth          = secINday * 30.0   # days/month
+    secINyear           = secINday * 365.25 # day/year
+    secINhumanlifetime  = humanlifetime * secINyear
+    yearINuniverse      = TotalAgeUniverse.value * 10e9
+
+    conversionfactor    =  yearINuniverse/secINhumanlifetime # years of Universe / sec in human lifetime
+
+    print(' - Defining epochs (redshifts) to evaluate:')
+    epochs = collections.OrderedDict()
+    epochs['Last Scattering (CMB)']     = 1100.0
+    epochs['Dark Ages']                 = 100.0
+    epochs['EoR start']                 = 15.0
+    epochs['EoR "mid"']                 = 10.0
+    epochs['EoR end']                   = 6.0
+    epochs['SF heyday']                 = 2.0
+    epochs[zevaluate[0]]                = zevaluate[1]
+
+    for key in epochs.keys():
+        redshift = epochs[key]
+        Uage     = cosmo.age(redshift)
+        humansec = (Uage.value*1e9)/conversionfactor
+
+        print('\n    - '+str("%.30s" % key)+' @ z = '+str("%10.4f" % redshift)+' ~ Age = '+str(Uage))
+        print('       For a human lifetime of '+str(humanlifetime)+' years this corresponds to:')
+        print('       human minutes = '+str("%10.4f" % (humansec/secINmin)))
+        print('       human hours   = '+str("%10.4f" % (humansec/secINhour)))
+        print('       human days    = '+str("%10.4f" % (humansec/secINday)))
+        print('       human months  = '+str("%10.4f" % (humansec/secINmonth)))
+        print('       human years   = '+str("%10.4f" % (humansec/secINyear)))
+
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
