@@ -59,6 +59,9 @@ def gen_pointingname(id):
         pointingname = 'hudf09-2-'
     elif idstr[0] == '5':
         pointingname = 'udf-'
+    elif len(idstr) <= 8:
+        pdb.set_trace('Length of ID string of non-UDF-mosaic objects should be longer than 8;'
+                      ' stopping in MUSEWideUtilities.gen_pointingname()...')
     else:
         sys.exit(' mu.gen_pointingname(): Field corresponding to ID[0]='+str(idstr[0])+' not known')
 
@@ -363,20 +366,26 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
                 goodent = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
 
                 if len(goodent) >= 2:
-                    if verbose: print(' - Saving model cube to \n   '+narrowbandname)
+                    if verbose: print(' - Saving narrowband image to \n   '+narrowbandname)
                     narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
 
                     imghdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
                     for key in imghdr.keys():
                         if '3' in key:
-                            del imghdr[key]
+                            try:
+                                del imghdr[key]
+                            except:
+                                pass
                         if 'ZAP' in key:
-                            del imghdr[key]
+                            try:
+                                del imghdr[key]
+                            except:
+                                pass
 
                     hduimg   = afits.PrimaryHDU(narrowbandimage,header=imghdr)
                     hdus     = [hduimg]
                     hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
-                    hdulist.writeto(narrowbandname,clobber=clobber)  # write fits file (clobber=True overwrites excisting file)
+                    hdulist.writeto(narrowbandname,overwrite=clobber)  # write fits file (clobber=True overwrites excisting file)
                 else:
                     if verbose: print(' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate')
                     if verbose: print('   '+narrowbandname)
@@ -884,7 +893,6 @@ use_shape_params           %s
                        inputimage,sigmaimage,psfimage,
                        catpath,pstampdir,pstampsuffix,shapeparam))
                 fout.close()
-
     elif build == 'JKexample':
         sys.exit('build option "'+build+'" not enabled yet')
         # write 'psf' (for fitting a star with a moffat) or 'obj'
