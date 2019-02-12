@@ -66,6 +66,12 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
         filelist.append('acs_'+acsimg+'_'+dirname+'_cut_v'+acsimgvs+'.fits')
         filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
         filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
+    elif collection== 'QtClassifyE24':
+        filelist = []
+        filelist.append('cat_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
+        filelist.append('acs_'+acsimg+'_'+dirname+'_cut_v'+acsimgvs+'.fits')
+        filelist.append('s2n_opt_v250_'+dirname+'_v'+lsdcatvs+'.fits')
+        filelist.append('median_filtered_DATACUBE_'+dirname+'_v1.0.fits')
     elif collection== 'QtClassifyE40':
         filelist = []
         filelist.append('cat_opt_v250_'+dirname+SNstr+'_fluxes.fits')
@@ -118,20 +124,20 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     else:
         if verbose: print(' - Download=False so no files downloaded from arche')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if (collection == 'QtClassify') or (collection == 'QtClassifyE40') or (collection == 'QtClassifyUDFmosaic'):
+    if (collection == 'QtClassify') or (collection == 'QtClassifyE24') or (collection == 'QtClassifyE40') or (collection == 'QtClassifyUDFmosaic'):
         if verbose:
             LSDCat    = filelist[0]
             HSTimg    = filelist[1]
             LSDCatSN  = filelist[2]
             datacube  = filelist[3]
 
-        if collection == 'QtClassify':
+        if collection == 'QtClassify' or (collection == 'QtClassifyE24'):
             fluxhdu = 0
         if (collection == 'QtClassifyE40') or (collection == 'QtClassifyUDFmosaic'):
             fluxhdu = 1
 
-            print ('\n - To run QtClassify move to outputdir ('+outputdir+') and execute (in your shell):')
-            print("""
+        print ('\n - To run QtClassify move to outputdir ('+outputdir+') and execute (in your shell):')
+        print("""
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     datapath='%s'
     datacube=$datapath'%s'
@@ -146,9 +152,9 @@ def download_data(archeuser,field='cosmos',pointing=10,collection='QtClassify',o
     # --column_X X_PEAK_SN --column_Y Y_PEAK_SN --column_Z Z_PEAK_SN --column_RA RA_PEAK_SN --column_DEC DEC_PEAK_SN --column_LAM LAMBDA_PEAK_SN
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname,fluxhdu))
-            print('   (here "qtclassify" is an alias for "python' \
-                  ' /Local/Path/To/qtclassify/line_classification_GUI_pyqtgraph.py")')
+        """ % (outputdir,datacube,LSDCatSN,LSDCat,HSTimg,dirname,fluxhdu))
+        print('   (here "qtclassify" is an alias for "python' \
+              ' /Local/Path/To/qtclassify/line_classification_GUI_pyqtgraph.py")')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return filelist
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
