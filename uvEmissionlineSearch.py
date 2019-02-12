@@ -123,7 +123,9 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     catE24main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_main_table_v3.2.fits'
     catE36main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v1.0.fits'
     catE40main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e40_v0.9.fits'
-    catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_mosaic_shallow_v0.9.fits'
+    #catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_mosaic_shallow_v0.9.fits'
+    catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_udf-mosaic_v0.9.fits'
+    # IDs in UDF mosaic catalog consist of 4 digits id followed by 4 digits runnin line number
 
     if verbose: print('   '+catE24main)
     datE24main  = pyfits.open(catE24main)[1].data
@@ -181,10 +183,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Counting LAEs and putting together ID list')
-    e24_ids  = datE24main['UNIQUE_ID']
-    e36_ids  = datE36main['ID']
-    e40_ids  = datE40main['ID']
-    udf_ids  = datUDFmain['ID']
+    e24_ids  = datE24main['UNIQUE_ID'].astype(str)
+    e36_ids  = datE36main['ID'].astype(str)
+    e40_ids  = datE40main['ID'].astype(str)
+    udf_ids  = np.asarray(["6"+str("%08d" % udfid) for udfid in datUDFmain['ID']])
     objids   = []
 
     zcut     = 2.7
@@ -298,10 +300,11 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             if verbose: print(infostr)
             # sys.stdout.write("%s\r" % infostr)
             # sys.stdout.flush()
-        pointingname = mu.gen_pointingname(id)
-        pointing.append(pointingname)
         # - - - - - - - - - - GET LSDCAT COORDINATES - - - - - - - - - -
         if str(id) in e24_ids:
+            pointingname = mu.gen_pointingname(id)
+            pointing.append(pointingname)
+
             objent = np.where(datE24main['UNIQUE_ID'] == str(id))[0]
             redshifts.append(datE24main['Z'][objent][0])
             ras.append(datE24main['RA'][objent][0])
@@ -313,7 +316,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             y_image.append(yimg)
             leadline.append(datE24main['LEAD_LINE'][objent][0])
             leadlineSN.append(datE24main['SN'][objent][0])
-        elif id in e36_ids:
+        elif str(id) in e36_ids:
+            pointingname = mu.gen_pointingname(id)
+            pointing.append(pointingname)
+
             objent = np.where(datE36main['ID'] == id)[0]
             redshifts.append(datE36main['REDSHIFT'][objent][0])
             ras.append(datE36main['RA'][objent][0])
@@ -325,7 +331,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             y_image.append(yimg)
             leadline.append(datE36main['LINE_ID'][objent][0])
             leadlineSN.append(datE36main['S2N'][objent][0])
-        elif id in e40_ids:
+        elif str(id) in e40_ids:
+            pointingname = mu.gen_pointingname(id)
+            pointing.append(pointingname)
+
             objent = np.where(datE40main['ID'] == id)[0]
             redshifts.append(datE40main['REDSHIFT'][objent][0])
             ras.append(datE40main['RA'][objent][0])
@@ -340,8 +349,12 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             y_image.append(yimg)
             leadline.append(datE40main['LINE_ID'][objent][0])
             leadlineSN.append(datE40main['S2N'][objent][0])
-        elif id in udf_ids:
-            objent = np.where(datUDFmain['ID'] == id)[0]
+        elif str(id) in udf_ids:
+            objent = np.where(udf_ids == str(id))[0]
+
+            pointingname = 'udf-mosaic' #datUDFmain['FIELD_COL'][objent]
+            pointing.append(pointingname)
+
             redshifts.append(datUDFmain['REDSHIFT'][objent][0])
             ras.append(datUDFmain['RA'][objent][0])
             decs.append(datUDFmain['DEC'][objent][0])
@@ -353,7 +366,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             leadline.append(datUDFmain['LINE_ID'][objent][0])
             leadlineSN.append(datUDFmain['S2N'][objent][0])
         else:
-            sys.exit('Weird... ID not found in E24, E36, E40 or UDF id-list...')
+            print('Weird... ID not found in E24, E36, E40 or UDF id-list... #1')
+            pdb.set_trace()
         # - - - - - - - - - - GET MODEL COORDINATES - - - - - - - - - -
         modelfile = glob.glob(galfitmodeldir+'imgblock_'+str("%.9d" % id)+'.fits')
 
@@ -471,7 +485,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sum_fit_red_std.append(datE24lp['sum_fit_red_std'][objent][0])
                 sum_lsdcat.append(datE24lp['sum_lsdcat'][objent][0])
                 sum_lsdcat_std.append(datE24lp['sum_lsdcat_std'][objent][0])
-            elif id in e36_ids:
+            elif str(id) in e36_ids:
                 objent = np.where(datE36lp['UNIQUE_ID'] == str(id))[0]
                 z_vac_red.append(datE36lp['z_vac_red'][objent][0])
                 z_vac_error.append(datE36lp['z_vac_error'][objent][0])
@@ -493,7 +507,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sum_fit_red_std.append(datE36lp['sum_fit_red_std'][objent][0])
                 sum_lsdcat.append(datE36lp['sum_lsdcat'][objent][0])
                 sum_lsdcat_std.append(datE36lp['sum_lsdcat_std'][objent][0])
-            elif (id in e40_ids) or (id in udf_ids):
+            elif (str(id) in e40_ids) or (str(id) in udf_ids):
                 z_vac_red.append(-99)
                 z_vac_error.append(-99)
                 z_vac_mean.append(-99)
@@ -515,7 +529,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sum_lsdcat.append(-99)
                 sum_lsdcat_std.append(-99)
             else:
-                sys.exit('Weird... ID not found in E24, E36, E40 or UDF id-list...')
+                print('Weird... ID not found in E24, E36, E40 or UDF id-list... #2')
+                pdb.set_trace()
 
             if peak_sep_kms[ii] != 0.0:
                 rp_shift_V18_kms     = 1.00 * peak_sep_kms[ii]/2.
@@ -584,7 +599,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
         # - - - - - - - - - - ADD MATCHES TO PHOTOMETRIC CATALOGS - - - - - - - - - -
         coordMUSE = SkyCoord(ra=ras[ii]*u.degree, dec=decs[ii]*u.degree)
 
-        if str(id)[0] in ['1','5']: # <------- Match to Guo catalog
+        if str(id)[0] in ['1','5','6']: # <------- Match to Guo catalog
             coordGuo  = SkyCoord(ra=datGuo['RA']*u.degree, dec=datGuo['DEC']*u.degree)
             entGuo, match_2DGuo, match_3DGuo = coordMUSE.match_to_catalog_sky(coordGuo)
             idsGuo.append(datGuo['ID'][entGuo])
@@ -597,7 +612,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasGuo.append(0.0)
             decsGuo.append(0.0)
 
-        if str(id)[0] in ['1','3','4','5']: # <------- Match to Skelton GOODS-SOUTH catalog
+        if str(id)[0] in ['1','3','4','5','6']: # <------- Match to Skelton GOODS-SOUTH catalog
             coordSkelton  = SkyCoord(ra=datSkeltonGS['RA']*u.degree, dec=datSkeltonGS['DEC']*u.degree)
             entSkelton, match_2DSkelton, match_3DSkelton = coordMUSE.match_to_catalog_sky(coordSkelton)
             idsSkelton.append(datSkeltonGS['ID'][entSkelton])
@@ -617,7 +632,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasSkelton.append(0.0)
             decsSkelton.append(0.0)
 
-        if str(id)[0] in ['1','5']: # <------- Match to Rafelski catalog
+        if str(id)[0] in ['1','5','6']: # <------- Match to Rafelski catalog
             coordRafelski  = SkyCoord(ra=datRafelski['RA']*u.degree, dec=datRafelski['DEC']*u.degree)
             entRafelski, match_2DRafelski, match_3DRafelski = coordMUSE.match_to_catalog_sky(coordRafelski)
             idsRafelski.append(datRafelski['ID'][entRafelski])
@@ -630,7 +645,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasRafelski.append(0.0)
             decsRafelski.append(0.0)
 
-        if str(id)[0] in ['2']: # <------- Match to Laigle catalog
+        if str(id)[0] in ['2']: # <------- Match to Laigle cosmos catalog
             coordLaigle  = SkyCoord(ra=datLaigle['ALPHA_J2000']*u.degree, dec=datLaigle['DELTA_J2000']*u.degree)
             entLaigle, match_2DLaigle, match_3DLaigle = coordMUSE.match_to_catalog_sky(coordLaigle)
             idsLaigle.append(datLaigle['NUMBER'][entLaigle])
@@ -954,20 +969,27 @@ def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=1
 
     for Mid in MUSEIDlist:
         idstr = str(Mid)
-        if idstr.startswith('1'):
-            if photcat == 'skelton':
+        if idstr.startswith('1') or idstr.startswith('6'):
+            if photcat == 'skelton': # GOODS-S (incl. UDF)
                 fitscat = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
             elif photcat == 'guo':
                 fitscat = '/Users/kschmidt/work/catalogs/guo/CANDELS.GOODSS.F160W.v1.fits'
             else:
-                print(' WARNING photcat = '+photcat+' has not setup for GOODS-S source; using Skelton catalog ')
+                print(' WARNING photcat = '+photcat+' has no setup for GOODS-S source; using Skelton catalog ')
                 fitscat = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
-        elif idstr.startswith('2'):
+        elif idstr.startswith('2'): # COSMOS
             if photcat == 'skelton':
                 fitscat = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
             else:
-                print(' WARNING photcat = '+photcat+' has not setup for COSMOS source; using Skelton catalog ')
+                print(' WARNING photcat = '+photcat+' has no setup for COSMOS source; using Skelton catalog ')
                 fitscat = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+        # elif idstr.startswith('6'): # UDF
+        #     if photcat == 'skelton':
+        #         print(' WARNING photcat = '+photcat+' will be ignored, as object in UDF where Rafelski will be used')
+        #         fitscat = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+        #     else:
+        #         print(' WARNING photcat = '+photcat+' has no setup for COSMOS source; using Skelton catalog ')
+        #         fitscat = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
         else:
             sys.exit(' MUSE-Wide id = '+idstr+' is neither in GOODS-S (starts with "1") nor in COSMOS (starts with "2")')
 
@@ -978,6 +1000,8 @@ def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=1
             print(' WARNING No match in LAE info file for MUSE-Wide_ID = '+idstr)
 
         refimg       = refimgdir+'acs_814w_'+LAEinfo['pointing'][objent][0]+'_cut_v1.0.fits'
+        if idstr.startswith('6'):
+            refimg   = refimgdir+'hlsp_hlf_hst_acs-30mas_goodss_f775w_udf-mosaic_v1.5_sci.fits'
         imgheader    = pyfits.open(refimg)[0].header
         sourcelist   = [ [Mid, Mid, objra, objdec, 1]]
         outname      = outputdir+'tdose_sourcecat_from_fitscat_id'+idstr+'.txt'
