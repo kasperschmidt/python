@@ -1332,70 +1332,101 @@ def OIIemitters_WhiteLightImages(outputdir,overwrite=True,skipImageCreation=Fals
     tsu.OIIemitters_WhiteLightImages(outputdir)
 
     """
-    modeldir     = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
-    fitscatalog  = modeldir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
-    datacubedir  = '/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/'
+    modeldir        = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    fitscatalog     = modeldir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits'
+    datacubedir     = '/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/'
+    tdosemodeldir   = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_models/'
+    tdosecutoutdir  = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_cutouts/'
+    tdosespecdir    = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_spectra/'
+    galfitmodeldir  = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/galfit_models/'
 
     objdat   = afits.open(fitscatalog)[1].data
 
     for oo, id in enumerate(objdat['UNIQUE_ID']):
         if verbose: print(' >>> Generating images for object '+str(oo+1)+' / '+str(len(objdat['UNIQUE_ID']))+' <<<')
-        pointing  = objdat['FIELD_NAME'][oo]
-        ra        = [objdat['RA'][oo]]
-        Dra       = 4.0 # arcsec
-        dec       = [objdat['DEC'][oo]]
-        Ddec      = Dra
-        objid     = str(objdat['UNIQUE_ID'][oo])
-        dcube     = datacubedir+'DATACUBE_'+pointing+'_v1.0_dcbgc_effnoised.fits'
-        datacube  = glob.glob(dcube)
+        pointing        = objdat['FIELD_NAME'][oo]
+        ra              = [objdat['RA'][oo]]
+        Dra             = 4.0 # arcsec
+        dec             = [objdat['DEC'][oo]]
+        Ddec            = Dra
+        objid           = str(objdat['UNIQUE_ID'][oo])
 
+        datacubestr     = datacubedir+'DATACUBE_'+pointing+'_v1.0_dcbgc_effnoised.fits'
+        datacube        = glob.glob(datacubestr)
         if len(datacube) != 1:
-            print('\n\n WARNING - the datacube '+dcube+' was not found... continuing\n\n')
+            print('\n\n WARNING - the datacube '+datacubestr+' was not found... continuing\n\n')
+            continue
+
+        sourcemodelstr  = tdosespecdir+'tdose_spectrum_modelimg*'+objid+'*.fits'
+        sourcemodel     = glob.glob(sourcemodelstr)
+        if len(sourcemodel) != 1:
+            print('\n\n WARNING - the spectrum with source model '+sourcemodelstr+' was not found... continuing\n\n')
             continue
 
         if verbose: print(' ---- Extracting white light image and cube for '+objid+' ---- ')
         wcenter   = [[7050]]
         dwave     = [[2250]]
-        name      = [objid+'_whitelight']
-        if not skipImageCreation:
-            mu.create_narrowband_subcube(datacube[0],ra,dec,Dra,Ddec,wcenter,dwave,outputdir,names=name,clobber=overwrite)
-        imgwhite  = glob.glob(outputdir+'*'+name[0]+'*narrowbandimage*fits')
+        names     = [objid+'DATACUBE_whitelight',objid+'SOURCEMODEL_whitelight']
+        for cc, dcube in enumerate([datacube[0],sourcemodel[0]]):
+            if not skipImageCreation:
+                mu.create_narrowband_subcube(dcube,ra,dec,Dra,Ddec,wcenter,dwave,outputdir,
+                                             cube_ext=['DATA_DCBGC'],names=[names[cc]],clobber=overwrite)
+        imgwhiteDC  = glob.glob(outputdir+'*'+names[0]+'*narrowbandimage*fits')
+        imgwhiteSM  = glob.glob(outputdir+'*'+names[1]+'*narrowbandimage*fits')
 
         if verbose: print(' ---- Extracting OII image and cube for '+objid+' ---- ')
         redshift  = float(str(objdat['Z'][oo]))
         linewave  = 3727.5
         wcenter   = [[linewave*(redshift+1.0)]]
         dwave     = [[500.0/299792.0 * linewave * (redshift+1.0)]]# narrowband width is 2x500=1000 km/s rest-frame
-        name      = [objid+'_OIIdoubletWidth1000kmsRest']
-        if not skipImageCreation:
-            mu.create_narrowband_subcube(datacube[0],ra,dec,Dra,Ddec,wcenter,dwave,outputdir,names=name,clobber=overwrite)
-        imgOII    = glob.glob(outputdir+'*'+name[0]+'*narrowbandimage*fits')
+        names     = [objid+'DATACUBE_OIIdoubletWidth1000kmsRest',objid+'SOURCEMODEL_OIIdoubletWidth1000kmsRest']
+        for cc, dcube in enumerate([datacube[0],sourcemodel[0]]):
+            if not skipImageCreation:
+                mu.create_narrowband_subcube(dcube,ra,dec,Dra,Ddec,wcenter,dwave,outputdir,
+                                             cube_ext=['DATA_DCBGC'],names=[names[cc]],clobber=overwrite)
+        imgOIIDC    = glob.glob(outputdir+'*'+names[0]+'*narrowbandimage*fits')
+        imgOIISM    = glob.glob(outputdir+'*'+names[1]+'*narrowbandimage*fits')
 
-        modeldir  = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_models/'
-        modelstr  = modeldir+'acs_814w_'+pointing+'*'+objid+'_cutout*tdose_modelimage_gauss.fits'
-        acsmodel  = glob.glob(modelstr)
+        if verbose: print(' ---- Globbing for other images of object ---- ')
+        modelstr       = tdosemodeldir+'acs_814w_'+pointing+'*'+objid+'_cutout*tdose_modelimage_gauss.fits'
+        acsmodel       = glob.glob(modelstr)
 
         if len(acsmodel) != 1:
             print('\n\n WARNING - the ACS model image '+modelstr+' was not found... continuing\n\n')
-            acsmodel = [' ']
-            modelconv = [' ']
+            acsmodel          = [' ']
+            modelGaussCubeWCS = [' ']
         else:
-            convstr   = acsmodel[0].replace('_gauss.fits','_cubeWCS_gauss.fits')
-            modelconv = glob.glob(convstr)
+            cubeWCSstr        = acsmodel[0].replace('_gauss.fits','_cubeWCS_gauss.fits')
+            modelGaussCubeWCS = glob.glob(cubeWCSstr)
 
-            refimage  = glob.glob(modeldir+'/../tdose_cutouts/acs_814w_'+pointing+'_cut_*'+objid+'*.fits')
+        galfitmodelstr = galfitmodeldir+'model_acs_814w_'+pointing+'*'+objid+'_cutout4p0x4p0arcsec_cubesum.fits'
+        galfitmodel    = glob.glob(galfitmodelstr)
+
+        if len(galfitmodel) != 1:
+            print('\n\n WARNING - the ACS GALFIT model cubesum image '+galfitmodelstr+' was not found... continuing\n\n')
+            galfitmodel      = [' ']
+            galfitModCubeWCS = [' ']
+        else:
+            cubeWCSstr   = acsmodel[0].replace('_gauss.fits','_cubeWCS_modelimg.fits')
+            galfitModCubeWCS = glob.glob(cubeWCSstr)
+
+        refimage  = glob.glob(tdosecutoutdir+'acs_814w_'+pointing+'_cut_*'+objid+'*.fits')
 
         ds9cmd = 'ds9 -scale mode minmax '+\
-                 imgwhite[0]+' '+imgOII[0]+' '+modelconv[0]+' '+acsmodel[0]+' '+refimage[0]+\
-                 ' -lock frame wcs -tile grid layout 5 1 -geometry 1400x500 -zoom to fit &'
+                 imgwhiteDC[0]+' '+imgwhiteSM[0]+' '+imgOIIDC[0]+' '+imgOIISM[0]+' '+modelGaussCubeWCS[0]+' '+acsmodel[0]+' '+refimage[0]+' '+galfitModCubeWCS[0]+' '+galfitmodel[0]+\
+                 ' -lock frame wcs -tile grid layout 9 1 -geometry 1400x500 -zoom to fit &'
         if verbose: print(ds9cmd)
 
         if printfilenames:
-            print(imgwhite[0])
-            print(imgOII[0])
-            print(modelconv[0])
+            print(imgwhiteDC[0])
+            print(imgwhiteSM[0])
+            print(imgOIIDC[0])
+            print(imgOIISM[0])
+            print(modelGaussCubeWCS[0])
             print(acsmodel[0])
             print(refimage[0])
+            print(galfitModCubeWCS[0])
+            print(galfitmodel[0])
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def OIIemitters_WhiteLightImages_estimatesize(outputdir,datestr='XXXXXX',overwrite=True,verbose=True):
@@ -1491,7 +1522,7 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
 
     dat_whitelight = paramdat[0::5]
     dat_OIIband    = paramdat[1::5]
-    dat_Convmodel  = paramdat[2::5]
+    dat_CubeWCSMod = paramdat[2::5]
     dat_ACSmodel   = paramdat[3::5]
     dat_ACSref     = paramdat[4::5]
 
@@ -1499,95 +1530,94 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
     MUSEpix2arcsec = 0.20 # arcsec/pix
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- MINOR AXES ----------------
-    WLminoraxes      = np.zeros(Nobj)
-    OIIminoraxes     = np.zeros(Nobj)
-    CONVMODminoraxes = np.zeros(Nobj)
-    ACSMODminoraxes  = np.zeros(Nobj)
-    REFminoraxes     = np.zeros(Nobj)
+    WLminoraxes         = np.zeros(Nobj)
+    OIIminoraxes        = np.zeros(Nobj)
+    CubeWCSModminoraxes = np.zeros(Nobj)
+    ACSMODminoraxes     = np.zeros(Nobj)
+    REFminoraxes        = np.zeros(Nobj)
 
     for ii, id in enumerate(unique_ids):
-        WLminoraxes[ii]      = np.min([dat_whitelight['xsigma'][ii],dat_whitelight['ysigma'][ii]]) * MUSEpix2arcsec
-        OIIminoraxes[ii]     = np.min([dat_OIIband['xsigma'][ii],dat_OIIband['ysigma'][ii]])       * MUSEpix2arcsec
-        CONVMODminoraxes[ii] = np.min([dat_Convmodel['xsigma'][ii],dat_Convmodel['ysigma'][ii]])   * MUSEpix2arcsec
-        ACSMODminoraxes[ii]  = np.min([dat_ACSmodel['xsigma'][ii],dat_ACSmodel['ysigma'][ii]])     * ACSpix2arcsec
-        REFminoraxes[ii]     = np.min([dat_ACSref['xsigma'][ii],dat_ACSref['ysigma'][ii]])         * ACSpix2arcsec
+        WLminoraxes[ii]         = np.min([dat_whitelight['xsigma'][ii],dat_whitelight['ysigma'][ii]]) * MUSEpix2arcsec
+        OIIminoraxes[ii]        = np.min([dat_OIIband['xsigma'][ii],dat_OIIband['ysigma'][ii]])       * MUSEpix2arcsec
+        CubeWCSModminoraxes[ii] = np.min([dat_CubeWCSMod['xsigma'][ii],dat_CubeWCSMod['ysigma'][ii]])   * MUSEpix2arcsec
+        ACSMODminoraxes[ii]     = np.min([dat_ACSmodel['xsigma'][ii],dat_ACSmodel['ysigma'][ii]])     * ACSpix2arcsec
+        REFminoraxes[ii]        = np.min([dat_ACSref['xsigma'][ii],dat_ACSref['ysigma'][ii]])         * ACSpix2arcsec
 
-    diff_WLvsOII_minor     = WLminoraxes-OIIminoraxes
-    med_WLvsOII_minor      = np.median(diff_WLvsOII_minor)
-    std_WLvsOII_minor      = np.std(diff_WLvsOII_minor)
-    diff_OIIvsCONVMOD_minor= OIIminoraxes-CONVMODminoraxes
-    med_OIIvsCONVMOD_minor = np.median(diff_OIIvsCONVMOD_minor)
-    std_OIIvsCONVMOD_minor = np.std(diff_OIIvsCONVMOD_minor)
-    diff_OIIvsACSMOD_minor = OIIminoraxes-ACSMODminoraxes
-    med_OIIvsACSMOD_minor  = np.median(diff_OIIvsACSMOD_minor)
-    std_OIIvsACSMOD_minor  = np.std(diff_OIIvsACSMOD_minor)
-    diff_OIIvsREF_minor    = OIIminoraxes-REFminoraxes
-    med_OIIvsREF_minor     = np.median(diff_OIIvsREF_minor)
-    std_OIIvsREF_minor     = np.std(diff_OIIvsREF_minor)
-    diff_WLvsCONVMOD_minor = WLminoraxes-CONVMODminoraxes
-    med_WLvsCONVMOD_minor  = np.median(diff_WLvsCONVMOD_minor)
-    std_WLvsCONVMOD_minor  = np.std(diff_WLvsCONVMOD_minor)
-    diff_WLvsACSMOD_minor  = WLminoraxes-ACSMODminoraxes
-    med_WLvsACSMOD_minor   = np.median(diff_WLvsACSMOD_minor)
-    std_WLvsACSMOD_minor   = np.std(diff_WLvsACSMOD_minor)
-    diff_WLvsREF_minor     = WLminoraxes-REFminoraxes
-    med_WLvsREF_minor      = np.median(diff_WLvsREF_minor)
-    std_WLvsREF_minor      = np.std(diff_WLvsREF_minor)
+    diff_WLvsOII_minor           = WLminoraxes-OIIminoraxes
+    med_WLvsOII_minor            = np.median(diff_WLvsOII_minor)
+    std_WLvsOII_minor            = np.std(diff_WLvsOII_minor)
+    diff_OIIvsCubeWCSMod_minor   = OIIminoraxes-CubeWCSModminoraxes
+    med_OIIvsCubeWCSMod_minor    = np.median(diff_OIIvsCubeWCSMod_minor)
+    std_OIIvsCubeWCSMod_minor    = np.std(diff_OIIvsCubeWCSMod_minor)
+    diff_OIIvsACSMOD_minor       = OIIminoraxes-ACSMODminoraxes
+    med_OIIvsACSMOD_minor        = np.median(diff_OIIvsACSMOD_minor)
+    std_OIIvsACSMOD_minor        = np.std(diff_OIIvsACSMOD_minor)
+    diff_OIIvsREF_minor          = OIIminoraxes-REFminoraxes
+    med_OIIvsREF_minor           = np.median(diff_OIIvsREF_minor)
+    std_OIIvsREF_minor           = np.std(diff_OIIvsREF_minor)
+    diff_WLvsCubeWCSMod_minor    = WLminoraxes-CubeWCSModminoraxes
+    med_WLvsCubeWCSMod_minor     = np.median(diff_WLvsCubeWCSMod_minor)
+    std_WLvsCubeWCSMod_minor     = np.std(diff_WLvsCubeWCSMod_minor)
+    diff_WLvsACSMOD_minor        = WLminoraxes-ACSMODminoraxes
+    med_WLvsACSMOD_minor         = np.median(diff_WLvsACSMOD_minor)
+    std_WLvsACSMOD_minor         = np.std(diff_WLvsACSMOD_minor)
+    diff_WLvsREF_minor           = WLminoraxes-REFminoraxes
+    med_WLvsREF_minor            = np.median(diff_WLvsREF_minor)
+    std_WLvsREF_minor            = np.std(diff_WLvsREF_minor)
 
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- MAJOR AXES ----------------
-    WLmajoraxes      = np.zeros(Nobj)
-    OIImajoraxes     = np.zeros(Nobj)
-    CONVMODmajoraxes = np.zeros(Nobj)
-    ACSMODmajoraxes  = np.zeros(Nobj)
-    REFmajoraxes     = np.zeros(Nobj)
+    WLmajoraxes         = np.zeros(Nobj)
+    OIImajoraxes        = np.zeros(Nobj)
+    CubeWCSModmajoraxes = np.zeros(Nobj)
+    ACSMODmajoraxes     = np.zeros(Nobj)
+    REFmajoraxes        = np.zeros(Nobj)
 
     for ii, id in enumerate(unique_ids):
-        WLmajoraxes[ii]      = np.max([dat_whitelight['xsigma'][ii],dat_whitelight['ysigma'][ii]]) * MUSEpix2arcsec
-        OIImajoraxes[ii]     = np.max([dat_OIIband['xsigma'][ii],dat_OIIband['ysigma'][ii]])       * MUSEpix2arcsec
-        CONVMODmajoraxes[ii] = np.max([dat_Convmodel['xsigma'][ii],dat_Convmodel['ysigma'][ii]])   * MUSEpix2arcsec
-        ACSMODmajoraxes[ii]  = np.max([dat_ACSmodel['xsigma'][ii],dat_ACSmodel['ysigma'][ii]])     * ACSpix2arcsec
-        REFmajoraxes[ii]     = np.max([dat_ACSref['xsigma'][ii],dat_ACSref['ysigma'][ii]])         * ACSpix2arcsec
+        WLmajoraxes[ii]         = np.max([dat_whitelight['xsigma'][ii],dat_whitelight['ysigma'][ii]]) * MUSEpix2arcsec
+        OIImajoraxes[ii]        = np.max([dat_OIIband['xsigma'][ii],dat_OIIband['ysigma'][ii]])       * MUSEpix2arcsec
+        CubeWCSModmajoraxes[ii] = np.max([dat_CubeWCSMod['xsigma'][ii],dat_CubeWCSMod['ysigma'][ii]])   * MUSEpix2arcsec
+        ACSMODmajoraxes[ii]     = np.max([dat_ACSmodel['xsigma'][ii],dat_ACSmodel['ysigma'][ii]])     * ACSpix2arcsec
+        REFmajoraxes[ii]        = np.max([dat_ACSref['xsigma'][ii],dat_ACSref['ysigma'][ii]])         * ACSpix2arcsec
 
-
-    diff_WLvsOII_major     = WLmajoraxes-OIImajoraxes
-    med_WLvsOII_major      = np.median(diff_WLvsOII_major)
-    std_WLvsOII_major      = np.std(diff_WLvsOII_major)
-    diff_OIIvsCONVMOD_major= OIImajoraxes-CONVMODmajoraxes
-    med_OIIvsCONVMOD_major = np.median(diff_OIIvsCONVMOD_major)
-    std_OIIvsCONVMOD_major = np.std(diff_OIIvsCONVMOD_major)
-    diff_OIIvsACSMOD_major = OIImajoraxes-ACSMODmajoraxes
-    med_OIIvsACSMOD_major  = np.median(diff_OIIvsACSMOD_major)
-    std_OIIvsACSMOD_major  = np.std(diff_OIIvsACSMOD_major)
-    diff_OIIvsREF_major    = OIImajoraxes-REFmajoraxes
-    med_OIIvsREF_major     = np.median(diff_OIIvsREF_major)
-    std_OIIvsREF_major     = np.std(diff_OIIvsREF_major)
-    diff_WLvsCONVMOD_major = WLmajoraxes-CONVMODmajoraxes
-    med_WLvsCONVMOD_major  = np.median(diff_WLvsCONVMOD_major)
-    std_WLvsCONVMOD_major  = np.std(diff_WLvsCONVMOD_major)
-    diff_WLvsACSMOD_major  = WLmajoraxes-ACSMODmajoraxes
-    med_WLvsACSMOD_major   = np.median(diff_WLvsACSMOD_major)
-    std_WLvsACSMOD_major   = np.std(diff_WLvsACSMOD_major)
-    diff_WLvsREF_major     = WLmajoraxes-REFmajoraxes
-    med_WLvsREF_major      = np.median(diff_WLvsREF_major)
-    std_WLvsREF_major      = np.std(diff_WLvsREF_major)
+    diff_WLvsOII_major           = WLmajoraxes-OIImajoraxes
+    med_WLvsOII_major            = np.median(diff_WLvsOII_major)
+    std_WLvsOII_major            = np.std(diff_WLvsOII_major)
+    diff_OIIvsCubeWCSMod_major   = OIImajoraxes-CubeWCSModmajoraxes
+    med_OIIvsCubeWCSMod_major    = np.median(diff_OIIvsCubeWCSMod_major)
+    std_OIIvsCubeWCSMod_major    = np.std(diff_OIIvsCubeWCSMod_major)
+    diff_OIIvsACSMOD_major       = OIImajoraxes-ACSMODmajoraxes
+    med_OIIvsACSMOD_major        = np.median(diff_OIIvsACSMOD_major)
+    std_OIIvsACSMOD_major        = np.std(diff_OIIvsACSMOD_major)
+    diff_OIIvsREF_major          = OIImajoraxes-REFmajoraxes
+    med_OIIvsREF_major           = np.median(diff_OIIvsREF_major)
+    std_OIIvsREF_major           = np.std(diff_OIIvsREF_major)
+    diff_WLvsCubeWCSMod_major    = WLmajoraxes-CubeWCSModmajoraxes
+    med_WLvsCubeWCSMod_major     = np.median(diff_WLvsCubeWCSMod_major)
+    std_WLvsCubeWCSMod_major     = np.std(diff_WLvsCubeWCSMod_major)
+    diff_WLvsACSMOD_major        = WLmajoraxes-ACSMODmajoraxes
+    med_WLvsACSMOD_major         = np.median(diff_WLvsACSMOD_major)
+    std_WLvsACSMOD_major         = np.std(diff_WLvsACSMOD_major)
+    diff_WLvsREF_major           = WLmajoraxes-REFmajoraxes
+    med_WLvsREF_major            = np.median(diff_WLvsREF_major)
+    std_WLvsREF_major            = np.std(diff_WLvsREF_major)
 
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- PRINTING ----------------
     if verbose:
-        print('\n - Minor axis estimates: ')
+        print('\n - dat_CubeWCSModel axis estimates: ')
         print('   median(whitelight - OIIband                 ) = '+
               str(med_WLvsOII_minor)+'arcsec +/- '+str(std_WLvsOII_minor))
         print(' ')
-        print('   median(OIIband    - MUSE PSF Conv. ACS model) = '+
-              str(med_OIIvsCONVMOD_minor)+'arcsec +/- '+str(std_OIIvsCONVMOD_minor))
+        print('   median(OIIband    - ACS model in CUBE WCS) = '+
+              str(med_OIIvsCubeWCSMod_minor)+'arcsec +/- '+str(std_OIIvsCubeWCSMod_minor))
         print('   median(OIIband    - ACS model               ) = '+
               str(med_OIIvsACSMOD_minor)+'arcsec +/- '+str(std_OIIvsACSMOD_minor))
         print('   median(OIIband    - ACS reference image     ) = '+
               str(med_OIIvsREF_minor)+'arcsec +/- '+str(std_OIIvsREF_minor))
         print(' ')
-        print('   median(White Light Img - MUSE PSF Conv. ACS model) = '+
-              str(med_WLvsCONVMOD_minor)+'arcsec +/- '+str(std_WLvsCONVMOD_minor))
+        print('   median(White Light Img - ACS model in CUBE WCS) = '+
+              str(med_WLvsCubeWCSMod_minor)+'arcsec +/- '+str(std_WLvsCubeWCSMod_minor))
         print('   median(White Light Img - ACS model               ) = '+
               str(med_WLvsACSMOD_minor)+'arcsec +/- '+str(std_WLvsACSMOD_minor))
         print('   median(White Light Img - ACS reference image     ) = '+
@@ -1597,15 +1627,15 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
         print('   median(whitelight - OIIband                 ) = '+
               str(med_WLvsOII_major)+'arcsec +/- '+str(std_WLvsOII_major))
         print(' ')
-        print('   median(OIIband    - MUSE PSF Conv. ACS model) = '+
-              str(med_OIIvsCONVMOD_major)+'arcsec +/- '+str(std_OIIvsCONVMOD_major))
+        print('   median(OIIband    - ACS model in CUBE WCS) = '+
+              str(med_OIIvsCubeWCSMod_major)+'arcsec +/- '+str(std_OIIvsCubeWCSMod_major))
         print('   median(OIIband    - ACS model               ) = '+
               str(med_OIIvsACSMOD_major)+'arcsec +/- '+str(std_OIIvsACSMOD_major))
         print('   median(OIIband    - ACS reference image     ) = '+
               str(med_OIIvsREF_major)+'arcsec +/- '+str(std_OIIvsREF_major))
         print(' ')
-        print('   median(White Light Img - MUSE PSF Conv. ACS model) = '+
-              str(med_WLvsCONVMOD_major)+'arcsec +/- '+str(std_WLvsCONVMOD_major))
+        print('   median(White Light Img - ACS model in CUBE WCS) = '+
+              str(med_WLvsCubeWCSMod_major)+'arcsec +/- '+str(std_WLvsCubeWCSMod_major))
         print('   median(White Light Img - ACS model               ) = '+
               str(med_WLvsACSMOD_major)+'arcsec +/- '+str(std_WLvsACSMOD_major))
         print('   median(White Light Img - ACS reference image     ) = '+
@@ -1613,8 +1643,8 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
 
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- PLOTTING ----------------
-    histvals = ['WLminoraxes','OIIminoraxes','CONVMODminoraxes','ACSMODminoraxes','REFminoraxes',
-                'WLmajoraxes','OIImajoraxes','CONVMODmajoraxes','ACSMODmajoraxes','REFmajoraxes']
+    histvals = ['WLminoraxes','OIIminoraxes','CubeWCSModminoraxes','ACSMODminoraxes','REFminoraxes',
+                'WLmajoraxes','OIImajoraxes','CubeWCSModmajoraxes','ACSMODmajoraxes','REFmajoraxes']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = plotdir+'histograms.pdf'
@@ -1658,9 +1688,9 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
               'WLminoraxes','WLminoraxes','WLminoraxes','WLmajoraxes',
               'OIImajoraxes','OIImajoraxes','OIImajoraxes','WLmajoraxes',
               'WLmajoraxes','WLmajoraxes']
-    yvals  = ['diff_WLvsOII_minor','diff_OIIvsCONVMOD_minor','diff_OIIvsACSMOD_minor','diff_OIIvsREF_minor',
-              'diff_WLvsCONVMOD_minor','diff_WLvsACSMOD_minor','diff_WLvsREF_minor','diff_WLvsOII_major',
-              'diff_OIIvsCONVMOD_major','diff_OIIvsACSMOD_major','diff_OIIvsREF_major','diff_WLvsCONVMOD_major',
+    yvals  = ['diff_WLvsOII_minor','diff_OIIvsCubeWCSMod_minor','diff_OIIvsACSMOD_minor','diff_OIIvsREF_minor',
+              'diff_WLvsCubeWCSMod_minor','diff_WLvsACSMOD_minor','diff_WLvsREF_minor','diff_WLvsOII_major',
+              'diff_OIIvsCubeWCSMod_major','diff_OIIvsACSMOD_major','diff_OIIvsREF_major','diff_WLvsCubeWCSMod_major',
               'diff_WLvsACSMOD_major','diff_WLvsREF_major']
     for pp in xrange(len(xvals)):
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1709,11 +1739,11 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
               'WLminoraxes','WLminoraxes','WLminoraxes','WLmajoraxes',
               'OIImajoraxes','OIImajoraxes','OIImajoraxes','WLmajoraxes',
               'WLmajoraxes','WLmajoraxes',
-              'CONVMODminoraxes','CONVMODminoraxes','ACSMODminoraxes',
-              'CONVMODmajoraxes','CONVMODmajoraxes','ACSMODmajoraxes']
-    yvals  = ['OIIminoraxes','CONVMODminoraxes','ACSMODminoraxes','REFminoraxes',
-              'CONVMODminoraxes','ACSMODminoraxes','REFminoraxes','OIImajoraxes',
-              'CONVMODmajoraxes','ACSMODmajoraxes','REFmajoraxes','CONVMODmajoraxes',
+              'CubeWCSModminoraxes','CubeWCSModminoraxes','ACSMODminoraxes',
+              'CubeWCSModmajoraxes','CubeWCSModmajoraxes','ACSMODmajoraxes']
+    yvals  = ['OIIminoraxes','CubeWCSModminoraxes','ACSMODminoraxes','REFminoraxes',
+              'CubeWCSModminoraxes','ACSMODminoraxes','REFminoraxes','OIImajoraxes',
+              'CubeWCSModmajoraxes','ACSMODmajoraxes','REFmajoraxes','CubeWCSModmajoraxes',
               'ACSMODmajoraxes','REFmajoraxes',
               'REFminoraxes','ACSMODminoraxes','REFminoraxes',
               'REFmajoraxes','ACSMODmajoraxes','REFmajoraxes']
