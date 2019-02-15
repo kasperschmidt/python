@@ -284,7 +284,154 @@ def launch_bluebumpGUI():
     determine_bb.main()
 
     print(' - GUI existed after inspections')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def create_manualimgFromCube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,outputdir,
+                             cube_ext=['DATA_DCBGC','EFF_STAT'],skip_cube_extraction=False,
+                             invertselection=False,
+                             names=None,overwrite=False,verbose=True):
+    """
+    Create a manually defined image by removing specified layers of a data cube.
+    This is a compliment to mu.create_narrowband_subcube() which only handles a continuous set of wavelength layers.
+    However, for cutting out line emission from data cubes, it can be useful to be able to remove multiple
+    pre-defined wavelength ranges. This is what this routine is for.
 
+    --- INPUT ---
+    datacube                Data cube to extract narrow band images from
+    ras                     List of R.A.s to extract narrow band images around
+    decs                    List of Dec.s to extract narrow band images around
+    dras                    Size of narrow band images in R.A. direction (provided in arcsec)
+    ddecs                   Size of narrow band images in Dec. direction (provided in arcsec)
+    wavecenters             List of lists of central wavelengths of narrow bands to remove from data cube.
+                            Use format:
+                                [[obj1center1,obj1center2,...,obj1centerN],[obj2center1,obj2center2,...,obj2centerN],...]
+    dwaves                  The width of the band to remove from the data cube given in Angstrom.
+                            Use format:
+                                [[obj1dwave1,obj1dwave2,...,obj1dwaveN],[obj2dwave1,obj2dwave2,...,obj2dwaveN],...]
+    outputdir               Directory to store outputs in
+    cube_ext                list of extensions to extract from cube into sub-cube. The header of the first extension mentioned
+                            in the list will be used as WCS and Header template for the narrow-band image generated
+    names                   Names or IDs of locations/objects indicated by the ras and decs input
+    overwrite               Overwrite existing files
+    skip_cube_extraction    If sub-cubes have already been extracted, re-generating them can be skipped
+                            setting this keywoprd to True
+    invertselection         If True, images of an inverted selection (i.e., keeping instead of removing the defined
+                            wavelength ranges) will be generated in addition to the original picture.
+                            For instance, if emission lines are removed to define a continuum white light image, an
+                            emission line image will be genrated if invertselection = True.
+    verbose                 Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mu
+
+    # remove Lya emission lines and look for continuum
+    pointing = 'candels-cdfs-01'
+    outdir   = '/Users/kschmidt/work/TDOSE/190215_Test_create_manualimgFromCube/'
+    ras      = [53.0612466535,53.0540222689]
+    decs     = [-27.8047374553,-27.8037275129]
+    wcenters = [[5830.0,7426.5,9152.5],[5869.5,7476.9,11000]]
+    dwaves   = [[10,10,10],[10,10,10]]
+    names    = ['101011026','101012027']
+    datacube = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_'+pointing+'_v1.0_dcbgc_effnoised.fits')
+
+    mu.create_manualimgFromCube(datacube[0],ras,decs,5.0,5.0,wcenters,dwaves,outdir,names=names,overwrite=True)
+
+    # Generate image of continuum (removing emission lines) image of OII and OIII lines
+    pointing = 'candels-cdfs-03'
+    outdir   = '/Users/kschmidt/work/TDOSE/190215_Test_create_manualimgFromCube/'
+    ras      = [53.0697905498543,53.0697905498543]
+    decs     = [-27.8390839474992,-27.8390839474992]
+    zobj     = 0.560494468420294
+    linepos  = np.array([3726.0,3729.0,4861.33,4959.0,10000.0])*(1.0+zobj)
+    dwave    = 500.0/299792.0 * linepos  # 500km/s x 2 to give width of 1000km/s bands
+    wcenters = [linepos,[5300,6777,8564]]
+    dwaves   = [dwave,[500,947,736]]
+    names    = ['103013064_cont','103013064_oxygenlines']
+    datacube = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_'+pointing+'_v1.0_dcbgc_effnoised.fits')
+
+    mu.create_manualimgFromCube(datacube[0],ras,decs,15.0,15.0,wcenters,dwaves,outdir,names=names,overwrite=True,invertselection=True)
+
+    """
+    Nsubcubes = len(ras)
+    if len(decs) != Nsubcubes:
+        sys.exit(' The number of RAs does not match the number of Decs. Make sure they do ')
+    if verbose: print(' - Found '+str(Nsubcubes)+' coordinate sets to generate sub cubes for ')
+
+    if (type(dras) == float) & (type(ddecs) == float):
+        dras  = [dras] * Nsubcubes
+        ddecs = [ddecs] * Nsubcubes
+
+    cubehdr = afits.open(datacube)[cube_ext[0]].header
+    wavevec = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    if verbose: print(' - Looping of (ra,dec) coordinate pairs in data cube to generate images for ')
+    for ii, ra in enumerate(ras):
+        subcubestr  = (str(dras[ii])+'x'+str(ddecs[ii]) ).replace('.','p')
+        subcubename = outputdir+'subcube_iiiiii_'+subcubestr+'arcsec.fits'
+        if names is not None:
+            subcubename = subcubename.replace('iiiiii',names[ii])
+        else:
+            subcubename = subcubename.replace('iiiiii',str("%.5d" % (ii+1)))
+
+        if os.path.isfile(subcubename) & (overwrite == False):
+            if verbose: print(' - '+subcubename+' exists and overwrwite=False so skipping...')
+        else:
+            if not skip_cube_extraction:
+                tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=cube_ext,
+                                   clobber=overwrite,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
+
+            for cc, cext in enumerate(cube_ext):
+                subcube = afits.open(subcubename)[cext].data
+                narrowbandname  = subcubename.replace('.fits','_narrowbandimage_'+cext+'_manualimgFromCube.fits')
+                if verbose: print(' - Found '+str(len(wavecenters[ii]))+' regions to remove from cube before collapsing ')
+                if verbose: print(' - Defining layers to extract based on ranges to '
+                                  'exclude provide via "wavecenters" and "dwaves" keywords.')
+                badwaveent_all = np.array([])
+                for ww, cwave in enumerate(wavecenters[ii]):
+                    dwave      = dwaves[ii][ww]
+                    wavemin    = cwave-dwave
+                    wavemax    = cwave+dwave
+                    badwaveent     = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
+                    if len(badwaveent) == 0:
+                        if verbose: print('\n - WARNING: wavelength range '+str(cwave)+'+/-'+str(dwave)+'A is outside cube\n')
+                    badwaveent_all = np.append(badwaveent_all,badwaveent)
+
+                badwaveent_all = np.unique(np.sort(badwaveent_all))
+                entlist        = np.arange(len(wavevec))
+                goodent        = np.delete(entlist,badwaveent_all.astype(int))
+
+                if len(goodent) >= 2:
+                    if verbose: print(' - Saving narrowband image to \n   '+narrowbandname)
+                    narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
+
+                    imghdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
+                    for key in imghdr.keys():
+                        if '3' in key:
+                            try:
+                                del imghdr[key]
+                            except:
+                                pass
+                        if 'ZAP' in key:
+                            try:
+                                del imghdr[key]
+                            except:
+                                pass
+
+                    hduimg   = afits.PrimaryHDU(narrowbandimage,header=imghdr)
+                    hdus     = [hduimg]
+                    hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
+                    hdulist.writeto(narrowbandname,overwrite=overwrite)  # write fits file
+
+                    if invertselection:
+                        invertedimage = np.sum(subcube[badwaveent_all.astype(int),:,:],axis=0)
+                        hduimg        = afits.PrimaryHDU(invertedimage,header=imghdr)
+                        hdus          = [hduimg]
+                        hdulist       = afits.HDUList(hdus)                  # turn header into to hdulist
+                        hdulist.writeto(narrowbandname.replace('.fits','_invertselection.fits'),
+                                        overwrite=overwrite)  # write fits file
+
+                else:
+                    if verbose: print(' - WARNING: less than 2 slices in narrowband extraction from subcube '+cext+' in')
+                    if verbose: print('   '+narrowbandname)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,outputdir,
                               cube_ext=['DATA_DCBGC','EFF_STAT'],
