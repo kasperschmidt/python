@@ -87,9 +87,11 @@ input_params_dir        = setupdic['input_params_dir']
 input_params            = setupdic['input_params']
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if 'margin' in setupdic.keys():
-    margin = float(setupdic['margin'])
+    margin      = float(setupdic['margin'])
+    margin_unit = setupdic['margin_unit'].lower()
 else:
     margin = 1.0 # to add to the area that is fit on both sides, in arcsec (change size of cutout)
+    margin_unit = 'arcsec'
 xconv  = 150. # Size of the convolution box (x y)
 yconv  = 150.
 
@@ -178,7 +180,8 @@ except:
 hdu_hst.close()
 
 ang_pix = (1./cdelt2)/60./60.
-margin  = int(margin*ang_pix) # convert from arcsec to pix 
+if margin_unit == 'arcsec':
+    margin  = int(margin*ang_pix) # convert from arcsec to pix
 
 # np.abs to make sure it's positive
 
@@ -619,11 +622,10 @@ def replace(string):
 def write_input_file(params_all_lines):
 
     for obj in xrange(len(x_pos)):
-
-        xmin = int(float(x_pos[obj])-margin_all_objs[obj])
-        xmax = int(float(x_pos[obj])+margin_all_objs[obj])
-        ymin = int(float(y_pos[obj])-margin_all_objs[obj])
-        ymax = int(float(y_pos[obj])+margin_all_objs[obj])
+        xmin = int(float(x_pos[obj])-float(margin_all_objs[obj]))
+        xmax = int(float(x_pos[obj])+float(margin_all_objs[obj]))
+        ymin = int(float(y_pos[obj])-float(margin_all_objs[obj]))
+        ymax = int(float(y_pos[obj])+float(margin_all_objs[obj]))
         
         params_open = open(input_params+'_'+str(ID_obj[obj])+'.input','w')
         
@@ -1517,7 +1519,7 @@ class main_GUI(QtGui.QWidget):
             self.write_comm_label()
         self.c = 999
         redo_bool[self.list_j[self.j]] = True
-        margin_all_objs[self.list_j[self.j]] = int(self.le_margin.text())
+        margin_all_objs[self.list_j[self.j]] = self.le_margin.text()
 
         #self.j +=1
 
@@ -1658,14 +1660,15 @@ class main_GUI(QtGui.QWidget):
         img_1.setLevels([level_min,level_max])
         self.view_img1 = self.img1.addViewBox()
         self.view_img1.addItem(img_1)
-        self.view_img1.setRange(QtCore.QRectF(0,0,margin_here*2,margin_here*2))
+        pixwidth = int(float(margin_here)*2)
+        self.view_img1.setRange(QtCore.QRectF(0,0,pixwidth,pixwidth))
         
         # include circle that is 1" in radius
         circle_1a = pg.ScatterPlotItem(pxMode=False,size=ang_pix,
                                        pen=pg.mkPen('w'),
                                        brush=pg.mkBrush(255,255, 255, 0))
-        spots = [{'pos': [margin_here+1,
-                          margin_here+1]}]
+        spots = [{'pos': [float(margin_here)+1,
+                          float(margin_here)+1]}]
         circle_1a.addPoints(spots)
         self.view_img1.addItem(circle_1a)
 
@@ -1675,21 +1678,24 @@ class main_GUI(QtGui.QWidget):
         img_2.setLevels([level_min,level_max])
         self.view_img2 = self.img2.addViewBox()
         self.view_img2.addItem(img_2)
-        self.view_img2.setRange(QtCore.QRectF(0,0,margin_here*2,margin_here*2))
+        self.view_img2.setRange(QtCore.QRectF(0,0,pixwidth,pixwidth))
+
+        level_min_res, level_max_res = vminvmax(image_data3)
 
         img_3 = pg.ImageItem()
         img_3.setImage(np.rot90(image_data3)[::-1])
         img_3.setLookupTable(cubehelix(ch_g,ch_s,ch_r,ch_h))
-        img_3.setLevels([level_min,level_max])
+        #img_3.setLevels([level_min,level_max])
+        img_3.setLevels([level_min_res, level_max_res])
         self.view_img3 = self.img3.addViewBox()
         self.view_img3.addItem(img_3)
-        self.view_img3.setRange(QtCore.QRectF(0,0,margin_here*2,margin_here*2))
+        self.view_img3.setRange(QtCore.QRectF(0,0,pixwidth,pixwidth))
 
         def mouseMovedImg(event):
             pos_add = event.pos()
             margin_here = margin_all_objs[self.list_j[self.j]]
-            add_x_pos = pos_add[0]-margin_here+x_pos[self.list_j[self.j]]
-            add_y_pos = pos_add[1]-margin_here+y_pos[self.list_j[self.j]]
+            add_x_pos = pos_add[0]-float(margin_here)+x_pos[self.list_j[self.j]]
+            add_y_pos = pos_add[1]-float(margin_here)+y_pos[self.list_j[self.j]]
             self.le_addx.setText(str(int(add_x_pos)))
             self.le_addy.setText(str(int(add_y_pos)))
         img_3.mouseClickEvent = mouseMovedImg
@@ -1715,7 +1721,7 @@ class main_GUI(QtGui.QWidget):
                 self.c = c
                 
                 po.setPen('b',width=3)
-                if po.pos()[0]==margin_here+1: # for main object
+                if po.pos()[0]==float(margin_here)+1: # for main object
                     self.c = 999 # to make sure not to change the main obj
                     self.posx.setText(str(np.round(x_pos[h],2)))
                     self.posy.setText(str(np.round(y_pos[h],2)))
@@ -1789,8 +1795,8 @@ class main_GUI(QtGui.QWidget):
             # brush is completely transparent
             s1 = pg.ScatterPlotItem(size=20, pen=pg.mkPen('r'), 
                                     brush=pg.mkBrush(255, 255, 255, 0))
-            spots = [{'pos': [margin_here-float(x_pos[h])+closex+1,
-                              margin_here-float(y_pos[h])+closey+1], 
+            spots = [{'pos': [float(margin_here)-float(x_pos[h])+closex+1,
+                              float(margin_here)-float(y_pos[h])+closey+1],
                       'data': c}]
             s1.addPoints(spots)
             self.view_img1.addItem(s1)
@@ -1800,8 +1806,8 @@ class main_GUI(QtGui.QWidget):
         # now mark position of object in LSDCat
         s1 = pg.ScatterPlotItem(size=20, pen=pg.mkPen('g'), 
                                 brush=pg.mkBrush(255, 255, 255, 0))
-        spots = [{'pos': [margin_here+1,
-                          margin_here+1], 
+        spots = [{'pos': [float(margin_here)+1,
+                          float(margin_here)+1],
                   'data': 999}]
         s1.addPoints(spots)
         self.view_img1.addItem(s1)
