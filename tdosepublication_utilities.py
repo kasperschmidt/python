@@ -1362,31 +1362,64 @@ def OIIemitters_WhiteLightImages(outputdir,overwrite=True,skipImageCreation=Fals
         if len(sourcemodel) != 1:
             print('\n\n WARNING - the spectrum with source model '+sourcemodelstr+' was not found... continuing\n\n')
             continue
-
+        # ---------------------------------------------------------------------------------------------------------
         if verbose: print(' ---- Extracting white light image and cube for '+objid+' ---- ')
         wcenter   = [[7050]]
         dwave     = [[2250]]
-        names     = [objid+'DATACUBE_whitelight',objid+'SOURCEMODEL_whitelight']
+        names     = [objid+'_DATACUBE_whitelight',objid+'_SOURCEMODEL_whitelight']
         for cc, dcube in enumerate([datacube[0],sourcemodel[0]]):
             if not skipImageCreation:
                 mu.create_narrowband_subcube(dcube,ra,dec,Dra,Ddec,wcenter,dwave,outputdir,
                                              cube_ext=['DATA_DCBGC'],names=[names[cc]],clobber=overwrite)
         imgwhiteDC  = glob.glob(outputdir+'*'+names[0]+'*narrowbandimage*fits')
         imgwhiteSM  = glob.glob(outputdir+'*'+names[1]+'*narrowbandimage*fits')
-
+        # ---------------------------------------------------------------------------------------------------------
         if verbose: print(' ---- Extracting OII image and cube for '+objid+' ---- ')
         redshift  = float(str(objdat['Z'][oo]))
         linewave  = 3727.5
         wcenter   = [[linewave*(redshift+1.0)]]
         dwave     = [[500.0/299792.0 * linewave * (redshift+1.0)]]# narrowband width is 2x500=1000 km/s rest-frame
-        names     = [objid+'DATACUBE_OIIdoubletWidth1000kmsRest',objid+'SOURCEMODEL_OIIdoubletWidth1000kmsRest']
+        names     = [objid+'_DATACUBE_OIIdoubletWidth1000kmsRest',objid+'_SOURCEMODEL_OIIdoubletWidth1000kmsRest']
         for cc, dcube in enumerate([datacube[0],sourcemodel[0]]):
             if not skipImageCreation:
                 mu.create_narrowband_subcube(dcube,ra,dec,Dra,Ddec,wcenter,dwave,outputdir,
                                              cube_ext=['DATA_DCBGC'],names=[names[cc]],clobber=overwrite)
         imgOIIDC    = glob.glob(outputdir+'*'+names[0]+'*narrowbandimage*fits')
         imgOIISM    = glob.glob(outputdir+'*'+names[1]+'*narrowbandimage*fits')
+        # ---------------------------------------------------------------------------------------------------------
+        if verbose: print(' ---- Extracting continuum image for '+objid+' (i.e., emission lines removed) ---- ')
+        linelist = MiGs.linelistdic()
+        linepos  = np.array([linelist['mgii1'][1],
+                             linelist['mgii2'][1],
+                             linelist['oii1'][1],
+                             linelist['oii2'][1],
+                             # linelist['NeIII'][1],
+                             linelist['hd'][1],
+                             # linelist['oiii4363'][1],
+                             linelist['hg'][1],
+                             linelist['hb'][1],
+                             linelist['oiii1'][1],
+                             linelist['oiii2'][1],
+                             # linelist['hei'][1],
+                             # linelist['oi'][1],
+                             linelist['nii1'][1],
+                             linelist['ha'][1],
+                             linelist['nii2'][1],
+                             linelist['sii1'][1],
+                             linelist['sii2'][1]])*(1.0+redshift)
 
+        dwave    = 500.0/299792.0 * linepos  # 500km/s x 2 to give width of 1000km/s bands
+        wcenter  = [linepos]
+        dwave    = [dwave]
+        names    = [objid+'_DATACUBE_continuumNoEL',objid+'_SOURCEMODEL_continuumNoEL']
+
+        for cc, dcube in enumerate([datacube[0],sourcemodel[0]]):
+            if not skipImageCreation:
+                mu.create_manualimgFromCube(dcube,ra,dec,Dra,Ddec,wcenter,dwave,outputdir,verbose=verbose,
+                                            cube_ext=['DATA_DCBGC'],names=[names[cc]],overwrite=overwrite)
+        imgNolinesDC    = glob.glob(outputdir+'*'+names[0]+'*narrowbandimage*fits')
+        imgNolinesSM    = glob.glob(outputdir+'*'+names[1]+'*narrowbandimage*fits')
+        # ---------------------------------------------------------------------------------------------------------
         if verbose: print(' ---- Globbing for other images of object ---- ')
         modelstr       = tdosemodeldir+'acs_814w_'+pointing+'*'+objid+'_cutout*tdose_modelimage_gauss.fits'
         acsmodel       = glob.glob(modelstr)
@@ -1411,10 +1444,10 @@ def OIIemitters_WhiteLightImages(outputdir,overwrite=True,skipImageCreation=Fals
             galfitModCubeWCS = glob.glob(cubeWCSstr)
 
         refimage  = glob.glob(tdosecutoutdir+'acs_814w_'+pointing+'_cut_*'+objid+'*.fits')
-
+        # ---------------------------------------------------------------------------------------------------------
         ds9cmd = 'ds9 -scale mode minmax '+\
-                 imgwhiteDC[0]+' '+imgwhiteSM[0]+' '+imgOIIDC[0]+' '+imgOIISM[0]+' '+modelGaussCubeWCS[0]+' '+acsmodel[0]+' '+refimage[0]+' '+galfitModCubeWCS[0]+' '+galfitmodel[0]+\
-                 ' -lock frame wcs -tile grid layout 9 1 -geometry 1400x500 -zoom to fit &'
+                 imgwhiteDC[0]+' '+imgwhiteSM[0]+' '+imgOIIDC[0]+' '+imgOIISM[0]+' '+modelGaussCubeWCS[0]+' '+acsmodel[0]+' '+refimage[0]+' '+galfitModCubeWCS[0]+' '+galfitmodel[0]+' '+imgNolinesDC[0]+' '+imgNolinesSM[0]+\
+                 ' -lock frame wcs -tile grid layout 11 1 -geometry 1400x500 -zoom to fit &'
         if verbose: print(ds9cmd)
 
         if printfilenames:
@@ -1427,7 +1460,8 @@ def OIIemitters_WhiteLightImages(outputdir,overwrite=True,skipImageCreation=Fals
             print(refimage[0])
             print(galfitModCubeWCS[0])
             print(galfitmodel[0])
-
+            print(imgNolinesDC[0])
+            print(imgNolinesSM[0])
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def OIIemitters_WhiteLightImages_estimatesize(outputdir,datestr='XXXXXX',overwrite=True,verbose=True):
     """
@@ -1438,12 +1472,12 @@ def OIIemitters_WhiteLightImages_estimatesize(outputdir,datestr='XXXXXX',overwri
 
     --- EXAMPLE OF USE ---
     import tdosepublication_utilities as tsu
-    outputdir  = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190212_WhiteLightImages/sizeestimates_1902XX/'
+    outputdir  = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/1902XX_WhiteLightImages/sizeestimates_1902XX/'
     tsu.OIIemitters_WhiteLightImages_estimatesize(outputdir,datestr='1902XX')
 
     """
-    imagefiles = outputdir+'../filenames.txt'
-    filenames  = np.genfromtxt(imagefiles,skip_header=4,dtype="S190",comments='#')
+    imagefiles = outputdir+'../filenames_'+datestr+'.txt'
+    filenames  = np.genfromtxt(imagefiles,skip_header=4,dtype="S250",comments='#')
 
     resultstxt = outputdir+'fitparameters'+datestr+'.txt'
     resultsout = open(resultstxt,'w')
@@ -1453,22 +1487,26 @@ def OIIemitters_WhiteLightImages_estimatesize(outputdir,datestr='XXXXXX',overwri
     resultsout.write('# objid xpos ypos fluxscale xsigma ysigma angle '
                   'xpos_init ypos_init fluxscale_init xsigma_init ysigma_init angle_init imagefit \n')
 
-    for fn in filenames:
+    for ff, fn in enumerate(filenames):
+        if verbose: print(' >>> Estimating size for profile in image '+str(ff+1)+' / '+str(len(filenames))+' <<<')
         dataimg    = afits.open(fn)[0].data
+
         try:
-            objid = int(fn.split('/')[-1].split('_')[1])
+            objid = int(fn.split('/')[-1].split('_')[1][:9])
         except:
-            objid = int(fn.split('/')[-1].split('_id')[-1].split('_')[0])
+            objid = int(fn.split('/')[-1].split('_id')[-1].split('_')[0][:9])
 
         txtcat    = outputdir+fn.split('/')[-1].replace('.fits','_sourcecat_automatic.txt')
         fout      = open(txtcat,'w')
         fout.write('# object xpos  ypos  fluxscale  \n')
         imgcenter = int(dataimg.shape[1]/2.)
         icstring  = str(imgcenter)
-        fout.write(str(objid)+'  '+icstring+'  '+icstring+'  '+str(dataimg[imgcenter,imgcenter])+' \n')
+        fluxscaleval = str(dataimg[imgcenter,imgcenter])
+        if fluxscaleval == 'nan':
+            fluxscaleval = str(np.max(dataimg[np.isfinite(dataimg)]))
+        fout.write(str(objid)+'  '+icstring+'  '+icstring+'  '+fluxscaleval+' \n')
         fout.close()
         fitscat = tu.ascii2fits(txtcat,asciinames=True,skip_header=0,outpath=outputdir,verbose=verbose)
-
         param_init, fit_output = \
             tmf.gen_fullmodel(dataimg,fitscat,xpos_col='xpos',ypos_col='ypos',
                               sigysigxangle=None, #np.array([[imgcenter/5.,imgcenter/10.,45.0]]),
@@ -1477,6 +1515,7 @@ def OIIemitters_WhiteLightImages_estimatesize(outputdir,datestr='XXXXXX',overwri
                               generateresidualimage=outputdir+fn.split('/')[-1].replace('.fits','_modelresidual.fits'),
                               max_centroid_shift=int(imgcenter*0.5),
                               verbose=verbose,datanoise=None,clobber=overwrite)
+
 
         outputstr = str(fit_output[0][1::6][0])+' '+str(fit_output[0][0::6][0])+' '+str(fit_output[0][2::6][0])+' '+\
                     str(fit_output[0][4::6][0])+' '+str(fit_output[0][3::6][0])+' '+str(fit_output[0][5::6][0])+'       '+\
@@ -1501,13 +1540,9 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
     --- EXAMPLE OF USE ---
     import tdosepublication_utilities as tsu
 
-    maindir   = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190212_WhiteLightImages/sizeestimates/'
-    plotdir   = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190212_WhiteLightImages/sizeestimates_plots/'
-    paramfile = maindir+'fitparameters190213_153obj.fits'
-
-    maindir   = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190212_WhiteLightImages/sizeestimates_190213/'
-    plotdir   = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190212_WhiteLightImages/sizeestimates_190213_plots/'
-    paramfile = maindir+'fitparameters190213.fits'
+    maindir   = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190215_WhiteLightImages/sizeestimates_190215/'
+    plotdir   = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/190215_WhiteLightImages/sizeestimates_190215_plots/'
+    paramfile = maindir+'fitparameters190215.fits'
 
     tsu.OIIemitters_compare_modeparams(paramfile,plotdir)
 
@@ -1520,134 +1555,110 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
         print(' - Found '+str(Nobj)+' unique IDs in parameter summary file to evaluate and plot.')
         print(' - With '+str(Nparamset)+' entries in file, that makes for '+str(float(Nparamset)/float(Nobj))+' files/object')
 
-    dat_whitelight = paramdat[0::5]
-    dat_OIIband    = paramdat[1::5]
-    dat_CubeWCSMod = paramdat[2::5]
-    dat_ACSmodel   = paramdat[3::5]
-    dat_ACSref     = paramdat[4::5]
+    dat_whitelightDC  = paramdat[0::11] # Whitelight image for the datacube
+    dat_whitelightSM  = paramdat[1::11] # Whitelight image for the source model
+    dat_OIIbandDC     = paramdat[2::11]
+    dat_OIIbandSM     = paramdat[3::11]
+    dat_ACSCubeWCS    = paramdat[4::11]
+    dat_ACSmodel      = paramdat[5::11]
+    dat_ACS           = paramdat[6::11]
+    dat_GalfitCubeWCS = paramdat[7::11]
+    dat_Galfitmodel   = paramdat[8::11]
+    dat_NolinesDC     = paramdat[9::11]
+    dat_NolinesSM     = paramdat[10::11]
 
     ACSpix2arcsec  = 0.03 # arcsec/pix
     MUSEpix2arcsec = 0.20 # arcsec/pix
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- MINOR AXES ----------------
-    WLminoraxes         = np.zeros(Nobj)
-    OIIminoraxes        = np.zeros(Nobj)
-    CubeWCSModminoraxes = np.zeros(Nobj)
-    ACSMODminoraxes     = np.zeros(Nobj)
-    REFminoraxes        = np.zeros(Nobj)
+    whitelightDC_MinA  = np.zeros(Nobj)
+    whitelightSM_MinA  = np.zeros(Nobj)
+    OIIbandDC_MinA     = np.zeros(Nobj)
+    OIIbandSM_MinA     = np.zeros(Nobj)
+    ACSCubeWCS_MinA    = np.zeros(Nobj)
+    ACSmodel_MinA      = np.zeros(Nobj)
+    ACS_MinA           = np.zeros(Nobj)
+    GalfitCubeWCS_MinA = np.zeros(Nobj)
+    Galfitmodel_MinA   = np.zeros(Nobj)
+    NolinesDC_MinA     = np.zeros(Nobj)
+    NolinesSM_MinA     = np.zeros(Nobj)
 
     for ii, id in enumerate(unique_ids):
-        WLminoraxes[ii]         = np.min([dat_whitelight['xsigma'][ii],dat_whitelight['ysigma'][ii]]) * MUSEpix2arcsec
-        OIIminoraxes[ii]        = np.min([dat_OIIband['xsigma'][ii],dat_OIIband['ysigma'][ii]])       * MUSEpix2arcsec
-        CubeWCSModminoraxes[ii] = np.min([dat_CubeWCSMod['xsigma'][ii],dat_CubeWCSMod['ysigma'][ii]])   * MUSEpix2arcsec
-        ACSMODminoraxes[ii]     = np.min([dat_ACSmodel['xsigma'][ii],dat_ACSmodel['ysigma'][ii]])     * ACSpix2arcsec
-        REFminoraxes[ii]        = np.min([dat_ACSref['xsigma'][ii],dat_ACSref['ysigma'][ii]])         * ACSpix2arcsec
+        whitelightDC_MinA[ii]      = np.min([dat_whitelightDC['xsigma'][ii] , dat_whitelightDC['ysigma'][ii]])  *  MUSEpix2arcsec
+        whitelightSM_MinA[ii]      = np.min([dat_whitelightSM['xsigma'][ii] , dat_whitelightSM['ysigma'][ii]])  *  MUSEpix2arcsec
+        OIIbandDC_MinA[ii]         = np.min([dat_OIIbandDC['xsigma'][ii]    , dat_OIIbandDC['ysigma'][ii]])     *  MUSEpix2arcsec
+        OIIbandSM_MinA[ii]         = np.min([dat_OIIbandSM['xsigma'][ii]    , dat_OIIbandSM['ysigma'][ii]])     *  MUSEpix2arcsec
+        ACSCubeWCS_MinA[ii]        = np.min([dat_ACSCubeWCS['xsigma'][ii]   , dat_ACSCubeWCS['ysigma'][ii]])    *  MUSEpix2arcsec
+        ACSmodel_MinA[ii]          = np.min([dat_ACSmodel['xsigma'][ii]     , dat_ACSmodel['ysigma'][ii]])      *  ACSpix2arcsec
+        ACS_MinA[ii]               = np.min([dat_ACS['xsigma'][ii]          , dat_ACS['ysigma'][ii]])           *  ACSpix2arcsec
+        GalfitCubeWCS_MinA[ii]     = np.min([dat_GalfitCubeWCS['xsigma'][ii], dat_GalfitCubeWCS['ysigma'][ii]]) *  MUSEpix2arcsec
+        Galfitmodel_MinA[ii]       = np.min([dat_Galfitmodel['xsigma'][ii]  , dat_Galfitmodel['ysigma'][ii]])   *  MUSEpix2arcsec
+        NolinesDC_MinA[ii]         = np.min([dat_NolinesDC['xsigma'][ii]    , dat_NolinesDC['ysigma'][ii]])     *  MUSEpix2arcsec
+        NolinesSM_MinA[ii]         = np.min([dat_NolinesSM['xsigma'][ii]    , dat_NolinesSM['ysigma'][ii]])     *  MUSEpix2arcsec
 
-    diff_WLvsOII_minor           = WLminoraxes-OIIminoraxes
-    med_WLvsOII_minor            = np.median(diff_WLvsOII_minor)
-    std_WLvsOII_minor            = np.std(diff_WLvsOII_minor)
-    diff_OIIvsCubeWCSMod_minor   = OIIminoraxes-CubeWCSModminoraxes
-    med_OIIvsCubeWCSMod_minor    = np.median(diff_OIIvsCubeWCSMod_minor)
-    std_OIIvsCubeWCSMod_minor    = np.std(diff_OIIvsCubeWCSMod_minor)
-    diff_OIIvsACSMOD_minor       = OIIminoraxes-ACSMODminoraxes
-    med_OIIvsACSMOD_minor        = np.median(diff_OIIvsACSMOD_minor)
-    std_OIIvsACSMOD_minor        = np.std(diff_OIIvsACSMOD_minor)
-    diff_OIIvsREF_minor          = OIIminoraxes-REFminoraxes
-    med_OIIvsREF_minor           = np.median(diff_OIIvsREF_minor)
-    std_OIIvsREF_minor           = np.std(diff_OIIvsREF_minor)
-    diff_WLvsCubeWCSMod_minor    = WLminoraxes-CubeWCSModminoraxes
-    med_WLvsCubeWCSMod_minor     = np.median(diff_WLvsCubeWCSMod_minor)
-    std_WLvsCubeWCSMod_minor     = np.std(diff_WLvsCubeWCSMod_minor)
-    diff_WLvsACSMOD_minor        = WLminoraxes-ACSMODminoraxes
-    med_WLvsACSMOD_minor         = np.median(diff_WLvsACSMOD_minor)
-    std_WLvsACSMOD_minor         = np.std(diff_WLvsACSMOD_minor)
-    diff_WLvsREF_minor           = WLminoraxes-REFminoraxes
-    med_WLvsREF_minor            = np.median(diff_WLvsREF_minor)
-    std_WLvsREF_minor            = np.std(diff_WLvsREF_minor)
+    vallist_MinA = ['whitelightDC_MinA','whitelightSM_MinA','OIIbandDC_MinA','OIIbandSM_MinA',
+                    'ACSCubeWCS_MinA','ACSmodel_MinA','ACS_MinA','GalfitCubeWCS_MinA',
+                    'Galfitmodel_MinA','NolinesDC_MinA','NolinesSM_MinA']
+
+    print(' - Minor Axes Estimates: ')
+    for mm, val1 in enumerate(vallist_MinA):
+        for nn, val2 in enumerate(vallist_MinA):
+            diff_val1val2 = eval(val1) - eval(val2)
+            med_val1val2  = np.median(diff_val1val2)
+            std_val1val2  = np.std(diff_val1val2)
+            print(' - Median for the pair '+str("%20s" % val1)+' and '+str("%20s" % val2)+'  :  '+
+                  str(med_val1val2)+'arcsec +/- '+str(std_val1val2))
 
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- MAJOR AXES ----------------
-    WLmajoraxes         = np.zeros(Nobj)
-    OIImajoraxes        = np.zeros(Nobj)
-    CubeWCSModmajoraxes = np.zeros(Nobj)
-    ACSMODmajoraxes     = np.zeros(Nobj)
-    REFmajoraxes        = np.zeros(Nobj)
+    whitelightDC_MajA  = np.zeros(Nobj)
+    whitelightSM_MajA  = np.zeros(Nobj)
+    OIIbandDC_MajA     = np.zeros(Nobj)
+    OIIbandSM_MajA     = np.zeros(Nobj)
+    ACSCubeWCS_MajA    = np.zeros(Nobj)
+    ACSmodel_MajA      = np.zeros(Nobj)
+    ACS_MajA           = np.zeros(Nobj)
+    GalfitCubeWCS_MajA = np.zeros(Nobj)
+    Galfitmodel_MajA   = np.zeros(Nobj)
+    NolinesDC_MajA     = np.zeros(Nobj)
+    NolinesSM_MajA     = np.zeros(Nobj)
 
     for ii, id in enumerate(unique_ids):
-        WLmajoraxes[ii]         = np.max([dat_whitelight['xsigma'][ii],dat_whitelight['ysigma'][ii]]) * MUSEpix2arcsec
-        OIImajoraxes[ii]        = np.max([dat_OIIband['xsigma'][ii],dat_OIIband['ysigma'][ii]])       * MUSEpix2arcsec
-        CubeWCSModmajoraxes[ii] = np.max([dat_CubeWCSMod['xsigma'][ii],dat_CubeWCSMod['ysigma'][ii]])   * MUSEpix2arcsec
-        ACSMODmajoraxes[ii]     = np.max([dat_ACSmodel['xsigma'][ii],dat_ACSmodel['ysigma'][ii]])     * ACSpix2arcsec
-        REFmajoraxes[ii]        = np.max([dat_ACSref['xsigma'][ii],dat_ACSref['ysigma'][ii]])         * ACSpix2arcsec
+        whitelightDC_MajA[ii]      = np.max([dat_whitelightDC['xsigma'][ii] , dat_whitelightDC['ysigma'][ii]])  *  MUSEpix2arcsec
+        whitelightSM_MajA[ii]      = np.max([dat_whitelightSM['xsigma'][ii] , dat_whitelightSM['ysigma'][ii]])  *  MUSEpix2arcsec
+        OIIbandDC_MajA[ii]         = np.max([dat_OIIbandDC['xsigma'][ii]    , dat_OIIbandDC['ysigma'][ii]])     *  MUSEpix2arcsec
+        OIIbandSM_MajA[ii]         = np.max([dat_OIIbandSM['xsigma'][ii]    , dat_OIIbandSM['ysigma'][ii]])     *  MUSEpix2arcsec
+        ACSCubeWCS_MajA[ii]        = np.max([dat_ACSCubeWCS['xsigma'][ii]   , dat_ACSCubeWCS['ysigma'][ii]])    *  MUSEpix2arcsec
+        ACSmodel_MajA[ii]          = np.max([dat_ACSmodel['xsigma'][ii]     , dat_ACSmodel['ysigma'][ii]])      *  ACSpix2arcsec
+        ACS_MajA[ii]               = np.max([dat_ACS['xsigma'][ii]          , dat_ACS['ysigma'][ii]])           *  ACSpix2arcsec
+        GalfitCubeWCS_MajA[ii]     = np.max([dat_GalfitCubeWCS['xsigma'][ii], dat_GalfitCubeWCS['ysigma'][ii]]) *  MUSEpix2arcsec
+        Galfitmodel_MajA[ii]       = np.max([dat_Galfitmodel['xsigma'][ii]  , dat_Galfitmodel['ysigma'][ii]])   *  MUSEpix2arcsec
+        NolinesDC_MajA[ii]         = np.max([dat_NolinesDC['xsigma'][ii]    , dat_NolinesDC['ysigma'][ii]])     *  MUSEpix2arcsec
+        NolinesSM_MajA[ii]         = np.max([dat_NolinesSM['xsigma'][ii]    , dat_NolinesSM['ysigma'][ii]])     *  MUSEpix2arcsec
 
-    diff_WLvsOII_major           = WLmajoraxes-OIImajoraxes
-    med_WLvsOII_major            = np.median(diff_WLvsOII_major)
-    std_WLvsOII_major            = np.std(diff_WLvsOII_major)
-    diff_OIIvsCubeWCSMod_major   = OIImajoraxes-CubeWCSModmajoraxes
-    med_OIIvsCubeWCSMod_major    = np.median(diff_OIIvsCubeWCSMod_major)
-    std_OIIvsCubeWCSMod_major    = np.std(diff_OIIvsCubeWCSMod_major)
-    diff_OIIvsACSMOD_major       = OIImajoraxes-ACSMODmajoraxes
-    med_OIIvsACSMOD_major        = np.median(diff_OIIvsACSMOD_major)
-    std_OIIvsACSMOD_major        = np.std(diff_OIIvsACSMOD_major)
-    diff_OIIvsREF_major          = OIImajoraxes-REFmajoraxes
-    med_OIIvsREF_major           = np.median(diff_OIIvsREF_major)
-    std_OIIvsREF_major           = np.std(diff_OIIvsREF_major)
-    diff_WLvsCubeWCSMod_major    = WLmajoraxes-CubeWCSModmajoraxes
-    med_WLvsCubeWCSMod_major     = np.median(diff_WLvsCubeWCSMod_major)
-    std_WLvsCubeWCSMod_major     = np.std(diff_WLvsCubeWCSMod_major)
-    diff_WLvsACSMOD_major        = WLmajoraxes-ACSMODmajoraxes
-    med_WLvsACSMOD_major         = np.median(diff_WLvsACSMOD_major)
-    std_WLvsACSMOD_major         = np.std(diff_WLvsACSMOD_major)
-    diff_WLvsREF_major           = WLmajoraxes-REFmajoraxes
-    med_WLvsREF_major            = np.median(diff_WLvsREF_major)
-    std_WLvsREF_major            = np.std(diff_WLvsREF_major)
+    vallist_MajA = ['whitelightDC_MajA','whitelightSM_MajA','OIIbandDC_MajA','OIIbandSM_MajA',
+                   'ACSCubeWCS_MajA','ACSmodel_MajA','ACS_MajA','GalfitCubeWCS_MajA',
+                   'Galfitmodel_MajA','NolinesDC_MajA','NolinesSM_MajA']
 
-    # ---------------------------------------------------------------------------------------------------------
-    # ---------------- PRINTING ----------------
-    if verbose:
-        print('\n - dat_CubeWCSModel axis estimates: ')
-        print('   median(whitelight - OIIband                 ) = '+
-              str(med_WLvsOII_minor)+'arcsec +/- '+str(std_WLvsOII_minor))
-        print(' ')
-        print('   median(OIIband    - ACS model in CUBE WCS) = '+
-              str(med_OIIvsCubeWCSMod_minor)+'arcsec +/- '+str(std_OIIvsCubeWCSMod_minor))
-        print('   median(OIIband    - ACS model               ) = '+
-              str(med_OIIvsACSMOD_minor)+'arcsec +/- '+str(std_OIIvsACSMOD_minor))
-        print('   median(OIIband    - ACS reference image     ) = '+
-              str(med_OIIvsREF_minor)+'arcsec +/- '+str(std_OIIvsREF_minor))
-        print(' ')
-        print('   median(White Light Img - ACS model in CUBE WCS) = '+
-              str(med_WLvsCubeWCSMod_minor)+'arcsec +/- '+str(std_WLvsCubeWCSMod_minor))
-        print('   median(White Light Img - ACS model               ) = '+
-              str(med_WLvsACSMOD_minor)+'arcsec +/- '+str(std_WLvsACSMOD_minor))
-        print('   median(White Light Img - ACS reference image     ) = '+
-              str(med_WLvsREF_minor)+'arcsec +/- '+str(std_WLvsREF_minor))
-
-        print('\n - Major axis estimates: ')
-        print('   median(whitelight - OIIband                 ) = '+
-              str(med_WLvsOII_major)+'arcsec +/- '+str(std_WLvsOII_major))
-        print(' ')
-        print('   median(OIIband    - ACS model in CUBE WCS) = '+
-              str(med_OIIvsCubeWCSMod_major)+'arcsec +/- '+str(std_OIIvsCubeWCSMod_major))
-        print('   median(OIIband    - ACS model               ) = '+
-              str(med_OIIvsACSMOD_major)+'arcsec +/- '+str(std_OIIvsACSMOD_major))
-        print('   median(OIIband    - ACS reference image     ) = '+
-              str(med_OIIvsREF_major)+'arcsec +/- '+str(std_OIIvsREF_major))
-        print(' ')
-        print('   median(White Light Img - ACS model in CUBE WCS) = '+
-              str(med_WLvsCubeWCSMod_major)+'arcsec +/- '+str(std_WLvsCubeWCSMod_major))
-        print('   median(White Light Img - ACS model               ) = '+
-              str(med_WLvsACSMOD_major)+'arcsec +/- '+str(std_WLvsACSMOD_major))
-        print('   median(White Light Img - ACS reference image     ) = '+
-              str(med_WLvsREF_major)+'arcsec +/- '+str(std_WLvsREF_major))
+    print(' - Major Axes Estimates: ')
+    for mm, val1 in enumerate(vallist_MajA):
+        for nn, val2 in enumerate(vallist_MajA):
+            diff_val1val2 = eval(val1) - eval(val2)
+            med_val1val2  = np.median(diff_val1val2)
+            std_val1val2  = np.std(diff_val1val2)
+            print(' - Median for the pair '+str("%20s" % val1)+' and '+str("%20s" % val2)+'  :  '+
+                  str(med_val1val2)+'arcsec +/- '+str(std_val1val2))
 
     # ---------------------------------------------------------------------------------------------------------
     # ---------------- PLOTTING ----------------
-    histvals = ['WLminoraxes','OIIminoraxes','CubeWCSModminoraxes','ACSMODminoraxes','REFminoraxes',
-                'WLmajoraxes','OIImajoraxes','CubeWCSModmajoraxes','ACSMODmajoraxes','REFmajoraxes']
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    histvals = ['NolinesDC_MinA','OIIbandDC_MinA','whitelightDC_MinA','ACSmodel_MinA',
+                'NolinesDC_MajA','OIIbandDC_MajA','whitelightDC_MajA','ACSmodel_MajA']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plotname = plotdir+'histograms.pdf'
+    plotname = plotdir+'histogramsDATACUBE.pdf'
     # if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fig = plt.figure(figsize=(7,4))
@@ -1682,114 +1693,140 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
     plt.savefig(plotname)
     fig.clf()
     plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    histvals = ['NolinesSM_MinA','OIIbandSM_MinA','whitelightSM_MinA','ACSmodel_MinA',
+                'NolinesSM_MajA','OIIbandSM_MajA','whitelightSM_MajA','ACSmodel_MajA']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    xvals  = ['WLminoraxes','OIIminoraxes','OIIminoraxes','OIIminoraxes',
-              'WLminoraxes','WLminoraxes','WLminoraxes','WLmajoraxes',
-              'OIImajoraxes','OIImajoraxes','OIImajoraxes','WLmajoraxes',
-              'WLmajoraxes','WLmajoraxes']
-    yvals  = ['diff_WLvsOII_minor','diff_OIIvsCubeWCSMod_minor','diff_OIIvsACSMOD_minor','diff_OIIvsREF_minor',
-              'diff_WLvsCubeWCSMod_minor','diff_WLvsACSMOD_minor','diff_WLvsREF_minor','diff_WLvsOII_major',
-              'diff_OIIvsCubeWCSMod_major','diff_OIIvsACSMOD_major','diff_OIIvsREF_major','diff_WLvsCubeWCSMod_major',
-              'diff_WLvsACSMOD_major','diff_WLvsREF_major']
-    for pp in xrange(len(xvals)):
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plotname = plotdir+'axesVSdiff_'+yvals[pp]+'.pdf'
-        # if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        fig = plt.figure(figsize=(7,4))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.10, right=0.98, bottom=0.15, top=0.98)
-        Fsize  = 10
-        lthick = 1
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif',size=Fsize)
-        plt.rc('xtick', labelsize=Fsize)
-        plt.rc('ytick', labelsize=Fsize)
-        plt.clf()
-        plt.ioff()
-        #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plt.plot(eval(xvals[pp]),eval(yvals[pp]),'.r')#,label='S/N LSDcat scaled by '+str(scalefactor))
+    plotname = plotdir+'histogramsSOURCEMODEL.pdf'
+    # if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=(7,4))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.05, right=0.98, bottom=0.15, top=0.98)
+    Fsize  = 10
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for hh, histlabel in enumerate(histvals):
+        plt.hist(eval(histvals[hh]),bins=np.arange(0,2.2,0.06),label=histlabel.replace('_','\_'),histtype='step')
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if logaxes:
-        #     axisrange = [2,100]
-        # else:
-        #     axisrange = [0,70]
-        plt.plot([np.min(eval(xvals[pp])),np.max(eval(xvals[pp]))],[0,0],'--k',lw=lthick)
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plt.xlabel(xvals[pp].replace('_','\_')+" [$''$]", fontsize=Fsize)
-        plt.ylabel(yvals[pp].replace('_','\_')+" [$''$]", fontsize=Fsize)
-        # plt.ylim(axisrange)
-        # plt.xlim(axisrange)
-        # if logaxes:
-        if 'major' in xvals[pp]:
-            plt.xscale('log')
-            plt.yscale('log')
-        # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
-        #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
-        # leg.get_frame().set_alpha(0.7)
-        print(' - Saving plot to '+plotname)
-        plt.savefig(plotname)
-        fig.clf()
-        plt.close('all')
+    plt.plot([MUSEpix2arcsec,MUSEpix2arcsec],[0,60],'--k',lw=lthick,label='MUSE pixel size')
+    plt.plot([MUSEpix2arcsec*1./2.355,MUSEpix2arcsec*1./2.355],[0,60],
+             linestyle='--',color='gray',lw=lthick,label='MUSE min. $\sigma$ allowed')
+
+    plt.plot([ACSpix2arcsec,ACSpix2arcsec],[0,60],':k',lw=lthick,label='HST/ACS pixel size')
+    plt.plot([ACSpix2arcsec*1./2.355,ACSpix2arcsec*1./2.355],[0,60],
+             linestyle=':',color='gray',lw=lthick,label='HST min. $\sigma$ allowed')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    xvals  = ['WLminoraxes','OIIminoraxes','OIIminoraxes','OIIminoraxes',
-              'WLminoraxes','WLminoraxes','WLminoraxes','WLmajoraxes',
-              'OIImajoraxes','OIImajoraxes','OIImajoraxes','WLmajoraxes',
-              'WLmajoraxes','WLmajoraxes',
-              'CubeWCSModminoraxes','CubeWCSModminoraxes','ACSMODminoraxes',
-              'CubeWCSModmajoraxes','CubeWCSModmajoraxes','ACSMODmajoraxes']
-    yvals  = ['OIIminoraxes','CubeWCSModminoraxes','ACSMODminoraxes','REFminoraxes',
-              'CubeWCSModminoraxes','ACSMODminoraxes','REFminoraxes','OIImajoraxes',
-              'CubeWCSModmajoraxes','ACSMODmajoraxes','REFmajoraxes','CubeWCSModmajoraxes',
-              'ACSMODmajoraxes','REFmajoraxes',
-              'REFminoraxes','ACSMODminoraxes','REFminoraxes',
-              'REFmajoraxes','ACSMODmajoraxes','REFmajoraxes']
+    plt.xlabel("Gaussian $\sigma$ [$''$]", fontsize=Fsize)
+    leg = plt.legend(fancybox=True, loc='upper right',prop={'size':Fsize},ncol=1,numpoints=1,
+                     bbox_to_anchor=(0.99, 0.99))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for mm, val1 in enumerate(vallist_MinA):
+        for nn, val2 in enumerate(vallist_MinA):
+            xvals  = val1
+            yvals  = val2
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plotname = plotdir+'axes_'+xvals+'_vs_'+yvals+'_minor.pdf'
+            # if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            fig = plt.figure(figsize=(7,4))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.98, bottom=0.15, top=0.98)
+            Fsize  = 10
+            lthick = 1
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plt.plot(eval(xvals),eval(yvals),'.r')#,label='S/N LSDcat scaled by '+str(scalefactor))
 
-    for pp in xrange(len(xvals)):
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plotname = plotdir+'axes_'+xvals[pp]+'_vs_'+yvals[pp]+'.pdf'
-        # if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        fig = plt.figure(figsize=(7,4))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.10, right=0.98, bottom=0.15, top=0.98)
-        Fsize  = 10
-        lthick = 1
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif',size=Fsize)
-        plt.rc('xtick', labelsize=Fsize)
-        plt.rc('ytick', labelsize=Fsize)
-        plt.clf()
-        plt.ioff()
-        #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plt.plot(eval(xvals[pp]),eval(yvals[pp]),'.r')#,label='S/N LSDcat scaled by '+str(scalefactor))
-
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if logaxes:
-        #     axisrange = [2,100]
-        # else:
-        #     axisrange = [0,70]
-        plt.plot([np.min(eval(xvals[pp])),np.max(eval(xvals[pp]))],[np.min(eval(xvals[pp])),np.max(eval(xvals[pp]))],
-                 '--k',lw=lthick)
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plt.xlabel(xvals[pp].replace('_','\_')+" [$''$]", fontsize=Fsize)
-        plt.ylabel(yvals[pp].replace('_','\_')+" [$''$]", fontsize=Fsize)
-        # plt.ylim(axisrange)
-        # plt.xlim(axisrange)
-        # if logaxes:
-        if 'major' in xvals[pp]:
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            # if logaxes:
+            #     axisrange = [2,100]
+            # else:
+            #     axisrange = [0,70]
+            plt.plot([np.min(eval(xvals)),np.max(eval(xvals))],[np.min(eval(xvals)),np.max(eval(xvals))],
+                     '--k',lw=lthick)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plt.xlabel(xvals.replace('_','\_')+" [$''$]", fontsize=Fsize)
+            plt.ylabel(yvals.replace('_','\_')+" [$''$]", fontsize=Fsize)
+            # plt.ylim(axisrange)
+            # plt.xlim(axisrange)
             plt.xscale('log')
             plt.yscale('log')
-        # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
-        #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
-        # leg.get_frame().set_alpha(0.7)
-        print(' - Saving plot to '+plotname)
-        plt.savefig(plotname)
-        fig.clf()
-        plt.close('all')
+            # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+            #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
+            # leg.get_frame().set_alpha(0.7)
+            print(' - Saving plot to '+plotname)
+            plt.savefig(plotname)
+            fig.clf()
+            plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for mm, val1 in enumerate(vallist_MajA):
+        for nn, val2 in enumerate(vallist_MajA):
+            xvals  = val1
+            yvals  = val2
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plotname = plotdir+'axes_'+xvals+'_vs_'+yvals+'_major.pdf'
+            # if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            fig = plt.figure(figsize=(7,4))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.98, bottom=0.15, top=0.98)
+            Fsize  = 10
+            lthick = 1
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plt.plot(eval(xvals),eval(yvals),'.r')#,label='S/N LSDcat scaled by '+str(scalefactor))
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            # if logaxes:
+            #     axisrange = [2,100]
+            # else:
+            #     axisrange = [0,70]
+            plt.plot([np.min(eval(xvals)),np.max(eval(xvals))],[np.min(eval(xvals)),np.max(eval(xvals))],
+                     '--k',lw=lthick)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            plt.xlabel(xvals.replace('_','\_')+" [$''$]", fontsize=Fsize)
+            plt.ylabel(yvals.replace('_','\_')+" [$''$]", fontsize=Fsize)
+            # plt.ylim(axisrange)
+            # plt.xlim(axisrange)
+            plt.xscale('log')
+            plt.yscale('log')
+            # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1,
+            #                  bbox_to_anchor=(0.01, 0.99))  # add the legend
+            # leg.get_frame().set_alpha(0.7)
+            print(' - Saving plot to '+plotname)
+            plt.savefig(plotname)
+            fig.clf()
+            plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MW102009072Guo9640_WhiteLightImage(outputdir,overwrite=True,verbose=True):
@@ -3210,7 +3247,102 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     #////////////////////////////////////////////////////////////////////////////////////////////////
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def paperfigs190214_whitelightimages(overwrite=True,verbose=True):
+    """
+    Plotting comparison of extractions of max values.
+    Based on tsu.OIIemitters_plotcomparisons() making this function obsolete.
 
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.paperfigs190214_whitelightimages()
+
+    """
+    cutoutdir = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_cutouts/'
+    datacubes = glob.glob(cutoutdir+'DATACUBE_candels-cdfs-*arcsec.fits')
+
+    for dc, datacube in enumerate(datacubes):
+        dataarray  = afits.open(datacube)[1].data
+        fitsheader = afits.open(datacube)[1].header
+        if verbose: print(' - Collapsing white light image of cube \n   '+datacube)
+        outname = datacube.replace('.fits','_whitelightimg.fits')
+        mu.collapsecube(outname,dataarray,fitsheader,layers='all',overwrite=overwrite,verbose=verbose)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
+    """
+    Function to pull out the Kron radii of a list of Guo objects
+
+    --- INPUT ---
+    Guoids          List of Guo+2013 CDFs object IDs to return information for
+    radiusfactor    Scales to apply to returned radii to enable returning 1R_Kron, 2R_Kron, 3R_kron etc.
+    verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    guoids  = [8420,9726,10621,10701,10843,11188,13776,15160,16009,17691]
+    results = tsu.get_KronRadii_forGuoObj(guoids,radiusscales=[1,2,3])
+
+    """
+    guocat = '/Users/kschmidt/work/catalogs/guo/hlsp_candels_hst_wfc3_goodss-tot-multiband_f160w_v1_cat.fits'
+    guodat = afits.open(guocat)[1].data
+
+    Nobj   = len(guoids)
+    if verbose: print(' - Received '+str(Nobj)+' object ids to extract Kron radii for.')
+
+    pix2arcsecF160W  = 0.06                  # arcsec/pixel in F160W
+    pix2arcsecF814W  = 0.03                  # arcsec/pixel in F814W
+    objids       = guodat['ID']
+    kron_radius  = guodat['KRON_RADIUS'] # factor to apply to A_image and B_image in pixels
+    a_image      = guodat['A_IMAGE']     # SExtractor major axis in pizels from F160W
+    b_image      = guodat['B_IMAGE']     # SExtractor minor axis in pizels from F160W
+    r20_F814W    = guodat['FLUX_RADIUS_1_F814W'] * pix2arcsecF814W # 20% Fraction-of-light radii [pixel] of F814W
+    r50_F814W    = guodat['FLUX_RADIUS_2_F814W'] * pix2arcsecF814W # 50% Fraction-of-light radii [pixel] of F814W
+    r80_F814W    = guodat['FLUX_RADIUS_3_F814W'] * pix2arcsecF814W # 80% Fraction-of-light radii [pixel] of F814W
+
+    PHOT_AUTOPARAMS = [2.5,3.5] # Assumed parameters for Guo SExtractor run
+
+    resultsarr   = np.zeros([Nobj,11+len(radiusscales)*2])
+
+    if verbose:
+        print('#  >>>>> WARNING: Kron radii directly from Guo catalog seem unreasonably high; especially compared to the 20, 50 and 80% flux radii')
+        print('#  >>>>>          Therefore it is assumed that what the Guo catalog provides uses PHOT_AUTOPARAMS = 2.5, 3.5 from SExtractor such that KRON_RADIUS is actually 2.5 * r_kron cf. ')
+        print('#  >>>>>          http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source_extractor.pdf, '
+              'https://media.readthedocs.org/pdf/sextractor/des_dr1/sextractor.pdf')
+        print('#  >>>>>          and similar to http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013ApJS..206...10G&link_type=EJOURNAL')
+        print('#  id  b_image["]  a_image["]  2b_image["]  2a_image["]  3b_image["]  3a_image["]  r_kron_scale  r20_f814w["] r50_f814w["] r80_f814w["]  '
+              '  [r_kron_minor, r_kron_major] * '+str(radiusscales))
+
+    for ii, gid in enumerate(np.asarray(guoids)):
+        objent = np.where(objids == gid)[0]
+
+        if len(objent) == 0:
+            sys.exit('Found no match in Guo catalog to Guo ID = '+str(gid))
+        elif len(objent) > 1:
+            sys.exit('Found more than one match in Guo catalog to Guo ID = '+str(gid))
+        else:
+            objent       = objent[0]
+            R_kron_scale = kron_radius[objent]
+            minor        = b_image[objent] * pix2arcsecF160W
+            major        = a_image[objent] * pix2arcsecF160W
+            R_kron_minor = R_kron_scale * minor / PHOT_AUTOPARAMS[0]
+            R_kron_major = R_kron_scale * major / PHOT_AUTOPARAMS[0]
+            resultsarr[ii,:11] = [gid,minor,major,2.*minor,2.*major,3.*minor,3.*major,
+                                 R_kron_scale,r20_F814W[objent],r50_F814W[objent],r80_F814W[objent]]
+
+
+            for rr, rscale in enumerate(radiusscales):
+                try:
+                    resultsarr[ii,11+rr*2:13+rr*2] = [R_kron_minor * rscale,R_kron_major * rscale]
+                except:
+                    pdb.set_trace()
+
+        if verbose:
+            r_kron_string = ' '.join([str("%8.2f" % res) for res in resultsarr[ii,3:]])
+            print('  '+str("%7.d" % gid)+'  '+str("%8.2f" % minor)+'  '+str("%8.2f" % major)+r_kron_string)
+
+    return resultsarr
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
 #
