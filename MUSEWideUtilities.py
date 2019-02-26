@@ -513,29 +513,54 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
                 goodent = np.where((wavevec < wavemax) & (wavevec > wavemin))[0]
 
                 if len(goodent) >= 2:
-                    if verbose: print(' - Saving narrowband image to \n   '+narrowbandname)
-                    narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
-
-                    imghdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
-                    for key in imghdr.keys():
-                        if '3' in key:
-                            try:
-                                del imghdr[key]
-                            except:
-                                pass
-                        if 'ZAP' in key:
-                            try:
-                                del imghdr[key]
-                            except:
-                                pass
-
-                    hduimg   = afits.PrimaryHDU(narrowbandimage,header=imghdr)
-                    hdus     = [hduimg]
-                    hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
-                    hdulist.writeto(narrowbandname,overwrite=clobber)  # write fits file (clobber=True overwrites excisting file)
+                    cubehdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
+                    mwu.collapsecube(narrowbandname,subcube,cubehdr,layers=goodent,overwrite=clobber,verbose=verbose)
                 else:
                     if verbose: print(' - WARNING: less than 2 slices in narrowband extraction from subcube trying to generate')
                     if verbose: print('   '+narrowbandname)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def collapsecube(outname,dataarray,fitsheader,layers='all',overwrite=False,verbose=True):
+    """
+    Function to callapse specified layers of data cube and store them as image
+
+    --- INPUT ---
+    outname    Name of image fits file to generate
+    dataarray       The data cube to collapse. Will be collapsed along the 0th axis
+    cubeheader      Fits header of data cube (in whihc case all third dimension coomponents are removed) or
+                    image to use when storing the output image to a fits file.
+    layers          The layers of the cube to collaps. If layers='all' the full cube is collapsed.
+    overwrite       Overwrite existing image?
+    verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    mwu.collapsecube(narrowbandname,subcube,cubehdr,layers=goodent,verbose=verbose)
+    """
+    if verbose: print(' - Saving narrowband image to \n   '+outname)
+
+    if layers == 'all':
+        layers = np.arange(dataarray.shape[0])
+
+    dataarray[np.where(~np.isfinite(dataarray))] = 0.0
+    narrowbandimage = np.sum(dataarray[layers,:,:],axis=0)
+
+    for key in fitsheader.keys():
+        if '3' in key:
+            try:
+                del fitsheader[key]
+            except:
+                pass
+        if 'ZAP' in key:
+            try:
+                del fitsheader[key]
+            except:
+                pass
+
+    hduimg   = afits.PrimaryHDU(narrowbandimage,header=fitsheader)
+    hdus     = [hduimg]
+    hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
+    hdulist.writeto(outname,overwrite=overwrite)  # write fits file (clobber=True overwrites excisting file)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_PSFasciiselectiontemplate(outname='./PSFselectionAsciiTemplate_RENAME_.txt',campaign='E40',clobber=False,verbose=True):
     """
