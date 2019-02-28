@@ -348,7 +348,7 @@ def create_manualimgFromCube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,out
     names    = ['103013064_cont','103013064_oxygenlines']
     datacube = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_'+pointing+'_v1.0_dcbgc_effnoised.fits')
 
-    mu.create_manualimgFromCube(datacube[0],ras,decs,15.0,15.0,wcenters,dwaves,outdir,names=names,overwrite=True,invertselection=True)
+    mu.create_manualimgFromCube(datacube[0],ras,decs,15.0,15.0,wcenters,dwaves,outdir,names=names,overwrite=True,invertselection=True,skip_cube_extraction=True)
 
     """
     Nsubcubes = len(ras)
@@ -403,32 +403,15 @@ def create_manualimgFromCube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,out
                     if verbose: print(' - Saving narrowband image to \n   '+narrowbandname)
                     narrowbandimage = np.sum(subcube[goodent,:,:],axis=0)
 
-                    imghdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
-                    for key in imghdr.keys():
-                        if '3' in key:
-                            try:
-                                del imghdr[key]
-                            except:
-                                pass
-                        if 'ZAP' in key:
-                            try:
-                                del imghdr[key]
-                            except:
-                                pass
-
-                    hduimg   = afits.PrimaryHDU(narrowbandimage,header=imghdr)
-                    hdus     = [hduimg]
-                    hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
-                    hdulist.writeto(narrowbandname,overwrite=overwrite)  # write fits file
+                if len(goodent) >= 2:
+                    cubehdr = tu.strip_header(afits.open(subcubename)[cube_ext[0]].header.copy())
 
                     if invertselection:
-                        invertedimage = np.sum(subcube[badwaveent_all.astype(int),:,:],axis=0)
-                        hduimg        = afits.PrimaryHDU(invertedimage,header=imghdr)
-                        hdus          = [hduimg]
-                        hdulist       = afits.HDUList(hdus)                  # turn header into to hdulist
-                        hdulist.writeto(narrowbandname.replace('.fits','_invertselection.fits'),
-                                        overwrite=overwrite)  # write fits file
-
+                        mwu.collapsecube(narrowbandname,subcube,cubehdr,layers=badwaveent_all.astype(int),
+                                         overwrite=overwrite,verbose=verbose)
+                    else:
+                        mwu.collapsecube(narrowbandname,subcube,cubehdr,layers=goodent.astype(int),
+                                         overwrite=overwrite,verbose=verbose)
                 else:
                     if verbose: print(' - WARNING: less than 2 slices in narrowband extraction from subcube '+cext+' in')
                     if verbose: print('   '+narrowbandname)
