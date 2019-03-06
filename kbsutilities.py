@@ -33,12 +33,7 @@ import sys
 import math
 import datetime
 import numpy as np
-from scipy.interpolate import interp1d
-import astropysics
-#import astropysics.obstools     #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
-#from astropysics import coords  #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
-from astropysics.constants import choose_cosmology
-import types               # for testing types
+import types
 import pdb
 import MiGs
 import fits2ascii as f2a
@@ -51,12 +46,27 @@ import matplotlib.pyplot as plt
 #from wand.image import Image as wImage
 #from wand.color import Color as wColor
 from PyPDF2 import PdfFileReader, PdfFileMerger
+import collections
+from reproject import reproject_interp
+
+### SCIPY ###
+from scipy import odr
+from scipy.interpolate import interp1d
+
+### ASTROPYSICS ###
+import astropysics
+#import astropysics.obstools     #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
+#from astropysics import coords  #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
+from astropysics.constants import choose_cosmology
+
+### ASTROPY ###
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import astropy.table as atab
 from astropy.cosmology import FlatLambdaCDM, z_at_value
-import collections
-from scipy import odr
+import astropy.io.fits as afits
+from astropy import wcs
+
 #-------------------------------------------------------------------------------------------------------------
 def test4float(str): 
     """testing whehter a string contains letters (i.e. whether it can be converted to a float)"""
@@ -1655,6 +1665,86 @@ def UniverseEpochsInFractionsOfHumaLifetime(humanlifetime=80,zevaluate=["MACS J1
         print('       human days    = '+str("%10.4f" % (humansec/secINday)))
         print('       human months  = '+str("%10.4f" % (humansec/secINmonth)))
         print('       human years   = '+str("%10.4f" % (humansec/secINyear)))
+
+#-------------------------------------------------------------------------------------------------------------
+def reproject_fitsimage(fitsimage,fitsoutput,fitsimageext=0,radec=None,naxis=None,overwrite=False,verbose=True):
+    """
+    Reprojecting, i.e., rotating fits image around given position so North is up and East is left.
+
+    --- INPUT ---
+    fitsimage         FITS file containing image to reporject in extension "fitsimageext".
+    fitsoutput        Path an name of file to store reprojects (rotated) image to.
+    fitsimageext      FITS extension of image to reproject.
+    radec             R.A. and Dec. [deg] of point in image to use as reference pixel in new image.
+                      If None the central pixel of the image will be used.
+    naxis             The output image size [x,y] to store from reprojected image. By default the output will
+                      be a square image of size max(NAXIS1,NAXIS2) of fitsimage.
+    overwrite         Overwrite existing output image?
+    verbose           Toggle verbosity.
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    imgpath     = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/CGR84_acs/acs_2.0_cutouts/'
+    fitsimage   = imgpath+'0001_150.05075000_2.59641000_acs_I_100006+0235_unrot_sci_20.fits'
+
+    fitsoutput  = fitsimage.replace('unrot','rot')
+    kbs.reproject_fitsimage(fitsimage,fitsoutput,fitsimageext=0,overwrite=False)
+
+    fitsoutput  = fitsimage.replace('unrot','rotandcut')
+    radec = [150.04876,2.5994931]
+    naxis = [1000,1500]
+    kbs.reproject_fitsimage(fitsimage,fitsoutput,radec=radec,naxis=naxis,overwrite=False)
+
+    """
+    if verbose:
+        print(' - Will reproject (rotate) fits image:')
+        print('   '+fitsimage+' (extension = '+str(fitsimageext)+')')
+
+    imghdu     = afits.open(fitsimage)[fitsimageext]
+    hdrin      = imghdu.header
+    wcsin      = wcs.WCS(hdrin)
+    pixscale   = wcs.utils.proj_plane_pixel_scales(wcsin)
+    hdrout     = hdrin.copy()
+
+    if radec is None:
+        pixpos     = np.asarray(imghdu.data.shape)/2
+        radec      = wcsin.wcs_pix2world(pixpos[1],pixpos[0],1)
+        if verbose: print(' - Using central coordinate set (ra,dec) = ('+str(radec[0])+','+str(radec[1])+
+                          ') as reference pixel in new image ')
+    else:
+        if verbose: print(' - Using input coordinate set (ra,dec) = ('+str(radec[0])+','+str(radec[1])+
+                          ') as reference pixel in new image ')
+        pixpos     = wcsin.wcs_world2pix(radec[0],radec[1],1)
+
+    hdrout['NAXIS1'] = np.max([hdrin['NAXIS1'],hdrin['NAXIS2']])
+    hdrout['NAXIS2'] = np.max([hdrin['NAXIS1'],hdrin['NAXIS2']])
+    hdrout['CRPIX1'] = float(pixpos[0])
+    hdrout['CRPIX2'] = float(pixpos[1])
+    hdrout['CRVAL1'] = float(radec[0])
+    hdrout['CRVAL2'] = float(radec[1])
+    hdrout['CD1_1']  = -1*np.abs(pixscale[0])
+    hdrout['CD1_2']  = 0.0
+    hdrout['CD2_2']  = np.abs(pixscale[0])
+    hdrout['CD2_1']  = 0.0
+
+    array, footprint = reproject_interp(imghdu, hdrout)
+
+    if naxis is not None:
+        if verbose: print(' - Cutting out projected image array to store around reference coordinate')
+        afits.writeto(fitsoutput, array, hdrout, overwrite=overwrite)
+        imghdu     = afits.open(fitsoutput)[0]
+        hdrin      = imghdu.header
+        # array = array[int(hdrout['CRPIX2']-hdrout['NAXIS2']/2):int(hdrout['CRPIX2']+hdrout['NAXIS2']/2),
+        #               int(hdrout['CRPIX1']-hdrout['NAXIS1']/2):int(hdrout['CRPIX1']+hdrout['NAXIS1']/2)]
+
+        hdrout = hdrin.copy()
+        hdrout['NAXIS1'] = naxis[0]
+        hdrout['NAXIS2'] = naxis[1]
+        hdrout['CRPIX1'] = naxis[0]/2.
+        hdrout['CRPIX2'] = naxis[1]/2.
+        array, footprint = reproject_interp(imghdu, hdrout)
+
+    afits.writeto(fitsoutput, array, hdrout, overwrite=overwrite)
 
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
