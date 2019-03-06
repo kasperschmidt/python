@@ -393,10 +393,267 @@ def plot_specs():
                          xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def extract_spectrum(sourceIDs,layer_scale_arr,wavelengths,noise_cube=None,source_model_cube=None,
-                     specname='tdose_extract_spectra_extractedspec.fits',obj_cube_hdr=None,data_cube=None,
-                     clobber=False,verbose=True):
-    return None
+def plot_190227spectra(figdir='/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/figures/',
+                       smoothsigma=0,showfluxnoise=True):
+    """
+    Function for plotting the aperture spectra and the modelimg spectra for the 10 objects
+    selected to potentially replace figures in the TDOSE paper draft.
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_190227spectra(smoothsigma=0,showfluxnoise=True)
+
+    """
+    objidlist       = np.array([8420,9726,10621,10701,10843,11188,13776,15160,16009,17691])
+    modelimgspecdir = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_spectra_modelimg_190227/'
+    aperspecdirstr  = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_spectra_aperture_*Rminor_190226/'
+
+    sourcecatdir = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/tdose_sourcecats/'
+    MWDR1specdir = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_spectra_MWDR1/'
+    setupfiledir = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/tdose_setupfiles/'
+    R1aper = np.genfromtxt(setupfiledir+'tdose_setup_aperturesizes_1Rminor.txt',comments='#',names=True)
+    R2aper = np.genfromtxt(setupfiledir+'tdose_setup_aperturesizes_2Rminor.txt',comments='#',names=True)
+    R3aper = np.genfromtxt(setupfiledir+'tdose_setup_aperturesizes_3Rminor.txt',comments='#',names=True)
+
+    showlinelist  = None
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # dictionary containing x and y ranges for plots
+    rangedic     = {}  #  xrangezoom    yrangeFlux   yrangeSN
+    #rangedic['8420']  = [[5800,6200], [-100,400],   [-2,15]] # OIIline
+    rangedic['8420']  = [[7300,7800], [-100,400],   [-2,15]] # Continuum
+    rangedic['9726']  = [[6800,7800], [-100,1500],  [-2,38]]
+    rangedic['10621'] = [[5300,5700], [-100,400],   [-2,8]]
+    rangedic['10701'] = [[6400,7000], [-100,1300],  [-2,30]]
+    rangedic['10843'] = [[5000,5800], [-100,3000],  [-2,50]]
+    rangedic['11188'] = [[5000,5800], [-100,600],   [-2,12]]
+    rangedic['13776'] = [[5500,6500], [-100,1400],  [-2,30]]
+    rangedic['15160'] = [[6000,7000], [-100,3000],  [-2,40]]
+    rangedic['16009'] = [[8000,9000], [-100,3000],  [-2,80]]
+    rangedic['17691'] = [[7000,7400], [-100,2000],  [-2,50]]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # dictionary containing strings (with IDs) of neighbors and/or neighboring MW EL spectra to plot alongside main spectra
+    neighbordic       = {}  # specstr                                 labels
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 8420 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['8420']  = [['tdose_spectrum_candels-cdfs-24_08793.fits',           'Guo 8793'],
+                            ['emission_spectrum_candels-cdfs-24_124002008.fits',    'MWDR1 EL 124002008'],
+                            ['aper_spectrum_candels-cdfs-24_124002008.fits',        'MWDR1 EL 124002008 aper']]
+                            # ['emission_spectrum_candels-cdfs-24_124012027.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-24_124012027.fits',        'noshow']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 9726 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['9726']  = [['tdose_spectrum_candels-cdfs-25_09472.fits',           'Guo 9472'],
+                            ['tdose_spectrum_candels-cdfs-25_09496.fits',           'Guo 9496'],
+                            # ['emission_spectrum_candels-cdfs-25_125017033.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-25_125017033.fits',        'noshow'],
+                            ['emission_spectrum_candels-cdfs-25_125068147.fits',    'MWDR1 EL 125068147'],
+                            ['aper_spectrum_candels-cdfs-25_125068147.fits',        'MWDR1 EL 125068147 aper'],
+                            ['emission_spectrum_candels-cdfs-25_125027078.fits',    'MWDR1 EL 125027078'],
+                            ['aper_spectrum_candels-cdfs-25_125027078.fits',        'MWDR1 EL 125027078 aper']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 10621 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['10621'] = [['tdose_spectrum_candels-cdfs-12_10433.fits',           'Guo 10433'],
+                            # ['emission_spectrum_candels-cdfs-12_112008041.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-12_112008041.fits',        'noshow'],
+                            ['emission_spectrum_candels-cdfs-12_112008040.fits',    'MWDR1 LAE 112008040'],
+                            ['aper_spectrum_candels-cdfs-12_112008040.fits',        'MWDR1 LAE 112008040 aper']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 10701 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['10701'] = [['emission_spectrum_candels-cdfs-25_125034103.fits',    'MWDR1 EL 125034103'],
+                            ['aper_spectrum_candels-cdfs-25_125034103.fits',        'MWDR1 EL 125034103 aper'],
+                            ['emission_spectrum_candels-cdfs-25_125001001.fits',    'MWDR1 LAE 125001001'],
+                            ['aper_spectrum_candels-cdfs-25_125001001.fits',        'MWDR1 LAE 125001001 aper']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 10843 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['10843'] = [['tdose_spectrum_candels-cdfs-12_10448.fits',           'Guo 10448'],
+                            ['tdose_spectrum_candels-cdfs-12_10478.fits',           'Guo 10478'],
+                            ['emission_spectrum_candels-cdfs-12_112003032.fits',    'MWDR1 EL 112003032'],
+                            ['aper_spectrum_candels-cdfs-12_112003032.fits',        'MWDR1 EL 112003032 aper']]
+                            # ['emission_spectrum_candels-cdfs-12_112031084.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-12_112031084.fits',        'noshow']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 11188 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['11188'] = [['emission_spectrum_candels-cdfs-29_129020136.fits',    'MWDR1 LAE 129020136'],
+                            ['aper_spectrum_candels-cdfs-29_129020136.fits',        'MWDR1 LAE 129020136 aper']]
+                            # ['emission_spectrum_candels-cdfs-29_129004083.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-29_129004083.fits',        'noshow']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 13776 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['13776'] = [['tdose_spectrum_candels-cdfs-45_13984.fits',           'Guo 13984'],
+                            ['emission_spectrum_candels-cdfs-45_145007037.fits',    'MWDR1 EL 145007037'],
+                            ['aper_spectrum_candels-cdfs-45_145007037.fits',        'MWDR1 EL 145007037 aper']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 15160 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['15160'] = [['tdose_spectrum_candels-cdfs-43_14208.fits',           'Guo 14208'],
+                            ['emission_spectrum_candels-cdfs-43_143021059.fits',    'MWDR1 EL 143021059'],
+                            ['aper_spectrum_candels-cdfs-43_143021059.fits',        'MWDR1 EL 143021059 aper']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 16009 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['16009'] = [['tdose_spectrum_candels-cdfs-36_15688.fits',           'Guo 15688']]
+                            # ['emission_spectrum_candels-cdfs-36_136002114.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-36_136002114.fits',        'noshow']]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - GUO 17691 - - - - - - - - - - - - - - - - - - - - - - - - -
+    neighbordic['17691'] = [['tdose_spectrum_candels-cdfs-39_17598.fits',           'Guo 17598'],
+                            ['tdose_spectrum_candels-cdfs-39_17796.fits',           'Guo 17796'],
+                            ['emission_spectrum_candels-cdfs-39_139049303.fits',    'MWDR1 EL 139049303'],
+                            ['aper_spectrum_candels-cdfs-39_139049303.fits',        'MWDR1 EL 139049303 aper'],
+                            # ['emission_spectrum_candels-cdfs-39_139006153.fits',    'noshow'],
+                            # ['aper_spectrum_candels-cdfs-39_139006153.fits',        'noshow'],
+                            ['emission_spectrum_candels-cdfs-39_139051305.fits',    'MWDR1 EL 139051305'],
+                            ['aper_spectrum_candels-cdfs-39_139051305.fits',        'MWDR1 EL 139051305 aper']]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for oo, objid in enumerate(objidlist.astype(str)[3:4]):
+        sourcecat = glob.glob(sourcecatdir+'manualsourcecat_candels-cdfs-*'+objid+'*arcsec.fits')
+        sourcedat = afits.open(sourcecat[0])[1].data
+        sent      = np.where(sourcedat['id'] == float(objid))[0][0]
+        ra        = sourcedat['ra'][sent]
+        dec       = sourcedat['dec'][sent]
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # generate DS9 region file with apertures
+        regionfile = figdir+'aperturesDS9regions_'+objid+'.reg'
+        fout = open(regionfile,'w')
+        fout.write("# Region file format: DS9 version 4.1 \nfk5\n")
+        R1ent    = np.where(R1aper['id'] == int(objid))[0][0]
+        R2ent    = np.where(R2aper['id'] == int(objid))[0][0]
+        R3ent    = np.where(R3aper['id'] == int(objid))[0][0]
+        R1size   = R1aper['aperturesize_arcsec'][R1ent]
+        R2size   = R2aper['aperturesize_arcsec'][R2ent]
+        R3size   = R3aper['aperturesize_arcsec'][R3ent]
+        stringR1 = 'circle('+str(ra)+','+str(dec)+','+str(R1size)+'") # color=blue  width=3 '
+        stringR2 = 'circle('+str(ra)+','+str(dec)+','+str(R2size)+'") # color=green width=3 '
+        stringR3 = 'circle('+str(ra)+','+str(dec)+','+str(R3size)+'") # color=red   width=3 '
+        fout.write(stringR1+' \n')
+        fout.write(stringR2+' \n')
+        fout.write(stringR3+' \n')
+        fout.close()
+        cutoutdir  = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_cutouts/cutouts190227/'
+        acscutout  = glob.glob(cutoutdir+'acs_814w_candels-cdfs-*_cut_v1.0_id'+objid+'*arcsec.fits')
+        whitelight = glob.glob(cutoutdir+'DATACUBE_candels-cdfs-*'+objid+'*arcsec_whitelightimg.fits')
+        ds9str = 'ds9 -cmap invert yes -scale mode minmax '+acscutout[0]+' -region '+regionfile+' '+whitelight[0]+' -region '+regionfile+' -lock frame wcs -tile grid layout 2 1 -geometry 600x600 -zoom to fit &'
+        print(' - Generataed DS9 region file with apertures. Open with:\n   '+ds9str)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Plot the aperture spectra
+        specs        = glob.glob(aperspecdirstr+'tdose_spectrum_aperture_*'+objid+'*.fits')
+        filelist     = [specs[0]]
+        labels       = ['r='+str(R1size)+' arcsec']
+
+        compspec     = [specs[1],specs[2]]
+        comp_labels  = ['r='+str(R2size)+' arcsec','r='+str(R3size)+' arcsec']
+        comp_colors  = ['green','red']
+
+        xranges       = [[4800,9300],rangedic[objid][0]]
+        plotnames     = [figdir+'/tdose_1Dspectra_aperturesRminor_'+objid+'_full_flux.pdf',
+                         figdir+'/tdose_1Dspectra_aperturesRminor_'+objid+'_zoom_flux.pdf']
+
+        for pp, pname in enumerate(plotnames):
+            plotname  = pname
+            xrange    = xranges[pp]
+            yrange    = rangedic[objid][1]
+            tes.plot_1Dspecs(filelist,plotname=plotname,colors=['blue'],labels=labels,plotSNcurve=False,
+                             comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                             comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                             xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                             showlinelist=showlinelist,smooth=smoothsigma)
+
+            plotname  = plotname.replace('flux.pdf','s2n.pdf')
+            yrange    = rangedic[objid][2]
+            tes.plot_1Dspecs(filelist,plotname=plotname,colors=['blue'],labels=labels,plotSNcurve=True,
+                             comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                             comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                             xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                             showlinelist=showlinelist,smooth=smoothsigma)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Plot TDOSE gauss and modelimg spectra
+        specs        = glob.glob(modelimgspecdir+'tdose_spectrum_modelimg_*'+objid+'*.fits')
+        filelist     = [specs[0]]
+        labels       = ['TDOSE w. Multi-Sersic model']
+
+        compspec     = glob.glob(MWDR1specdir+'tdose_spectrum_candels-cdfs*'+objid+'*.fits')
+        comp_labels  = ['TDOSE w. Single-Gauss model (MW DR1)']
+        comp_colors  = ['magenta']
+
+        if objid in ['10701']: # appending info if extractions on cubes with mock edges exist
+            edgedir   = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions' \
+                        '/tdose_spectra_modelimg_wEdge_190305/'
+            edgespec  = glob.glob(edgedir+'tdose_spectrum_modelimg_*'+objid+'*.fits')
+            compspec.append(edgespec[0])
+            comp_labels.append('TDOSE w. Multi-Sersic model (w. edge)')
+            comp_colors.append('orange')
+
+        xranges       = [[4800,9300],rangedic[objid][0]]
+        plotnames     = [figdir+'/tdose_1Dspectra_modelbased_'+objid+'_full_flux.pdf',
+                         figdir+'/tdose_1Dspectra_modelbased_'+objid+'_zoom_flux.pdf']
+
+        for pp, pname in enumerate(plotnames):
+            plotname  = pname
+            xrange    = xranges[pp]
+            yrange    = rangedic[objid][1]
+            tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=False,
+                             comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                             comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                             xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                             showlinelist=showlinelist,smooth=smoothsigma)
+
+            plotname  = plotname.replace('flux.pdf','s2n.pdf')
+            yrange    = rangedic[objid][2]
+            tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=True,
+                             comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                             comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                             xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                             showlinelist=showlinelist,smooth=smoothsigma)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Plot Neighbors and unrealted MW specs
+        colorlist    = ['black','green','blue','orange','magenta','cyan','red','gray','skyblue']
+        specs        = [MWDR1specdir+nd[0] for nd in neighbordic[objid]]
+        speclabels   = [nd[1] for nd in neighbordic[objid]]
+        filelist     = [specs[0]]
+        labels       = [speclabels[0]]
+
+        compspec     = specs[1:]
+        comp_labels  = speclabels[1:]
+        comp_colors  = colorlist[1:]
+
+        xranges       = [[4800,9300],rangedic[objid][0]]
+        plotnames     = [figdir+'/tdose_1Dspectra_neighborspec_'+objid+'_full_flux.pdf',
+                         figdir+'/tdose_1Dspectra_neighborspec_'+objid+'_zoom_flux.pdf']
+
+        for pp, pname in enumerate(plotnames):
+            plotname  = pname
+            xrange    = xranges[pp]
+            yrange    = rangedic[objid][1]
+            tes.plot_1Dspecs(filelist,plotname=plotname,colors=[colorlist[0]],labels=labels,plotSNcurve=False,
+                             comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                             comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                             xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                             showlinelist=showlinelist,smooth=smoothsigma)
+
+            plotname  = plotname.replace('flux.pdf','s2n.pdf')
+            yrange    = rangedic[objid][2]
+            tes.plot_1Dspecs(filelist,plotname=plotname,colors=[colorlist[0]],labels=labels,plotSNcurve=True,
+                             comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                             comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                             xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                             showlinelist=showlinelist,smooth=smoothsigma)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def MWDR1hdrToTDOSEhdr(specfilenames):
+    """
+    Change column names in fits table containing spectra from MWDR1 to the column names used by tdose
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    specfilenames = glob.glob('/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_spectra_MWDR1/emission_spectrum*fits')
+    specfilenames = glob.glob('/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_spectra_MWDR1/aper_spectrum*fits')
+    tsu.MWDR1hdrToTDOSEhdr(specfilenames)
+
+    """
+    print(' - Changing table column names in:')
+    for fn in specfilenames:
+        print('   '+fn)
+        hdul = afits.open(fn, mode='update')
+        hdul[1].columns.names   = ['wave', 'WAVE_VAC', 'flux', 'fluxerror']
+        hdul[1].columns[0].name = 'wave'
+        hdul[1].columns[1].name = 'WAVE_VAC'
+        hdul[1].columns[2].name = 'flux'
+        hdul[1].columns[3].name = 'fluxerror'
+        hdul.flush()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
@@ -3269,6 +3526,36 @@ def paperfigs190214_whitelightimages(overwrite=True,verbose=True):
         if verbose: print(' - Collapsing white light image of cube \n   '+datacube)
         outname = datacube.replace('.fits','_whitelightimg.fits')
         mu.collapsecube(outname,dataarray,fitsheader,layers='all',overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def rotate_CosmosGroupImages():
+    """
+    wrapper for rotating the images of the Cosmos Groups
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.rotate_CosmosGroupImages()
+
+    """
+    rundic = {}
+
+    imgpath         = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/CGR84_acs/acs_2.0_cutouts/'
+    rundic['CGr84'] = [150.04876, 2.5994887,
+                       imgpath+'0001_150.05075000_2.59641000_acs_I_100006+0235_unrot_sci_20.fits',
+                       imgpath+'0001_150.05075000_2.59641000_acs_I_100006+0235_unrot_wht_20.fits']
+
+    imgpath         = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/CGR32_M1_acs/acs_2.0_cutouts/'
+    rundic['CGr32'] = [149.92345,2.5249373,
+                       imgpath+'0001_149.92052000_2.53133000_acs_I_095936+0230_unrot_sci_20.fits',
+                       imgpath+'0001_149.92052000_2.53133000_acs_I_095936+0230_unrot_wht_20.fits']
+
+    naxis = [800,800]
+    for dickey in rundic.keys():
+        radec = rundic[dickey][:2]
+        for fitsimage in rundic[dickey][2:]:
+            fitsoutput  = fitsimage.replace('unrot','rotandcut')
+            kbs.reproject_fitsimage(fitsimage,fitsoutput,radec=radec,naxis=naxis,overwrite=True)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
     """
@@ -3343,6 +3630,73 @@ def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
             print('  '+str("%7.d" % gid)+'  '+str("%8.2f" % minor)+'  '+str("%8.2f" % major)+r_kron_string)
 
     return resultsarr
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_EdgeInDatacube(datacube,outputdir,cubeext=['DATA','STAT'],edgelocation='default',edgeval='nan',
+                       overwrite=False,verbose=True):
+    """
+    Function generating a mock edge in a datacube.
+    Can be used to compare TDOSE extractions using complete models, but scale to incomplete (on the edge)
+    data cubes.
+
+    --- INPUT ---
+    datacube        Datacube to dublicate and change to contain the mock edge specified in "edgelocation"
+    outputdir       Directory to store the datacube including the edge to
+    cubeext         Names of extensions of datacube to add mock edge to.
+    edgelocation    The 'default' location of the mock edge, is at the (spacial) center of the cube in
+                    x-direction from bottom to top. To manually specify the location of the edge provide
+                    a list containing [xmin,xmax,ymin,ymax] which defines the edge (rectangualr hole) in
+                    the cube
+    edgeval         The value assign to the mock edge pixels. Deafult is to urn pixels outside edge into np.nan
+    overwrite       Overwrite any existing cube.
+    verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    outputdir  = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_cutouts/'
+    datacube   = outputdir+'DATACUBE_candels-cdfs-25_v1.0_dcbgc_effnoised_id10701_cutout10p0x6p0arcsec.fits'
+    cubeext    = ['DATA_DCBGC','EFF_STAT']
+    edgeloc    = 'default' # [30,45,15,30]
+
+    tsu.gen_EdgeInDatacube(datacube,outputdir,edgelocation=edgeloc,cubeext=cubeext,overwrite=True)
+
+    """
+    datacubefile = datacube.split('/')[-1]
+    outfile      = outputdir+datacubefile.replace('.fits','_WithMockEdge.fits')
+    if os.path.isfile(outfile) & (overwrite == False):
+        sys.exit(' - The output\n   '+outfile+'\n   exists and "overwrite==False" so aborting ')
+    else:
+        if verbose: print(' - The output\n   '+outfile+'\n   exists but "overwrite==True" so continuing')
+
+    if verbose: print(' - Copy datacube to output file\n '+outfile)
+    shutil.copyfile(datacube, outfile)
+
+    if verbose: print(' - Loading output')
+    hdul = afits.open(outfile, mode='update')
+    for cext in cubeext:
+        if verbose: print('   Adding mock edge to FITS extensions '+cext)
+        datarray = hdul[cext].data
+
+        if edgelocation == 'default':
+            xmin    = datarray.shape[2]/2
+            xmax    = datarray.shape[2]
+            ymin    = 0
+            ymax    = datarray.shape[1]
+            edgedef = [xmin, xmax, ymin, ymax]
+        else:
+            edgedef = edgelocation
+
+        if edgeval == 'nan':
+            edgepixval = np.nan
+        else:
+            edgepixval = edgeval
+
+        #        lmin:lmax,      ymin:ymax,            xmin:xmax
+        datarray[    :    ,edgedef[2]:edgedef[3],edgedef[0]:edgedef[1]] = edgepixval
+
+    if verbose: print(' - Flushing the edited data cube to output file.')
+    hdul.flush()
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
 #
