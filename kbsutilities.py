@@ -42,12 +42,16 @@ import time
 import pyfits
 import os
 import glob
-import matplotlib.pyplot as plt
 #from wand.image import Image as wImage
 #from wand.color import Color as wColor
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import collections
 from reproject import reproject_interp
+
+### MATPLOTLIB ###
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ### SCIPY ###
 from scipy import odr
@@ -1745,7 +1749,202 @@ def reproject_fitsimage(fitsimage,fitsoutput,fitsimageext=0,radec=None,naxis=Non
         array, footprint = reproject_interp(imghdu, hdrout)
 
     afits.writeto(fitsoutput, array, hdrout, overwrite=overwrite)
+#-------------------------------------------------------------------------------------------------------------
+def plot_GALFITmodel(galfit_imgblock,colormap='viridis',showcomponentnumbers=False,
+                     figsize=(10,3),logcolor=True,vscale=0.99,verbose=True):
+    """
+    Plotting the FITS extensions of a GALFIT imgblock
+    Plotting based on plot_fitsimage, but using sub-plots to get overview.
 
+    --- INPUT ___
+    galfit_imgblock       The GALFIT imgblock to plot
+    colormap              Colormap to use for plotting
+    showcomponentnumbers  To add component numbers on model panel, set to True
+    figsize               Size of figure. Labels will stay fixed so small size = large labels.
+    logcolor              If true, color map will be in log
+    vscale                The scale to apply when estimating vmin and vmax. If type(vscale) is not float,
+                          it is assumed that list of vmin and vmax is provided instead.
+    verbose               Toggle verbosity
+
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    path       = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/GALFIT/galfit_wrapper_results_final/imgblocks/'
+
+    galfitimg  = path+'imgblock_CGr32_289_acs_814w_289.0_190307.fits'
+    kbs.plot_GALFITmodel(galfitimg,colormap='nipy_spectral',vscale=[1e-4,1.0],logcolor=True)
+    """
+    fileext    = galfit_imgblock.split('.')[-1]
+    outputfile = galfit_imgblock.replace('.'+fileext,'_overview.pdf')
+    if verbose: print(' - Will plot GALFIT model summary to:\n   '+outputfile)
+    if verbose: print(' - Using    logartihmic colormap : '+str(logcolor))
+    if verbose: print('            vscale               : '+str(vscale))
+
+    dat_refimg   = afits.open(galfit_imgblock)[1].data
+    dat_model    = afits.open(galfit_imgblock)[2].data
+    dat_residual = afits.open(galfit_imgblock)[3].data
+
+    if type(vscale) is not float:
+        vmin = vscale[0]
+        vmax = vscale[1]
+    else:
+        vmin,vmax  = kbs.get_vminvmax(dat_refimg, logscale=logcolor, scale=vscale, verbose=False)
+    if verbose: print('            i.e. [vmin,vmax]     : ['+str(vmin)+','+str(vmax)+']')
+
+    if logcolor:
+        normclass = LogNorm()
+    else:
+        normclass = None
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.4, hspace=0.1,left=0.05, right=0.95, bottom=0.05, top=0.98)
+    Fsize  = 12
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    Nrow = 1
+    Ncol = 3
+    for ii, imgdat in enumerate([dat_refimg,dat_model,dat_residual]):
+        ax = plt.subplot2grid((Nrow,Ncol), (0, ii), colspan=1, rowspan=1)
+        im = plt.imshow(imgdat, cmap=colormap, norm=normclass, origin='lower',vmin=vmin, vmax=vmax)
+        divider = make_axes_locatable(ax)
+        cax     = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+        ax.grid(False)
+
+        if (ii == 1) & showcomponentnumbers: # Adding component numbers to model panel
+            hdrinfo = afits.open(galfit_imgblock)[2].header
+
+            Ncomp   = 0
+            skycomp = False
+            for key in hdrinfo.keys():
+                if 'COMP_' in key:
+                    if 'sky' not in hdrinfo[key]:
+                        Ncomp = Ncomp+1
+                    else:
+                        skycomp = True
+            infostr = 'GALFIT components = '+str(Ncomp)
+            if skycomp:
+                infostr = infostr+' (+sky)'
+            ax.text(0,0,infostr,fontsize=Fsize-3, color='black', ha='left', va='bottom')
+
+            for cc in np.arange(Ncomp):
+                xpix = float(hdrinfo[str(cc+1)+'_XC'].split()[0])
+                ypix = float(hdrinfo[str(cc+1)+'_YC'].split()[0])
+                ax.text(xpix,ypix,str(cc+1),fontsize=Fsize, color='black', ha='center', va='center')
+
+    plt.savefig(outputfile)
+    fig.clf()
+
+#-------------------------------------------------------------------------------------------------------------
+def plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap='viridis',figsize=(3,4),logcolor=True,vscale=0.99,
+                   verbose=True):
+    """
+
+    --- INPUT
+    fitsfile       FITS file containing image to plot
+    outputfile     Name of image to generate
+    fitsext        Extension of FITS file containing image to plot
+    colormap       Colormap to use for plotting
+    figsize        Size of figure. Labels will stay fixed so small size = large labels.
+    logcolor       If true, color map will be in log
+    vscale         The scale to apply when estimating vmin and vmax. If type(vscale) is not float,
+                   it is assumed that list of vmin and vmax is provided instead.
+    verbose        Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    path       = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/GALFIT/galfit_wrapper_results_final/imgblocks/'
+    fitsfile   = path+'imgblock_CGr32_289_acs_814w_289.0_190307.fits'
+    outputfile = fitsfile.replace('.fits','_model.pdf')
+    kbs.plot_fitsimage(fitsfile,outputfile,fitsext=2,colormap='nipy_spectral',vscale=0.99,logcolor=True)
+
+    """
+    if verbose: print(' - Will plot image to:\n   '+outputfile)
+    if verbose: print(' - Using    logartihmic colormap : '+str(logcolor))
+    if verbose: print('            vscale               : '+str(vscale))
+    imgdat = afits.open(fitsfile)[fitsext].data
+
+    if type(vscale) is not float:
+        vmin = vscale[0]
+        vmax = vscale[1]
+    else:
+        vmin,vmax  = kbs.get_vminvmax(imgdat, logscale=logcolor, scale=vscale, verbose=False)
+    if verbose: print('            i.e. [vmin,vmax]     : ['+str(vmin)+','+str(vmax)+']')
+
+    if logcolor:
+        normclass = LogNorm()
+    else:
+        normclass = None
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.90, bottom=0.1, top=0.95)
+    Fsize  = 12
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    ax = plt.gca()
+    im = plt.imshow(imgdat, cmap=colormap, norm=normclass, origin='lower',vmin=vmin, vmax=vmax)
+
+    divider = make_axes_locatable(ax)
+    cax     = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    ax.grid(False)
+    plt.savefig(outputfile)
+    fig.clf()
+
+#-------------------------------------------------------------------------------------------------------------
+def get_vminvmax(dataarray, scale=0.95, logscale=False, verbose=True):
+    """
+    Define vmin and vmax for an input image
+
+    --- INPUT ---
+    dataarray      Data array to estimate vmin and vmax for
+    scale          The scale factor ]0,1] to use for the vmin and vmax values
+    logscale       If logscal is True, negative calues will be ignored in array when setting vmin and vmax
+    verbose        Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    vmin,vmax = kbs.get_vminvmax(data, scale=0.99)
+
+    """
+    if scale > 1 or scale <= 0:
+        sys.exit(' Scale should be contained in ]0,1]; it is not as it is scale='+str(scale))
+    else:
+        if verbose: print(' - Will estimate vmin/vmax using a scale of '+str(scale))
+
+    includemask = np.isfinite(dataarray)
+
+    if logscale:
+        positivemask = (dataarray > 0)
+        includemask  = (includemask & positivemask)
+
+    flatdata  = dataarray[includemask].flatten()
+
+    if len(flatdata) > 1:
+        sortdata   = np.sort(flatdata)
+        length     = len(sortdata)
+        vmax_index = int(np.floor(scale*length))-1
+        vmin_index = int(np.ceil((1-scale)*length))
+        vmin       = sortdata[vmin_index]
+        vmax       = sortdata[vmax_index]
+    else:
+        if verbose: print(' WARNING: No finite pixel values in data array')
+        vmin = np.min(dataarray)
+        vmax = np.max(dataarray)
+
+    if verbose: print(' - Returning vmin,vmax = '+str(vmin)+','+str(vmax))
+    return vmin, vmax
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
