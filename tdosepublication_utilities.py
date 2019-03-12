@@ -7,6 +7,7 @@ import sys
 import glob
 import aplpy
 import shutil
+import scipy
 import MiGs
 import tdose_utilities as tu
 import MUSEWideUtilities as mu
@@ -1057,7 +1058,7 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         subdat_Ferr_ser = dat_modelimg['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent_ser]
         subdat_Ferr_gau = dat_gauss['fluxerror'][waveent[0]-dwave:waveent[0]+dwave][fmaxent_gau]
 
-        SNgauss.append(np.max(subdat_S2N_ser))
+        SNsersic.append(np.max(subdat_S2N_ser))
         SNgauss.append(np.max(subdat_S2N_gau))
         Fsersic.append(np.max(subdat_F_ser))
         Fgauss.append(np.max(subdat_F_gau))
@@ -1451,8 +1452,8 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         axisrange = [0,5000]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
-    plt.ylabel('max(F/[cgs]) TDOSE multicomponent Gauss model', fontsize=Fsize)
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) TDOSE multicomponent Gauss model', fontsize=Fsize)
     plt.ylim(axisrange)
     plt.xlim(axisrange)
     if logaxes:
@@ -1500,8 +1501,8 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         axisrange = [0,3000]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
-    plt.ylabel('max(F/[cgs]) MW DR1 EL spectrum', fontsize=Fsize)
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) MW DR1 EL spectrum', fontsize=Fsize)
     plt.ylim(axisrange)
     plt.xlim(axisrange)
     if logaxes:
@@ -1561,8 +1562,8 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         axisrange = [0,1500]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
-    plt.ylabel('max(F/[cgs]) MW DR1 TDOSE spectrum', fontsize=Fsize)
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) MW DR1 TDOSE spectrum', fontsize=Fsize)
     plt.ylim(axisrange)
     plt.xlim(axisrange)
     if logaxes:
@@ -2932,8 +2933,8 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
         axisrange = [0,1500]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
-    plt.ylabel('max(F/[cgs]) MW DR1 TDOSE spectrum', fontsize=Fsize)
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) MW DR1 TDOSE spectrum', fontsize=Fsize)
     plt.ylim(axisrange)
     plt.xlim(axisrange)
     if logaxes:
@@ -2998,8 +2999,8 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
         yaxisrange = [0,1500]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel('max(F/[cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
-    plt.ylabel('max(F/[cgs]) MW DR1 PSF weighted spectrum', fontsize=Fsize)
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) MW DR1 PSF weighted spectrum', fontsize=Fsize)
     plt.ylim(yaxisrange)
     plt.xlim(xaxisrange)
     if logaxes:
@@ -3191,7 +3192,7 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
 
     SNleadline  = maxvaldat['leadlineS2N']
     leadline    = []
-    LAEinfodat  = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    LAEinfodat  = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_wUDFshallow.fits')[1].data
     for objid in ids:
         objent = np.where(LAEinfodat['id'] == objid)[0]
         leadline.append(LAEinfodat['leadline'][objent][0])
@@ -3489,8 +3490,8 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
         axisrange = [0,1500]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.xlabel('max(F/[cgs]) GALFIT Sersic model', fontsize=Fsize)
-    plt.ylabel('max(F/[cgs]) TDOSE 0.5'' aperture extraction', fontsize=Fsize)
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) TDOSE 0.5'' aperture extraction', fontsize=Fsize)
     plt.ylim(axisrange)
     plt.xlim(axisrange)
     if logaxes:
