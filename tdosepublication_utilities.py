@@ -3558,6 +3558,75 @@ def rotate_CosmosGroupImages():
             kbs.reproject_fitsimage(fitsimage,fitsoutput,radec=radec,naxis=naxis,overwrite=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def align_CosmosGroupImages(verbose=True):
+    """
+    wrapper for aligning the MUSE-Wide image to the Cosmos Group's HST imaging
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    resultsdictionary = tsu.align_CosmosGroupImages()
+
+    """
+    parentdir = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/'
+
+    infodic = {}
+
+    infodic['CGr32_289'] = [parentdir+'TDOSE/tdose_cutouts/0001_149.92052000_2.53133000_acs_I_095936+0230_rotandcut_sci_20_id289_cutout8p0x8p0arcsec.fits',
+                            # parentdir+'CGR32_M1_acs/acs_2.0_cutouts/'
+                            #           '0001_149.92052000_2.53133000_acs_I_095936+0230_rotandcut_sci_20.fits',
+                            parentdir+'subcube_CGr32_289_8p0x8p0arcsec_narrowbandimage_cwave7050dwave2250.fits',
+                            parentdir+'subcube_CGr32_289_8p0x8p0arcsec_narrowbandimage_cwave7050dwave2250_aligned.fits']
+
+    infodic['CGr84_307'] = [parentdir+'TDOSE/tdose_cutouts/0001_150.05075000_2.59641000_acs_I_100006+0235_rotandcut_sci_20_id307_cutout8p0x8p0arcsec.fits',
+                            # parentdir+'CGR84_acs/acs_2.0_cutouts/'
+                            #           '0001_150.05075000_2.59641000_acs_I_100006+0235_rotandcut_sci_20.fits',
+                            parentdir+'subcube_CGr84_307_8p0x8p0arcsec_narrowbandimage_cwave7050dwave2250.fits',
+                            parentdir+'subcube_CGr84_307_8p0x8p0arcsec_narrowbandimage_cwave7050dwave2250_aligned.fits']
+
+
+    for key in infodic.keys():
+        if verbose: print('\n - Loading ACS and MUSE whitelight images for '+key)
+        fix_image_arr_init = afits.open(infodic[key][0])[0].data
+        reg_image_arr      = afits.open(infodic[key][1])[0].data
+
+        if key == 'CGr32_289':
+            reg_image_arr[np.where(reg_image_arr == np.min(reg_image_arr))] = 0.0
+            reg_image_arr[np.where(reg_image_arr == np.min(reg_image_arr))] = 0.0
+            reg_image_arr[np.where(reg_image_arr == np.min(reg_image_arr))] = 0.0
+
+        if verbose: print(' - Rebinning ACS image to match MUSE pixel size = '+str(reg_image_arr.shape))
+        zoomfactors     = np.asarray(reg_image_arr.shape).astype(float)/np.asarray(fix_image_arr_init.shape).astype(float)
+        fix_image_arr   = scipy.ndimage.zoom(fix_image_arr_init, zoomfactors)
+
+        if verbose: print('   Storing plots of rebinning to:\n   '+parentdir+'imgzoomcheck'+key+'*.pdf')
+        fig = plt.figure(figsize=(5,5))
+        plt.clf()
+        plt.ioff()
+        im = plt.imshow(fix_image_arr, cmap='nipy_spectral', origin='lower',vmin=-0.01,vmax=0.05)
+        plt.colorbar(im)
+        plt.savefig(parentdir+'imgzoomcheck'+key+'.pdf')
+        fig.clf()
+
+        fig = plt.figure(figsize=(5,5))
+        plt.clf()
+        plt.ioff()
+        im = plt.imshow(fix_image_arr_init, cmap='nipy_spectral', origin='lower',vmin=-0.01,vmax=0.05)
+        plt.colorbar(im)
+        plt.savefig(parentdir+'imgzoomcheck'+key+'_init.pdf')
+        fig.clf()
+
+        if verbose: print(' - Aligning ACS and MUSE Whitelight images')
+        arr_shifts, arr_aligned = kbs.align_arrays(fix_image_arr, reg_image_arr, reg_image_arr_noise=None, verbose=verbose)
+        infodic[key].append(arr_shifts)
+
+        if verbose: print(' - Storing aligned white light image to:\n   '+infodic[key][2])
+        hdu = afits.open(infodic[key][2],mode='update')
+        hdu[0].data = arr_aligned
+        hdu.flush()
+
+    if verbose: print(' - Returning info dictionary with lists of image shifts appended to each key entry')
+    return infodic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
     """
     Function to pull out the Kron radii of a list of Guo objects
