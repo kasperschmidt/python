@@ -71,6 +71,11 @@ from astropy.cosmology import FlatLambdaCDM, z_at_value
 import astropy.io.fits as afits
 from astropy import wcs
 
+### IMAGE REGISTRATION ###
+from image_registration import chi2_shift
+from image_registration.fft_tools import shift
+
+
 #-------------------------------------------------------------------------------------------------------------
 def test4float(str): 
     """testing whehter a string contains letters (i.e. whether it can be converted to a float)"""
@@ -1915,6 +1920,7 @@ def get_vminvmax(dataarray, scale=0.95, logscale=False, verbose=True):
     verbose        Toggle verbosity
 
     --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
     vmin,vmax = kbs.get_vminvmax(data, scale=0.99)
 
     """
@@ -1945,6 +1951,39 @@ def get_vminvmax(dataarray, scale=0.95, logscale=False, verbose=True):
 
     if verbose: print(' - Returning vmin,vmax = '+str(vmin)+','+str(vmax))
     return vmin, vmax
+
+#-------------------------------------------------------------------------------------------------------------
+def align_arrays(fix_image_arr, reg_image_arr, reg_image_arr_noise=None, verbose=True):
+    """
+    Aligning two (image) arrays by (re-)registering the array content using the
+    image_registration package
+
+    --- INPUT ---
+    fix_img_arr         The image array to keep fixed registering (aligning) the reg_img_arr to.
+    reg_img_arr         The image array to register to fix_img_arr
+    reg_img_arr_noise   Per pixel noise/uncertainty in the reg_img_arr
+    verbose             Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    arr_shifts, arr_aligned = kbs.align_arrays(fix_image_arr, reg_image_arr)
+
+    The output contains:    arr_shifts = xoff, yoff, xoff_err, yoff_err  ; the shifts to apply for alignment
+                            arr_aligned                                  ; shifts applied to reg_image_arr
+
+    """
+    if verbose: print(' - Determining shifts for optimal (minimum chi2) array alignment.')
+    xoff, yoff, xoff_err, yoff_err   = chi2_shift(fix_image_arr, reg_image_arr, reg_image_arr_noise,
+                                                  return_error=True, upsample_factor='auto')
+    if verbose: print('   Shifts were determined to be (xoff, yoff, xoff_err, yoff_err) = '+
+                      str([xoff, yoff, xoff_err, yoff_err]))
+
+    if verbose: print(' - Applying shifts to reg_img_arr to produced re-registerd (aligned) array')
+    arr_aligned  = shift.shiftnd(reg_image_arr, (-yoff, -xoff))
+
+    if verbose: print(' - Retruning shifts and shifted array')
+    arr_shifts = xoff, yoff, xoff_err, yoff_err
+    return arr_shifts, arr_aligned # arr_shifts contains xoff, yoff, xoff_err, yoff_err
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
