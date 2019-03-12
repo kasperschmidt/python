@@ -85,6 +85,10 @@ use_shape_params        = setupdic['use_shape_params']
 placeholder_bombed      = setupdic['placeholder_bombed']
 input_params_dir        = setupdic['input_params_dir']
 input_params            = setupdic['input_params']
+try:
+    input_phot_zero_ab  = setupdic['phot_zeropoint_ab']
+except:
+    input_phot_zero_ab  = None
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if 'margin' in setupdic.keys():
     margin      = float(setupdic['margin'])
@@ -160,19 +164,23 @@ try:
         cdelt1   = header_hst['CD1_1']
         cdelt2   = header_hst['CD2_2']
 
-    # Manually setting zeropoint if not in image FITS header
-    if 'acs_775w_udf-03_cut_rot.fits' in input_image:
-        phot_zero_ab = 25.69 # from https://archive.stsci.edu/prepds/hlf/#products (Hubble Legacy Fields)
-    elif 'cutout_rings.v3.skycell' in input_image:
-        phot_zero_ab = 25.00 # from "HIERARCH FPA.ZP" keyword in image header
+    if input_phot_zero_ab is None:
+        # Manually setting zeropoint if not in image FITS header
+        if 'acs_775w_udf-03_cut_rot.fits' in input_image:
+            phot_zero_ab = 25.69 # from https://archive.stsci.edu/prepds/hlf/#products (Hubble Legacy Fields)
+        elif 'cutout_rings.v3.skycell' in input_image:
+            phot_zero_ab = 25.00 # from "HIERARCH FPA.ZP" keyword in image header
+        else:
+            photzpt   = header_hst['PHOTZPT'] # ST magnitude photometric zeropoint
+            photflam  = header_hst['PHOTFLAM']
+            photplam  = header_hst['PHOTPLAM']
+            phot_zero = -2.5*np.log10(photflam)+photzpt
+            # convert st mag zeropoint to ab mag
+            # this is taken from http://www.stsci.edu/hst/wfc3/phot_zp_lbn
+            phot_zero_ab = -2.5*np.log10(photflam)-21.10-5*np.log10(photplam)+18.6921
     else:
-        photzpt   = header_hst['PHOTZPT'] # ST magnitude photometric zeropoint
-        photflam  = header_hst['PHOTFLAM']
-        photplam  = header_hst['PHOTPLAM']
-        phot_zero = -2.5*np.log10(photflam)+photzpt
-        # convert st mag zeropoint to ab mag
-        # this is taken from http://www.stsci.edu/hst/wfc3/phot_zp_lbn
-        phot_zero_ab = -2.5*np.log10(photflam)-21.10-5*np.log10(photplam)+18.6921
+        print('\n - Will use photometric zeropoint from setup file: phot_zeropoint_ab = '+str(input_phot_zero_ab))
+        phot_zero_ab = input_phot_zero_ab
 except:
     print('   There was no CDELT1, CDELT2 or PHOTZPT in the header of your file. ('+str(input_image)+')')
     import pdb; pdb.set_trace()
@@ -242,8 +250,10 @@ elif 'candels' in area and 'cosmos' in field:
     here_field = np.where(int(field[7:]) == field_numbers)[0]
     if fieldprovided:
         here_field = np.arange(len(data[col_name_ra]))
+elif 'cosmos' in area and 'group' in field:
+    here_field = np.arange(len(data[col_name_ra]))
 else:
-    sys.exit(' ERROR: The field name and area combinatio provided (field,area) = ('+field+','+area+') ')
+    sys.exit(' ERROR: The field name and area combinatio provided (field,area) = ('+field+','+area+') has not "here_field" definitions assigned to them in /Users/kschmidt/work/GitHub/python/run_script_galfit_wrapper.py - add one or change setup file ')
 
 ra_sn = data[col_name_ra][here_field][from_1:to_1]
 dec_sn = data[col_name_dec][here_field][from_1:to_1]
