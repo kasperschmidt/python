@@ -483,7 +483,7 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
             tu.extract_subcube(datacube,ras[ii],decs[ii],[dras[ii],ddecs[ii]],subcubename,cubeext=cube_ext,
                                clobber=clobber,imgfiles=None,imgexts=None,imgnames=None,verbose=verbose)
 
-            subcube = afits.open(subcubename)['DATA_DCBGC'].data
+            subcube = afits.open(subcubename)[cube_ext[0]].data
 
             for ww, cwave in enumerate(wavecenters[ii]):
                 dwave = dwaves[ii][ww]
