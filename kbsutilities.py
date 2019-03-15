@@ -1309,7 +1309,7 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     redshiftrange   Range of redshift to include in plot
     zspacing        Spacing between redshift axis ticks
     markfilter      List of filters to outline in black
-    verticalmarker  Add vertical lines at given redshifts providing [[redshift1,name1],[redshift2,name2],...]
+    verticalmarker  Add vertical lines at given redshifts providing [[redshift1,name1,color1],[redshift2,name2,color2],...]
     verbose         toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -1350,8 +1350,8 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
 
     left   = 0.12   # the left side of the subplots of the figure
     right  = 0.72   # the right side of the subplots of the figure
-    bottom = 1.0/figuresize_y/2.0       # the bottom of the subplots of the figure
-    top    = 1.0-1.0/figuresize_y/2.0   # the top of the subplots of the figure
+    bottom = 1.0/figuresize_y       # the bottom of the subplots of the figure
+    top    = 1.0-1.0/figuresize_y   # the top of the subplots of the figure
     wspace = 0.20   # the amount of width reserved for blank space between subplots
     hspace = 0.20   # the amount of height reserved for white space between subplots
     plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
@@ -1377,8 +1377,11 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
             yhigh   = [ll+1.5-ff*dy]*2
             ylow  = [ll+1.5-(ff+1)*dy]*2
 
-            if filt in markfilter:
-                ecolor="black"
+            if markfilter is not None:
+                if filt in markfilter:
+                    ecolor="black"
+                else:
+                    ecolor=filtercolors[ff]
             else:
                 ecolor=filtercolors[ff]
 
@@ -1981,7 +1984,7 @@ def align_arrays(fix_image_arr, reg_image_arr, reg_image_arr_noise=None, verbose
     if verbose: print(' - Applying shifts to reg_img_arr to produced re-registerd (aligned) array')
     arr_aligned  = shift.shiftnd(reg_image_arr, (-yoff, -xoff))
 
-    if verbose: print(' - Retruning shifts and shifted array')
+    if verbose: print(' - Returning shifts and shifted array')
     arr_shifts = xoff, yoff, xoff_err, yoff_err
     return arr_shifts, arr_aligned # arr_shifts contains xoff, yoff, xoff_err, yoff_err
 #-------------------------------------------------------------------------------------------------------------
