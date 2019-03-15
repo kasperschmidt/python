@@ -632,6 +632,127 @@ def plot_190227spectra(figdir='/Users/kschmidt/work/publications/TDOSE/TDOSEextr
                              comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
                              xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
                              showlinelist=showlinelist,smooth=smoothsigma)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_10701edgecomp(smoothsigma=0,showfluxnoise=True):
+    """
+    Function plotting extraction with mock edge of 10701.
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_10701edgecomp(smoothsigma=0,showfluxnoise=True)
+
+    """
+    figdir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/figures/'
+    parentdir    = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/'
+
+    objid        = '10701'
+    zobj         = 0.3373
+    xranges      = [[4800,9300],[6400,6800]]
+    yranges_full = [[-50,2200],[-1,32]]
+    yranges_zoom = [[500,1500],[5,32]]
+    # spec_edge    = parentdir+'tdose_spectra_modelimg_wEdge_190305/tdose_spectrum_modelimg_0000010701-0000010701.fits' BUT RUN WITH FILLED MASKED ARRAYS
+    # spec_full    = parentdir+'tdose_spectra_modelimg_190227/tdose_spectrum_modelimg_0000010701-0000010701.fits'
+    spec_full    =  parentdir+'/tdose_spectra_singlegauss_wEdge_190314/tdose_spectrum_gauss_0000010701-0000010701_noEdge.fits'
+    spec_edge    =  parentdir+'/tdose_spectra_singlegauss_wEdge_190314/tdose_spectrum_gauss_0000010701-0000010701_wEdge.fits'
+
+    data_full    = afits.open(spec_full)[1].data
+    data_edge    = afits.open(spec_edge)[1].data
+
+    SN_medianloss = np.median(1.0 - data_edge['s2n']/data_full['s2n'])
+    SN_meanloss   = np.mean(1.0 - data_edge['s2n']/data_full['s2n'])
+    F_medianloss  = np.median(1.0 - data_edge['flux']/data_full['flux'])
+    F_meanloss    = np.mean(1.0 - data_edge['flux']/data_full['flux'])
+    print(' - Median loss in S/N,  i.e. median of 1-SN_edge/SN_full: '+str(SN_medianloss))
+    print(' - Mean   loss in S/N,  i.e. mean   of 1-SN_edge/SN_full: '+str(SN_meanloss))
+    print(' - Median loss in flux, i.e. median of 1-f_edge/f_full:   '+str(F_medianloss))
+    print(' - Mean   loss in flux, i.e. mean   of 1-f_edge/f_full:   '+str(F_meanloss))
+
+    filelist     = [spec_full]
+    labels       = ['Full FoV']
+    col          = ['black']
+
+    compspec     = [spec_edge]
+    comp_labels  = ['Mock FoV edge']
+    comp_colors  = ['red']
+
+    plotnames    = [figdir+'/tdose_1Dspectra_edgecomp_'+objid+'_full_flux.pdf',
+                    figdir+'/tdose_1Dspectra_edgecomp_'+objid+'_zoom_flux.pdf']
+
+    for pp, pname in enumerate(plotnames):
+        linelistdic  = MiGs.linelistdic()
+        if pp == 0:
+            keylist  = ['oii1','oii2' ,'oiii1' ,'oiii2','hb'       ,'ha'        ,'sii1','sii2','nii1','nii2']
+            namelist = [''    ,'[OII]','H$\\beta$ [OIII]',''     ,'','H$\\alpha$','SII' ,''    ,''    ,''    ]
+            wavelist = [linelistdic[key][1] for key in keylist]
+            for kk, key in enumerate(keylist):
+                if kk == 0:
+                    linelist = np.array([wavelist[kk]*(1.0+zobj),namelist[kk]])
+                else:
+                    linelist = np.vstack((linelist,[wavelist[kk]*(1.0+zobj),namelist[kk]]))
+        else:
+            for kk, key in enumerate(linelistdic.keys()):
+                if kk == 0:
+                    linelist = np.array([linelistdic[key][1]*(1.0+zobj),linelistdic[key][0]])
+                else:
+                    linelist = np.vstack((linelist,[linelistdic[key][1]*(1.0+zobj),linelistdic[key][0]]))
+
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelist=linelist,smooth=smoothsigma)
+
+        plotname  = plotname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelist=linelist,smooth=smoothsigma)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_10701narrowbands(overwrite=True,verbose=True):
+    """
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.gen_10701narrowbands()
+
+    """
+    cube_ext  = 'DATA_DCBGC'
+    cutoutdir = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_cutouts/cutouts190227/'
+    datacube  = cutoutdir+'DATACUBE_candels-cdfs-25_v1.0_dcbgc_effnoised_id10701_cutout10p0x6p0arcsec.fits'
+
+    redshift  = 0.3373
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    # - - - - - - - OIII5007 - - - - - - -
+    linewave  = 5007
+    if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    wcenter   = linewave*(redshift+1.0)
+    HalfWidth = 500.0
+    dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+    outname   = datacube.replace('.fits','_OIIInarrowbandWidth'+str(int(HalfWidth*2))+'kmsRest.fits')
+    diffvec   = np.abs(wavevec-(wcenter-dwave))
+    layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+    diffvec   = np.abs(wavevec-(wcenter+dwave))
+    layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+    layers    = np.arange(layermin,layermax,1).astype(int)
+    if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+    if verbose: print('   This corresponds to cutteing layers ['+
+                      str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+    mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MWDR1hdrToTDOSEhdr(specfilenames):
@@ -3626,6 +3747,57 @@ def align_CosmosGroupImages(verbose=True):
 
     if verbose: print(' - Returning info dictionary with lists of image shifts appended to each key entry')
     return infodic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def shift_CosmosGroupMUSEcubes(verbose=True):
+    """
+    Function to shift the data by editing the WCS of the Cosmos Group Data cubes
+    according to the shifts calculated with resultsdictionary = tsu.align_CosmosGroupImages()
+
+    --- INPUT ---
+    verbose             Toggle verbosity
+
+    --- EXAMPLES OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.shift_CosmosGroupMUSEcubes(verbose=True)
+
+
+    """
+    parentdir = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/'
+    datacubes   = [parentdir+'massive_CGr32-M1_4.25h_289_stellar_cube_cut.fits',
+                   parentdir+'massive_CGr32-M1_4.25h_289_stellar_var_cut.fits',
+                   parentdir+'massive_CGr84_5.25h_307_stellar_cube_cut.fits',
+                   parentdir+'massive_CGr84_5.25h_307_stellar_var_cut.fits']
+
+    outputcubes = [dc.replace('.fits','_aligned.fits') for dc in datacubes]
+
+    if verbose: print(' - Estimate offsets for apply to MUSE cubs for the Cosmos Group images ')
+    resultsdictionary = tsu.align_CosmosGroupImages(verbose=verbose)
+
+    for dd, datacube in enumerate(datacubes):
+        if verbose: print('\n - Copy over original cube to output ')
+        outcube = outputcubes[dd]
+        shutil.copyfile(datacube,outcube)
+
+        if verbose: print(' - Get offsets to apply to output cube ')
+        if 'CGr32' in datacube:
+            offsets = resultsdictionary['CGr32_289'][3]
+        elif 'CGr84' in datacube:
+            offsets = resultsdictionary['CGr84_307'][3]
+        else:
+            sys.exit(' Did not find any offsets for:\n   '+datacube)
+
+        xoff = offsets[0]
+        yoff = offsets[1]
+
+        if verbose: print(' - Apply offsets to header WCS info of output cube ')
+        hdunew = afits.open(outcube, mode='update')
+
+        hdunew[0].header['CRPIX1'] = hdunew[0].header['CRPIX1']+xoff
+        hdunew[0].header['CRPIX2'] = hdunew[0].header['CRPIX2']+yoff
+
+        if verbose: print(' - Saving changes to ouput in\n   '+outcube)
+        hdunew.flush()
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
     """
