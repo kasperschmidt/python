@@ -503,7 +503,7 @@ def create_narrowband_subcube(datacube,ras,decs,dras,ddecs,wavecenters,dwaves,ou
                     if verbose: print('   '+narrowbandname)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def collapsecube(outname,dataarray,fitsheader,layers='all',overwrite=False,verbose=True):
+def collapsecube(outname,dataarray,fitsheader,layers='all',normalize=False,overwrite=False,verbose=True):
     """
     Function to callapse specified layers of data cube and store them as image
 
@@ -513,6 +513,7 @@ def collapsecube(outname,dataarray,fitsheader,layers='all',overwrite=False,verbo
     cubeheader      Fits header of data cube (in whihc case all third dimension coomponents are removed) or
                     image to use when storing the output image to a fits file.
     layers          The layers of the cube to collaps. If layers='all' the full cube is collapsed.
+    normalize       Normalize output by the number of layers collapsed
     overwrite       Overwrite existing image?
     verbose         Toggle verbosity
 
@@ -544,6 +545,12 @@ def collapsecube(outname,dataarray,fitsheader,layers='all',overwrite=False,verbo
     hdus     = [hduimg]
     hdulist  = afits.HDUList(hdus)                  # turn header into to hdulist
     hdulist.writeto(outname,overwrite=overwrite)  # write fits file (clobber=True overwrites excisting file)
+
+    if normalize:
+        imghdu = afits.open(outname, mode='update')
+        imghdu[0].data = imghdu[0].data / len(layers)
+        imghdu.flush()
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_PSFasciiselectiontemplate(outname='./PSFselectionAsciiTemplate_RENAME_.txt',campaign='E40',clobber=False,verbose=True):
     """
