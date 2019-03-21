@@ -52,6 +52,7 @@ from reproject import reproject_interp
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import Circle
 
 ### SCIPY ###
 from scipy import odr
@@ -1759,7 +1760,7 @@ def reproject_fitsimage(fitsimage,fitsoutput,fitsimageext=0,radec=None,naxis=Non
     afits.writeto(fitsoutput, array, hdrout, overwrite=overwrite)
 #-------------------------------------------------------------------------------------------------------------
 def plot_GALFITmodel(galfit_imgblock,colormap='viridis',showcomponentnumbers=False,
-                     figsize=(10,3),logcolor=True,vscale=0.99,verbose=True):
+                     figsize=(10,3),logcolor=True,vscale=0.99,verbose=True,addcircles=None):
     """
     Plotting the FITS extensions of a GALFIT imgblock
     Plotting based on plot_fitsimage, but using sub-plots to get overview.
@@ -1773,6 +1774,7 @@ def plot_GALFITmodel(galfit_imgblock,colormap='viridis',showcomponentnumbers=Fal
     vscale                The scale to apply when estimating vmin and vmax. If type(vscale) is not float,
                           it is assumed that list of vmin and vmax is provided instead.
     verbose               Toggle verbosity
+    addcircles            To add circles to individual frames provide list of [x,y,r,color]
 
 
     --- EXAMPLE OF USE ---
@@ -1846,12 +1848,19 @@ def plot_GALFITmodel(galfit_imgblock,colormap='viridis',showcomponentnumbers=Fal
                 ypix = float(hdrinfo[str(cc+1)+'_YC'].split()[0])
                 ax.text(xpix,ypix,str(cc+1),fontsize=Fsize, color='black', ha='center', va='center')
 
+        if addcircles is not None:
+            for cirsetup in addcircles:
+                circ = Circle((cirsetup[0],cirsetup[1]),cirsetup[2],color=cirsetup[3],
+                              alpha=0.8,linestyle='-',linewidth=3, fill=False, label=None)
+                ax.add_patch(circ)
+
+
     plt.savefig(outputfile)
     fig.clf()
 
 #-------------------------------------------------------------------------------------------------------------
-def plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap='viridis',figsize=(3,4),logcolor=True,vscale=0.99,
-                   verbose=True):
+def plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap='viridis',figsize=(4,3),addcircles=None,
+                   logcolor=True,vscale=0.99,verbose=True):
     """
 
     --- INPUT
@@ -1860,6 +1869,7 @@ def plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap='viridis',figsize=(3,4
     fitsext        Extension of FITS file containing image to plot
     colormap       Colormap to use for plotting
     figsize        Size of figure. Labels will stay fixed so small size = large labels.
+    addcircles     To add circles to image, provide list of [x,y,r,color] for the circles to add.
     logcolor       If true, color map will be in log
     vscale         The scale to apply when estimating vmin and vmax. If type(vscale) is not float,
                    it is assumed that list of vmin and vmax is provided instead.
@@ -1903,6 +1913,12 @@ def plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap='viridis',figsize=(3,4
 
     ax = plt.gca()
     im = plt.imshow(imgdat, cmap=colormap, norm=normclass, origin='lower',vmin=vmin, vmax=vmax)
+
+    if addcircles is not None:
+        for cirsetup in addcircles:
+            circ = Circle((cirsetup[0],cirsetup[1]),cirsetup[2],color=cirsetup[3],
+                          alpha=0.8,linestyle='-',linewidth=3, fill=False, label=None)
+            ax.add_patch(circ)
 
     divider = make_axes_locatable(ax)
     cax     = divider.append_axes("right", size="5%", pad=0.05)
