@@ -232,6 +232,11 @@ def linelistdic(listversion='full'):
         linelist['mgii2']    = ['MgII$\\lambda$2803'              , 2802.705 ,         'left'       , 'Morton1991tab5']
         linelist['oii1']     = ['[OII]$\\lambda$3726'              , 3726.    ,         'right'      , 'Pradhan2006']
         linelist['oii2']     = ['[OII]$\\lambda$3729'              , 3729.    ,         'left'       , 'Pradhan2006']
+
+        # Taken from table of Fraunhofer lines: https://en.wikipedia.org/wiki/Fraunhofer_lines
+        linelist['cah']     = ['CaH$\\lambda$3968'              , 3968.47    ,         'left'       , 'Wikipedia']
+        linelist['cak']     = ['CaK$\\lambda$3934'              , 3933.66    ,         'left'       , 'Wikipedia']
+
         linelist['NeIII']    = ['[NeIII]$\\lambda$3869'            , 3869.0   ,        'right'       , 'Nebular URL']
         linelist['hd']       = ['H$\delta\\lambda$4103'          , 4102.89  ,         'right'      , 'VandenBerk2001tab4']
         linelist['oiii4363'] = ['[OIII]$\\lambda$4363'             , 4363.    ,         'right'      , 'Sanders+2016']
