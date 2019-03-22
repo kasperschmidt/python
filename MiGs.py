@@ -237,7 +237,7 @@ def linelistdic(listversion='full'):
         linelist['cah']     = ['CaH$\\lambda$3968'              , 3968.47    ,         'left'       , 'Wikipedia']
         linelist['cak']     = ['CaK$\\lambda$3934'              , 3933.66    ,         'left'       , 'Wikipedia']
 
-        linelist['NeIII']    = ['[NeIII]$\\lambda$3869'            , 3869.0   ,        'right'       , 'Nebular URL']
+        linelist['neiii']    = ['[NeIII]$\\lambda$3869'            , 3869.0   ,        'right'       , 'Nebular URL']
         linelist['hd']       = ['H$\delta\\lambda$4103'          , 4102.89  ,         'right'      , 'VandenBerk2001tab4']
         linelist['oiii4363'] = ['[OIII]$\\lambda$4363'             , 4363.    ,         'right'      , 'Sanders+2016']
         # Lines from http://www.sdss.org/dr7/algorithms/linestable.html,
