@@ -223,7 +223,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=False,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
 
     plotname = plotname.replace('.pdf','_S2N.pdf')
@@ -231,7 +231,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=True,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = parentdir+'/tdose_1Dspectra_UDF3_QSOandDLA_zoom2.pdf'
@@ -240,7 +240,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=False,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
 
     plotname = plotname.replace('.pdf','_S2N.pdf')
@@ -248,7 +248,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=True,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -258,7 +258,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=False,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
 
     plotname = plotname.replace('.pdf','_S2N.pdf')
@@ -266,7 +266,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=True,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = parentdir+'/tdose_1Dspectra_UDF3_QSOandDLA_fullrange.pdf'
@@ -275,7 +275,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=False,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
 
     plotname = plotname.replace('.pdf','_S2N.pdf')
@@ -283,7 +283,7 @@ def plot_UDF03_QSO(pubversion=False):
 
     tes.plot_1Dspecs(filelist,plotname=plotname,colors=['black'],labels=labels,plotSNcurve=True,
                      comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
-                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelist=linelist,
+                     comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',showlinelists=[linelist],
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=pubversion)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -706,7 +706,7 @@ def plot_10701edgecomp(smoothsigma=0,showfluxnoise=True):
                          comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
                          comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
                          xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
-                         showlinelist=linelist,smooth=smoothsigma)
+                         showlinelists=[linelist],smooth=smoothsigma)
 
         plotname  = plotname.replace('flux.pdf','s2n.pdf')
         if pp == 0:
@@ -717,7 +717,7 @@ def plot_10701edgecomp(smoothsigma=0,showfluxnoise=True):
                          comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
                          comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
                          xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
-                         showlinelist=linelist,smooth=smoothsigma)
+                         showlinelists=[linelist],smooth=smoothsigma)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_10701narrowbands(overwrite=True,verbose=True):
@@ -755,6 +755,328 @@ def gen_10701narrowbands(overwrite=True,verbose=True):
     mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_9726(smoothsigma=0,plotmode = 'all',showfluxnoise=True,plottype='pdf',overwritefitsimages=True,verbose=True):
+    """
+    Function for extracting narrowbands, plotting spectra, plotting narrowbands for 9726 and neighbors.
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_9726(smoothsigma=0,showfluxnoise=True)
+
+    """
+    maindir    = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/9726figure/'
+
+    z125027078 = 0.6494 # MW 125027078
+    z9726      = 0.5221 # Guo 9726 / MW 125017033
+    z9496      = 1.3885 # Guo 9496 / MW 125068147
+
+    specs      = [maindir+'tdose_spectrum_manual_extract_0000009726.fits',               # 0
+                  maindir+'tdose_spectrum_manual_extract_0000009472.fits',               # 1
+                  maindir+'tdose_spectrum_manual_extract_0000009496.fits',               # 2
+                  maindir+'tdose_spectrum_aperture_0000009726-0000009726_3Rminor.fits',  # 3
+                  maindir+'tdose_spectrum_aperture_0000009726-0000009726_2Rminor.fits',  # 4
+                  maindir+'tdose_spectrum_aperture_0000009726-0000009726_1Rminor.fits',  # 5
+                  maindir+'tdose_spectrum_aperture_0000009726-0000009726_1Rmajor.fits',  # 6
+                  maindir+'tdose_spectrum_aperture_0000009726-0000009726_2Rmajor.fits',  # 7
+                  maindir+'tdose_spectrum_aperture_0000009726-0000009726_3Rmajor.fits',  # 8
+                  maindir+'aper_spectrum_candels-cdfs-25_125017033.fits',                # 9
+                  maindir+'aper_spectrum_candels-cdfs-25_125027078.fits',                # 10
+                  maindir+'aper_spectrum_candels-cdfs-25_125068147.fits',                # 11
+                  maindir+'emission_spectrum_candels-cdfs-25_125017033.fits',            # 12
+                  maindir+'emission_spectrum_candels-cdfs-25_125027078.fits',            # 13
+                  maindir+'emission_spectrum_candels-cdfs-25_125068147.fits',            # 14
+                  maindir+'tdose_spectrum_candels-cdfs-25_09472.fits',                   # 15
+                  maindir+'tdose_spectrum_candels-cdfs-25_09496.fits',                   # 16
+                  maindir+'tdose_spectrum_candels-cdfs-25_09726.fits']                   # 17
+
+    # 9726      0.46      0.52        0.92     1.03              1.38     1.55
+    # 9496      0.20      0.27        0.40     0.55              0.60     0.82
+    apertures    = {}
+    apertures[maindir+'tdose_spectrum_aperture_0000009726-0000009726_3Rminor.fits'] = 0.46
+    apertures[maindir+'tdose_spectrum_aperture_0000009726-0000009726_2Rminor.fits'] = 0.92
+    apertures[maindir+'tdose_spectrum_aperture_0000009726-0000009726_1Rminor.fits'] = 1.38
+    apertures[maindir+'tdose_spectrum_aperture_0000009726-0000009726_1Rmajor.fits'] = 0.52
+    apertures[maindir+'tdose_spectrum_aperture_0000009726-0000009726_2Rmajor.fits'] = 1.03
+    apertures[maindir+'tdose_spectrum_aperture_0000009726-0000009726_3Rmajor.fits'] = 1.55
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    keylist  = ['oii1','oii2' ,'oiii1' ,'oiii2'     ,'hg'           ,'hb','ha'        ,'sii1','sii2','nii1','nii2']
+    namelist = [''    ,'[OII]','H$\\beta$ [OIII]','','H$\\gamma'     ,''  ,'H$\\alpha$','SII' ,''    ,''    ,''    ]
+    wavelist = [linelistdic[key][1] for key in keylist]
+
+    for kk, key in enumerate(keylist):
+        if kk == 0:
+            linelist_full9726 = np.array([wavelist[kk]*(1.0+z9726),namelist[kk]])
+        else:
+            linelist_full9726 = np.vstack((linelist_full9726,[wavelist[kk]*(1.0+z9726),namelist[kk]]))
+
+        if kk == 0:
+            linelist_full9496 = np.array([wavelist[kk]*(1.0+z9496),namelist[kk]])
+        else:
+            linelist_full9496 = np.vstack((linelist_full9496,[wavelist[kk]*(1.0+z9496),namelist[kk]]))
+
+        if kk == 0:
+            linelist_full125027078 = np.array([wavelist[kk]*(1.0+z125027078),namelist[kk]])
+        else:
+            linelist_full125027078 = np.vstack((linelist_full125027078,[wavelist[kk]*(1.0+z125027078),namelist[kk]]))
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_zoom9726 = np.array([linelistdic[key][1]*(1.0+z9726),linelistdic[key][0]])
+        else:
+            linelist_zoom9726 = np.vstack((linelist_zoom9726,[linelistdic[key][1]*(1.0+z9726),linelistdic[key][0]]))
+
+        if kk == 0:
+            linelist_zoom9496 = np.array([linelistdic[key][1]*(1.0+z9496),linelistdic[key][0]])
+        else:
+            linelist_zoom9496 = np.vstack((linelist_zoom9496,[linelistdic[key][1]*(1.0+z9496),linelistdic[key][0]]))
+
+        if kk == 0:
+            linelist_zoom125027078 = np.array([linelistdic[key][1]*(1.0+z125027078),linelistdic[key][0]])
+        else:
+            linelist_zoom125027078 = np.vstack((linelist_zoom125027078,[linelistdic[key][1]*(1.0+z125027078),linelistdic[key][0]]))
+
+    keylistZ  = ['oii1','oii2' ,'neiii' ,'cah' ,'cak']
+    namelistZ = [''    ,'[OII]','[NeIII]','CaH','CaK']
+    wavelistZ = [linelistdic[key][1] for key in keylistZ]
+
+    for kk, key in enumerate(keylistZ):
+        if kk == 0:
+            linelist_zoomOII9726 = np.array([wavelistZ[kk]*(1.0+z9726),namelistZ[kk]])
+        else:
+            linelist_zoomOII9726 = np.vstack((linelist_zoomOII9726,[wavelistZ[kk]*(1.0+z9726),namelistZ[kk]]))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+    ylogval      = False
+    linesetup = {}
+    if plotmode == 'all':
+        filelist     = [specs[0]]
+        col          = ['gray']
+        labels       = ['TDOSE spec 9726',]
+
+        compspec     = [specs[1],specs[2],specs[6],specs[7],specs[8]]
+        comp_colors  = ['magenta','black','blue','green','red']
+        comp_labels  = ['TDOSE spec 9472',
+                        'TDOSE spec 9496',
+                        'Aper 9726; $r='+str(apertures[specs[6]])+'$"',
+                        'Aper 9726; $r='+str(apertures[specs[7]])+'$"',
+                        'Aper 9726; $r='+str(apertures[specs[8]])+'$"']
+
+        xranges      = [[4800,9300],[5630,5690],[8850,8925],[6100,6175]]
+        yranges_full = [[-100,2500],[-1,32]]
+        yranges_zoom = [[-100,1300],[-1,32]]
+
+        objid        = '9726'
+        plotnames    = [maindir+'/tdose_1Dspectra_allspecs_'+objid+'_full_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_allspecs_'+objid+'_zoomOII9726_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_allspecs_'+objid+'_zoomOII9496_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_allspecs_'+objid+'_zoomOII125027078_allspecs_flux.'+plottype]
+
+        linesetup[plotnames[0]] = [linelist_full9726,linelist_full9496,linelist_full125027078], ['gray','black','orange']
+        linesetup[plotnames[1]] = [linelist_zoom9726], ['gray']
+        linesetup[plotnames[2]] = [linelist_zoom9496], ['black']
+        linesetup[plotnames[3]] = [linelist_zoom125027078], ['orange']
+
+    elif plotmode == '9726and9472':
+        filelist     = [specs[0]]
+        col          = ['gray']
+        labels       = ['TDOSE spectrum Guo 9726',]
+
+        compspec     = [specs[2]]
+        comp_colors  = ['black']
+        comp_labels  = ['TDOSE spectrum Guo 9496']
+
+        xranges      = [[4800,9300],[5600,6100],[8600,9100],[6100,6175]]
+        yranges_full = [[-100,1500],[-5,22]]
+        yranges_zoom = [[-100,1500],[-5,22]]
+
+        objid        = '9726'
+        plotnames    = [maindir+'/tdose_1Dspectra_9726and9472_'+objid+'_full_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_9726and9472_'+objid+'_zoomOII9726_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_9726and9472_'+objid+'_zoomOII9496_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_9726and9472_'+objid+'_zoomOII125027078_allspecs_flux.'+plottype]
+
+        linesetup[plotnames[0]] = [linelist_full9726,linelist_full9496], ['gray','black']
+        linesetup[plotnames[1]] = [linelist_full9726], ['gray']
+        linesetup[plotnames[2]] = [linelist_full9496], ['black']
+        linesetup[plotnames[3]] = [linelist_zoom125027078], ['orange']
+
+    elif plotmode == 'aperturecomp':
+        filelist     = [specs[0]]
+        col          = ['gray']
+        labels       = ['TDOSE',]
+
+        compspec     = [specs[6],specs[7],specs[8]]
+        comp_colors  = ['blue','green','red']
+        comp_labels  = ['$r_\\textrm{aper}='+str(apertures[specs[6]])+'$"',
+                        '$r_\\textrm{aper}='+str(apertures[specs[7]])+'$"',
+                        '$r_\\textrm{aper}='+str(apertures[specs[8]])+'$"']
+
+        xranges      = [[4800,9300],[6400,6625],[5500,5700],[7300,7700]]
+        yranges_full = [[100,2500],[3,32]]
+        yranges_zoom = [[100,800],[3,17]]
+
+        objid        = '9726'
+        plotnames    = [maindir+'/tdose_1Dspectra_apercomp_'+objid+'_full_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_apercomp_'+objid+'_zoomHgamma_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_apercomp_'+objid+'_zoomOII9726_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_apercomp_'+objid+'_zoomwideHb9726_flux.'+plottype]
+
+        linesetup[plotnames[0]] = [linelist_full9726], ['gray']
+        linesetup[plotnames[1]] = [linelist_zoom9726], ['gray']
+        linesetup[plotnames[2]] = [linelist_zoom9726], ['gray']
+        linesetup[plotnames[3]] = [linelist_zoom9726], ['gray']
+
+    elif plotmode == 'singlemulti':
+        filelist     = [specs[0]]
+        col          = ['gray']
+        labels       = ['4-component Sersic model']
+
+        compspec     = [specs[17]]
+        comp_colors  = ['red']
+        comp_labels  = ['1-component Gauss model']
+
+        xranges      = [[4800,9300],[5600,6100],[8600,9100],[6100,6175]]
+        yranges_full = [[-100,1500],[-1,25]]
+        yranges_zoom = [[-100,1500],[-1,25]]
+
+        objid        = '9726'
+        plotnames    = [maindir+'/tdose_1Dspectra_singlemulti_'+objid+'_full_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_singlemulti_'+objid+'_zoomOII9726_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_singlemulti_'+objid+'_zoomOII9496_flux.'+plottype,
+                        maindir+'/tdose_1Dspectra_singlemulti_'+objid+'_zoomOII125027078_allspecs_flux.'+plottype]
+
+        linesetup[plotnames[0]] = [linelist_full9726], ['gray']
+        linesetup[plotnames[1]] = [linelist_zoomOII9726], ['gray']
+        linesetup[plotnames[2]] = [linelist_zoom9726], ['gray']
+        linesetup[plotnames[3]] = [linelist_zoom9726], ['gray']
+
+        fluxratio = afits.open(specs[0])[1].data['flux']/afits.open(specs[17])[1].data['flux']
+        s2nratio = afits.open(specs[0])[1].data['s2n']/afits.open(specs[17])[1].data['s2n']
+
+        if verbose: print(' - median flux difference expressed as median(4comp/1comp) '+str(np.median(fluxratio)))
+        if verbose: print(' - median S/N  difference expressed as median(4comp/1comp) '+str(np.median(s2nratio)))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.'+plottype,'s2n.'+plottype)
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        # - - - - - - - - - - FLUX AND S/N RATIO PLOTS - - - - - - - - - -
+        plotname  = pname.replace('flux.'+plottype,'flux_ratio.'+plottype)
+        yrange    = [0,3]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,plotratio=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.'+plottype,'s2n_ratio.'+plottype)
+        yrange    = [0,3]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,plotratio=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    cube_ext  = 'DATA_DCBGC'
+    datacube  = maindir+'DATACUBE_candels-cdfs-25_v1.0_dcbgc_effnoised_id9726_cutout6p0x6p0arcsec.fits'
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    nbandimgs = []
+
+    # - - - - - - - OII narrowbands image - - - - - - -
+    linewave  = 3726
+    if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    for redshift in [z9726,z9496]:
+        wcenter   = linewave*(redshift+1.0)
+        HalfWidth = 500.0
+        dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+        outname   = datacube.replace('.fits','_OIInarrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+                                     str("%.4f" % redshift).replace('.','p')+'.fits')
+        diffvec   = np.abs(wavevec-(wcenter-dwave))
+        layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+        diffvec   = np.abs(wavevec-(wcenter+dwave))
+        layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+        layers    = np.arange(layermin,layermax,1).astype(int)
+        if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+        if verbose: print('   This corresponds to cutteing layers ['+
+                          str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+        mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+        nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight image')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = fitsfile.replace('.fits','.'+plottype)
+        vscale     = 0.99 #[0.0,5.0] #
+
+        if plotmode == 'aperturecomp':
+            colmap = 'Greys'
+            circle1 = [15,15,0.52/0.2,'blue']
+            circle2 = [15,15,1.03/0.2,'green']
+            circle3 = [15,15,1.55/0.2,'red']
+            addcirc = [circle1,circle2,circle3]
+        else:
+            addcirc = None
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=addcirc)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    if plotmode == 'aperturecomp':
+        circle1 = [100,100,0.52/0.03,'blue']
+        circle2 = [100,100,1.03/0.03,'green']
+        circle3 = [100,100,1.55/0.03,'red']
+        addcirc = [circle1,circle2,circle3]
+    else:
+        addcirc = None
+
+    galfitimg  = maindir+'model_acs_814w_candels-cdfs-25_cut_v1.0_id9726_cutout6p0x6p0arcsec.fits'
+    #vscale = [1e-4,1.0]
+    kbs.plot_GALFITmodel(galfitimg,colormap=colmap,vscale=0.99,logcolor=True,addcircles=addcirc)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MWDR1hdrToTDOSEhdr(specfilenames):
     """
     Change column names in fits table containing spectra from MWDR1 to the column names used by tdose
@@ -779,8 +1101,8 @@ def MWDR1hdrToTDOSEhdr(specfilenames):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
-                   savefits='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selection',
-                   plotnamebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selectionplot'):
+                   savefits='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selection_RENAME',
+                   plotnamebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selectionplot_RENAME'):
     """
 
     Get sample of OII emitters to build GALFIT and TDOSE-Guass models of for comparison purposes.
@@ -2208,6 +2530,265 @@ def OIIemitters_compare_modeparams(paramsummary,plotdir,verbose=True):
             plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_plot_singleVSmulticomponent(MWDR1ID=140046113,verbose=True):
+    """
+    Function generating plots for the figure illustarting the Gain from
+
+    Candidates with large changes in max[OII] flux and S/N provided by print on the command line from
+    tsu.plot_maxvalues_OIIemitters()) are listed below
+
+     - top 20 max(O[II]) flux ratios (id,Fsersic/Fmwdr1,S/NforMaxFlux):
+    124012027.0  1.54045287352  10.1865203128
+    143056142.0  1.51085862206  4.20245875932
+    103020083.0  1.46787017919  6.99142284762
+    145048107.0  1.34909616264  12.3200196572
+    103013064.0  1.33669622943  6.09000033688
+    104020060.0  1.33484314821  11.0312198014
+    140046113.0  1.32493074754  9.99346970419
+    103047123.0  1.2876122923  5.09957479044
+    104023065.0  1.27787638052  8.98077459562
+    110029075.0  1.26361064765  12.3583082366
+    117016056.0  1.25885420544  10.4753226988
+    141023115.0  1.23083614744  4.17129793865
+    103040115.0  1.20671161229  7.30303102518
+    146064349.0  1.19909522556  3.52327471301
+    119043082.0  1.18704353123  26.5880876264
+    125030088.0  1.18611064701  48.10496556
+    107022115.0  1.18056709283  7.2379437372
+    139048302.0  1.17640036004  7.30824800569
+    104027073.0  1.17376566625  31.2501250568
+    123021124.0  1.1724338791  7.24769716151
+     - top 20 max(O[II]) S/N  ratios (id,SNsersic/SNmwdr1):
+    104020060.0  1.55331556502
+    103020083.0  1.36485190552
+    140046113.0  1.28348848585
+    143056142.0  1.23844103639
+    139048302.0  1.22569334524
+    146037288.0  1.15702964058
+    145048107.0  1.14555741299
+    142014099.0  1.11648105096
+    139070327.0  1.11191717755
+    104023065.0  1.11169706323
+    125030088.0  1.11013216901
+    115037158.0  1.10659684349
+    135047237.0  1.10198283127
+    144055144.0  1.0924209017
+    118008036.0  1.08774105556
+    105017060.0  1.08692666738
+    133025065.0  1.08443194398
+    134022039.0  1.08428233822
+    112032088.0  1.08260073043
+    108020133.0  1.08054623047
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_plot_singleVSmulticomponent(MWDR1ID=140046113)
+
+    """
+    figuredir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/singleVSmulticompfigure/'
+
+    specdir         = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_spectra/'
+    spec_modelimg   = glob.glob(specdir+'tdose_spectrum_modelimg*'+str(MWDR1ID)+'*.fits')[0]
+    spec_gauss      = glob.glob(specdir+'tdose_spectrum_gauss*'+str(MWDR1ID)+'*.fits')[0]
+
+    modeldir        = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_models/'
+    gauss_residuals = glob.glob(modeldir+'acs_814w_candels-cdfs*'+str(MWDR1ID)+'*gauss_residual.fits')[0]
+
+    cutoutdir       = '/Volumes/DATABCKUP1/TDOSEextractions/181016_MWDR1_OIIemitters/tdose_cutouts/'
+    datacube_cutout = glob.glob(cutoutdir+'DATACUBE_candels-cdfs*'+str(MWDR1ID)+'*_cutout4p0x4p0arcsec.fits')[0]
+
+    galfitdir       = '/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/galfit_wrapper_results_final_181015/'
+    galfitmodel     = galfitdir+'imgblocks/imgblock_acs_814w_'+str(MWDR1ID)+'.fits'
+
+    modelhdr        = afits.open(galfitmodel)[2].header
+    Ncomp           = 0
+    for key in modelhdr.keys():
+        if 'COMP_' in key:
+            if modelhdr[key] is not 'sky':
+                Ncomp = Ncomp + 1
+
+    objcatalog      = afits.open(galfitdir+'OIIemitter_selection_23LTm814LT24_SkelsepLT0p3_Nobj153.fits')[1].data
+    objent          = np.where(objcatalog['unique_id'] == MWDR1ID)[0]
+
+    objz            =  objcatalog['z'][objent]
+
+    if verbose:
+        print(' - Grabbed files and infor for MW DR1 object '+str(MWDR1ID)+' including:')
+        print('   redshift    = '+str(objz))
+        print('   OII_SN      = '+str(objcatalog['sn'][objent]))
+        print('   GuoID       = '+str(objcatalog['guo_id'][objent]))
+        print('   Guo_sep     = '+str(objcatalog['guo_sep'][objent]))
+        print('   SkeltonID   = '+str(objcatalog['skelton_id'][objent]))
+        print('   Skelton_sep = '+str(objcatalog['skelton_sep'][objent]))
+
+    specs      = [spec_modelimg,spec_gauss]
+    OIIlineobs = 3726*(1+objz)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all = np.array([linelistdic[key][1]*(1.0+objz),linelistdic[key][0]])
+        else:
+            linelist_all = np.vstack((linelist_all,[linelistdic[key][1]*(1.0+objz),linelistdic[key][0]]))
+
+    keylistZ  = ['oii1','oii2' ,'neiii' ,'cah' ,'cak']
+    namelistZ = [''    ,'[OII]','[NeIII]','CaH','CaK']
+    wavelistZ = [linelistdic[key][1] for key in keylistZ]
+
+    for kk, key in enumerate(keylistZ):
+        if kk == 0:
+            linelist_zoomOII = np.array([wavelistZ[kk]*(1.0+objz),namelistZ[kk]])
+        else:
+            linelist_zoomOII = np.vstack((linelist_zoomOII,[wavelistZ[kk]*(1.0+objz),namelistZ[kk]]))
+
+    keylist  = ['oii1','oii2' ,'oiii1' ,'oiii2'     ,'hg'           ,'hb','ha'        ,'sii1','sii2','nii1','nii2']
+    namelist = [''    ,'[OII]','H$\\beta$ [OIII]','','H$\\gamma'     ,''  ,'H$\\alpha$','SII' ,''    ,''    ,''    ]
+    wavelist = [linelistdic[key][1] for key in keylist]
+
+    for kk, key in enumerate(keylist):
+        if kk == 0:
+            linelist_manual = np.array([wavelist[kk]*(1.0+objz),namelist[kk]])
+        else:
+            linelist_manual = np.vstack((linelist_manual,[wavelist[kk]*(1.0+objz),namelist[kk]]))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+    ylogval      = False
+    filelist     = [specs[0]]
+    col          = ['black']
+    labels       = [str(int(Ncomp))+'-component Sersic model']
+
+    compspec     = [specs[1]]
+    comp_colors  = ['red']
+    comp_labels  = ['1-component Gauss model']
+
+    xranges      = [[4800,9300],[OIIlineobs-100,OIIlineobs+500]]
+    yranges_full = [[-100,1000],[-1,32]]
+    yranges_zoom = [[-100,1000],[-1,32]]
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_allspecs_'+str(MWDR1ID)+'_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_allspecs_'+str(MWDR1ID)+'_zoomOII_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_manual], ['black']
+    linesetup[plotnames[1]] = [linelist_zoomOII], ['black']
+
+    fluxratio = afits.open(specs[0])[1].data['flux']/afits.open(specs[1])[1].data['flux']
+    s2nratio = afits.open(specs[0])[1].data['s2n']/afits.open(specs[1])[1].data['s2n']
+    if verbose: print(' - median flux difference expressed as median(4comp/1comp) '+str(np.median(fluxratio)))
+    if verbose: print(' - median S/N  difference expressed as median(4comp/1comp) '+str(np.median(s2nratio)))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    smoothsigma   = 0
+    overwritefitsimages = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+
+        # - - - - - - - - - - FLUX AND S/N RATIO PLOTS - - - - - - - - - -
+        plotname  = pname.replace('flux.pdf','flux_ratio.pdf')
+        yrange    = [0,10]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,plotratio=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n_ratio.pdf')
+        yrange    = [0,10]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,plotratio=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    cube_ext  = 'DATA_DCBGC'
+    datacube  = datacube_cutout
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    nbandimgs = []
+
+    # - - - - - - - OII narrowbands image - - - - - - -
+    linewave  = 3726
+    if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    for redshift in [objz]:
+        wcenter   = linewave*(redshift+1.0)
+        HalfWidth = 500.0
+        dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+        outname   = datacube.replace('.fits','_OIInarrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+                                     str("%.4f" % redshift).replace('.','p')+'.fits')
+        diffvec   = np.abs(wavevec-(wcenter-dwave))
+        layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+        diffvec   = np.abs(wavevec-(wcenter+dwave))
+        layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+        layers    = np.arange(layermin,layermax,1).astype(int)
+        if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+        if verbose: print('   This corresponds to cutteing layers ['+
+                          str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+        mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+        nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight image')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+
+    nbandimgs.append(gauss_residuals)
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = figuredir+fitsfile.replace('.fits','.pdf').split('/')[-1]
+        vscale     = 0.99 #[0.0,5.0] #
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=None)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    kbs.plot_GALFITmodel(galfitmodel,colormap=colmap,vscale=0.99,logcolor=True,addcircles=None)
+    galfitplot = galfitmodel.replace('.fits','_overview.pdf')
+    newfile    = figuredir+galfitplot.split('/')[-1]
+    shutil.copy(galfitplot, newfile)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MW102009072Guo9640_WhiteLightImage(outputdir,overwrite=True,verbose=True):
     """
     Function to generate white light image for the Star-Galaxy blend of MW=102009072/Guo=9640
@@ -2738,6 +3319,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     redshift    = maxvaldat['redshift']
 
     SNsersic    = maxvaldat['max_s2n_modelimg']
+    SNforMaxFlux_sersic = maxvaldat['max_flux_s2n_modelimg']
     Fsersic     = maxvaldat['max_flux_modelimg']
     Ferrsersic  = maxvaldat['max_fluxerror_modelimg']
 
@@ -2746,6 +3328,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     Ferrsersic_filtered  = maxvaldat['max_fluxerror_filt_modelimg']
 
     SNgauss    = maxvaldat['max_s2n_gauss']
+    SNforMaxFlux_gauss = maxvaldat['max_flux_s2n_gauss']
     Fgauss     = maxvaldat['max_flux_gauss']
     Ferrgauss  = maxvaldat['max_fluxerror_gauss']
 
@@ -2784,6 +3367,29 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
           str(np.median(np.asarray(Fsersic)/np.asarray(Fmwdr1td))))
     print('   -> np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1td))  = '+
           str(np.std(np.asarray(Fsersic)/np.asarray(Fmwdr1td))))
+
+    fluxratios = np.asarray(Fsersic)/np.asarray(Fmwdr1td)
+    topFlux    = np.sort(fluxratios)[::-1][0:20]
+    snratios   = np.asarray(SNsersic)/np.asarray(SNmwdr1td)
+    topSN      = np.sort(snratios)[::-1][0:20]
+    # print(str(topFlux))
+    # print(str(topSN))
+    print(' - top 20 max(O[II]) flux ratios (id,Fsersic/Fmwdr1,S/NforMaxFlux):')
+    for fratio in topFlux:
+        objent = np.where(fluxratios == fratio)[0]
+        if len(objent) == 1:
+            print(str(ids[objent][0])+'  '+str(fratio)+'  '+str(SNforMaxFlux_gauss[objent][0]))
+        else:
+            print('  For flux ratio '+str(fratio)+' more than 1 id was found:'+str(ids[objent]))
+
+    print(' - top 20 max(O[II]) S/N  ratios (id,SNsersic/SNmwdr1):')
+    for snratio in topSN:
+        objent = np.where(snratios == snratio)[0]
+        if len(objent) == 1:
+            print(str(ids[objent][0])+'  '+str(snratio))
+        else:
+            print('  For S/N  ratio '+str(snratio)+' more than 1 id was found:'+str(ids[objent]))
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = namebase+'_ODRfit2data_fluxel.pdf'
     if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
@@ -3799,6 +4405,34 @@ def shift_CosmosGroupMUSEcubes(verbose=True):
         hdunew.flush()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_spec_for_flowchart(xrange=[4800,9300], yrange=[-100,2000], smoothsigma=0):
+    """
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_spec_for_flowchart(xrange=[4800,9300], yrange=[-10,200], smoothsigma=0)
+
+    """
+    pubdir    = '/Users/kschmidt/work/publications/TDOSE/'
+    plotname  = pubdir+'fig/flowchartspectrum.pdf'
+    # spec      = pubdir+'TDOSEexampleruns/tdose_spectra/tdose_spectrum_gauss_0000009093-0000009093.fits'
+    spec      = pubdir+'TDOSEexampleruns/MWDR1_guo8685_mw102033149/tdose_spectrum_candels-cdfs-02_08685.fits'
+    spec      = '/Users/kschmidt/work/MUSE/MerlinSantiniObj/tdose_spectrum_candels-cdfs-10_04949.fits'
+
+    spec      = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/tdose_spectra_MWDR1/tdose_spectrum_candels-cdfs-45_13984.fits'
+
+    tes.plot_1Dspecs([spec],plotname=plotname,colors=['black'],labels=['Guo 4949'],plotSNcurve=False,
+                     xrange=xrange,yrange=yrange,showspecs=False,shownoise=False,verbose=True,pubversion=True,
+                     showlinelists=None,smooth=smoothsigma)
+
+    yrange=[-1,50]
+    plotname  = plotname.replace('.pdf','_s2n.pdf')
+    tes.plot_1Dspecs([spec],plotname=plotname,colors=['black'],labels=['Guo 4949'],plotSNcurve=True,
+                     xrange=xrange,yrange=yrange,showspecs=False,shownoise=False,verbose=True,pubversion=True,
+                     showlinelists=None,smooth=smoothsigma)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
     """
     Function to pull out the Kron radii of a list of Guo objects
@@ -3810,7 +4444,7 @@ def get_KronRadii_forGuoObj(guoids,radiusscales=[1],verbose=True):
 
     --- EXAMPLE OF USE ---
     import tdosepublication_utilities as tsu
-    guoids  = [8420,9726,10621,10701,10843,11188,13776,15160,16009,17691]
+    guoids  = [8420,9726,9496,10621,10701,10843,11188,13776,15160,16009,17691]
     results = tsu.get_KronRadii_forGuoObj(guoids,radiusscales=[1,2,3])
 
     """
