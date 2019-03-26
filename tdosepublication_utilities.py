@@ -1076,6 +1076,254 @@ def plot_9726(smoothsigma=0,plotmode = 'all',showfluxnoise=True,plottype='pdf',o
     #vscale = [1e-4,1.0]
     kbs.plot_GALFITmodel(galfitimg,colormap=colmap,vscale=0.99,logcolor=True,addcircles=addcirc)
 
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_10843(smoothsigma=0,verbose=True):
+    """
+    Function plotting single vs multi extraction for Guo 10843
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_10843()
+
+    """
+
+    figuredir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/10843figure/'
+
+    specdir         = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190322_Guo10843_singleVSmulti/tdose_spectra/'
+    spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000010843-0000010843.fits'
+    spec_gauss      = specdir+'tdose_spectrum_gauss_0000010843-0000010843.fits'
+
+    modeldir        = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190322_Guo10843_singleVSmulti/tdose_models/'
+    gauss_model     = modeldir+'acs_814w_candels-cdfs-12_cut_v1.0_id10843_cutout8p0x8p0arcsec_tdose_modelimage_gauss.fits'
+    gauss_residuals = modeldir+\
+                      'acs_814w_candels-cdfs-12_cut_v1.0_id10843_cutout8p0x8p0arcsec_tdose_modelimage_gauss_residual.fits'
+
+
+    cutoutdir       = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190322_Guo10843_singleVSmulti/tdose_cutouts/'
+    datacube_cutout = cutoutdir+'DATACUBE_candels-cdfs-12_v1.0_dcbgc_effnoised_id10843_cutout8p0x8p0arcsec.fits'
+
+    galfitdir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/galfit_wrapper_models/models_renamed/'
+    galfitmodel     = galfitdir+'model_acs_814w_candels-cdfs-12_cut_v1.0_id10843_cutout8p0x8p0arcsec.fits'
+
+    modelhdr        = afits.open(galfitmodel)[2].header
+    Ncomp           = 0
+    for key in modelhdr.keys():
+        if 'COMP_' in key:
+            if modelhdr[key] is not 'sky':
+                Ncomp = Ncomp + 1
+
+
+    objz            =  0.24745837
+    specs           = [spec_modelimg,spec_gauss]
+    OIIlineobs      = 3726*(1+objz)
+    Halineobs       = 6563*(1+objz)
+
+    objz_fg         = 0.11681000
+    Halineobs_fg    = 6563*(1+objz_fg)
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all = np.array([linelistdic[key][1]*(1.0+objz),linelistdic[key][0]])
+        else:
+            linelist_all = np.vstack((linelist_all,[linelistdic[key][1]*(1.0+objz),linelistdic[key][0]]))
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all_fg = np.array([linelistdic[key][1]*(1.0+objz_fg),linelistdic[key][0]])
+        else:
+            linelist_all_fg = np.vstack((linelist_all_fg,[linelistdic[key][1]*(1.0+objz_fg),linelistdic[key][0]]))
+
+    keylistZ  = ['oii1','oii2' ,'neiii' ,'cah' ,'cak']
+    namelistZ = [''    ,'[OII]','[NeIII]','CaH','CaK']
+    wavelistZ = [linelistdic[key][1] for key in keylistZ]
+
+    for kk, key in enumerate(keylistZ):
+        if kk == 0:
+            linelist_zoomOII = np.array([wavelistZ[kk]*(1.0+objz),namelistZ[kk]])
+        else:
+            linelist_zoomOII = np.vstack((linelist_zoomOII,[wavelistZ[kk]*(1.0+objz),namelistZ[kk]]))
+
+    keylist  = ['oii1','oii2' ,'oiii1' ,'oiii2'     ,'hg'           ,'hb','ha'        ,'sii1','sii2','nii1','nii2']
+    namelist = [''    ,'[OII]','H$\\beta$ [OIII]','','H$\\gamma'     ,''  ,'H$\\alpha$','SII' ,''    ,''    ,''    ]
+    wavelist = [linelistdic[key][1] for key in keylist]
+
+    for kk, key in enumerate(keylist):
+        if kk == 0:
+            linelist_manual = np.array([wavelist[kk]*(1.0+objz),namelist[kk]])
+        else:
+            linelist_manual = np.vstack((linelist_manual,[wavelist[kk]*(1.0+objz),namelist[kk]]))
+
+    keylistZ  = ['nii1','nii2' ,'ha'           ,'sii1' ,'sii2']
+    namelistZ = [''    ,' '    ,'H$\\alpha$+NII','[SII]',' ']
+    wavelistZ = [linelistdic[key][1] for key in keylistZ]
+
+    for kk, key in enumerate(keylistZ):
+        if kk == 0:
+            linelist_zoomHa = np.array([wavelistZ[kk]*(1.0+objz),namelistZ[kk]])
+        else:
+            linelist_zoomHa = np.vstack((linelist_zoomHa,[wavelistZ[kk]*(1.0+objz),namelistZ[kk]]))
+
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+
+    filelist     = [specs[0]]
+    col          = ['black']
+    labels       = ['Multi-component Sersic model']
+
+    compspec     = [specs[1]]
+    comp_colors  = ['red']
+    comp_labels  = ['Single-component Gauss model']
+
+    xranges      = [[4800,9300],[5450,6000],
+                    [Halineobs-100,Halineobs+500],[Halineobs_fg-100,Halineobs_fg+500],
+                    [Halineobs-50,Halineobs+50]]
+    logsetup = True
+    if not logsetup:
+        ylogval      = False
+        yranges_full = [[-100,4000],[-1,30]]
+        # yranges_zoom = [[500,2200],[-1,30]]
+        yranges_zoom = [[1500,2800],[15,28]]
+    else:
+        ylogval      = False
+        yranges_full = [[1000,2e4],[3,300]]
+        yranges_zoom = [[1000,2e4],[3,300]]
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo10843_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo10843_zoom_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo10843_zoomHa_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo10843_zoomHaFG_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo10843_zoomHaNarrow_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_manual], ['black']
+    linesetup[plotnames[1]] = [linelist_all], ['black']
+    linesetup[plotnames[2]] = [linelist_zoomHa], ['black']
+    linesetup[plotnames[3]] = [linelist_all_fg], ['black']
+    linesetup[plotnames[4]] = [linelist_all], ['black']
+
+    fluxratio = afits.open(specs[0])[1].data['flux']/afits.open(specs[1])[1].data['flux']
+    s2nratio = afits.open(specs[0])[1].data['s2n']/afits.open(specs[1])[1].data['s2n']
+    if verbose: print(' - median flux difference expressed as median(GALFIT model / single Gauss model) '+str(np.median(fluxratio)))
+    if verbose: print(' - median S/N  difference expressed as median(GALFIT model / single Gauss model) '+str(np.median(s2nratio)))
+
+    if verbose: print(' - mean flux difference expressed as mean(GALFIT model / single Gauss model) '+str(np.mean(fluxratio)))
+    if verbose: print(' - mean S/N  difference expressed as mean(GALFIT model / single Gauss model) '+str(np.mean(s2nratio)))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    overwritefitsimages = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+
+        # - - - - - - - - - - FLUX AND S/N RATIO PLOTS - - - - - - - - - -
+        plotname  = pname.replace('flux.pdf','flux_ratio.pdf')
+        yrange    = [0,2]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,plotratio=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n_ratio.pdf')
+        yrange    = [0,2]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,plotratio=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    cube_ext  = 'DATA_DCBGC'
+    datacube  = datacube_cutout
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    nbandimgs = []
+
+    # - - - - - - - Ha+NII narrowbands image - - - - - - -
+    linewave  = 6563
+    if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    for redshift in [objz,objz_fg]:
+        wcenter   = linewave*(redshift+1.0)
+        HalfWidth = 500.0
+        dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+        outname   = datacube.replace('.fits','_Ha_narrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+                                     str("%.4f" % redshift).replace('.','p')+'.fits')
+        diffvec   = np.abs(wavevec-(wcenter-dwave))
+        layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+        diffvec   = np.abs(wavevec-(wcenter+dwave))
+        layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+        layers    = np.arange(layermin,layermax,1).astype(int)
+        if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+        if verbose: print('   This corresponds to cutteing layers ['+
+                          str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+        mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+        nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight image')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+    nbandimgs.append(gauss_model)
+    nbandimgs.append(gauss_residuals)
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = figuredir+fitsfile.replace('.fits','.pdf').split('/')[-1]
+
+        if 'DATACUBE' in fitsfile:
+            vscale = 0.99
+        else:
+            vscale = [1e-5,2e-2]
+
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=None)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    vscale = [1e-5,2e-2]
+    kbs.plot_GALFITmodel(galfitmodel,colormap=colmap,vscale=vscale,logcolor=True,addcircles=None,showcomponentnumbers=True)
+    galfitplot = galfitmodel.replace('.fits','_overview.pdf')
+    newfile    = figuredir+galfitplot.split('/')[-1]
+    shutil.copy(galfitplot, newfile)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MWDR1hdrToTDOSEhdr(specfilenames):
     """
@@ -1102,7 +1350,8 @@ def MWDR1hdrToTDOSEhdr(specfilenames):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
                    savefits='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selection_RENAME',
-                   plotnamebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selectionplot_RENAME'):
+                   plotnamebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/OIIemitter_selectionplot_RENAME',
+                   printphotoinfo=False):
     """
 
     Get sample of OII emitters to build GALFIT and TDOSE-Guass models of for comparison purposes.
@@ -1126,12 +1375,21 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
 
     print(' - Found '+str(len(OIIent))+' object with OII being the leading line and a MW confidence of 3 ')
 
-    ids_MW      = DR1dat_main['UNIQUE_ID'][OIIent]
-    ids_Skelton = DR1dat_main['SKELTON_ID'][OIIent]
-    sep_Skelton = DR1dat_main['SKELTON_SEP'][OIIent]
+    ids_MW            = DR1dat_main['UNIQUE_ID'][OIIent]
+    ids_Skelton       = DR1dat_main['SKELTON_ID'][OIIent]
+    sep_Skelton       = DR1dat_main['SKELTON_SEP'][OIIent]
 
     goodent     = np.array([])
     mags814     = np.array([])
+    aimg        = np.array([])
+    bimg        = np.array([])
+    rkron       = np.array([])
+    rflux       = np.array([])
+    fwhm_img    = np.array([])
+
+    if printphotoinfo:
+        print('# idMW        idSkel     sepSkel   m814        a_image["] b_image["] r_kron["] r_flux["] fwhm_img["]')
+
     for ii, id_MW in enumerate(ids_MW):
         if ids_Skelton[ii] > 0:
             ent_skelton = np.where(SkeltonDat['id'] == ids_Skelton[ii])[0]
@@ -1146,6 +1404,27 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
                 if (m814 > magcut[0]) & (m814 < magcut[1]) & (sep_Skelton[ii] < sepcut):
                     goodent = np.append(goodent,OIIent[ii])
                     mags814 = np.append(mags814,m814)
+
+                    if printphotoinfo:
+                        aimg_skelton      = SkeltonDat['a_image'][ent_skelton][0]
+                        bimg_skelton      = SkeltonDat['b_image'][ent_skelton][0]
+                        rkron_skelton     = SkeltonDat['kron_radius'][ent_skelton][0]
+                        rflux_skelton     = SkeltonDat['flux_radius'][ent_skelton][0]
+                        fwhm_img_skelton  = SkeltonDat['fwhm_image'][ent_skelton][0]
+
+                        pixscale = 0.06 # arcsec/pixel
+                        printstr = '   '.join([str(id_MW),str("%8i" % ids_Skelton[ii])]+
+                                              [str("%8.4f" % val) for val in [sep_Skelton[ii],m814[0],
+                                               aimg_skelton*pixscale,bimg_skelton*pixscale,rkron_skelton*pixscale,
+                                               rflux_skelton*pixscale,fwhm_img_skelton*pixscale]])
+                        print(printstr)
+
+                        aimg = np.append(aimg, SkeltonDat['a_image'][ent_skelton]*pixscale )
+                        bimg = np.append(bimg, SkeltonDat['b_image'][ent_skelton]*pixscale )
+                        rkron = np.append(rkron, SkeltonDat['kron_radius'][ent_skelton]*pixscale )
+                        rflux = np.append(rflux, SkeltonDat['flux_radius'][ent_skelton]*pixscale )
+                        fwhm_img = np.append(fwhm_img, SkeltonDat['fwhm_image'][ent_skelton]*pixscale )
+
 
     print('   '+str(len(goodent))+' of these objects have a Skelton match within '+str(sepcut)+' arc seconds and '+str(magcut[0])+' < mag(f814w) < '+str(magcut[1]))
     goodsubcat = DR1dat_main[goodent.astype(int)]
@@ -1243,7 +1522,11 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
     plt.close('all')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    return goodsubcat, mags814
+    if printphotoinfo:
+        photreturn = ids_MW,ids_Skelton,sep_Skelton,m814,aimg,bimg,rkron,rflux,fwhm_img
+    else:
+        photreturn = mags814
+    return goodsubcat, photreturn
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def extractGOODSS_cutoouts(dataarray,mwidcol='UNIQUE_ID',cutsize=5.0,racol='RA',deccol='DEC',clobber=True,
                            generatepng=False,outdir='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/cutoutsTEMP/'):
