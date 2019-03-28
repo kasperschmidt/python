@@ -186,7 +186,268 @@ def plot_9640_MWDR1():
                      xrange=xrange,yrange=yrange,showspecs=False,shownoise=True,verbose=True,pubversion=True)
 
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_9640(smoothsigma=0,verbose=True):
+    """
+    Function plotting the panels needed for the velicity gradient affected extraction for Guo 16009
 
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_9640()
+
+    """
+    figuredir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/9640figure/'
+
+    specdir         = '/Users/kschmidt/work/publications/TDOSE/TDOSEexampleruns/190328_Guo9640extractions/tdose_spectra/'
+    spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000009640-0000009640.fits'
+    spec_gauss      = specdir+'tdose_spectrum_gauss_0000009640-0000009640.fits'
+    spec_aper1      = specdir+'tdose_spectrum_aper1_aperture_0000009640-0000009640.fits'
+    spec_aper2      = specdir+'tdose_spectrum_aper2_aperture_0000009640-0000009640.fits'
+    spec_aper3      = specdir+'tdose_spectrum_aper3_aperture_0000009640-0000009640.fits'
+
+    spec_mimg_9640  = specdir+'/tdose_spectrum_manual_extract_modelimg_190328_0000009640.fits'
+    spec_mimg_9777  = specdir+'/tdose_spectrum_manual_extract_modelimg_190328_0000009777.fits'
+    spec_aper_9640  = specdir+'/tdose_spectrum_manual_extract_aperture_190328_0000009640.fits'
+    spec_aper_9777  = specdir+'/tdose_spectrum_manual_extract_aperture_190328_0000009777.fits'
+
+    modeldir        = '/Users/kschmidt/work/publications/TDOSE/TDOSEexampleruns/190328_Guo9640extractions/tdose_models/'
+    gauss_model     = modeldir+'acs_814w_candels-cdfs-02_cut_v1.0_id9640_cutout4p0x4p0arcsec_tdose_modelimage_gauss.fits'
+    gauss_residuals = modeldir+'acs_814w_candels-cdfs-02_cut_v1.0_id9640_cutout4p0x4p0arcsec_tdose_modelimage_gauss_residual.fits'
+
+    cutoutdir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEexampleruns/190328_Guo9640extractions/tdose_cutouts/'
+    datacube_cutout = cutoutdir+'DATACUBE_candels-cdfs-02_v1.0_dcbgc_effnoised_id9640_cutout4p0x4p0arcsec.fits'
+    refimg_cutout   = cutoutdir+'acs_814w_candels-cdfs-02_cut_v1.0_id9640_cutout4p0x4p0arcsec.fits'
+
+    galfitdir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEexampleruns/models/'
+    galfitmodel     = galfitdir+'model_acs_814w_candels-cdfs-02_cut_v1.0_id9640_cutout4p0x4p0arcsec.fits'
+
+    objz            = 0.33769787
+    OIIIlineobs     = 5007*(1+objz)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    cube_ext  = 'DATA_DCBGC'
+    datacube  = datacube_cutout
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    nbandimgs = []
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all = np.array([linelistdic[key][1]*(1.0+objz),linelistdic[key][0]])
+        else:
+            linelist_all = np.vstack((linelist_all,[linelistdic[key][1]*(1.0+objz),linelistdic[key][0]]))
+
+    keylist  = ['oii1','oii2' ,'oiii1' ,'oiii2'     ,'hg'           ,'hb','ha'        ,'sii1','sii2','nii1','nii2']
+    namelist = [''    ,'[OII]','H$\\beta$ [OIII]','','H$\\gamma'     ,''  ,'H$\\alpha$','SII' ,''    ,''    ,''    ]
+    wavelist = [linelistdic[key][1] for key in keylist]
+
+    for kk, key in enumerate(keylist):
+        if kk == 0:
+            linelist_manual = np.array([wavelist[kk]*(1.0+objz),namelist[kk]])
+        else:
+            linelist_manual = np.vstack((linelist_manual,[wavelist[kk]*(1.0+objz),namelist[kk]]))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+    specs        = [spec_modelimg,spec_gauss,spec_aper1,spec_aper2,spec_aper3,
+                    spec_aper_9640,spec_aper_9777,spec_mimg_9640,spec_mimg_9777]
+
+    # filelist     = [specs[0]]
+    # labels       = ['GALFIT model']
+    filelist     = [specs[7]]
+    labels       = ['Single Gauss extraction 9640']
+
+    col          = ['black']
+
+    # compspec     = [specs[1]]
+    # comp_labels  = ['Gauss model']
+
+    compspec     = [specs[8]]
+    comp_labels  = ['Single Gauss extraction 9777']
+
+    comp_colors  = ['red']
+
+    xranges      = [[4800,9300],[OIIIlineobs-300,OIIIlineobs+100]]
+    ylogval      = False
+    yranges_full = [[-10,2000],[-1,25]]
+    yranges_zoom = [[-10,1200],[-1,25]]
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_modelimgVSgauss_Guo9640_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_modelimgVSgauss_Guo9640_zoomOIII_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_manual], ['black']
+    linesetup[plotnames[1]] = [linelist_all], ['black']
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+    #-------------------------------------------------------------------------------------------------------
+    # filelist     = [specs[0]]
+    # labels       = ['GALFIT model']
+
+    filelist     = [specs[5]]
+    labels       = ['r$_\\textrm{aper} = 2r_\\textrm{major}$ 9640']
+    col          = ['black']
+
+    # compspec     = [specs[2],specs[3],specs[4]]
+    # comp_labels  = ['r$_\\textrm{aper} = r_\\textrm{major}$',
+    #                 'r$_\\textrm{aper} = 2r_\\textrm{major}$',
+    #                 'r$_\\textrm{aper} = 3r_\\textrm{major}$']
+    # comp_colors  = ['blue','green','red']
+
+    compspec     = [specs[6]]
+    comp_labels  = ['r$_\\textrm{aper} = 2r_\\textrm{major}$ 9777']
+    comp_colors  = ['red']
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_modelimgVSaperture_Guo9640_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_modelimgVSaperture_Guo9640_zoomOIII_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_manual], ['black']
+    linesetup[plotnames[1]] = [linelist_all], ['black']
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    overwritefitsimages = True
+    cube_ext  = 'DATA_DCBGC'
+    datacube  = datacube_cutout
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    nbandimgs = []
+    # - - - - - - - OIII narrowbands image - - - - - - -
+    linewave  = 5007
+    if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    for redshift in [objz]:
+        wcenter   = linewave*(redshift+1.0)
+        HalfWidth = 500.0
+        dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+        outname   = datacube.replace('.fits','_OIII_narrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+                                     str("%.4f" % redshift).replace('.','p')+'.fits')
+        diffvec   = np.abs(wavevec-(wcenter-dwave))
+        layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+        diffvec   = np.abs(wavevec-(wcenter+dwave))
+        layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+        layers    = np.arange(layermin,layermax,1).astype(int)
+        if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+        if verbose: print('   This corresponds to cutting layers ['+
+                          str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+        mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+        nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight image')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+    nbandimgs.append(gauss_model)
+    nbandimgs.append(gauss_residuals)
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = figuredir+fitsfile.replace('.fits','.pdf').split('/')[-1]
+
+        if 'DATACUBE' in fitsfile:
+            vscale = [1e-2,30]
+        else:
+            vscale = [1e-5,2e-2]
+
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=None)
+
+    outputfile = figuredir+refimg_cutout.replace('.fits','.pdf').split('/')[-1]
+    vscale     = [1e-5,2e-2]
+
+    allcircles = False
+    if allcircles:
+        circle1    = [65,65,0.51/0.03,'blue']
+        circle2    = [65,65,1.02/0.03,'green']
+        circle3    = [65,65,1.54/0.03,'red']
+        circle4    = [99,66,0.51/0.03,'blue']
+        circle5    = [99,66,1.02/0.03,'green']
+        circle6    = [99,66,1.54/0.03,'red']
+        addcirc    = [circle1,circle2,circle3,circle4,circle5,circle6]
+    else:
+        circle2    = [65,65,1.02/0.03,'black']
+        circle5    = [99,66,1.02/0.03,'red']
+        addcirc    = [circle2,circle5]
+
+    kbs.plot_fitsimage(refimg_cutout,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,addcircles=addcirc)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    vscale = [1e-5,2e-2]
+    kbs.plot_GALFITmodel(galfitmodel,colormap=colmap,vscale=vscale,logcolor=True,addcircles=None,showcomponentnumbers=False)
+    galfitplot = galfitmodel.replace('.fits','_overview.pdf')
+    newfile    = figuredir+galfitplot.split('/')[-1]
+    shutil.copy(galfitplot, newfile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_UDF03_QSO(pubversion=False):
     """
@@ -1315,6 +1576,295 @@ def plot_10843(smoothsigma=0,verbose=True):
 
         kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
                            addcircles=None)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    vscale = [1e-5,2e-2]
+    kbs.plot_GALFITmodel(galfitmodel,colormap=colmap,vscale=vscale,logcolor=True,addcircles=None,showcomponentnumbers=True)
+    galfitplot = galfitmodel.replace('.fits','_overview.pdf')
+    newfile    = figuredir+galfitplot.split('/')[-1]
+    shutil.copy(galfitplot, newfile)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_16009(smoothsigma=0,verbose=True):
+    """
+    Function plotting the panels needed for the velicity gradient affected extraction for Guo 16009
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_16009()
+
+    """
+
+    figuredir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/16009figure/'
+
+    specdir         = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190327_Guo16009/tdose_spectra/'
+    spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000016009-0000016009_wModelPSFconv.fits'
+    spec_gauss      = specdir+'tdose_spectrum_gauss_0000016009-0000016009.fits'
+    spec_aper1      = specdir+'tdose_spectrum_aper1_aperture_0000016009-0000016009.fits'
+    spec_aper2      = specdir+'tdose_spectrum_aper2_aperture_0000016009-0000016009.fits'
+    spec_aper3      = specdir+'tdose_spectrum_aper3_aperture_0000016009-0000016009.fits'
+
+    modeldir        = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190327_Guo16009/tdose_models/'
+    gauss_model     = modeldir+'acs_814w_candels-cdfs-36_cut_v1.0_id16009_cutout6p0x6p0arcsec_tdose_modelimage_gauss.fits'
+    gauss_residuals = modeldir+'acs_814w_candels-cdfs-36_cut_v1.0_id16009_cutout6p0x6p0arcsec_tdose_modelimage_gauss_residual.fits'
+
+    cuberes_gauss    = modeldir+'DATACUBE_candels-cdfs-36_v1.0_dcbgc_effnoised_id16009_cutout6p0x6p0arcsec_tdose_modelcube_residual_gauss.fits'
+    cuberes_modelimg = modeldir+'DATACUBE_candels-cdfs-36_v1.0_dcbgc_effnoised_id16009_cutout6p0x6p0arcsec_tdose_modelcube_residual_modelimg_wModelPSFconv.fits'
+
+    cutoutdir       = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190327_Guo16009/tdose_cutouts/'
+    datacube_cutout = cutoutdir+'DATACUBE_candels-cdfs-36_v1.0_dcbgc_effnoised_id16009_cutout6p0x6p0arcsec.fits'
+    refimg_cutout   = cutoutdir+'acs_814w_candels-cdfs-36_cut_v1.0_id16009_cutout6p0x6p0arcsec.fits'
+
+    galfitdir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/galfit_wrapper_models/models_renamed/'
+    galfitmodel     = galfitdir+'model_acs_814w_candels-cdfs-36_cut_v1.0_id16009_cutout6p0x6p0arcsec.fits'
+
+    objz            = 0.24716264
+    Halineobs       = 6563*(1+objz)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all = np.array([linelistdic[key][1]*(1.0+objz),linelistdic[key][0]])
+        else:
+            linelist_all = np.vstack((linelist_all,[linelistdic[key][1]*(1.0+objz),linelistdic[key][0]]))
+
+    keylist  = ['oii1','oii2' ,'oiii1' ,'oiii2'     ,'hg'           ,'hb','ha'        ,'sii1','sii2','nii1','nii2']
+    namelist = [''    ,'[OII]','H$\\beta$ [OIII]','','H$\\gamma'     ,''  ,'H$\\alpha$','SII' ,''    ,''    ,''    ]
+    wavelist = [linelistdic[key][1] for key in keylist]
+
+    for kk, key in enumerate(keylist):
+        if kk == 0:
+            linelist_manual = np.array([wavelist[kk]*(1.0+objz),namelist[kk]])
+        else:
+            linelist_manual = np.vstack((linelist_manual,[wavelist[kk]*(1.0+objz),namelist[kk]]))
+
+    keylistZ  = ['nii1','nii2' ,'ha'           ,'sii1' ,'sii2']
+    namelistZ = [''    ,' '    ,'H$\\alpha$+NII','[SII]',' ']
+    wavelistZ = [linelistdic[key][1] for key in keylistZ]
+
+    for kk, key in enumerate(keylistZ):
+        if kk == 0:
+            linelist_zoomHa = np.array([wavelistZ[kk]*(1.0+objz),namelistZ[kk]])
+        else:
+            linelist_zoomHa = np.vstack((linelist_zoomHa,[wavelistZ[kk]*(1.0+objz),namelistZ[kk]]))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+    specs        = [spec_modelimg,spec_gauss,spec_aper1,spec_aper2,spec_aper3]
+
+    filelist     = [specs[0]]
+    col          = ['black']
+    labels       = ['Multi-component Sersic model']
+
+    compspec     = [specs[1]]
+    comp_colors  = ['red']
+    comp_labels  = ['Single-component Gauss model']
+
+    xranges      = [[4800,9300],[Halineobs-100,Halineobs+300],[Halineobs-50,Halineobs+50]]
+    ylogval      = False
+    yranges_full = [[-100,5500],[-10,100]]
+    yranges_zoom = [[-100,5500],[-10,100]]
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo16009_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo16009_zoomHa_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_Guo16009_zoomHaNarrow_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_manual], ['black']
+    linesetup[plotnames[1]] = [linelist_zoomHa], ['black']
+    linesetup[plotnames[2]] = [linelist_all], ['black']
+
+    fluxratio = afits.open(specs[0])[1].data['flux']/afits.open(specs[1])[1].data['flux']
+    s2nratio = afits.open(specs[0])[1].data['s2n']/afits.open(specs[1])[1].data['s2n']
+    if verbose: print(' - median flux difference expressed as median(GALFIT model / single Gauss model) '+str(np.median(fluxratio)))
+    if verbose: print(' - median S/N  difference expressed as median(GALFIT model / single Gauss model) '+str(np.median(s2nratio)))
+
+    if verbose: print(' - mean flux difference expressed as mean(GALFIT model / single Gauss model) '+str(np.mean(fluxratio)))
+    if verbose: print(' - mean S/N  difference expressed as mean(GALFIT model / single Gauss model) '+str(np.mean(s2nratio)))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+    #-------------------------------------------------------------------------------------------------------
+    filelist     = [specs[1]]
+    col          = ['black']
+    labels       = ['TDOSE']
+
+    compspec     = [specs[2],specs[3],specs[4]]
+    comp_colors  = ['blue','green','red']
+    comp_labels  = ['r$_\\textrm{aper} = r_\\textrm{major}$',
+                    'r$_\\textrm{aper} = 2r_\\textrm{major}$',
+                    'r$_\\textrm{aper} = 3r_\\textrm{major}$']
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_singleVSaperture_Guo16009_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSaperture_Guo16009_zoomHa_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSaperture_Guo16009_zoomHaNarrow_flux.pdf']
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_manual], ['black']
+    linesetup[plotnames[1]] = [linelist_zoomHa], ['black']
+    linesetup[plotnames[2]] = [linelist_all], ['black']
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    overwritefitsimages = True
+    cube_ext  = 'DATA_DCBGC'
+    datacube  = datacube_cutout
+    dataarray = afits.open(datacube)[cube_ext].data
+    cubehdr   = afits.open(datacube)[cube_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    rescube_gauss_array    = afits.open(cuberes_gauss)[cube_ext].data
+    rescube_modelimg_array = afits.open(cuberes_modelimg)[cube_ext].data
+
+    dcubes        = [datacube,  cuberes_gauss,       cuberes_modelimg]
+    dcubes_arrays = [dataarray, rescube_gauss_array, rescube_modelimg_array ]
+
+    nbandimgs = []
+
+    # - - - - - - - Ha+NII narrowbands image - - - - - - -
+    linewave  = 6563
+    if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    for redshift in [objz]:
+        for dd, dcube in enumerate(dcubes):
+            darray    = dcubes_arrays[dd]
+
+            wcenter   = linewave*(redshift+1.0)
+            HalfWidth = 500.0
+            dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+            outname   = dcube.replace('.fits','_Ha_narrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+                                         str("%.4f" % redshift).replace('.','p')+'.fits')
+            diffvec   = np.abs(wavevec-(wcenter-dwave))
+            layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+            diffvec   = np.abs(wavevec-(wcenter+dwave))
+            layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+            layers    = np.arange(layermin,layermax,1).astype(int)
+            if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+            if verbose: print('   This corresponds to cutting layers ['+
+                              str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+            mu.collapsecube(outname,darray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+            nbandimgs.append(outname)
+
+            # - - - - - - - Halpha-blue- - - - - - -
+            wcenter   = 8182.0
+            dwave     = 3.0
+            outname   = dcube.replace('.fits','_Ha_blue_5Aband_z'+str("%.4f" % redshift).replace('.','p')+'.fits')
+            diffvec   = np.abs(wavevec-(wcenter-dwave))
+            layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+            diffvec   = np.abs(wavevec-(wcenter+dwave))
+            layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+            layers    = np.arange(layermin,layermax,1).astype(int)
+            if verbose: print('   Width is set to '+str(int(2.0*dwave))+'A')
+            if verbose: print('   This corresponds to cutting layers ['+
+                              str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+            mu.collapsecube(outname,darray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+            nbandimgs.append(outname)
+
+            # - - - - - - - Halpha-red- - - - - - -
+            wcenter   = 8188.0
+            dwave     = 3.0
+            outname   = dcube.replace('.fits','_Ha_red_5Aband_z'+str("%.4f" % redshift).replace('.','p')+'.fits')
+            diffvec   = np.abs(wavevec-(wcenter-dwave))
+            layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+            diffvec   = np.abs(wavevec-(wcenter+dwave))
+            layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+            layers    = np.arange(layermin,layermax,1).astype(int)
+            if verbose: print('   Width is set to '+str(int(2.0*dwave))+'A')
+            if verbose: print('   This corresponds to cutting layers ['+
+                              str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+            mu.collapsecube(outname,darray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+            nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight image')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+    nbandimgs.append(gauss_model)
+    nbandimgs.append(gauss_residuals)
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = figuredir+fitsfile.replace('.fits','.pdf').split('/')[-1]
+
+        if 'DATACUBE' in fitsfile:
+            vscale = [1e-2,30]
+        else:
+            vscale = [1e-5,2e-2]
+
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=None)
+
+    outputfile = figuredir+refimg_cutout.replace('.fits','.pdf').split('/')[-1]
+    vscale     = [1e-5,2e-2]
+    circle1    = [100,100,0.87/0.03,'blue']
+    circle2    = [100,100,1.74/0.03,'green']
+    circle3    = [100,100,2.61/0.03,'red']
+    addcirc    = [circle1,circle2,circle3]
+    kbs.plot_fitsimage(refimg_cutout,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,addcircles=addcirc)
 
     #-------------------------------------------------------------------------------------------------------
     if verbose: print(' - Plotting galfit model')
@@ -3574,8 +4124,8 @@ def extractMaxValues(wave,flux,fluxerror,s2n,wavecenter,dwave):
     return maxF, maxFerr, maxFs2n, maxs2n
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsize=12, logaxes=True, showids=False,
-                   nstd = 3.0, # The number of sigma shown as region around for ODR fitted lines
-                   namebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/maxval_comparison_fitscat'):
+                               nstd = 3.0, # The number of sigma shown as region around for ODR fitted lines
+                               namebase='/Users/kschmidt/work/TDOSE/OIIemitterGalfitModels/maxval_comparison_fitscat'):
     """
     Plotting comparison of extractions of max values.
     Based on tsu.OIIemitters_plotcomparisons() making this function obsolete.
@@ -3635,6 +4185,27 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     Fmwdr1el_filtered     = maxvaldat['max_flux_filt_mwdr1el']
     Ferrmwdr1el_filtered  = maxvaldat['max_fluxerror_filt_mwdr1el']
 
+    ### APERTURE INFO ###
+    SNaper1             = maxvaldat['max_s2n_aper1']
+    Faper1              = maxvaldat['max_flux_aper1']
+    Ferraper1           = maxvaldat['max_fluxerror_aper1']
+    SNaper1_filtered    = maxvaldat['max_s2n_filt_aper1']
+    Faper1_filtered     = maxvaldat['max_flux_filt_aper1']
+    Ferraper1_filtered  = maxvaldat['max_fluxerror_filt_aper1']
+
+    SNaper2             = maxvaldat['max_s2n_aper2']
+    Faper2              = maxvaldat['max_flux_aper2']
+    Ferraper2           = maxvaldat['max_fluxerror_aper2']
+    SNaper2_filtered    = maxvaldat['max_s2n_filt_aper2']
+    Faper2_filtered     = maxvaldat['max_flux_filt_aper2']
+    Ferraper2_filtered  = maxvaldat['max_fluxerror_filt_aper2']
+
+    SNaper3             = maxvaldat['max_s2n_aper3']
+    Faper3              = maxvaldat['max_flux_aper3']
+    Ferraper3           = maxvaldat['max_fluxerror_aper3']
+    SNaper3_filtered    = maxvaldat['max_s2n_filt_aper3']
+    Faper3_filtered     = maxvaldat['max_flux_filt_aper3']
+    Ferraper3_filtered  = maxvaldat['max_fluxerror_filt_aper3']
 
     IDlsdcat    = maxvaldat['UNIQUE_ID']
     SNlsdcat    = maxvaldat['SN']
@@ -3724,6 +4295,75 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
           str(np.median(np.asarray(SNsersic)/np.asarray(SNmwdr1el))))
     print('   -> np.std(np.asarray(SNsersic)/np.asarray(SNmwdr1el))  = '+
           str(np.std(np.asarray(SNsersic)/np.asarray(SNmwdr1el))))
+
+    # - - - - - - - - - - - - - - - - - - - - APERTURE COMPARISON - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_ODRfit2data_fluxaper1.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_Fsersic_Faper1 = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Faper1,Ferrsersic,Ferraper1,
+                                                                              fitfunction='linear',
+                                                                              plotresults=plotname)
+    plotname = namebase+'_ODRfit2data_SNaper1.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_SNsersic_SNaper1 = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic,SNaper1,
+                                                                                 np.asarray(SNaper1)*0.0+1.0,
+                                                                                 np.asarray(SNaper1)*0.0+1.0,
+                                                                                 fitfunction='linear',
+                                                                                 plotresults=plotname)
+    print(' - APER1 stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(Fsersic)/np.asarray(Faper1))  = '+
+          str(np.median(np.asarray(Fsersic)/np.asarray(Faper1))))
+    print('   -> np.std(np.asarray(Fsersic)/np.asarray(Faper1))  = '+
+          str(np.std(np.asarray(Fsersic)/np.asarray(Faper1))))
+    print('   -> np.median(np.asarray(SNsersic)/np.asarray(SNaper1))  = '+
+          str(np.median(np.asarray(SNsersic)/np.asarray(SNaper1))))
+    print('   -> np.std(np.asarray(SNsersic)/np.asarray(SNaper1))  = '+
+          str(np.std(np.asarray(SNsersic)/np.asarray(SNaper1))))
+
+    plotname = namebase+'_ODRfit2data_fluxaper2.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_Fsersic_Faper2 = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Faper2,Ferrsersic,Ferraper2,
+                                                                              fitfunction='linear',
+                                                                              plotresults=plotname)
+    plotname = namebase+'_ODRfit2data_SNaper2.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_SNsersic_SNaper2 = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic,SNaper2,
+                                                                                 np.asarray(SNaper2)*0.0+1.0,
+                                                                                 np.asarray(SNaper2)*0.0+1.0,
+                                                                                 fitfunction='linear',
+                                                                                 plotresults=plotname)
+    print(' - APER2 stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(Fsersic)/np.asarray(Faper2))  = '+
+          str(np.median(np.asarray(Fsersic)/np.asarray(Faper2))))
+    print('   -> np.std(np.asarray(Fsersic)/np.asarray(Faper2))  = '+
+          str(np.std(np.asarray(Fsersic)/np.asarray(Faper2))))
+    print('   -> np.median(np.asarray(SNsersic)/np.asarray(SNaper2))  = '+
+          str(np.median(np.asarray(SNsersic)/np.asarray(SNaper2))))
+    print('   -> np.std(np.asarray(SNsersic)/np.asarray(SNaper2))  = '+
+          str(np.std(np.asarray(SNsersic)/np.asarray(SNaper2))))
+
+    plotname = namebase+'_ODRfit2data_fluxaper3.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_Fsersic_Faper3 = kbs.fit_function_to_data_with_errors_on_both_axes(Fsersic,Faper3,Ferrsersic,Ferraper3,
+                                                                              fitfunction='linear',
+                                                                              plotresults=plotname)
+    plotname = namebase+'_ODRfit2data_SNaper3.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    odrfit_SNsersic_SNaper3 = kbs.fit_function_to_data_with_errors_on_both_axes(SNsersic,SNaper3,
+                                                                                 np.asarray(SNaper3)*0.0+1.0,
+                                                                                 np.asarray(SNaper3)*0.0+1.0,
+                                                                                 fitfunction='linear',
+                                                                                 plotresults=plotname)
+    print(' - APER3 stats on the input data for the ODR fit:')
+    print('   -> np.median(np.asarray(Fsersic)/np.asarray(Faper3))  = '+
+          str(np.median(np.asarray(Fsersic)/np.asarray(Faper3))))
+    print('   -> np.std(np.asarray(Fsersic)/np.asarray(Faper3))  = '+
+          str(np.std(np.asarray(Fsersic)/np.asarray(Faper3))))
+    print('   -> np.median(np.asarray(SNsersic)/np.asarray(SNaper3))  = '+
+          str(np.median(np.asarray(SNsersic)/np.asarray(SNaper3))))
+    print('   -> np.std(np.asarray(SNsersic)/np.asarray(SNaper3))  = '+
+          str(np.std(np.asarray(SNsersic)/np.asarray(SNaper3))))
+
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     #////////////////////////////////////////////////////////////////////////////////////////////////
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -4066,7 +4706,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     if logaxes:
         axisrange = [3,60]
     else:
-        axisrange = [0,70]
+        axisrange = [0,45]
     plt.plot(axisrange,axisrange,'--k',lw=lthick)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
@@ -4143,6 +4783,159 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     fig.clf()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_flux_apertures.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # plot ODR fits
+    popt = odrfit_Fsersic_Faper1.beta
+    perr = odrfit_Fsersic_Faper1.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label=None,color='blue')
+    plt.plot(x_fit, fit, 'b', lw=2, label='Best fit r$_\\textrm{aperture} = 1\\times r_\\textrm{major}$')
+
+    popt = odrfit_Fsersic_Faper2.beta
+    perr = odrfit_Fsersic_Faper2.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label=None,color='green')
+    plt.plot(x_fit, fit, 'g', lw=2, label='Best fit r$_\\textrm{aperture} = 2\\times r_\\textrm{major}$')
+
+    popt = odrfit_Fsersic_Faper3.beta
+    perr = odrfit_Fsersic_Faper3.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(Fsersic), max(Fsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label=None,color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit r$_\\textrm{aperture} = 3\\times r_\\textrm{major}$')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.errorbar(Fsersic,Faper1, yerr=Ferraper1, xerr=Ferrsersic,fmt='ob',alpha=0.5)
+    plt.errorbar(Fsersic,Faper2, yerr=Ferraper2, xerr=Ferrsersic,fmt='og',alpha=0.5)
+    plt.errorbar(Fsersic,Faper3, yerr=Ferraper3, xerr=Ferrsersic,fmt='or',alpha=0.5)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        xaxisrange = [100,2000]
+        yaxisrange = [100,6000]
+    else:
+        xaxisrange = [0,1500]
+        yaxisrange = [0,1500]
+    plt.plot(yaxisrange,yaxisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(F/[1e-20 cgs]) aperture spectrum', fontsize=Fsize)
+    plt.ylim(yaxisrange)
+    plt.xlim(xaxisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #////////////////////////////////////////////////////////////////////////////////////////////////
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_S2N_apertures.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # overplot ODR fit
+    popt = odrfit_SNsersic_SNaper1.beta
+    perr = odrfit_SNsersic_SNaper1.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic), max(SNsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label=None,color='blue')
+    plt.plot(x_fit, fit, 'b', lw=2, label='Best fit r$_\\textrm{aperture} = 1\\times r_\\textrm{major}$')
+
+    popt = odrfit_SNsersic_SNaper2.beta
+    perr = odrfit_SNsersic_SNaper2.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic), max(SNsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label=None,color='green')
+    plt.plot(x_fit, fit, 'g', lw=2, label='Best fit r$_\\textrm{aperture} = 2\\times r_\\textrm{major}$')
+
+    popt = odrfit_SNsersic_SNaper3.beta
+    perr = odrfit_SNsersic_SNaper3.sd_beta
+    popt_up = popt + nstd * perr
+    popt_dw = popt - nstd * perr
+    x_fit = np.linspace(min(SNsersic), max(SNsersic), 100)
+    fit = kbs.odr_fitfunction_linear(popt, x_fit)
+    fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
+    fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label=None,color='red')
+    plt.plot(x_fit, fit, 'r', lw=2, label='Best fit r$_\\textrm{aperture} = 3\\times r_\\textrm{major}$')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.plot(SNsersic,SNaper1,'ob',alpha=0.5)
+    plt.plot(SNsersic,SNaper2,'og',alpha=0.5)
+    plt.plot(SNsersic,SNaper3,'or',alpha=0.5)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [3,50]
+    else:
+        axisrange = [0,45]
+    plt.plot(axisrange,axisrange,'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(S/N) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('max(S/N) aperture spectrum', fontsize=Fsize)
+    plt.ylim(axisrange)
+    plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsize=12, logaxes=True, showids=False,
@@ -4686,6 +5479,98 @@ def shift_CosmosGroupMUSEcubes(verbose=True):
 
         if verbose: print(' - Saving changes to ouput in\n   '+outcube)
         hdunew.flush()
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_CGr32_obj289(verbose=True):
+    """
+    Generating narrow-band images and plotting Cosmos Group 32 object 289 before and after TDOSE modifications
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_CGr32_obj289()
+
+    """
+    figuredir   = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/CosmosGroupsFigure/'
+    maindir     = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/'
+
+    cutoutdir   = maindir+'TDOSE/tdose_cutouts/'
+    datacube    = cutoutdir+'massive_CGr32-M1_4.25h_289_stellar_cube_cut_aligned_id289_cutout7p0x7p0arcsec.fits'
+    refimg      = cutoutdir+'0001_149.92052000_2.53133000_acs_I_095936+0230_rotandcut_sci_20_id289_cutout7p0x7p0arcsec.fits'
+
+    galfitdir   = maindir+'GALFIT/models_renamed/190312_6comp/'
+    galfitmodel = galfitdir+'model_0001_149.92052000_2.53133000_acs_I_095936+0230_rotandcut_sci_20_id289_cutout7p0x7p0arcsec.fits'
+
+    modeldir    = maindir+'TDOSE/tdose_models/'
+    smcube      = modeldir+'massive_CGr32-M1_4.25h_289_stellar_cube_cut_aligned_id289_cutout7p0x7p0arcsec_tdose_modelcube_modelimg.fits'
+
+    modifydir   = maindir+'TDOSE/tdose_modified_cubes/'
+    modcube     = modifydir+'massive_CGr32-M1_4.25h_289_stellar_cube_cut_aligned_id289_cutout7p0x7p0arcsec_tdose_modified_datacube.fits'
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    data_ext  = 'DATA'
+    dataarray = afits.open(datacube)[data_ext].data
+    cubehdr   = afits.open(datacube)[data_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    modarray  = afits.open(modcube)[data_ext].data
+    modhdr    = afits.open(modcube)[data_ext].header
+
+    smcarray  = afits.open(smcube)[data_ext].data
+    smchdr    = afits.open(smcube)[data_ext].header
+
+    nbandimgs = []
+
+    # - - - - - - - OII narrowbands image - - - - - - -
+    # linewave  = 3726
+    # if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    # for redshift in [objz]:
+    #     wcenter   = linewave*(redshift+1.0)
+    #     HalfWidth = 500.0
+    #     dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+    #     outname   = datacube.replace('.fits','_OIInarrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+    #                                  str("%.4f" % redshift).replace('.','p')+'.fits')
+    #     diffvec   = np.abs(wavevec-(wcenter-dwave))
+    #     layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+    #     diffvec   = np.abs(wavevec-(wcenter+dwave))
+    #     layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+    #     layers    = np.arange(layermin,layermax,1).astype(int)
+    #     if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+    #     if verbose: print('   This corresponds to cutteing layers ['+
+    #                       str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+    #     mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+    #     nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight images')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    outname   = modcube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,modarray,modhdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    outname   = smcube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,smcarray,smchdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = figuredir+fitsfile.replace('.fits','.pdf').split('/')[-1]
+        vscale     = [1e-3,10.0]
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=None)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    kbs.plot_GALFITmodel(galfitmodel,colormap=colmap,vscale=0.99,logcolor=True,addcircles=None)
+    galfitplot = galfitmodel.replace('.fits','_overview.pdf')
+    newfile    = figuredir+galfitplot.split('/')[-1]
+    shutil.copy(galfitplot, newfile)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_spec_for_flowchart(xrange=[4800,9300], yrange=[-100,2000], smoothsigma=0):
