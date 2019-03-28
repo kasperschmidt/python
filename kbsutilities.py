@@ -1844,8 +1844,10 @@ def plot_GALFITmodel(galfit_imgblock,colormap='viridis',showcomponentnumbers=Fal
             ax.text(0,0,infostr,fontsize=Fsize-3, color='black', ha='left', va='bottom')
 
             for cc in np.arange(Ncomp):
-                xpix = float(hdrinfo[str(cc+1)+'_XC'].split()[0])
-                ypix = float(hdrinfo[str(cc+1)+'_YC'].split()[0])
+                XCinfo = hdrinfo[str(cc+1)+'_XC'].replace('[','').replace(']','')
+                YCinfo = hdrinfo[str(cc+1)+'_YC'].replace('[','').replace(']','')
+                xpix = float(XCinfo.split()[0])
+                ypix = float(YCinfo.split()[0])
                 ax.text(xpix,ypix,str(cc+1),fontsize=Fsize, color='black', ha='center', va='center')
 
         if addcircles is not None:
