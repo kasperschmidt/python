@@ -1015,6 +1015,19 @@ def gen_10701narrowbands(overwrite=True,verbose=True):
                       str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
     mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwrite,verbose=verbose)
 
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    nbandimages = [outname]
+    nbandimages.append(cutoutdir+'DATACUBE_candels-cdfs-25_v1.0_dcbgc_effnoised_id10701_cutout10p0x6p0arcsec_whitelightimg.fits')
+    nbandimages.append(cutoutdir+'acs_814w_candels-cdfs-25_cut_v1.0_id10701_cutout10p0x6p0arcsec.fits')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimages:
+        outputfile = fitsfile.replace('.fits','.pdf')
+        vscale     = 0.99 #[0.0,5.0] #
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=True,
+                           addcircles=None)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_9726(smoothsigma=0,plotmode = 'all',showfluxnoise=True,plottype='pdf',overwritefitsimages=True,verbose=True):
     """
@@ -5573,6 +5586,106 @@ def plot_CGr32_obj289(verbose=True):
     shutil.copy(galfitplot, newfile)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_CGr84_obj307(verbose=True):
+    """
+    Generating narrow-band images and plotting Cosmos Group 84 object 307 before and after TDOSE modifications
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.plot_CGr84_obj307()
+
+    """
+    figuredir   = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/CosmosGroupsFigure/'
+    maindir     = '/Users/kschmidt/work/MUSE/MUSEGalaxyGroups/'
+
+    cutoutdir   = maindir+'TDOSE/tdose_cutouts/'
+    datacube    = cutoutdir+'massive_CGr84_5.25h_307_stellar_cube_cut_aligned_id307_cutout7p0x7p0arcsec.fits'
+    refimg      = cutoutdir+'0001_150.05075000_2.59641000_acs_I_100006+0235_rotandcut_sci_20_id307_cutout7p0x7p0arcsec.fits'
+
+    galfitdir   = maindir+'GALFIT/models_renamed/'
+    galfitmodel = galfitdir+'model_0001_150.05075000_2.59641000_acs_I_100006+0235_rotandcut_sci_20_id307_cutout7p0x7p0arcsec.fits'
+
+    modeldir    = maindir+'TDOSE/tdose_models/'
+    smcube      = modeldir+'massive_CGr84_5.25h_307_stellar_cube_cut_aligned_id307_cutout7p0x7p0arcsec_tdose_modelcube_modelimg.fits'
+
+    modifydir   = maindir+'TDOSE/tdose_modified_cubes/'
+    modcube     = modifydir+'massive_CGr84_5.25h_307_stellar_cube_cut_aligned_id307_cutout7p0x7p0arcsec_tdose_modified_datacube.fits'
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Generating narrow band images from data cube')
+    data_ext  = 'DATA'
+    dataarray = afits.open(datacube)[data_ext].data
+    cubehdr   = afits.open(datacube)[data_ext].header
+    wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+
+    modarray  = afits.open(modcube)[data_ext].data
+    modhdr    = afits.open(modcube)[data_ext].header
+
+    smcarray  = afits.open(smcube)[data_ext].data
+    smchdr    = afits.open(smcube)[data_ext].header
+
+    nbandimgs = []
+
+    # - - - - - - - OII narrowbands image - - - - - - -
+    # linewave  = 3726
+    # if verbose: print(' - Generating narrowband image around '+str(linewave)+' Angstrom')
+    # for redshift in [objz]:
+    #     wcenter   = linewave*(redshift+1.0)
+    #     HalfWidth = 500.0
+    #     dwave     = HalfWidth/299792.0 * linewave * (redshift+1.0) # narrowband width is 2xHalfWidth=1000 km/s rest-frame
+    #     outname   = datacube.replace('.fits','_OIInarrowbandWidth'+str(int(HalfWidth*2))+'kmsRest_z'+
+    #                                  str("%.4f" % redshift).replace('.','p')+'.fits')
+    #     diffvec   = np.abs(wavevec-(wcenter-dwave))
+    #     layermin  = np.where(diffvec == np.min(diffvec))[0][0]
+    #     diffvec   = np.abs(wavevec-(wcenter+dwave))
+    #     layermax  = np.where(diffvec == np.min(diffvec))[0][0]
+    #     layers    = np.arange(layermin,layermax,1).astype(int)
+    #     if verbose: print('   Width is set to '+str(int(2.0*HalfWidth))+'km/s rest-frame')
+    #     if verbose: print('   This corresponds to cutteing layers ['+
+    #                       str(layermin)+','+str(layermax)+'] = ['+str(wavevec[layermin])+','+str(wavevec[layermax])+']')
+    #     mu.collapsecube(outname,dataarray,cubehdr,layers=layers,overwrite=overwritefitsimages,verbose=verbose,normalize=True)
+    #     nbandimgs.append(outname)
+
+    # - - - - - - - whitelight image - - - - - - -
+    if verbose: print(' - Generating whitelight images')
+    outname   = datacube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,dataarray,cubehdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    outname   = modcube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,modarray,modhdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    outname   = smcube.replace('.fits','_whitelight.fits')
+    mu.collapsecube(outname,smcarray,smchdr,layers='all',overwrite=True,verbose=verbose,normalize=True)
+    nbandimgs.append(outname)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting narrowbands images ')
+    colmap = 'viridis' # 'nipy_spectral'
+    for fitsfile in nbandimgs:
+        outputfile = figuredir+fitsfile.replace('.fits','.pdf').split('/')[-1]
+
+        uselog = False
+        if uselog:
+            logcol   = True
+            vscale   = [1e-3,-10.0]
+        else:
+            logcol   = False
+            vscale   = [-4.0,4.0]
+
+        kbs.plot_fitsimage(fitsfile,outputfile,fitsext=0,colormap=colmap,vscale=vscale,logcolor=logcol,
+                           addcircles=None)
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting galfit model')
+    kbs.plot_GALFITmodel(galfitmodel,colormap=colmap,vscale=0.99,logcolor=True,addcircles=None)
+    galfitplot = galfitmodel.replace('.fits','_overview.pdf')
+    newfile    = figuredir+galfitplot.split('/')[-1]
+    shutil.copy(galfitplot, newfile)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_spec_for_flowchart(xrange=[4800,9300], yrange=[-100,2000], smoothsigma=0):
     """
 
@@ -5740,6 +5853,35 @@ def gen_EdgeInDatacube(datacube,outputdir,cubeext=['DATA','STAT'],edgelocation='
 
     if verbose: print(' - Flushing the edited data cube to output file.')
     hdul.flush()
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def MaNGA_genVarCube(MaNGAfits,overwrite=False,verbose=True):
+    """
+    Pulling out the IVAR cube of the MaNGA data structure and storing it as an independent variance cube
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    MaNGAfits = '/Users/kschmidt/work/publications/TDOSE/TDOSEexampleruns/MANGA/datacubes/manga-7443-12703-LOGCUBE.fits'
+    tsu.MaNGA_genVarCube(MaNGAfits)
+
+    """
+    inputHDU     = afits.open(MaNGAfits)
+
+    outputfile   = MaNGAfits.replace('.fits','_variance.fits')
+    if os.path.isfile(outputfile) & (overwrite == False):
+        sys.exit('Outout '+outputfile+' already exists and overwrite=False')
+    else:
+        if verbose: print(' - Will extract variance cube and save it to\n   '+outputfile)
+
+    variancecube = 1.0/inputHDU['IVAR'].data
+    fluxheader   = inputHDU['FLUX'].header
+
+    hduprim        = afits.PrimaryHDU()  # default HDU with default minimal header
+    hducube        = afits.ImageHDU(variancecube,header=fluxheader)
+    hducube.header['EXTNAME'] = 'VAR'
+    hdus           = [hduprim,hducube]
+    hdulist        = afits.HDUList(hdus)
+    hdulist.writeto(outputfile, overwrite=overwrite)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
