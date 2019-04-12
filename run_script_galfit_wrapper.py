@@ -151,6 +151,14 @@ if use_for == 'psf':
 hdu_hst      = fits.open(input_image)
 header_hst   = hdu_hst[0].header
 data_hst     = hdu_hst[0].data
+if data_hst is None:
+    header_hst   = hdu_hst[1].header
+    data_hst     = hdu_hst[1].data
+    print (" - Loading image data and header from extension 1")
+    sys.exit('\n ERROR'
+             '\n You do not want images in 1st extension as GALFIT expects the data to be in extension 0. '
+             '\n Otherwise it will throw a "malloc" crash at you. '
+             '\n You can save the images from DS9 which will put them in the 0th extensions and re-run using those.')
 
 try:
     try:
@@ -183,6 +191,7 @@ try:
         phot_zero_ab = input_phot_zero_ab
 except:
     print('   There was no CDELT1, CDELT2 or PHOTZPT in the header of your file. ('+str(input_image)+')')
+    print('   If it is PHOTZPT which is missing you can use "phot_zeropoint_ab" in the setup to provide a zero point')
     import pdb; pdb.set_trace()
     exit()
 hdu_hst.close()
@@ -245,6 +254,8 @@ if 'candels' in area and 'cdfs' in field:
 elif 'udf' in field:
     here_field = np.where(int(field[-1]) == field_numbers)[0]
 elif 'califa' in field:
+    here_field = np.arange(len(data[col_name_ra]))
+elif 'manga' in field and 'manga' in area :
     here_field = np.arange(len(data[col_name_ra]))
 elif 'candels' in area and 'cosmos' in field:
     here_field = np.where(int(field[7:]) == field_numbers)[0]
@@ -754,8 +765,7 @@ def run_galfit(redo_bool,obj):
         
     if redo_bool[obj]==True:
         # TODO: Why do I need the full path here? Can I change that?
-        command = (galfit_path+' -outsig '+input_params+'_'+
-                   str(ID_obj[obj])+'.input')  
+        command = (galfit_path+' -outsig '+input_params+'_'+str(ID_obj[obj])+'.input')
         print('   '+str(command))
         os.system(command)
 
