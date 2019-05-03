@@ -1352,13 +1352,13 @@ def plot_9726(smoothsigma=0,plotmode = 'all',showfluxnoise=True,plottype='pdf',o
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_10843(smoothsigma=0,verbose=True):
+def plot_10843(smoothsigma=0,logsetup=True,verbose=True):
     """
     Function plotting single vs multi extraction for Guo 10843
 
     --- EXAMPLE OF USE ---
     import tdosepublication_utilities as tsu
-    tsu.plot_10843()
+    tsu.plot_10843(logsetup=False)
 
     """
 
@@ -1379,6 +1379,8 @@ def plot_10843(smoothsigma=0,verbose=True):
 
     galfitdir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/galfit_wrapper_models/models_renamed/'
     galfitmodel     = galfitdir+'model_acs_814w_candels-cdfs-12_cut_v1.0_id10843_cutout8p0x8p0arcsec.fits'
+
+    skyspectra      = ['/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-12_av.fits']
 
     modelhdr        = afits.open(galfitmodel)[2].header
     Ncomp           = 0
@@ -1456,12 +1458,12 @@ def plot_10843(smoothsigma=0,verbose=True):
     xranges      = [[4800,9300],[5450,6000],
                     [Halineobs-100,Halineobs+500],[Halineobs_fg-100,Halineobs_fg+500],
                     [Halineobs-50,Halineobs+50]]
-    logsetup = True
+
     if not logsetup:
         ylogval      = False
         yranges_full = [[-100,4000],[-1,30]]
         # yranges_zoom = [[500,2200],[-1,30]]
-        yranges_zoom = [[1500,2800],[15,28]]
+        yranges_zoom = [[1500,2800],[15,26]]
     else:
         ylogval      = False
         yranges_full = [[1000,2e4],[3,300]]
@@ -1516,6 +1518,7 @@ def plot_10843(smoothsigma=0,verbose=True):
         tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
                          comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
                          comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         #skyspecs=skyspectra,sky_colors=['gray'], # to show sky see notes LT190506
                          xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
                          showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
 
@@ -2288,6 +2291,9 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
 
     MWDR1dir       = '/Users/kschmidt/work/TDOSE/OIIemitter_MWDR1spectra/'
 
+    SkeltonCat    = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    SkeltonDat    = afits.open(SkeltonCat)[1].data
+
     print(' - Looping over objects and pulling out maximum OII flux and S/N from spectra')
     ids         = []
     SNsersic    = []
@@ -2309,6 +2315,8 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     Fsersic_filtered     = []
     Ferrsersic_filtered  = []
     SNsersic_filtered    = []
+
+    OIIem_aimg_Skelton   = [] # vector to contain a_image from the Skelton catalog
 
     for ff, file_mi in enumerate(files_modelimg):
         if '116004061' in file_mi:  # Ignore duplicated object
@@ -2415,6 +2423,12 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         SNmwdr1td.append(np.max(subdat_S2N))
         Fmwdr1td.append(np.max(subdat_F))
         Ferrmwdr1td.append(Ferrmax[0])
+
+        # - - - - - - - - - Get Object Size(s) - - - - - - - - -
+        skelidstr       = str("%.10d" % objcatalog['SKELTON_ID'][catent])
+        skelent         = np.where(SkeltonDat['id'] == int(skelidstr))[0][0]
+        aimg            = SkeltonDat['a_image'][skelent]
+        OIIem_aimg_Skelton.append(aimg)
 
     print('\n   ... done')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2860,6 +2874,90 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
         plt.yscale('log')
     leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
     leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_fluxratiosize_mwdr1td.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    FratioSersicMWDR1 = np.asarray(Fsersic)/np.asarray(Fmwdr1td)
+    yerrprop = np.abs(FratioSersicMWDR1) * np.sqrt((np.asarray(Ferrsersic)/np.asarray(Fsersic))**2 +
+                                                   (np.asarray(Ferrmwdr1td)/np.asarray(Fmwdr1td))**2)
+    plt.errorbar(OIIem_aimg_Skelton, FratioSersicMWDR1, yerr=yerrprop, xerr=None,fmt='ok',alpha=0.5)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        axisrange = [0.01,100]
+    else:
+        axisrange = [0.2,1.8]
+    plt.plot([np.min(OIIem_aimg_Skelton),np.max(OIIem_aimg_Skelton)],[1,1],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('$r_\\textrm{major}$ [pixels]', fontsize=Fsize)
+    plt.ylabel('F$_\\textrm{OII max}$(Mulit-Sersic) / F$_\\textrm{OII max}$(Single-Gauss)', fontsize=Fsize)
+    plt.ylim(axisrange)
+    # plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    # leg.get_frame().set_alpha(0.7)
+    print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    fig.clf()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = namebase+'_fluxratioflux_mwdr1td.pdf'
+    if logaxes: plotname = plotname.replace('.pdf','_log.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+    Fsize  = fontsize
+    lthick = 1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(plotname.split('TDOSE 1D spectra'),fontsize=Fsize)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.errorbar(Fsersic, FratioSersicMWDR1, yerr=yerrprop, xerr=None,fmt='ok',alpha=0.5)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if logaxes:
+        xrange = [100,4000]
+        axisrange = [0.01,100]
+    else:
+        axisrange = [0.2,1.8]
+        xrange = [0,1500]
+
+    plt.plot(xrange,[1,1],'--k',lw=lthick)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.xlabel('max(F/[1e-20 cgs]) GALFIT multicomponent Sersic model', fontsize=Fsize)
+    plt.ylabel('F$_\\textrm{OII max}$(Mulit-Sersic) / F$_\\textrm{OII max}$(Single-Gauss)', fontsize=Fsize)
+    plt.ylim(axisrange)
+    # plt.xlim(axisrange)
+    if logaxes:
+        plt.xscale('log')
+        plt.yscale('log')
+    # leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)
+    # leg.get_frame().set_alpha(0.7)
     print(' - Saving plot to '+plotname)
     plt.savefig(plotname)
     fig.clf()
