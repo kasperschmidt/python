@@ -57,6 +57,7 @@ from matplotlib.patches import Circle
 ### SCIPY ###
 from scipy import odr
 from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter
 
 ### ASTROPYSICS ###
 import astropysics
@@ -2005,6 +2006,147 @@ def align_arrays(fix_image_arr, reg_image_arr, reg_image_arr_noise=None, verbose
     if verbose: print(' - Returning shifts and shifted array')
     arr_shifts = xoff, yoff, xoff_err, yoff_err
     return arr_shifts, arr_aligned # arr_shifts contains xoff, yoff, xoff_err, yoff_err
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calc_concentration(fitsimage,verbose=True):
+    """
+    Calculating the concentration (C in CAS) of an image as defined in Conselice (2013) section 4.1.
+
+    --- INPUT ---
+    fitsimage      image to calculcate clumpiness off
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+
+    """
+    sys.exit(' Not written yet')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calc_asymmetry(fitsimage,verbose=True):
+    """
+    Calculating the asymmetry (A in CAS) of an image as defined in Conselice (2013) section 4.2.
+
+    --- INPUT ---
+    fitsimage      image to calculcate clumpiness off
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+
+    """
+    sys.exit(' Not written yet')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calc_clumpiness(fitsimage,sigmasmooth,imgext=0,bckimg=None,bckimgext=0,negative2zero=True, mask=None,
+                    r_center=None, plotimages=None, verbose=True):
+    """
+    Calculating the clumpiness (S in CAS) of an image as defined in Conselice (2013) section 4.3 - well, actually
+    using definition in Eq. 5 of Christopher J. Conselice, Cui Yang and Asa F. L. Bluck (2009).
+
+    --- INPUT ---
+    fitsimage      image to calculcate clumpiness off
+    sigmasmooth    the width of the Gaussian smoothing kernel used
+    imgext         FITS extecions of image
+    bckimg         If a background region is defined, provide that as an image
+    bckimgext      FITS extension of background image
+    negative2zero  Set all negative valus in fits image to 0? Done by Conselic in original paper.
+    segmap         To apply a mask to the fitsimage (post smoothing) and the skyimg supply it here.
+                   This mask could be resulting from a SExtractor segmentation map.
+    r_center       Provide a radius in pixels to mark central region to include in estimate. The remaining
+                   pixels will be set to 0, hence, corresponding to a central circular mask applied to image.
+    showimage      Provde a path and file name to plot the image used to estimate clumpiness after masking etc.
+    verbose        Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+
+    imgdir       = '/Volumes/DATABCKUP1/TDOSEextractions/190325_MWDR1_OIIemitters_apertureExt/tdose_cutouts/'
+    fitsimage    = imgdir+'acs_814w_candels-cdfs-46_cut_v1.0_id146074360_cutout4p0x4p0arcsec.fits'
+    sigmasmooth  = 5.0 #pixels
+    Sval         = kbs.calc_clumpiness(fitsimage,sigmasmooth,negative2zero=True,r_center=False,plotimages=imgdir+'clumpinessimages.pdf')
+    """
+    if verbose: print(' - Estimating clumpiness as defined by '
+                      'C. J. Conselice, C. Yang and A. F. L. Bluck (2009).')
+    dataimg   = afits.open(fitsimage)[imgext].data
+    if negative2zero:
+        dataimg[dataimg < 0] = 0
+
+    if mask is not None:
+        dataimg[mask] = 0.0
+
+    dataimg_smooth = gaussian_filter(dataimg, sigma=sigmasmooth)
+
+    if r_center: # generate circular mask and apply to image
+        imgxsize, imgysize = dataimg.shape
+        y,x  = np.ogrid[-imgysize/2.0:imgysize/2.0, -imgxsize/2.0:imgxsize/2.0]
+        circularmask = x*x + y*y <= r_center*r_center
+        dataimg[~circularmask] = 0.0 # setting pixels outside circle to 0
+        dataimg_smooth[~circularmask] = 0.0
+
+    if bckimg is not None:
+        Barr = afits.open(bckimg)[bckimgext].data
+        Barr[dataimg == 0] = 0.0
+        Barr_smooth    = gaussian_filter(Barr, sigma=sigmasmooth)
+    else:
+        Barr        = dataimg * 0.0
+        Barr_smooth = dataimg * 0.0
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if plotimages is not None:
+        plotlog = True
+        vmin,vmax  = kbs.get_vminvmax(dataimg, logscale=plotlog, scale=0.95, verbose=False)
+        if verbose: print(' - Will plot using [vmin,vmax]     : ['+str(vmin)+','+str(vmax)+']')
+        if plotlog:
+            normclass = LogNorm()
+        else:
+            normclass = None
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        fig = plt.figure(figsize=(5,5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.90, bottom=0.1, top=0.95)
+        Fsize  = 12
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        ax = plt.gca()
+        im = plt.imshow(dataimg, cmap='viridis', norm=normclass, origin='lower',vmin=vmin, vmax=vmax)
+        divider = make_axes_locatable(ax)
+        cax     = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+        ax.grid(False)
+        plt.savefig(plotimages)
+        fig.clf()
+        plt.close()
+        if verbose: print(' - saved plot to '+plotimages)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        fig = plt.figure(figsize=(5,5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.90, bottom=0.1, top=0.95)
+        Fsize  = 12
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        ax = plt.gca()
+        im = plt.imshow(dataimg_smooth, cmap='viridis', norm=normclass, origin='lower',vmin=vmin, vmax=vmax)
+        divider = make_axes_locatable(ax)
+        cax     = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+        ax.grid(False)
+        plt.savefig(plotimages.replace('.pdf','_smoothed.pdf'))
+        fig.clf()
+        plt.close()
+        if verbose: print(' - saved plot to '+plotimages.replace('.pdf','_smoothed.pdf'))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    imgpart = np.sum(dataimg-dataimg_smooth) / np.sum(dataimg)
+    bckpart = np.sum(Barr-Barr_smooth)       / np.sum(dataimg)
+    Sval    = 10.0 * (imgpart - bckpart)
+    if verbose: print('   Clumpiness values estimated to be '+str(Sval))
+    return Sval
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
