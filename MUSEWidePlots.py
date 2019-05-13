@@ -6,6 +6,7 @@ import kbsutilities as kbs
 import numpy as np
 import MUSEWidePlots as mwp
 import MUSEWideUtilities as mwu
+import tdose_extract_spectra as tes
 import sys
 import matplotlib.pyplot as plt
 import collections
@@ -1522,4 +1523,171 @@ def plot_FoVoverview(ras,decs,names,sizeFoV,outputdir='./',pointings=None,showre
         plt.close('all')
 
         os.remove(cutname)
+
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_MgIIemitterUDF884spec(smoothsigma=0,verbose=True):
+    """
+    Function plotting the spectra for MgII emitter 884 in UDF03
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    mwp.plot_MgIIemitterUDF884spec(smoothsigma=0)
+
+    """
+
+    figuredir       = '/Users/kschmidt/work/MUSE/MgIIemittersUDF3/tdose_spectra/190510/'
+
+    specdir         = figuredir
+    spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000000884-0000000884.fits'
+    spec_gauss      = specdir+'tdose_spectrum_gauss_0000000884-0000000884.fits'
+
+    objz            = 0.737
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all = np.array([linelistdic[key][1]*(1.0+objz),linelistdic[key][0]])
+        else:
+            linelist_all = np.vstack((linelist_all,[linelistdic[key][1]*(1.0+objz),linelistdic[key][0]]))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+    specs        = [spec_modelimg,spec_gauss]
+
+    filelist     = [specs[0]]
+    col          = ['black']
+    labels       = ['Multi-component Sersic model']
+
+    compspec     = [specs[1]]
+    comp_colors  = ['red']
+    comp_labels  = ['Single-component Gauss model']
+
+    xranges      = [[4800,9300],[4800,9300]]
+    ylogval      = False
+    yranges_full = [[-100,2500],[-1,50]]
+    yranges_zoom = [[100,350],[-1,10]]
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF884_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF884_zoom_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_all], ['black']
+    linesetup[plotnames[1]] = [linelist_all], ['black']
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_MgIIemitterUDF939spec(smoothsigma=0,verbose=True):
+    """
+    Function plotting the spectra for MgII emitter 884 in UDF03
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    mwp.plot_MgIIemitterUDF939spec(smoothsigma=0)
+
+    """
+
+    figuredir       = '/Users/kschmidt/work/MUSE/MgIIemittersUDF3/tdose_spectra/190510/'
+
+    specdir         = figuredir
+    spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000000939-0000000939.fits'
+    spec_gauss      = specdir+'tdose_spectrum_gauss_0000000939-0000000939.fits'
+
+    objz            = 1.296
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Defining emission line lists ')
+    linelistdic  = MiGs.linelistdic()
+
+    for kk, key in enumerate(linelistdic.keys()):
+        if kk == 0:
+            linelist_all = np.array([linelistdic[key][1]*(1.0+objz),linelistdic[key][0]])
+        else:
+            linelist_all = np.vstack((linelist_all,[linelistdic[key][1]*(1.0+objz),linelistdic[key][0]]))
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Setting up plot ranges and line lists ')
+    specs        = [spec_modelimg,spec_gauss]
+
+    filelist     = [specs[0]]
+    col          = ['black']
+    labels       = ['Multi-component Sersic model']
+
+    compspec     = [specs[1]]
+    comp_colors  = ['red']
+    comp_labels  = ['Single-component Gauss model']
+
+    xranges      = [[4800,9300],[4800,9300]]
+    ylogval      = False
+    yranges_full = [[-50,800],[-1,15]]
+    yranges_zoom = [[-10,150],[-1,3]]
+
+    plotnames    = [figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF939_full_flux.pdf',
+                    figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF939_zoom_flux.pdf']
+
+    linesetup = {}
+    linesetup[plotnames[0]] = [linelist_all], ['black']
+    linesetup[plotnames[1]] = [linelist_all], ['black']
+
+    #-------------------------------------------------------------------------------------------------------
+    if verbose: print(' - Plotting spectra ')
+    showfluxnoise = True
+    for pp, pname in enumerate(plotnames):
+        linelist, linecols = linesetup[pname]
+
+        # - - - - - - - - - - FLUX AND S/N PLOTS - - - - - - - - - -
+        plotname  = pname
+        xrange    = xranges[pp]
+        if pp == 0:
+            yrange    = yranges_full[0]
+        else:
+            yrange    = yranges_zoom[0]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=False,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+        plotname  = pname.replace('flux.pdf','s2n.pdf')
+        if pp == 0:
+            yrange    = yranges_full[1]
+        else:
+            yrange    = yranges_zoom[1]
+        tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
+                         comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
+                         comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
+                         xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
+                         showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
