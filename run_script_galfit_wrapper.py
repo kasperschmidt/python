@@ -178,6 +178,8 @@ try:
             phot_zero_ab = 25.69 # from https://archive.stsci.edu/prepds/hlf/#products (Hubble Legacy Fields)
         elif 'cutout_rings.v3.skycell' in input_image:
             phot_zero_ab = 25.00 # from "HIERARCH FPA.ZP" keyword in image header
+        elif 'hlsp_xdf_hst_acswfc-30mas_hudf_f775w' in input_image:
+            phot_zero_ab = 25.69 # from https://archive.stsci.edu/prepds/xdf/
         else:
             photzpt   = header_hst['PHOTZPT'] # ST magnitude photometric zeropoint
             photflam  = header_hst['PHOTFLAM']
