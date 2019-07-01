@@ -9,6 +9,7 @@ import sys
 import stacking
 import scipy.ndimage
 import tdose_utilities as tu
+import kbsutilities as kbs
 from astropy import wcs
 from astropy.coordinates import SkyCoord
 import datetime
@@ -1252,5 +1253,138 @@ def stack_MUSEWideSpecs_plot(plotmultiple=False,plotSN=False):
 
     stacking.plot_1DspecOverview(spectra,labels,['wave']*Nspec,['flux']*Nspec,['fluxerror']*Nspec,plotname,
                                  plotSN=plotSN,xrangefull=xrangefull,yrangefull=yrangefull,zoomwindows=zoomwindows)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage,minRaper=0.5,minCutwidth=4.5,overwrite=False,verbose=True):
+    """
+    Generate a TDOSE source catatalog (and catalog with intitial guesses for Gaussian modeling) from
+    the Rafelski+2015 UVUDF catalog.
+
+    --- INPUT ---
+    outputnamebase    The name base (prepended the path) of the source catalog to generate
+    refimage          Provide fits image with WCS information to use for the pixel positions in the source cata
+    overwrite         Overwrite output files if they exists?
+    verbose           Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+
+    imgpath        = '/Users/kschmidt/work/MUSE/TDOSE_fullextractions/Rafelski-UDF-full-v1p0/refimages/'
+    refimage       = imgpath+'acs_775w_udf-04_cut_rot.fits'
+    outputnamebase = refimage.replace('acs_775w','tdose_sourcecat_Rafelski_in_acs_775w').replace('.fits','')
+
+    mwu.TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage)
+
+    """
+    if verbose: print(' - Generating TDOSE source catalog from Rafelski+2015 catalog\n'
+                      '   Restricting source to FoV of reference image '+refimage+'\n'
+                      '   Output will be saved to '+outputnamebase+'.txt/fits')
+    rafelskidat      = afits.open('/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits')[1].data
+    refimghdr        = afits.open(refimage)[0].header
+    arcsecPerPix_Raf = 0.03
+
+    ids_all     = rafelskidat['ID']
+    ras_all     = rafelskidat['RA']
+    decs_all    = rafelskidat['DEC']
+    fluxf_all   = rafelskidat['FLUX_ISO_F775W']
+    ellip_all   = rafelskidat['ELLIPTICITY']
+    theta_all   = rafelskidat['THETA']
+    area_all    = rafelskidat['AREAF']
+    a_area_all  = np.sqrt(area_all/np.pi/(1-ellip_all))
+    b_area_all  = (1.0-ellip_all)*a_area_all
+    x_raf_all   = rafelskidat['X']
+    y_raf_all   = rafelskidat['Y']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
+    if verbose: print('   (storing both files together with source catalog output) ')
+
+    refimgpath  = '/'.join(refimage.split('/')[:-1])+'/'
+    cut_outtxt  = refimgpath+'cutoutsizes_Rafelski_4xA_AREA.txt'
+    aper_outtxt = refimgpath+'apertureradii_Rafelski_1xA_AREA.txt'
+
+    fout = open(cut_outtxt,'w')
+    fout.write('# Cutout sizes of 4*A_AREA on each side (corresponding to twice the aperture diameter '
+               'used for the aperture extractions) estimated with '
+               'MUSEWideUtilities.TDOSE_sourcecat_from_Rafelski() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id xsize ysize \n')
+
+    cutoutwidth = 4.0 * a_area_all * arcsecPerPix_Raf
+    cutoutwidth[cutoutwidth < minCutwidth]  = minCutwidth
+    cutoutwidth[cutoutwidth > 10.0] = 10.0000
+
+    for ii, id in enumerate(ids_all):
+        fout.write(str(ids_all[ii])+' '+
+                   str(cutoutwidth[ii])+' '+
+                   str(cutoutwidth[ii])+'  \n')
+    fout.close()
+
+    fout = open(aper_outtxt,'w')
+    fout.write('# Aperturesizes of A_AREA estimated with '
+               'MUSEWideUtilities.TDOSE_sourcecat_from_Rafelski() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id aperturesize \n')
+
+    Raper_arcsec = a_area_all * arcsecPerPix_Raf
+    Raper_arcsec[Raper_arcsec < minRaper]  = minRaper
+
+    for ii, id in enumerate(ids_all):
+        fout.write(str(ids_all[ii])+' '+str(Raper_arcsec[ii])+'  \n')
+    fout.close()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Finding objects within reference image field-of-view')
+    if verbose: print('   (Estimating pixel positions using wcs info from header)')
+    striphdr   = tu.strip_header(refimghdr,verbose=verbose)
+    wcs_in     = wcs.WCS(striphdr)
+    arcsecPerPix_refimg = wcs.utils.proj_plane_pixel_scales(wcs_in)*60*60
+
+    skycoord   = SkyCoord(ras_all, decs_all, frame='fk5', unit='deg')
+    pixcoord   = wcs.utils.skycoord_to_pixel(skycoord,wcs_in,origin=1)
+    xpos       = pixcoord[0]
+    ypos       = pixcoord[1]
+    goodent    = np.where((xpos < refimghdr['NAXIS1']) & (xpos > 0) &
+                          (ypos < refimghdr['NAXIS2']) & (ypos > 0)   )[0]
+
+    ids             = ids_all[goodent]
+    ras             = ras_all[goodent]
+    decs            = decs_all[goodent]
+    x_image         = xpos[goodent]
+    y_image         = ypos[goodent]
+    flux_iso_f775w  = fluxf_all[goodent]
+    a_area          = a_area_all[goodent] * arcsecPerPix_Raf / np.mean(arcsecPerPix_refimg)
+    b_area          = b_area_all[goodent] * arcsecPerPix_Raf / np.mean(arcsecPerPix_refimg)
+    theta           = theta_all[goodent]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    outtxt          = outputnamebase+'.txt'
+    if (overwrite == False) & os.path.isfile(outtxt):
+        sys.exit('Output ('+outtxt+') already exists and clobber=False')
+    else:
+        if verbose: print(' - Will save source catalog to '+outtxt+' (overwriting any existing files)')
+        fout = open(outtxt,'w')
+        fout.write('# TDOSE Source catalog generated with '
+                   'MUSEWideUtilities.TDOSE_sourcecat_from_Rafelski() on '+kbs.DandTstr2()+'\n')
+        fout.write('# \n')
+        fout.write('# parent_id id ra dec x_image y_image flux_iso_f775w a_area b_area theta \n')
+        for ii, id in enumerate(ids):
+            fout.write(str(ids[ii])+' '+str(ids[ii])+' '+str(ras[ii])+' '+str(decs[ii])+' '+
+                       str(x_image[ii])+' '+str(y_image[ii])+' '+str(flux_iso_f775w[ii])+' '+
+                       str(a_area[ii])+' '+str(b_area[ii])+' '+str(theta[ii])+'  \n')
+
+        fout.close()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        regionfile = outtxt.replace('.txt','.reg')
+        if verbose: print(' - Storing DS9 region file to '+regionfile)
+        idsstr     = [str(id) for id in ids]
+        tu.create_simpleDS9region(regionfile,ras,decs,color='green',circlesize=a_area*np.mean(arcsecPerPix_refimg),
+                                  textlist=idsstr,clobber=overwrite)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        outnamefits = outtxt.replace('.txt','.fits')
+        if verbose: print(' - Saving fits version of source catalog to '+outnamefits)
+        fitsfmt       = ['D']*10
+        sourcecatfits = tu.ascii2fits(outtxt,asciinames=True,skip_header=2,fitsformat=fitsfmt,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
