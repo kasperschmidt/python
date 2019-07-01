@@ -180,6 +180,8 @@ try:
             phot_zero_ab = 25.00 # from "HIERARCH FPA.ZP" keyword in image header
         elif 'hlsp_xdf_hst_acswfc-30mas_hudf_f775w' in input_image:
             phot_zero_ab = 25.69 # from https://archive.stsci.edu/prepds/xdf/
+        elif 'acs_775w_udf-03_cut_rot' in input_image:
+            phot_zero_ab = 25.69 # from https://archive.stsci.edu/prepds/hlf/
         else:
             photzpt   = header_hst['PHOTZPT'] # ST magnitude photometric zeropoint
             photflam  = header_hst['PHOTFLAM']
