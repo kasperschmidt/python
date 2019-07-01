@@ -190,7 +190,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     if verbose: print('   '+catRafelski)
     datRafelski = pyfits.open(catRafelski)[1].data
 
-    catLaigle = '/Users/kschmidt/work/catalogs/COSMOS2015_Laigle_v1.1.fits'
+    #catLaigle = '/Users/kschmidt/work/catalogs/COSMOS2015_Laigle_v1.1.fits'
+    catLaigle = '/Users/kschmidt/work/catalogs/COSMOS2015_Laigle_v1.1_candelsregion.fits' # generated with TOPCAT
     if verbose: print('   '+catLaigle )
     datLaigle  = pyfits.open(catLaigle)[1].data
 
