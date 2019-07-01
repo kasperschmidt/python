@@ -123,9 +123,11 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     catE24main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_main_table_v3.2.fits'
     catE36main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v1.0.fits'
     catE40main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e40_v0.9.fits'
-    #catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_mosaic_shallow_v0.9.fits'
+    catUDFSmain       = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_mosaic_shallow_v0.9.fits'
+    catU10main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/object_catalog_udf-10_v0.9.fits'
     catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_udf-mosaic_v0.9.fits'
-    # IDs in UDF mosaic catalog consist of 4 digits id followed by 4 digits runnin line number
+    # IDs in UDF mosaic catalog consist of 4 digits id followed by 4 digits running line number
+
 
     if verbose: print('   '+catE24main)
     datE24main  = pyfits.open(catE24main)[1].data
@@ -139,14 +141,25 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     datE40main  = pyfits.open(catE40main)[1].data
     if verbose: print('   Columns: '+str(datE40main.dtype.names)+'\n')
 
+    if verbose: print('   '+catUDFSmain)
+    datUDFSmain  = pyfits.open(catUDFSmain)[1].data
+    if verbose: print('   Columns: '+str(datUDFSmain.dtype.names)+'\n')
+
     if verbose: print('   '+catUDFmain)
     datUDFmain  = pyfits.open(catUDFmain)[1].data
     if verbose: print('   Columns: '+str(datUDFmain.dtype.names)+'\n')
 
+    if verbose: print('   '+catU10main)
+    datU10main= pyfits.open(catU10main)[1].data
+    if verbose: print('   Columns: '+str(datU10main.dtype.names)+'\n')
+
+
     catE24lineprops   = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_v3.1_LAEs_line_props.fits'
     catE36lineprops   = '/Users/kschmidt/work/catalogs/MUSE_GTO/e36_emline_master_v1.0_LAEs_line_props.fits'
     catE40lineprops   = 'None'
+    catUDFSlineprops  = 'None'
     catUDFlineprops   = 'None'
+    catU10lineprops   = 'None'
 
     if verbose: print('   '+catE24lineprops)
     datE24lp  = pyfits.open(catE24lineprops)[1].data
@@ -173,7 +186,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     if verbose: print('   '+catSkeltonCOS)
     datSkeltonCOS = pyfits.open(catSkeltonCOS)[1].data
 
-    catRafelski = '/Users/kschmidt/work/catalogs/uvudf_rafelski_2015.fits'
+    catRafelski = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
     if verbose: print('   '+catRafelski)
     datRafelski = pyfits.open(catRafelski)[1].data
 
@@ -186,10 +199,13 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     e24_ids  = datE24main['UNIQUE_ID'].astype(str)
     e36_ids  = datE36main['ID'].astype(str)
     e40_ids  = datE40main['ID'].astype(str)
+    udfs_ids = datUDFSmain['ID'].astype(str)
     udf_ids  = np.asarray(["6"+str("%08d" % udfid) for udfid in datUDFmain['ID']])
+    u10_ids  = np.asarray(["7"+str("%08d" % u10id) for u10id in datU10main['ID']])
     objids   = []
 
-    zcut     = 2.7
+    zcut     = 2.7 # LAEs
+    zcut     = 1.5 # UVemitters; objects with potential CIII]1909 (or below) and no OII
     # - - - - - - - - - - - - - E24 - - - - - - - - - - - - - -
     for ii,id in enumerate(e24_ids):
         if datE24main['Z'][ii] > zcut:
@@ -202,13 +218,28 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     for ii,id in enumerate(e40_ids):
         if datE40main['REDSHIFT'][ii] > zcut:
             objids.append( id )
-    # - - - - - - - - - - - - - UDF - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - UDF Shallow - - - - - - - - - - - - - -
+    for ii,id in enumerate(udfs_ids):
+        if datUDFSmain['REDSHIFT'][ii] > zcut:
+            objids.append( id )
+    # - - - - - - - - - - - - - UDF Mosaic - - - - - - - - - - - - - -
     for ii,id in enumerate(udf_ids):
         if datUDFmain['REDSHIFT'][ii] > zcut:
             objids.append( id )
+    # - - - - - - - - - - - - - UDF-10 - - - - - - - - - - - - - -
+    for ii,id in enumerate(u10_ids):
+        if datU10main['REDSHIFT'][ii] > zcut:
+            objids.append( id )
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     objids = np.sort(np.asarray(objids).astype(int))
-    #objids = np.array([106003018,131016105,153024080,206004030,302038138,404010192,509084195])
+    # objids[0] = 1: CDFS
+    # objids[0] = 2: COSMOS
+    # objids[0] = 3: Parallel hudf09-1
+    # objids[0] = 4: Parallel hudf09-2
+    # objids[0] = 5: UDF-mosaic-shallow
+    # objids[0] = 6: UDF-mosaic
+    # objids[0] = 7: UDF-10
+    #objids = np.array([106003018,131016105,153024080,206004030,302038138,404010192,509084195,600100628,614564367,720060067])
     NLAEs  = len(objids)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Assembling info for the '+str(NLAEs)+' LAEs found')
@@ -300,6 +331,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             if verbose: print(infostr)
             # sys.stdout.write("%s\r" % infostr)
             # sys.stdout.flush()
+        imgignorstr = '_wht_'
         # - - - - - - - - - - GET LSDCAT COORDINATES - - - - - - - - - -
         if str(id) in e24_ids:
             pointingname = mu.gen_pointingname(id)
@@ -311,7 +343,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             decs.append(datE24main['DEC'][objent][0])
             ximg, yimg = mu.get_pixelpos(datE24main['RA'][objent],datE24main['DEC'][objent],pointingname,pixorigin=0,
                                          imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*814*',
-                                         imgext=0,verbose=False)
+                                         ignorestr=imgignorstr,imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
             leadline.append(datE24main['LEAD_LINE'][objent][0])
@@ -326,7 +358,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             decs.append(datE36main['DEC'][objent][0])
             ximg, yimg = mu.get_pixelpos(datE36main['RA'][objent],datE36main['DEC'][objent],pointingname,
                                          imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*814*',
-                                         imgext=0,verbose=False)
+                                         ignorestr=imgignorstr,imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
             leadline.append(datE36main['LINE_ID'][objent][0])
@@ -344,15 +376,31 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             else:
                 imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*775*'
             ximg, yimg = mu.get_pixelpos(datE40main['RA'][objent],datE40main['DEC'][objent],pointingname,
-                                         imgdir=imgdir,imgext=0,verbose=False)
+                                         ignorestr=imgignorstr,imgdir=imgdir,imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
             leadline.append(datE40main['LINE_ID'][objent][0])
             leadlineSN.append(datE40main['S2N'][objent][0])
+        elif str(id) in udfs_ids:
+            objent = np.where(udfs_ids == str(id))[0]
+
+            pointingname = mu.gen_pointingname(id)
+            pointing.append(pointingname)
+
+            redshifts.append(datUDFSmain['REDSHIFT'][objent][0])
+            ras.append(datUDFSmain['RA'][objent][0])
+            decs.append(datUDFSmain['DEC'][objent][0])
+            ximg, yimg = mu.get_pixelpos(datUDFSmain['RA'][objent],datUDFSmain['DEC'][objent],pointingname,
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*775*',
+                                         ignorestr=imgignorstr,imgext=0,verbose=False)
+            x_image.append(ximg)
+            y_image.append(yimg)
+            leadline.append(datUDFSmain['LINE_ID'][objent][0])
+            leadlineSN.append(datUDFSmain['S2N'][objent][0])
         elif str(id) in udf_ids:
             objent = np.where(udf_ids == str(id))[0]
 
-            pointingname = 'udf-mosaic' #datUDFmain['FIELD_COL'][objent]
+            pointingname = 'udf-mosaic'
             pointing.append(pointingname)
 
             redshifts.append(datUDFmain['REDSHIFT'][objent][0])
@@ -360,13 +408,29 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             decs.append(datUDFmain['DEC'][objent][0])
             ximg, yimg = mu.get_pixelpos(datUDFmain['RA'][objent],datUDFmain['DEC'][objent],pointingname,
                                          imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*775*',
-                                         imgext=0,verbose=False)
+                                         ignorestr=imgignorstr,imgext=0,verbose=False)
             x_image.append(ximg)
             y_image.append(yimg)
             leadline.append(datUDFmain['LINE_ID'][objent][0])
             leadlineSN.append(datUDFmain['S2N'][objent][0])
+        elif str(id) in u10_ids:
+            objent = np.where(u10_ids == str(id))[0]
+
+            pointingname = 'udf-10'
+            pointing.append(pointingname)
+
+            redshifts.append(datU10main['REDSHIFT'][objent][0])
+            ras.append(datU10main['RA'][objent][0])
+            decs.append(datU10main['DEC'][objent][0])
+            ximg, yimg = mu.get_pixelpos(datU10main['RA'][objent],datU10main['DEC'][objent],'udf-mosaic_v1.5',
+                                         imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/*775*',
+                                         ignorestr=imgignorstr,imgext=0,verbose=False)
+            x_image.append(ximg)
+            y_image.append(yimg)
+            leadline.append(datU10main['LINE_ID'][objent][0])
+            leadlineSN.append(datU10main['S2N'][objent][0])
         else:
-            print('Weird... ID not found in E24, E36, E40 or UDF id-list... #1')
+            print('Weird... ID not found in E24, E36, E40, UDF10, UDF-shallow or UDF-mosaic id-list... #1')
             pdb.set_trace()
         # - - - - - - - - - - GET MODEL COORDINATES - - - - - - - - - -
         modelfile = glob.glob(galfitmodeldir+'imgblock_'+str("%.9d" % id)+'.fits')
@@ -507,7 +571,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sum_fit_red_std.append(datE36lp['sum_fit_red_std'][objent][0])
                 sum_lsdcat.append(datE36lp['sum_lsdcat'][objent][0])
                 sum_lsdcat_std.append(datE36lp['sum_lsdcat_std'][objent][0])
-            elif (str(id) in e40_ids) or (str(id) in udf_ids):
+            elif (str(id) in e40_ids) or (str(id) in udfs_ids) or (str(id) in udf_ids) or (str(id) in u10_ids):
                 z_vac_red.append(-99)
                 z_vac_error.append(-99)
                 z_vac_mean.append(-99)
@@ -529,7 +593,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
                 sum_lsdcat.append(-99)
                 sum_lsdcat_std.append(-99)
             else:
-                print('Weird... ID not found in E24, E36, E40 or UDF id-list... #2')
+                print('Weird... ID not found in E24, E36, E40, UDF-10, UDF-shallow or UDF-mosaic id-list... #2')
                 pdb.set_trace()
 
             if peak_sep_kms[ii] != 0.0:
@@ -599,7 +663,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
         # - - - - - - - - - - ADD MATCHES TO PHOTOMETRIC CATALOGS - - - - - - - - - -
         coordMUSE = SkyCoord(ra=ras[ii]*u.degree, dec=decs[ii]*u.degree)
 
-        if str(id)[0] in ['1','5','6']: # <------- Match to Guo catalog
+        if str(id)[0] in ['1','5','6','7']: # <------- Match to Guo catalog
             coordGuo  = SkyCoord(ra=datGuo['RA']*u.degree, dec=datGuo['DEC']*u.degree)
             entGuo, match_2DGuo, match_3DGuo = coordMUSE.match_to_catalog_sky(coordGuo)
             idsGuo.append(datGuo['ID'][entGuo])
@@ -607,12 +671,12 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasGuo.append(datGuo['RA'][entGuo])
             decsGuo.append(datGuo['DEC'][entGuo])
         else:
-            idsGuo.append(0.0)
-            sepsGuo.append(0.0)
-            rasGuo.append(0.0)
-            decsGuo.append(0.0)
+            idsGuo.append(-99)
+            sepsGuo.append(-99)
+            rasGuo.append(-99)
+            decsGuo.append(-99)
 
-        if str(id)[0] in ['1','3','4','5','6']: # <------- Match to Skelton GOODS-SOUTH catalog
+        if str(id)[0] in ['1','3','4','5','6','7']: # <------- Match to Skelton GOODS-SOUTH catalog
             coordSkelton  = SkyCoord(ra=datSkeltonGS['RA']*u.degree, dec=datSkeltonGS['DEC']*u.degree)
             entSkelton, match_2DSkelton, match_3DSkelton = coordMUSE.match_to_catalog_sky(coordSkelton)
             idsSkelton.append(datSkeltonGS['ID'][entSkelton])
@@ -627,12 +691,12 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasSkelton.append(datSkeltonCOS['RA'][entSkelton])
             decsSkelton.append(datSkeltonCOS['DEC'][entSkelton])
         else:
-            idsSkelton.append(0.0)
-            sepsSkelton.append(0.0)
-            rasSkelton.append(0.0)
-            decsSkelton.append(0.0)
+            idsSkelton.append(-99)
+            sepsSkelton.append(-99)
+            rasSkelton.append(-99)
+            decsSkelton.append(-99)
 
-        if str(id)[0] in ['1','5','6']: # <------- Match to Rafelski catalog
+        if str(id)[0] in ['1','5','6','7']: # <------- Match to Rafelski catalog
             coordRafelski  = SkyCoord(ra=datRafelski['RA']*u.degree, dec=datRafelski['DEC']*u.degree)
             entRafelski, match_2DRafelski, match_3DRafelski = coordMUSE.match_to_catalog_sky(coordRafelski)
             idsRafelski.append(datRafelski['ID'][entRafelski])
@@ -640,10 +704,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasRafelski.append(datRafelski['RA'][entRafelski])
             decsRafelski.append(datRafelski['DEC'][entRafelski])
         else:
-            idsRafelski.append(0.0)
-            sepsRafelski.append(0.0)
-            rasRafelski.append(0.0)
-            decsRafelski.append(0.0)
+            idsRafelski.append(-99)
+            sepsRafelski.append(-99)
+            rasRafelski.append(-99)
+            decsRafelski.append(-99)
 
         if str(id)[0] in ['2']: # <------- Match to Laigle cosmos catalog
             coordLaigle  = SkyCoord(ra=datLaigle['ALPHA_J2000']*u.degree, dec=datLaigle['DELTA_J2000']*u.degree)
@@ -653,10 +717,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             rasLaigle.append(datLaigle['ALPHA_J2000'][entLaigle])
             decsLaigle.append(datLaigle['DELTA_J2000'][entLaigle])
         else:
-            idsLaigle.append(0.0)
-            sepsLaigle.append(0.0)
-            rasLaigle.append(0.0)
-            decsLaigle.append(0.0)
+            idsLaigle.append(-99)
+            sepsLaigle.append(-99)
+            rasLaigle.append(-99)
+            decsLaigle.append(-99)
 
     if verbose: print('\n   done...')
 
@@ -667,8 +731,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     c3  = pyfitsOLD.Column(name='ra', format='D', unit='DEF', array=ras)
     c4  = pyfitsOLD.Column(name='dec', format='D', unit='DEG', array=decs)
     c5  = pyfitsOLD.Column(name='redshift', format='D', unit='', array=redshifts)
-    c6  = pyfitsOLD.Column(name='x_image_F814W', format='D', unit='PIXEL', array=x_image)
-    c7  = pyfitsOLD.Column(name='y_image_F814W', format='D', unit='PIXEL', array=y_image)
+    c6  = pyfitsOLD.Column(name='x_image', format='D', unit='PIXEL', array=x_image)
+    c7  = pyfitsOLD.Column(name='y_image', format='D', unit='PIXEL', array=y_image)
 
     c8  = pyfitsOLD.Column(name='modelname', format='A110', unit='', array=name_model)
     c9  = pyfitsOLD.Column(name='Nmodelcomponents', format='D', unit='DEF', array=N_model_comp)
