@@ -20,13 +20,32 @@ import collections
 import os
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_pixelpos(ra,dec,pointingname,imgdir='/Users/kschmidt/work/images_MAST/MUSEWidePointings/',imgext=0,
-                 radecunit="deg",pixorigin=1,verbose=True):
+                 radecunit="deg",ignorestr='_wht_',pixorigin=1,verbose=True):
     """
     Get pixel positions in a muse cube for
 
+    --- INPUT ---
+    ra                  Right ascension of coordinate set to convert.
+    dec                 Declination of coordinate set to convert.
+    pointingname        Name of pointing (or similar) to combine with imgdir when searching for images
+    imgdir              directory to serach for images
+    imgext              Image extension to use WCS from
+    radecunit           Units of ra and dec
+    ignorestr           Ignore images contianing the provided string when searching through imgdir
+    pixorigin           Pixel orgigin when coinvertin to pixcels
+    verbose             Toggle verbosity
+
     """
     searchstr = imgdir+'*'+pointingname+'*.fits'
-    img = glob.glob(searchstr)
+    img_in = glob.glob(searchstr)
+
+    img = []
+    for imname in img_in:
+        if ignorestr in imname.split('/')[-1]:
+            continue
+        else:
+            img.append(imname)
+
     if len(img) == 1:
         imghdr = afits.open(img[0])[imgext].header
     else:
