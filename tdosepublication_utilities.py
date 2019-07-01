@@ -1352,20 +1352,21 @@ def plot_9726(smoothsigma=0,plotmode = 'all',showfluxnoise=True,plottype='pdf',o
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_10843(smoothsigma=0,logsetup=True,verbose=True):
+def plot_10843(smoothsigma=0,logsetup=True, useall9comp=True, verbose=True):
     """
     Function plotting single vs multi extraction for Guo 10843
 
     --- EXAMPLE OF USE ---
     import tdosepublication_utilities as tsu
-    tsu.plot_10843(logsetup=False)
+    tsu.plot_10843(logsetup=False, useall9comp=True)
 
     """
-
     figuredir       = '/Users/kschmidt/work/publications/TDOSE/TDOSEextractions4figures/10843figure/'
 
     specdir         = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190322_Guo10843_singleVSmulti/tdose_spectra/'
     spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000010843-0000010843.fits'
+    if useall9comp:
+        spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000010843-0000010843_all9comp.fits'
     spec_gauss      = specdir+'tdose_spectrum_gauss_0000010843-0000010843.fits'
 
     modeldir        = '/Volumes/DATABCKUP1/TDOSEextractions/190220_TDOSEpaper_figureextractions/190322_Guo10843_singleVSmulti/tdose_models/'
@@ -1463,7 +1464,8 @@ def plot_10843(smoothsigma=0,logsetup=True,verbose=True):
         ylogval      = False
         yranges_full = [[-100,4000],[-1,30]]
         # yranges_zoom = [[500,2200],[-1,30]]
-        yranges_zoom = [[1500,2800],[15,26]]
+        yranges_zoom = [[1500,3100],[15,26]]
+        #yranges_zoom = [[1500,3100],[-10,300]]
     else:
         ylogval      = False
         yranges_full = [[1000,2e4],[3,300]]
@@ -1518,7 +1520,7 @@ def plot_10843(smoothsigma=0,logsetup=True,verbose=True):
         tes.plot_1Dspecs(filelist,plotname=plotname,colors=col,labels=labels,plotSNcurve=True,
                          comparisonspecs=compspec,comp_colors=comp_colors,comp_labels=comp_labels,
                          comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
-                         #skyspecs=skyspectra,sky_colors=['gray'], # to show sky see notes LT190506
+                         skyspecs=skyspectra,sky_colors=['gray'], # to show sky see notes LT190506
                          xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
                          showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
 
@@ -1891,6 +1893,20 @@ def plot_16009(smoothsigma=0,verbose=True):
     shutil.copy(galfitplot, newfile)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_paperFig1panels():
+    """
+
+    """
+    tdosedir    = '/Users/kschmidt/work/publications/TDOSE/TDOSEexampleruns/181008_modelimg/tdose_cutouts/'
+    acscut      = tdosedir+'acs_814w_candels-cdfs-02_cut_v1.0_id102013086_cutout5p98x5p98arcsec.fits'
+    modelDCWCS  = tdosedir+'acs_814w_candels-cdfs-02_cut_v1.0_id102013086_cutout5p98x5p98arcsec_tdose_modelimage_cubeWCS_modelimg.fits'
+    DCcut       = tdosedir+'DATACUBE_candels-cdfs-02_v1.0_dcbgc_effnoised_id102013086_cutout5p98x5p98arcsec.fits'
+    DCmodelimg  = tdosedir+'DATACUBE_candels-cdfs-02_v1.0_dcbgc_effnoised_id102013086_cutout5p98x5p98arcsec_tdose_modelcube_modelimg.fits'
+    DCmodelres  = tdosedir+'DATACUBE_candels-cdfs-02_v1.0_dcbgc_effnoised_id102013086_cutout5p98x5p98arcsec_tdose_modelcube_residual_modelimg.fits'
+    smc         = tdosedir+'DATACUBE_candels-cdfs-02_v1.0_dcbgc_effnoised_id102013086_cutout5p98x5p98arcsec_tdose_source_modelcube_modelimg.fits'
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MWDR1hdrToTDOSEhdr(specfilenames):
     """
     Change column names in fits table containing spectra from MWDR1 to the column names used by tdose
@@ -1945,6 +1961,10 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
     ids_Skelton       = DR1dat_main['SKELTON_ID'][OIIent]
     sep_Skelton       = DR1dat_main['SKELTON_SEP'][OIIent]
 
+    ids_MW_sel      = []
+    ids_Skelton_sel = []
+    sep_Skelton_sel = []
+
     goodent     = np.array([])
     mags814     = np.array([])
     aimg        = np.array([])
@@ -1984,6 +2004,10 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
                                                aimg_skelton*pixscale,bimg_skelton*pixscale,rkron_skelton*pixscale,
                                                rflux_skelton*pixscale,fwhm_img_skelton*pixscale]])
                         print(printstr)
+
+                        ids_MW_sel.append(id_MW)
+                        ids_Skelton_sel.append(ids_Skelton[ii])
+                        sep_Skelton_sel.append(sep_Skelton[ii])
 
                         aimg = np.append(aimg, SkeltonDat['a_image'][ent_skelton]*pixscale )
                         bimg = np.append(bimg, SkeltonDat['b_image'][ent_skelton]*pixscale )
@@ -2089,7 +2113,7 @@ def getOIIemitters(magcut=25,sepcut=0.3,verbose=True,
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if printphotoinfo:
-        photreturn = ids_MW,ids_Skelton,sep_Skelton,m814,aimg,bimg,rkron,rflux,fwhm_img
+        photreturn = ids_MW_sel,ids_Skelton_sel,sep_Skelton_sel,mags814,aimg,bimg,rkron,rflux,fwhm_img
     else:
         photreturn = mags814
     return goodsubcat, photreturn
@@ -3732,6 +3756,44 @@ def OIIemitters_plot_singleVSmulticomponent(MWDR1ID=140046113,verbose=True):
     shutil.copy(galfitplot, newfile)
 
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def OIIemitters_estimate_clumping(inputMWids='all',verbose=True):
+    """
+    Function estimateing the clumping factor for the ACS postage stamps of the OII emitters within 2 x a_img['']
+
+    --- EXAMPLE OF USE ---
+    import tdosepublication_utilities as tsu
+    tsu.OIIemitters_estimate_clumping(inputMWids=[146074360])
+
+    """
+    MWsubcat, photinfo = tsu.getOIIemitters(magcut=[23,24], sepcut=0.3, verbose=True, savefits=None, printphotoinfo=True)
+    ids_MW,ids_Skelton,sep_Skelton,m814,aimg,bimg,rkron,rflux,fwhm_img = photinfo
+
+    if inputMWids == 'all':
+        inputMWids = ids_MW
+
+    imgdir   = '/Volumes/DATABCKUP1/TDOSEextractions/190325_MWDR1_OIIemitters_apertureExt/tdose_cutouts/'
+    pixscale = 0.06 # arcsec/pixel
+    clumping = []
+    outids   = []
+
+    for objid in inputMWids:
+        objent = np.where(np.asarray(ids_MW) == objid)[0]
+        if len(objent) == 0:
+            print(' WARNING No match to input MW ID '+str(objid))
+        else:
+            fitsimage   = glob.glob(imgdir+'acs_814w_candels-cdfs-*_cut_v1.0_id'+str(objid)+'_cutout4p0x4p0arcsec.fits')[0]
+            aperture    = 2 * aimg[objent] / pixscale
+            sigmasmooth = 0.25 * aimg[objent][0] / pixscale # using a smoothing kernal of 0.25*a_image
+
+            Sval         = kbs.calc_clumpiness(fitsimage,sigmasmooth,negative2zero=True,r_center=aperture,
+                                               plotimages=imgdir+str(objid)+'_clumpinessimages.pdf',verbose=False)
+
+            if verbose: print('  '+str(objid)+'  '+str(Sval))
+            outids.append(objid)
+            clumping.append(Sval)
+
+    return outids, clumping
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def MW102009072Guo9640_WhiteLightImage(outputdir,overwrite=True,verbose=True):
     """
