@@ -1527,7 +1527,7 @@ def plot_FoVoverview(ras,decs,names,sizeFoV,outputdir='./',pointings=None,showre
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_MgIIemitterUDF884spec(smoothsigma=0,verbose=True):
+def plot_MgIIemitterUDF884spec(datestamp='190515',smoothsigma=0,verbose=True):
     """
     Function plotting the spectra for MgII emitter 884 in UDF03
 
@@ -1536,8 +1536,7 @@ def plot_MgIIemitterUDF884spec(smoothsigma=0,verbose=True):
     mwp.plot_MgIIemitterUDF884spec(smoothsigma=0)
 
     """
-
-    figuredir       = '/Users/kschmidt/work/MUSE/MgIIemittersUDF3/tdose_spectra/190510/'
+    figuredir       = '/Users/kschmidt/work/MUSE/MgIIemittersUDF3/tdose_spectra/'+datestamp+'/'
 
     specdir         = figuredir
     spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000000884-0000000884.fits'
@@ -1568,8 +1567,15 @@ def plot_MgIIemitterUDF884spec(smoothsigma=0,verbose=True):
 
     xranges      = [[4800,9300],[4800,9300]]
     ylogval      = False
-    yranges_full = [[-100,2500],[-1,50]]
-    yranges_zoom = [[100,350],[-1,10]]
+
+    if datestamp == '190510': # MUSE-Wide version
+        yranges_full = [[-100,2500],[-1,50]]
+        yranges_zoom = [[100,350],[-1,10]]
+    elif datestamp == '190515':
+        yranges_full = [[-100,2500],[-1,250]]
+        yranges_zoom = [[100,400],[-1,75]]
+    else:
+        sys.exit('Invalid datestamp provided')
 
     plotnames    = [figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF884_full_flux.pdf',
                     figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF884_zoom_flux.pdf']
@@ -1610,17 +1616,16 @@ def plot_MgIIemitterUDF884spec(smoothsigma=0,verbose=True):
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_MgIIemitterUDF939spec(smoothsigma=0,verbose=True):
+def plot_MgIIemitterUDF939spec(datestamp='190515',smoothsigma=0,verbose=True):
     """
     Function plotting the spectra for MgII emitter 884 in UDF03
 
     --- EXAMPLE OF USE ---
     import MUSEWidePlots as mwp
-    mwp.plot_MgIIemitterUDF939spec(smoothsigma=0)
+    mwp.plot_MgIIemitterUDF939spec(datestamp='190515',smoothsigma=0)
 
     """
-
-    figuredir       = '/Users/kschmidt/work/MUSE/MgIIemittersUDF3/tdose_spectra/190510/'
+    figuredir       = '/Users/kschmidt/work/MUSE/MgIIemittersUDF3/tdose_spectra/'+datestamp+'/'
 
     specdir         = figuredir
     spec_modelimg   = specdir+'tdose_spectrum_modelimg_0000000939-0000000939.fits'
@@ -1651,8 +1656,15 @@ def plot_MgIIemitterUDF939spec(smoothsigma=0,verbose=True):
 
     xranges      = [[4800,9300],[4800,9300]]
     ylogval      = False
-    yranges_full = [[-50,800],[-1,15]]
-    yranges_zoom = [[-10,150],[-1,3]]
+
+    if datestamp == '190510': # MUSE-Wide version
+        yranges_full = [[-50,800],[-1,15]]
+        yranges_zoom = [[-10,150],[-1,3]]
+    elif datestamp == '190515':
+        yranges_full = [[-50,1000],[-1,80]]
+        yranges_zoom = [[-10,200],[-1,10]]
+    else:
+        sys.exit('Invalid datestamp provided; valid values are:')
 
     plotnames    = [figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF939_full_flux.pdf',
                     figuredir+'/tdose_1Dspectra_singleVSmulticomp_UDF939_zoom_flux.pdf']
