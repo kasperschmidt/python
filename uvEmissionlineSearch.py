@@ -2974,6 +2974,103 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
         tempname = outfits.replace('.fits',valstring+'.fits')
         fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
 
+    # - - - - - - - - - - - - - - - - - - SiIII doublet - - - - - - - - - - - - - - - - - -
+    doubletlam  = [1882.71,1892.03] # See detection from Berg+19
+    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    fluxSiIII1  = 1.0
+    fluxratios  = [0.1,0.3,0.5,0.7,0.9,1.1] # ???
+
+    Ntemps      = len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the NV doublet (varying sigma and flux ratio)')
+
+    for fr in fluxratios:
+        fluxSiIII2 = fluxSiIII1 / fr
+        for sig in sigmas:
+            tcdic = {}
+            tcdic['Si3_1']  = ['GAUSS', doubletlam[0], sig, 0.0, fluxSiIII1, 'SiIII1883A']
+            tcdic['Si3_2']  = ['GAUSS', doubletlam[1], sig, 0.0, fluxSiIII2, 'SiIII1892A']
+
+            valstring = '_SiIIIdoublet'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+
+    # - - - - - - - - - - - - - - - - - - CII gauss - - - - - - - - - - - - - - - - - -
+    linelam     = 1335.6627
+    rangeDlam   = [linelam-10.0,linelam+10.0,0.1]
+
+    Ntemps      = len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the CII line (varying sigma)')
+
+    for sig in sigmas:
+        tcdic = {}
+        tcdic['CII']                  = ['GAUSS', linelam, sig, 0.0, 1.0, 'CII1336A']
+
+        valstring = '_CII'+\
+                    '_sig_'+str(sig).replace('.','p')
+
+        if addLSF:
+            tcdic['LSF']        = LSFparam
+            valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+        tempname = outfits.replace('.fits',valstring+'.fits')
+        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+    # - - - - - - - - - - - - - - - - - - CII] gauss - - - - - - - - - - - - - - - - - -
+    linelam     = 2326.113
+    rangeDlam   = [linelam-10.0,linelam+10.0,0.1]
+
+    Ntemps      = len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the CII] line (varying sigma)')
+
+    for sig in sigmas:
+        tcdic = {}
+        tcdic['CIIb']                  = ['GAUSS', linelam, sig, 0.0, 1.0, 'CII]2326A']
+
+        valstring = '_CIIb'+\
+                    '_sig_'+str(sig).replace('.','p')
+
+        if addLSF:
+            tcdic['LSF']        = LSFparam
+            valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+        tempname = outfits.replace('.fits',valstring+'.fits')
+        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+    # - - - - - - - - - - - - - - - - - - MgII doublet - - - - - - - - - - - - - - - - - -
+    doubletlam  = [2795.528,2802.705]
+    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    fluxMgII1   = 1.0
+    fluxratios  = [0.1,0.3,0.5,0.7,0.9,1.1] # ???
+
+    Ntemps      = len(fluxratios)*len(sigmas)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the NV doublet (varying sigma and flux ratio)')
+
+    for fr in fluxratios:
+        fluxMgII2 = fluxMgII1 / fr
+        for sig in sigmas:
+            tcdic = {}
+            tcdic['MgII1']  = ['GAUSS', doubletlam[0], sig, 0.0, fluxMgII1, 'MgII2796A']
+            tcdic['MgII2']  = ['GAUSS', doubletlam[1], sig, 0.0, fluxMgII2, 'MgII2803A']
+
+            valstring = '_MgIIdoublet'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5,
                       zoomxplot=None,verbose=True):
