@@ -93,16 +93,16 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
     elif stacktype.lower() == 'median':
         fluxarr_ma      = np.ma.masked_array(fluxarr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
         flux_out_ma     = np.median(fluxarr_ma,axis=1)
-        flux_out        = flux_out_ma.filled()
+        flux_out        = flux_out_ma.filled(fill_value = np.nan)
 
         fluxarr_ones    = fluxarr * 0.0 + 1.0
         Nspecstack_ma   = np.ma.masked_array(fluxarr_ones,mask=~np.isfinite(fluxarr_ones),fill_value = np.nan)
         Nspecstack_ma   = np.sum(Nspecstack_ma,axis=1)
-        Nspecstack      = Nspecstack_ma.filled()
+        Nspecstack      = Nspecstack_ma.filled(fill_value = np.nan)
 
         vararr_ma       = np.ma.masked_array(vararr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
         variance_out_ma = np.median(vararr_ma,axis=1)
-        variance_out    = variance_out_ma.filled()
+        variance_out    = variance_out_ma.filled(fill_value = np.nan)
 
         # alternatively, loop over columns and take confidence intervals, to indicate scatter of errors
         # Or use the error from the median value itself.
@@ -122,6 +122,52 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
 
     if verbose: print(' - Returning wavelengths, fluxes, variances of stack and '
                       'number of spectra contributing to each stacked pixel')
+    return wave_out, flux_out, variance_out, Nspecstack
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_1D_wrapper(spectra, redshifts, outfile, verbose=True,
+                     stacktype='median', wavemin=1100, wavemax=3000, deltawave=0.1):
+    """
+    Wrapper around stack_1D() to load spectra on the TDOSE/FELIS format (and corresponding redshifts) and stack them
+
+    --- INPUT ---
+    spectra         List of spectra to stack in rest-frame
+    redshifts       Redshifts used to move spectra to rest-frame
+    outfile         File to save stacked spectrum to
+    verbose         Toggle verbosity
+
+    stacktype, wavemin, wavemax, deltawave are passed directly to stac_1D()
+
+    --- EXAMPLE OF USE ---
+    import stacking
+    import glob
+
+    spectra = glob.glob('/Volumes/DATABCKUP1/TDOSEextractions/180824_TDOSEextraction_LAEs60fields/modelimg/tdose_spectra/tdose_spectrum_candels-cdfs-16*.fits')
+    stacktype = 'median'
+    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits'
+    objinfo   = afits.open(infofile)[1].data
+    z_Lya     = objinfo['redshift'][129:140]
+
+    wave_out, flux_out, variance_out, Nspecstack = stacking.stack_1D_wrapper(spectra,z_Lya, '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_spectrum_candels-cdfs-16_LAEs_stack_'+stacktype+'.fits',stacktype=stacktype)
+
+    """
+    if verbose: print(' - Will stack the '+str(len(spectra))+' provided spectra')
+
+    wavelengths  = []
+    fluxes       = []
+    variances    = []
+
+    for spectrum in spectra:
+        data        = afits.open(spectrum)[1].data
+        wavelengths.append(data['wave'])
+        fluxes.append(data['flux'])
+        variances.append(data['fluxerror']**2.0)
+
+    if verbose: print(' - Start stacking of spectra in rest-frame')
+    wave_out, flux_out, variance_out, Nspecstack = \
+        stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=redshifts,
+                          stacktype=stacktype, wavemin=wavemin, wavemax=wavemax,
+                          deltawave=deltawave, outfile=outfile, verbose=verbose)
+
     return wave_out, flux_out, variance_out, Nspecstack
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, outname,
