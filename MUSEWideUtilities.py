@@ -1300,6 +1300,7 @@ def TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage,minRaper=0.5,minCutwid
                       '   Restricting source to FoV of reference image '+refimage+'\n'
                       '   Output will be saved to '+outputnamebase+'.txt/fits')
     rafelskidat      = afits.open('/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits')[1].data
+    refimgdata       = afits.open(refimage)[0].data
     refimghdr        = afits.open(refimage)[0].header
     arcsecPerPix_Raf = 0.03
 
@@ -1366,6 +1367,19 @@ def TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage,minRaper=0.5,minCutwid
     ypos       = pixcoord[1]
     goodent    = np.where((xpos < refimghdr['NAXIS1']) & (xpos > 0) &
                           (ypos < refimghdr['NAXIS2']) & (ypos > 0)   )[0]
+
+    if verbose: print('   (Make sure no 0s exist in a 6x6 pixel region around position, i.e., ignoring 0-edges of ref images.)')
+    Ngoodinit  = len(goodent)
+    intxpos    = np.round(xpos).astype(int)
+    intypos    = np.round(ypos).astype(int)
+    for ent in goodent:
+        if (refimgdata[np.max([intypos[ent]-5,0]):np.min([intypos[ent]+5,refimghdr['NAXIS2']-1]),
+                       np.max([intxpos[ent]-5,0]):np.min([intxpos[ent]+5,refimghdr['NAXIS1']-1])] == 0).any():
+            goodent[np.where(goodent == ent)[0]] = -99
+    Nedge     = len(np.where(goodent == -99)[0])
+    goodent   = goodent[np.where(goodent != -99)[0]]
+    if verbose: print('   (Ended up removing '+str(Nedge)+'/'+str(Ngoodinit)+
+                      ' objects that fall in the edge region but are within the image FoV)')
 
     ids             = ids_all[goodent]
     ras             = ras_all[goodent]
