@@ -2614,7 +2614,7 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if logaxes:
@@ -2879,7 +2879,7 @@ def OIIemitters_plotcomparisons(showids=False, outliercut=1.25, figsize=(5, 5), 
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -4684,7 +4684,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if logaxes:
@@ -4746,7 +4746,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -4810,7 +4810,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -4872,7 +4872,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -4932,7 +4932,7 @@ def plot_maxvalues_OIIemitters(maxvalfitstable, outliercut=1.25, figsize=(5, 5),
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -5268,7 +5268,7 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -5328,7 +5328,7 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -5389,7 +5389,7 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -5456,7 +5456,7 @@ def plot_maxvalues_LAEs(maxvalfitstable, outliercut=1.25, figsize=(5, 5), fontsi
     fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
     fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
 
-    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+    plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3$\sigma$ interval',color='red')
     plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
