@@ -1469,8 +1469,13 @@ def TDOSE_sourcecat_from_Skelton(outputnamebase,refimage,minRaper=0.5,minCutwidt
     if verbose: print('   (storing both files together with source catalog output) ')
 
     outpath     = '/'.join(outputnamebase.split('/')[:-1])+'/'
-    cut_outtxt  = outpath+'../'+'cutoutsizes_Skelton_4xA_IMAGE.txt'
-    aper_outtxt = outpath+'../'+'apertureradii_Skelton_1xA_IMAGE.txt'
+
+    if '-cosmos-' in refimage:
+        cut_outtxt  = outpath+'../'+'cutoutsizes_Skelton_cosmos_4xA_IMAGE.txt'
+        aper_outtxt = outpath+'../'+'apertureradii_Skelton_cosmos_1xA_IMAGE.txt'
+    else:
+        cut_outtxt  = outpath+'../'+'cutoutsizes_Skelton_goodss_4xA_IMAGE.txt'
+        aper_outtxt = outpath+'../'+'apertureradii_Skelton_goodss_1xA_IMAGE.txt'
 
     fout = open(cut_outtxt,'w')
     fout.write('# Cutout sizes of 4*A_IMAGE on each side (corresponding to twice the aperture diameter '
