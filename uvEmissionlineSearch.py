@@ -8,7 +8,7 @@ import sys
 import glob
 import astropy
 import MiGs
-import astropy.io.fits as pyfits
+import astropy.io.fits as afits
 import pyfits as pyfitsOLD
 import datetime
 import numpy as np
@@ -113,11 +113,11 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     catE24eltab       = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_emline_table_v3.2.fits'
 
     if verbose: print('   '+catPSF)
-    datPSF      = pyfits.open(catPSF)[1].data
+    datPSF      = afits.open(catPSF)[1].data
     if verbose: print('   Columns: '+str(datPSF.dtype.names)+'\n')
 
     if verbose: print('   '+catE24eltab)
-    datE24eltab = pyfits.open(catE24eltab)[1].data
+    datE24eltab = afits.open(catE24eltab)[1].data
     if verbose: print('   Columns: '+str(datE24eltab.dtype.names)+'\n')
 
     catE24main        = '/Users/kschmidt/work/catalogs/MUSE_GTO/MW_1-24_main_table_v3.2.fits'
@@ -130,27 +130,27 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
 
 
     if verbose: print('   '+catE24main)
-    datE24main  = pyfits.open(catE24main)[1].data
+    datE24main  = afits.open(catE24main)[1].data
     if verbose: print('   Columns: '+str(datE24main.dtype.names)+'\n')
 
     if verbose: print('   '+catE36main)
-    datE36main  = pyfits.open(catE36main)[1].data
+    datE36main  = afits.open(catE36main)[1].data
     if verbose: print('   Columns: '+str(datE36main.dtype.names)+'\n')
 
     if verbose: print('   '+catE40main)
-    datE40main  = pyfits.open(catE40main)[1].data
+    datE40main  = afits.open(catE40main)[1].data
     if verbose: print('   Columns: '+str(datE40main.dtype.names)+'\n')
 
     if verbose: print('   '+catUDFSmain)
-    datUDFSmain  = pyfits.open(catUDFSmain)[1].data
+    datUDFSmain  = afits.open(catUDFSmain)[1].data
     if verbose: print('   Columns: '+str(datUDFSmain.dtype.names)+'\n')
 
     if verbose: print('   '+catUDFmain)
-    datUDFmain  = pyfits.open(catUDFmain)[1].data
+    datUDFmain  = afits.open(catUDFmain)[1].data
     if verbose: print('   Columns: '+str(datUDFmain.dtype.names)+'\n')
 
     if verbose: print('   '+catU10main)
-    datU10main= pyfits.open(catU10main)[1].data
+    datU10main= afits.open(catU10main)[1].data
     if verbose: print('   Columns: '+str(datU10main.dtype.names)+'\n')
 
 
@@ -162,38 +162,38 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     catU10lineprops   = 'None'
 
     if verbose: print('   '+catE24lineprops)
-    datE24lp  = pyfits.open(catE24lineprops)[1].data
+    datE24lp  = afits.open(catE24lineprops)[1].data
     if verbose: print('   Columns: '+str(datE24lp.dtype.names)+'\n')
 
     if verbose: print('   '+catE36lineprops)
-    datE36lp    = pyfits.open(catE36lineprops)[1].data
+    datE36lp    = afits.open(catE36lineprops)[1].data
     if verbose: print('   Columns: '+str(datE36lp.dtype.names)+'\n')
 
     catLyaEW          = '/Users/kschmidt/work/catalogs/MUSE_GTO/fluxes_EWs_line_props.fits'
     if verbose: print('   '+catLyaEW)
-    datLyaEW  = pyfits.open(catLyaEW)[1].data
+    datLyaEW  = afits.open(catLyaEW)[1].data
     if verbose: print('   Columns: '+str(datLyaEW.dtype.names)+'\n')
 
     catGuo     = '/Users/kschmidt/work/catalogs/guo/CANDELS.GOODSS.F160W.v1.fits'
     if verbose: print('   '+catGuo)
-    datGuo     = pyfits.open(catGuo)[1].data
+    datGuo     = afits.open(catGuo)[1].data
 
     catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
     if verbose: print('   '+catSkeltonGS)
-    datSkeltonGS  = pyfits.open(catSkeltonGS)[1].data
+    datSkeltonGS  = afits.open(catSkeltonGS)[1].data
 
     catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
     if verbose: print('   '+catSkeltonCOS)
-    datSkeltonCOS = pyfits.open(catSkeltonCOS)[1].data
+    datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
 
     catRafelski = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
     if verbose: print('   '+catRafelski)
-    datRafelski = pyfits.open(catRafelski)[1].data
+    datRafelski = afits.open(catRafelski)[1].data
 
     #catLaigle = '/Users/kschmidt/work/catalogs/COSMOS2015_Laigle_v1.1.fits'
     catLaigle = '/Users/kschmidt/work/catalogs/COSMOS2015_Laigle_v1.1_candelsregion.fits' # generated with TOPCAT
     if verbose: print('   '+catLaigle )
-    datLaigle  = pyfits.open(catLaigle)[1].data
+    datLaigle  = afits.open(catLaigle)[1].data
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Counting LAEs and putting together ID list')
@@ -448,8 +448,8 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
         elif len(modelfile) > 1:
             sys.exit('Found more than one model file for '+str("%.9d" % id)+'; Found the models '+modelfile)
         else:
-            refimg_hdr  = pyfits.open(modelfile[0])[1].header
-            model_hdr   = pyfits.open(modelfile[0])[2].header
+            refimg_hdr  = afits.open(modelfile[0])[1].header
+            model_hdr   = afits.open(modelfile[0])[2].header
             comps       = []
             for hdrkey in model_hdr.keys():
                 if ('COMP_' in hdrkey) & (model_hdr[hdrkey] != 'sky'):
@@ -842,7 +842,7 @@ def get_LAEidLists(sourcecatalog,skipids=True,includecomponentinfo=True,verbose=
     idlists = uves.get_LAEidLists(sourcecatalog)
 
     """
-    sourcetab = pyfits.open(sourcecatalog)[1].data
+    sourcetab = afits.open(sourcecatalog)[1].data
     pointings = np.unique(np.sort(sourcetab['pointing']))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -911,7 +911,7 @@ def gen_LAEsourceCats(outputdir,sourcecatalog,modelcoord=False,verbose=True):
     uves.gen_LAEsourceCats('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_sourcecats/','/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits',modelcoord=True)
 
     """
-    sourcetab = pyfits.open(sourcecatalog)[1].data
+    sourcetab = afits.open(sourcecatalog)[1].data
     pointings = np.unique(np.sort(sourcetab['pointing']))
 
     for pp, pointing in enumerate(pointings):
@@ -974,7 +974,7 @@ def gen_LAEsourceCats_fromGALFITmodelCubeSourceCats(outputdir,sourcecatalog,mode
     uves.gen_LAEsourceCats_fromGALFITmodelCubeSourceCats(outputdir,sourcecat,modelsourcecatdir,ignore99s=False)
 
     """
-    sourcetab = pyfits.open(sourcecatalog)[1].data
+    sourcetab = afits.open(sourcecatalog)[1].data
     pointings = np.unique(np.sort(sourcetab['pointing']))
 
     for pp, pointing in enumerate(pointings):
@@ -1030,7 +1030,7 @@ def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=1
     uves.gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,photcat='skelton',returnSeparations=False)
 
     """
-    LAEinfo = pyfits.open(LAEinfo)[1].data
+    LAEinfo = afits.open(LAEinfo)[1].data
 
     for Mid in MUSEIDlist:
         idstr = str(Mid)
@@ -1067,7 +1067,7 @@ def gen_LAEsourceCats_FromPhotCat(outputdir,MUSEIDlist,LAEinfo,sourcecatradius=1
         refimg       = refimgdir+'acs_814w_'+LAEinfo['pointing'][objent][0]+'_cut_v1.0.fits'
         if idstr.startswith('6'):
             refimg   = refimgdir+'hlsp_hlf_hst_acs-30mas_goodss_f775w_udf-mosaic_v1.5_sci.fits'
-        imgheader    = pyfits.open(refimg)[0].header
+        imgheader    = afits.open(refimg)[0].header
         sourcelist   = [ [Mid, Mid, objra, objdec, 1]]
         outname      = outputdir+'tdose_sourcecat_from_fitscat_id'+idstr+'.txt'
 
@@ -1147,9 +1147,9 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
             if type(PSFmodelext) is not list:
                 PSFmodelext = [PSFmodelext] * len(PSFmodels)
             for mm, PSFmodel in enumerate(PSFmodels):
-                PSFlist.append(pyfits.open(PSFmodel)[PSFmodelext[mm]].data)
+                PSFlist.append(afits.open(PSFmodel)[PSFmodelext[mm]].data)
         else:
-            PSFlist = [pyfits.open(PSFmodels)[PSFmodelext].data]*len(GALFITmodels)
+            PSFlist = [afits.open(PSFmodels)[PSFmodelext].data]*len(GALFITmodels)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     gen_compinfofile = True
@@ -1223,7 +1223,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 """ % tu.get_now_string())
 
             for mm, GFmodel in enumerate(GALFITmodels):
-                modelheader = pyfits.open(models_renamed[mm])[2].header
+                modelheader = afits.open(models_renamed[mm])[2].header
                 compstring  = ' '
                 for key in modelheader.keys():
                     if 'COMP_' in key:
@@ -1264,7 +1264,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
     uves.inspect_GALFITmodels(modelstart=3)
 
     """
-    LAEinfo = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    LAEinfo = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
 
     if objids is None:
         GALFITmodels = glob.glob(modeldir+'model*arcsec.fits')
@@ -1444,7 +1444,7 @@ def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
     uves.rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False)
     """
     modelfiles = glob.glob(modeldir+'/imgblock*.fits')
-    sourcetab  = pyfits.open(sourcecatalog)[1].data
+    sourcetab  = afits.open(sourcecatalog)[1].data
     if verbose: print ' - Found '+str(len(modelfiles))+' in modeldir to rename '
 
     for oldname in modelfiles:
@@ -1498,11 +1498,11 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
     coordarray = np.zeros(Nfiles, dtype={'names':['modelfile','xpix','ypix','ra','dec'],
                                          'formats':['a250', 'f8', 'f8', 'f8', 'f8']})
     for mm, modelfile in enumerate(modelfiles[0:5]):
-        model_refimghdr = pyfits.open(modelfile)[1].header
+        model_refimghdr = afits.open(modelfile)[1].header
         imgwcs    = wcs.WCS(tu.strip_header(model_refimghdr.copy()))
 
         if pixpos == 'center':
-            model_shape     = pyfits.open(modelfile)[1].data.shape
+            model_shape     = afits.open(modelfile)[1].data.shape
             xpix      = int(model_shape[1]/2.)
             ypix      = int(model_shape[0]/2.)
         else:
@@ -1543,7 +1543,7 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
     uves.gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,1549,1909],fwhmkey='FWHM',verbose=True)
 
     """
-    LAEinfo = pyfits.open(LAEinfofile)[1].data
+    LAEinfo = afits.open(LAEinfofile)[1].data
 
     pointings = LAEinfo['pointing']
 
@@ -1616,7 +1616,7 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
 
     """
     if verbose: print(' - Loading source catalog ')
-    sourcecat = pyfits.open(sourcecatalog)[1].data
+    sourcecat = afits.open(sourcecatalog)[1].data
 
     Nspec = len(spectra)
     if verbose: print(' - Will estimate limits for lines '+str(lines)+' for '+str(Nspec)+' spectra found')
@@ -1671,7 +1671,7 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
             if verbose: print(' - Looping over spectra for line = '+keys[ll])
             for ss, spec in enumerate(spectra):
                 id       = spec.split('/')[-1].split('.fit')[0][-9:]
-                specdat  = pyfits.open(spec)[1].data
+                specdat  = afits.open(spec)[1].data
                 spec_lam = specdat['wave']
                 spec_f   = specdat['flux']
                 spec_err = specdat['fluxerror']
@@ -1785,7 +1785,7 @@ def estimate_continuumlevel_viaBeta(wave, wave_ref, f_ref, beta, verbose=True):
 
     --- EXAMPLE OF USE ---
 
-    sourcecatdat = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    sourcecatdat = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
     objent       = np.where(sourcecatdat['id'] == 102013086)[0]
     wave         = 1551 * (sourcecatdat['redshift'][objent][0] + 1)
     beta         = sourcecatdat['beta'][objent][0]
@@ -1822,7 +1822,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
     Plotting the output from uves.estimate_limits()
 
     """
-    sourcedat = pyfits.open(sourcecatalog)[1].data
+    sourcedat = afits.open(sourcecatalog)[1].data
 
     for key in limits_dictionary.keys():
     #for key in ['lya']:
@@ -2332,7 +2332,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
     import uvEmissionlineSearch as uves
 
     MUSEidlist  = [103006046,119031070,208006149]
-    MUSEidlist  = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
+    MUSEidlist  = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data['id']
 
     outputdir   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/171108_1DspecOverview/'
     plottedspec = uves.plot_1DspecOverview_forsample(MUSEidlist,outputdir=outputdir)
@@ -2340,7 +2340,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
     """
     Nobj     = len(MUSEidlist)
     if verbose: print ' - Plotting spectra of '+str(Nobj)+' objects in "MUSEidlist"'
-    LAEinfo        = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    LAEinfo        = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
     spectraplottet = collections.OrderedDict()
 
     if type(specdir) == str:
@@ -2640,7 +2640,7 @@ def gen_overviewdocument(outdir,outfile,clobber=False,
 
     """
 
-    objdata   = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    objdata   = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
     ids       = objdata['id']
     ras       = objdata['ra']
     decs      = objdata['dec']
@@ -2846,7 +2846,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
     LSFparam     = ['LSF', MUSELSFsigma,  'MUSE GAUSS LSF']
 
     # - - - - - - - - - - - - - - - - - - CIII doublet - - - - - - - - - - - - - - - - - -
-    doubletlam  = [1907.0,1909.0]
+    doubletlam  = [1906.68,1908.73]
     rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
     fluxCIII1   = 1.0
     fluxratios  = [0.3,0.6,0.9,1.2,1.5,1.8] # Osterbrock predicts CIII1/CIII2 < 1.6
@@ -3111,6 +3111,48 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
         if verbose: print(' - Wrote output spectrum to '+mockspec)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectrum_fromsetup.fits',
+                                    S2N = [1.0,3.0,5.0,7.0],
+                                    plotspectra=False,overwrite=False,verbose=True):
+    """
+    Wrapper to generate a set of mock spectra to test FELIS on.
+    The setup of each of the mock spectra are defined in the
+
+    --- INPUT ---
+    basename        Main name (and dir) of mock fits spectra to generate
+    specsetup       Setup file containing the components and spectra to generate
+    S2N             List of signal-to-noise ratios of strongest line to generate
+    plotspectra     To plot the generated spectra set this to true
+    overwrite       Overwrite existing files?
+    verbose         Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    outdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
+    uves.gen_felismockspec(basename=outdir+'uves_felis_mock_MUSEspectrum.fits',redshift=3.5,zoomxplot=np.array([1880,1940])*(1+3.5))
+
+    """
+    if verbose: print(' - Building mockspectra using FELIS tools')
+
+    if verbose: print(' - Lopping over template components to build')
+
+
+    noisesigmas  = lineflux/S2N
+
+    for ss, sigma in noisesigmas:
+        mockspec = basename.replace('.fits','_S2N'+str(sigma).replace('.','p')+'mainline_'+namekey+'.fits')
+        noise    = ['GAUSS', 0.0, sigma]
+        wavemin  = 4800
+        wavemax  = 9300
+        dwave    = 0.25
+
+        fbt.build_template([wavemin,wavemax,dwave],tcdic,tempfile=mockspec,noise=noise,overwrite=overwrite,
+                           plottemplate=plottemplates,zoomxplot=[wavemin,wavemax])
+        if verbose: print(' - Wrote output spectrum to '+mockspec)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
                        lamwidth_restframe='dvoffset',runonallspecs=False,subtract_spec_median=True,verbose=True):
@@ -3146,12 +3188,12 @@ def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line
                       specdir+'tdose_spectrum_candels-cdfs-25_modelimg_0125042115-0125042115.fits']
 
     uvlinesdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
-    z_all      = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['redshift']
-    id_all     = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['id']
+    z_all      = afits.open(uvlinesdir+'LAEinfo.fits')[1].data['redshift']
+    id_all     = afits.open(uvlinesdir+'LAEinfo.fits')[1].data['id']
     try:
-        vshift_all = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['red_peak_shift_AV17_kms']
+        vshift_all = afits.open(uvlinesdir+'LAEinfo.fits')[1].data['red_peak_shift_AV17_kms']
     except:
-        vshift_all = pyfits.open(uvlinesdir+'LAEinfo.fits')[1].data['red_peak_shift_V18_kms']
+        vshift_all = afits.open(uvlinesdir+'LAEinfo.fits')[1].data['red_peak_shift_V18_kms']
 
     specs     = []
     objzs     = []
@@ -3272,7 +3314,7 @@ def plot_FELISmatchOutput_OLD(picklefile,line='CIII',verbose=True,
 
             besttemp = CCdic[spec]['templatevec'][cn_besttemp]
 
-            besttempt_hdr = pyfits.open(besttemp)[1].header
+            besttempt_hdr = afits.open(besttemp)[1].header
 
             besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
             besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
@@ -3451,7 +3493,7 @@ def plot_FELISmatchOutput(picklefile,line='CIII',verbose=True,S2Ncut=3,  # only 
                     best_flux        = cc_best_flux[SNmax_ent]
                     best_variance    = cc_best_variance[SNmax_ent]
 
-                besttempt_hdr = pyfits.open(besttemp)[1].header
+                besttempt_hdr = afits.open(besttemp)[1].header
                 if 'fluxratio' in besttemp:
                     besttemp_fratios.append(besttempt_hdr['F'+line+'1_4']/besttempt_hdr['F'+line+'2_4'])
                     besttemp_sigmas.append(besttempt_hdr['F'+line+'1_2'])
@@ -3648,8 +3690,8 @@ def check_neighbors(ids=[214063213],
         sc_JKmodel   = modeldir+'model_acs_814w_candels-'+field+'-'+str(fieldno)+'_cut_v1.0_id'+\
                        str(id)+'_cutout2p0x2p0arcsec_sourcecatalog.fits'
 
-        sc_gen = pyfits.open(sc_generated)[1].data
-        sc_mod = pyfits.open(sc_JKmodel)[1].data
+        sc_gen = afits.open(sc_generated)[1].data
+        sc_mod = afits.open(sc_JKmodel)[1].data
 
         print(' - - - - - - - - - - '+str(id)+' - - - - - - - - - - - ')
         print(" - SOURCE CATALOG GENERATED FROM CROSSMATCH TO MASTER SOURCE CAT")
