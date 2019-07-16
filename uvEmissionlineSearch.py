@@ -4091,13 +4091,13 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
         else:
             if 'udf-' in refimage:
                 outputnamebase = outputdir+refimage.split('/')[-1].\
-                    replace('acs_775w','tdose_sourcecat_MW_acs_775w').replace('.fits','')
+                    replace('acs_775w','tdose_sourcecat_MWuves_acs_775w').replace('.fits','')
             elif 'hudf09' in refimage:
                 outputnamebase = outputdir+refimage.split('/')[-1].\
-                    replace('wfc3_160w','tdose_sourcecat_MW_wfc3_160w').replace('.fits','')
+                    replace('wfc3_160w','tdose_sourcecat_MWuves_wfc3_160w').replace('.fits','')
             else:
                 outputnamebase = outputdir+refimage.split('/')[-1].\
-                    replace('acs_814w','tdose_sourcecat_MW_acs_814w').replace('.fits','')
+                    replace('acs_814w','tdose_sourcecat_MWuves_acs_814w').replace('.fits','')
 
         refimgdata       = afits.open(refimage)[0].data
         refimghdr        = afits.open(refimage)[0].header
@@ -4195,11 +4195,11 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
         if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
 
         if '-cosmos-' in refimage:
-            cut_outtxt  = outputdir+'cutoutsizes_MW_cosmos_4xA_IMAGE.txt'
-            aper_outtxt = outputdir+'apertureradii_MW_cosmos_2xA_IMAGE.txt'
+            cut_outtxt  = outputdir+'cutoutsizes_MWuves_cosmos_4xA_IMAGE.txt'
+            aper_outtxt = outputdir+'apertureradii_MWuves_cosmos_2xA_IMAGE.txt'
         else:
-            cut_outtxt  = outputdir+'cutoutsizes_MW_goodss_4xA_IMAGE.txt'
-            aper_outtxt = outputdir+'apertureradii_MW_goodss_2xA_IMAGE.txt'
+            cut_outtxt  = outputdir+'cutoutsizes_MWuves_goodss_4xA_IMAGE.txt'
+            aper_outtxt = outputdir+'apertureradii_MWuves_goodss_2xA_IMAGE.txt'
 
         fout = open(cut_outtxt,'w')
         fout.write('# Cutout sizes of 4*A_IMAGE on each side (corresponding to twice the aperture diameter '
