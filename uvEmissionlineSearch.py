@@ -4269,6 +4269,8 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
         a_image         = a_image_all[goodent] * arcsecPerPix_phot / np.mean(arcsecPerPix_refimg)
         b_image         = b_image_all[goodent] * arcsecPerPix_phot / np.mean(arcsecPerPix_refimg)
         theta           = theta_all[goodent]
+
+        MWidsinfield    = ids
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose: print(' - Add photometric objects around MUSE-Wide objects of interest')
 
@@ -4334,5 +4336,14 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
             if verbose: print(' - Saving fits version of source catalog to '+outnamefits)
             fitsfmt       = ['D']*10
             sourcecatfits = tu.ascii2fits(outtxt,asciinames=True,skip_header=2,fitsformat=fitsfmt,verbose=verbose)
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            extidcat      = outtxt.replace('.txt','_objects2extract.txt')
+            if verbose: print(' - Will save ids of objects to extract in '+extidcat+' (overwriting any existing files)')
+            fout = open(extidcat,'w')
+            fout.write('# id \n')
+            for mm, mwid in enumerate(MWidsinfield):
+                fout.write(str(MWidsinfield[mm])+'  \n')
+            fout.close()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
