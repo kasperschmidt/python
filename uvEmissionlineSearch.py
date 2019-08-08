@@ -4347,3 +4347,165 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
             fout.close()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_infofile_nondetections(infofile,goodmatchsep=0.25,outdir=None,magcuts=None,
+                               magtocuton=['f814wcand','f160w','f814w','f775w'],verbose=True):
+    """
+    Generate object id lists of objects from the infofile which are (likely) not detected in the imaging
+    and which should therfore be extracted as point sources with the "nondetections" keyword in the TDOSE setup files.
+
+    --- INPUT ---
+    infofile          infofile from uves.build_LAEfitstable() to base source catalogs on
+    goodmatchsep      Any match to the photometric catalog below goodmatchsep is considered detectable
+    outdir            To save results to output ascii files instead of printing IDs to screen provide an output directory
+    magcuts           Applying magnitude cuts to the selection. Provide a list of 4 cuts to be applied
+                      to [cdfs,cdfs-parallel,cosmos,udf] photometry.
+    magtocuton        Corresponding to the magcuts, provide the names of the filters to cut on
+    verbose           Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits'
+    outdir        = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/nondetection_lists/'
+    uves.get_infofile_nondetections(infofile,goodmatchsep=0.25,outdir=outdir,magcuts=[27.2,26.4,26.5,29.5],verbose=True) # mag cuts are Skelton and Rafelski 5sigma limiting depths
+
+    """
+    if outdir is not None:
+        out_summary = outdir+'uves_nondetections_summary.txt'
+        fout = open(out_summary,'w')
+        fout.write('# List of MUSE ids to treat as non-detections for TDOSE extractions generated with uves.get_infofile_nondetections() on '+kbs.DandTstr2()+'\n')
+        fout.write('# Selection based on: \n')
+        fout.write('# goodmatchsep                                = '+str(goodmatchsep)+' \n')
+        fout.write('# magtocuton[cdfs,cdfs-parallel,cosmos,udf]   = '+str(magtocuton)+' \n')
+        fout.write('# magcuts[cdfs,cdfs-parallel,cosmos,udf]      = '+str(magcuts)+' \n# \n')
+
+    infodat        = afits.open(infofile)[1].data
+
+    skelcosmos     = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+    skelcosmosdat  = afits.open(skelcosmos)[1].data
+
+    skelcdfs       = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    skelcdfsdat    = afits.open(skelcdfs)[1].data
+
+    rafelskicat    = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
+    rafelskidat    = afits.open(rafelskicat)[1].data
+
+    pointings      = np.unique(infodat['pointing'])
+
+    if magcuts is None:
+        if verbose: print(' - WARNING: No magnitude cuts provided')
+        magcuts = [35,35,35,35]
+    print(' - Including objects with matches brighter than: \n   [cdfs_'+str(magtocuton[0])+',cdfs-parallels_'+str(magtocuton[1])+',cosmos_'+str(magtocuton[2])+',udf_'+str(magtocuton[3])+'] = '+str(magcuts))
+
+    if verbose & (outdir is None):
+        print(' - - - - - - - - - - - - - - - OBJECTS FOR NONDETECTION KEYWORD - - - - - - - - - - - - - - - ')
+    for pp, pointing in enumerate(pointings):
+        pointingent     = np.where(infodat['pointing'] == pointing)
+        ids_point       = infodat['id'][pointingent]
+        match_sep_Skel  = infodat['sep_skelton'][pointingent]
+        match_id_Skel   = infodat['id_skelton'][pointingent]
+        match_sep_Raf   = infodat['sep_rafelski'][pointingent]
+        match_id_Raf    = infodat['id_rafelski'][pointingent]
+
+        pointing_nondetections   = []
+        pointing_nondetections_s = []  # seperate list for UDF skelton objects
+        for ii, museid in enumerate(ids_point):
+
+            # magcuts = [cdfs,cdfs-parallel,cosmos,udf,udf10]
+            if 'cdfs' in pointing:
+                match_id  = match_id_Skel[ii]
+                match_sep = match_sep_Skel[ii]
+                phot_ent  = np.where(skelcdfsdat['id'] == match_id)[0]
+                phot_mag  = 25.0 - 2.5**np.log10(skelcdfsdat['f_'+magtocuton[0]][phot_ent])
+                mag_cut   = magcuts[0]
+
+            elif 'hudf09' in pointing:
+                match_id  = match_id_Skel[ii]
+                match_sep = match_sep_Skel[ii]
+                phot_ent  = np.where(skelcdfsdat['id'] == match_id)[0]
+                phot_mag  = 25.0 - 2.5**np.log10(skelcdfsdat['f_'+magtocuton[1]][phot_ent])
+                mag_cut   = magcuts[1]
+
+            elif 'cosmos' in pointing:
+                match_id  = match_id_Skel[ii]
+                match_sep = match_sep_Skel[ii]
+                phot_ent  = np.where(skelcosmosdat['id'] == match_id)[0]
+                phot_mag  = 25.0 - 2.5*np.log10(skelcosmosdat['f_'+magtocuton[2]][phot_ent])
+                mag_cut   = magcuts[2]
+
+            elif ('mosaic' in pointing) or ('udf-' in pointing):
+                match_id  = match_id_Raf[ii]
+                match_sep = match_sep_Raf[ii]
+                phot_ent  = np.where(rafelskidat['ID'] == match_id)[0]
+                phot_mag  = rafelskidat['MAG_'+magtocuton[1].upper()][phot_ent]
+                mag_cut   = magcuts[3]
+
+                match_id_s  = match_id_Skel[ii]
+                match_sep_s = match_sep_Skel[ii]
+                phot_ent_s  = np.where(skelcdfsdat['id'] == match_id_s)[0]
+                phot_mag_s  = 25.0 - 2.5**np.log10(skelcdfsdat['f_'+magtocuton[0]][phot_ent_s])
+                mag_cut_s   = magcuts[0]
+
+            else:
+                sys.exit(' The pointing '+pointing+' was not recognised')
+
+
+            if match_sep > goodmatchsep:
+                pointing_nondetections.append(museid)
+            else:
+                if phot_mag > mag_cut:
+                    pointing_nondetections.append(museid)
+
+            if ('mosaic' in pointing) or ('udf-' in pointing):
+                if match_sep_s > goodmatchsep:
+                    pointing_nondetections_s.append(museid)
+                else:
+                    if phot_mag_s > mag_cut_s:
+                        pointing_nondetections.append(museid)
+
+        if verbose & (outdir is None):
+            print('   '+str("%30s" % pointing)+' (Nobj='+str("%5i" % len(pointing_nondetections))+
+                  ')  '+str(pointing_nondetections))
+
+            if ('mosaic' in pointing) or ('udf-' in pointing):
+                if verbose: print('   '+str("%30s" % (pointing+'_SKELTON'))+' (Nobj='+str("%5i" % len(pointing_nondetections_s))+
+                                  ')  '+str(pointing_nondetections_s))
+        else:
+            fout.write('   '+str("%30s" % pointing)+' (Nobj='+str("%5i" % len(pointing_nondetections))+
+                       ')  '+str(pointing_nondetections)+'\n')
+
+            if ('mosaic' in pointing) or ('udf-' in pointing):
+                fout.write('   '+str("%30s" % (pointing+'_SKELTON'))+' (Nobj='+str("%5i" % len(pointing_nondetections_s))+
+                           ')  '+str(pointing_nondetections_s)+'\n')
+
+        out_pointing = outdir+'uves_nondetections_'+pointing+'.txt'
+        fout_p = open(out_pointing,'w')
+        fout_p.write('# List of MUSE ids to treat as non-detections for TDOSE extractions generated with uves.get_infofile_nondetections() on '+kbs.DandTstr2()+'\n')
+        fout_p.write('# Selection based on: \n')
+        fout_p.write('# goodmatchsep           = '+str(goodmatchsep)+' \n')
+        if 'cdfs' in pointing:
+            fout_p.write('# magtocuton[cdfs]   = '+str(magtocuton[0])+' \n')
+            fout_p.write('# magcuts[cdfs]      = '+str(magcuts[0])+' \n# \n')
+            for nonid in pointing_nondetections: fout_p.write(str(nonid)+'\n')
+        elif 'hudf09' in pointing:
+            fout_p.write('# magtocuton[cdfs-parallel]   = '+str(magtocuton[1])+' \n')
+            fout_p.write('# magcuts[cdfs-parallel]      = '+str(magcuts[1])+' \n# \n')
+            for nonid in pointing_nondetections: fout_p.write(str(nonid)+'\n')
+        elif 'cosmos' in pointing:
+            fout_p.write('# magtocuton[cosmos]   = '+str(magtocuton[2])+' \n')
+            fout_p.write('# magcuts[cosmos]      = '+str(magcuts[2])+' \n# \n')
+            for nonid in pointing_nondetections: fout_p.write(str(nonid)+'\n')
+        elif ('mosaic' in pointing) or ('udf-' in pointing):
+            fout_p.write('# magtocuton[udf]   = '+str(magtocuton[3])+' \n')
+            fout_p.write('# magcuts[udf]      = '+str(magcuts[3])+' \n# \n')
+            for nonid in pointing_nondetections: fout_p.write(str(nonid)+'\n')
+
+            out_pointing_skelton = outdir+'uves_nondetections_'+pointing+'_skeltonbased.txt'
+            fout_pS = open(out_pointing_skelton,'w')
+            fout_pS.write('# List of MUSE ids to treat as non-detections for TDOSE extractions generated with uves.get_infofile_nondetections() on '+kbs.DandTstr2()+'\n')
+            fout_pS.write('# Selection based on: \n')
+            fout_pS.write('# goodmatchsep           = '+str(goodmatchsep)+' \n')
+            fout_pS.write('# magtocuton[udf]   = '+str(magtocuton[3])+' \n')
+            fout_pS.write('# magcuts[udf]      = '+str(magcuts[3])+' \n# \n')
+            for nonid in pointing_nondetections_s: fout_pS.write(str(nonid)+'\n')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
