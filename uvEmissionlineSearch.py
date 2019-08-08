@@ -4318,17 +4318,7 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
     uid, uindex = np.unique(aimage_arr_inarcsec[:,0].astype(int), return_index=True)
     aimage_arr_inarcsec = aimage_arr_inarcsec[uindex,:]
 
-    # if '-cosmos-' in refimage:
-    #     field = 'cosmos'
-    # elif '_udf-0' in refimage:
-    #     field = 'mosaic'
-    # elif '_udf-10' in refimage:
-    #     field = 'udf-10'
-    # else:
-    #     field = 'goodss'
-
     # ===== CTUOUT SIZES =====
-    # cut_outtxt  = outputdir+'cutoutsizes_MWuves_'+field+'_4xA_IMAGE.txt'
     cut_outtxt  = outputdir+'cutoutsizes_MWuves_4xA_IMAGE.txt'
     fout        = open(cut_outtxt,'w')
     fout.write('# Cutout sizes of 4*A_IMAGE on each side (corresponding to twice the aperture diameter '
@@ -4349,7 +4339,6 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
     fout.close()
 
     # ===== APERTURE SIZES =====
-    # aper_outtxt = outputdir+'apertureradii_MWuves_'+field+'_2xA_IMAGE.txt'
     aper_outtxt = outputdir+'apertureradii_MWuves_2xA_IMAGE.txt'
     fout        = open(aper_outtxt,'w')
     fout.write('# Aperturesizes of 2*A_IMAGE estimated with '
