@@ -4067,7 +4067,11 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
                       '   Restricting source to FoV of individual reference images\n'
                       '   Output will be saved to '+outputdir)
 
-    infodat        = afits.open(infofile)[1].data
+    infodat              = afits.open(infofile)[1].data
+    ids_all              = infodat['id']
+    ras_all              = infodat['ra']
+    decs_all             = infodat['dec']
+    aimage_arr_inarcsec  = np.array([])
 
     skelcosmos     = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
     skelcosmosdat  = afits.open(skelcosmos)[1].data
@@ -4107,10 +4111,6 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
         else:
             skeltondat       = skelcdfsdat
 
-        ids_all       = infodat['id']
-        ras_all       = infodat['ra']
-        decs_all      = infodat['dec']
-
         if '_udf-' in refimage:
             match_sep          = infodat['sep_rafelski']
             match_id           = infodat['id_rafelski']
@@ -4141,7 +4141,8 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
 
         matchedids = []
         for mm, mid in enumerate(match_id):
-            firstdigit = int(str(ids_all[mm])[0])
+            MWid = ids_all[mm]
+            firstdigit = int(str(MWid)[0])
             if '-cosmos-' in refimage:
                 if firstdigit in [2]:
                     includeobj = True
@@ -4179,6 +4180,12 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
                     theta_all.append(0.0)
                     a_image_all.append(2.0)
                     b_image_all.append(2.0)
+
+                if len(aimage_arr_inarcsec) == 0:
+                    aimage_arr_inarcsec = np.array([str(MWid),str(np.asarray(a_image_all)[-1]*arcsecPerPix_phot)])
+                else:
+                    aimage_arr_inarcsec = np.vstack([aimage_arr_inarcsec,
+                                                     np.array([str(MWid),str(np.asarray(a_image_all)[-1]*arcsecPerPix_phot)])])
             else:
                 fluxf_all.append(-99)
                 theta_all.append(-99)
@@ -4190,46 +4197,6 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
         theta_all    = np.asarray(theta_all)
         a_image_all  = np.asarray(a_image_all)
         b_image_all  = np.asarray(b_image_all)
-
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
-
-        if '-cosmos-' in refimage:
-            cut_outtxt  = outputdir+'cutoutsizes_MWuves_cosmos_4xA_IMAGE.txt'
-            aper_outtxt = outputdir+'apertureradii_MWuves_cosmos_2xA_IMAGE.txt'
-        else:
-            cut_outtxt  = outputdir+'cutoutsizes_MWuves_goodss_4xA_IMAGE.txt'
-            aper_outtxt = outputdir+'apertureradii_MWuves_goodss_2xA_IMAGE.txt'
-
-        fout = open(cut_outtxt,'w')
-        fout.write('# Cutout sizes of 4*A_IMAGE on each side (corresponding to twice the aperture diameter '
-                   'used for the aperture extractions) estimated with '
-                   'uvEmissionlineSearch.TDOSE_sourcecat_from_infofile() on '+kbs.DandTstr2()+'\n')
-        fout.write('# \n')
-        fout.write('# id xsize ysize \n')
-
-        cutoutwidth = 4.0 * a_image_all * arcsecPerPix_phot
-        cutoutwidth[(cutoutwidth >= 0.0) & (cutoutwidth < minCutwidth)]  = minCutwidth
-        cutoutwidth[cutoutwidth > 10.0] = 10.0000
-
-        for ii, id in enumerate(ids_all):
-            fout.write(str(ids_all[ii])+' '+
-                       str(cutoutwidth[ii])+' '+
-                       str(cutoutwidth[ii])+'  \n')
-        fout.close()
-
-        fout = open(aper_outtxt,'w')
-        fout.write('# Aperturesizes of 2*A_IMAGE estimated with '
-                   'uvEmissionlineSearch.TDOSE_sourcecat_from_infofile() on '+kbs.DandTstr2()+'\n')
-        fout.write('# \n')
-        fout.write('# id aperturesize \n')
-
-        Raper_arcsec = 2.0 * a_image_all * arcsecPerPix_phot
-        Raper_arcsec[(Raper_arcsec >= 0.0) & (Raper_arcsec < minRaper)]  = minRaper
-
-        for ii, id in enumerate(ids_all):
-            fout.write(str(ids_all[ii])+' '+str(Raper_arcsec[ii])+'  \n')
-        fout.close()
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose: print(' - Finding objects within reference image field-of-view')
@@ -4345,6 +4312,56 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
             for mm, mwid in enumerate(MWidsinfield):
                 fout.write(str(MWidsinfield[mm])+'  \n')
             fout.close()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
+    uid, uindex = np.unique(aimage_arr_inarcsec[:,0].astype(int), return_index=True)
+    aimage_arr_inarcsec = aimage_arr_inarcsec[uindex,:]
+
+    # if '-cosmos-' in refimage:
+    #     field = 'cosmos'
+    # elif '_udf-0' in refimage:
+    #     field = 'mosaic'
+    # elif '_udf-10' in refimage:
+    #     field = 'udf-10'
+    # else:
+    #     field = 'goodss'
+
+    # ===== CTUOUT SIZES =====
+    # cut_outtxt  = outputdir+'cutoutsizes_MWuves_'+field+'_4xA_IMAGE.txt'
+    cut_outtxt  = outputdir+'cutoutsizes_MWuves_4xA_IMAGE.txt'
+    fout        = open(cut_outtxt,'w')
+    fout.write('# Cutout sizes of 4*A_IMAGE on each side (corresponding to twice the aperture diameter '
+               'used for the aperture extractions) estimated with '
+               'uvEmissionlineSearch.TDOSE_sourcecat_from_infofile() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id xsize ysize \n')
+    for aa, arrid in enumerate(aimage_arr_inarcsec[:,0]):
+        cutoutwidth = 4.0 * float(aimage_arr_inarcsec[aa,1])
+        if (cutoutwidth >= 0.0) & (cutoutwidth < minCutwidth):
+            cutoutwidth = minCutwidth
+        if cutoutwidth > 10.0:
+            cutoutwidth = 10.0000
+
+        fout.write(str(arrid)+' '+
+                   str(cutoutwidth)+' '+
+                   str(cutoutwidth)+'  \n')
+    fout.close()
+
+    # ===== APERTURE SIZES =====
+    # aper_outtxt = outputdir+'apertureradii_MWuves_'+field+'_2xA_IMAGE.txt'
+    aper_outtxt = outputdir+'apertureradii_MWuves_2xA_IMAGE.txt'
+    fout        = open(aper_outtxt,'w')
+    fout.write('# Aperturesizes of 2*A_IMAGE estimated with '
+               'uvEmissionlineSearch.TDOSE_sourcecat_from_infofile() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id aperturesize \n')
+    for aa, arrid in enumerate(aimage_arr_inarcsec[:,0]):
+        Raper_arcsec = 2.0 * float(aimage_arr_inarcsec[aa,1])
+        if (Raper_arcsec >= 0.0) & (Raper_arcsec < minRaper):
+            Raper_arcsec = minRaper
+        fout.write(str(arrid)+' '+str(Raper_arcsec)+'  \n')
+    fout.close()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_infofile_nondetections(infofile,goodmatchsep=0.25,outdir=None,magcuts=None,
