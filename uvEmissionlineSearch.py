@@ -3112,16 +3112,16 @@ def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectrum_fromsetup.fits',
-                                    S2N = [1.0,3.0,5.0,7.0],
+                                    S2Nvalues = [1.0,3.0,5.0,7.0],
                                     plotspectra=False,overwrite=False,verbose=True):
     """
     Wrapper to generate a set of mock spectra to test FELIS on.
     The setup of each of the mock spectra are defined in the
 
     --- INPUT ---
-    basename        Main name (and dir) of mock fits spectra to generate
     specsetup       Setup file containing the components and spectra to generate
-    S2N             List of signal-to-noise ratios of strongest line to generate
+    basename        Main name (and dir) of mock fits spectra to generate
+    S2Nvalues       S2N of spectra to generate (determined on intergarted flux in spectrum)
     plotspectra     To plot the generated spectra set this to true
     overwrite       Overwrite existing files?
     verbose         Toggle verbosity
@@ -3129,23 +3129,55 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
 
-    outdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_testing/'
-    uves.gen_felismockspec(basename=outdir+'uves_felis_mock_MUSEspectrum.fits',redshift=3.5,zoomxplot=np.array([1880,1940])*(1+3.5))
+    basename   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra/uves_mock_spectrum_fromsetup.fits'
+    specsetup  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_setup.txt'
+    uves.gen_felismockspec_fromsetupfile(specsetup,basename=basename)
 
     """
     if verbose: print(' - Building mockspectra using FELIS tools')
+    templatedat = np.genfromtxt(specsetup,names=True,skip_header=7,comments='#',dtype='40a,40a,40a,40a,f,f,40a,40a,f,f')
+    dwave       = 0.25  # spectral resolution to use
 
-    if verbose: print(' - Lopping over template components to build')
+    pdb.set_trace()
+    for tt, tempname in enumerate(templatedat['namekey']):
+        tempdic = {}
+        if 'doublet' in tempname:
+            fratios    = np.asarray(templatedat['fratios'][tt][1:-1].split(',')).astype(float)
+            linewaves  = np.asarray(templatedat['linewaves'][tt][1:-1].split(',')).astype(float)
+            linesigmas = np.asarray(templatedat['sigmas'][tt][1:-1].split(',')).astype(float)
+
+            for fratio in fratios:
+                for linesigma in linesigmas:
+                    tempdic[namekey+'_line1'] = [templatedat['type'][tt], linewaves[0] * (1+templatedat['redshift'][tt]),
+                                                 linesigma, templatedat['skew'][tt],
+                                                 templatedat['scaling'][tt], templatedat['headerinfo'][tt]+'_1']
+                    tempdic[namekey+'_line2'] = [templatedat['type'][tt], linewaves[1] * (1+templatedat['redshift'][tt]),
+                                                 linesigma, templatedat['skew'][tt],
+                                                 templatedat['scaling'][tt]*fratio, templatedat['headerinfo'][tt]+'_2']
+                    wavecen = np.mean(linewaves)-templatedat['waverange'][tt]/2.
+                    wavemin = wavecen-templatedat['waverange'][tt]/2.
+                    wavemax = wavecen-templatedat['waverange'][tt]/2.
+
+        else:
+            for linesigma in linesigmas:
+                linewave  = float(templatedat['linewaves'][tt])
+                tempdic['namekey'] = [templatedat['type'][tt], linewave * (1+templatedat['redshift'][tt]),
+                                    linesigma, templatedat['skew'][tt],
+                                    templatedat['scaling'][tt], templatedat['headerinfo'][tt]+'_1']
 
 
-    noisesigmas  = lineflux/S2N
+                wavecen = linewave
+                wavemin = wavecen-templatedat['waverange'][tt]/2.
+                wavemax = wavecen-templatedat['waverange'][tt]/2.
 
-    for ss, sigma in noisesigmas:
-        mockspec = basename.replace('.fits','_S2N'+str(sigma).replace('.','p')+'mainline_'+namekey+'.fits')
+        for S2N in S2Nvalues:
+            noissigma = integratedflux/S2N
+
+        mockspec = basename.replace('.fits','_S2N'+str(sigma).replace('.','p')+'mainline_'+tempname+'.fits')
         noise    = ['GAUSS', 0.0, sigma]
         wavemin  = 4800
         wavemax  = 9300
-        dwave    = 0.25
+
 
         fbt.build_template([wavemin,wavemax,dwave],tcdic,tempfile=mockspec,noise=noise,overwrite=overwrite,
                            plottemplate=plottemplates,zoomxplot=[wavemin,wavemax])
