@@ -4154,6 +4154,8 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
             phot_a_image_all   = np.sqrt(rafelskidat['AREAF']/np.pi/(1-rafelskidat['ELLIPTICITY']))
             phot_b_image_all   = (1.0-rafelskidat['ELLIPTICITY'])*phot_a_image_all
             arcsecPerPix_phot  = 0.03
+            fivesigma_maglimit = 29.5  # f775w 5sigma limit
+            onesigma_flux     = 10**((8.90-fivesigma_maglimit)/2.5) / 5.0 * 1e6 # flux in muJy
         else:
             match_sep          = infodat['sep_skelton']
             match_id           = infodat['id_skelton']
@@ -4165,6 +4167,11 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
             phot_a_image_all   = skeltondat['a_image']
             phot_b_image_all   = skeltondat['b_image']
             arcsecPerPix_phot  = 0.06
+            if '-cosmos-' in refimage:
+                fivesigma_maglimit = 25.8  # f160w 5sigma limit COSMOS
+            else:
+                fivesigma_maglimit = 26.4  # f160w 5sigma limit GOODS-S
+            onesigma_flux     = 10**((25-fivesigma_maglimit)/2.5) / 5.
 
         fluxf_all   = []
         theta_all   = []
@@ -4208,7 +4215,7 @@ def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.
                     a_image_all.append(phot_a_image_all[phot_ent][0])
                     b_image_all.append(phot_b_image_all[phot_ent][0])
                 else:
-                    fluxf_all.append(999999.0)
+                    fluxf_all.append(onesigma_flux)
                     theta_all.append(0.0)
                     a_image_all.append(2.0)
                     b_image_all.append(2.0)
