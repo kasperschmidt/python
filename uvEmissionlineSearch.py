@@ -3206,6 +3206,68 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
                             if verbose: print(' - Genreated spectrum:   '+mockspec)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_noisespec',basename='',verbose=True):
+    """
+    Function to write (and load) table with parameter sets of the individual spectra generated from setupfile with
+    uves.gen_felismockspec_fromsetupfile(). Essentially just expanding the parameter lists.
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    basename   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra/uves_mock_spectrum_fromsetup.fits'
+    specsetup  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_setup.txt'
+    paramtable = uves.build_mockspeck_setup_parametertable(specsetup,basename=basename)
+
+    """
+    templatedat = np.genfromtxt(setupfile,names=True,skip_header=skip_header,
+                                comments='#',dtype='40a,40a,40a,40a,40a,40a,40a,40a,40a,f')
+    outputfile  = setupfile.replace('.txt','_parametertable.txt')
+
+    fout = open(outputfile,'w')
+    fout.write('# Parameter table of spectra generated with uves.gen_felismockspec_fromsetupfile() based on the setup\n')
+    fout.write('# '+setupfile+'\n')
+    fout.write('# \n')
+    fout.write('#  linesigma     lineskew     lineflux     Ftotspec     redshift       Fratio     specname \n')
+    for tt, tempname in enumerate(templatedat['namekey']):
+        linewaves  = np.asarray(templatedat['linewaves'][tt][1:-1].split(',')).astype(float)
+        linesigmas = np.asarray(templatedat['sigmas'][tt][1:-1].split(',')).astype(float)
+        lineskews  = np.asarray(templatedat['skew'][tt][1:-1].split(',')).astype(float)
+        linefluxes = np.asarray(templatedat['scaling'][tt][1:-1].split(',')).astype(float)
+        redshifts  = np.asarray(templatedat['redshift'][tt][1:-1].split(',')).astype(float)
+        fratios    = np.asarray(templatedat['fratios'][tt][1:-1].split(',')).astype(float)
+
+        for linesigma in linesigmas:
+            for lineskew in lineskews:
+                for lineflux in linefluxes:
+                    for zval in redshifts:
+                        for fratio in fratios:
+                            if len(linewaves) == 2:
+                                Ftotspec         = lineflux + lineflux*fratio
+                            else:
+                                Ftotspec         = lineflux
+
+                            specext    = '_'+tempname+\
+                                         noisestr+\
+                                         '_sigma'+str("%.2f" % linesigma).replace('.','p')+\
+                                         '_skew'+str("%.2f" % lineskew).replace('.','p')+\
+                                         '_Ftot'+str("%.2f" % Ftotspec).replace('.','p')+\
+                                         '_Fratio'+str("%.2f" % fratio).replace('.','p')+\
+                                         '_z'+str("%.2f" % zval).replace('.','p')+\
+                                         '.fits'
+                            specname  = basename.replace('.fits',specext)
+
+                            paramlist = str("%12.4f" % linesigma)+' '+\
+                                        str("%12.4f" % lineskew)+' '+\
+                                        str("%12.4f" % lineflux)+' '+\
+                                        str("%12.4f" % Ftotspec)+' '+\
+                                        str("%12.4f" % zval)+' '+\
+                                        str("%12.4f" % fratio)
+                            fout.write(paramlist+'     '+specname+'\n')
+    fout.close()
+
+    paramtable = np.genfromtxt(outputfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,200a')
+    return paramtable
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
                        lamwidth_restframe='dvoffset',runonallspecs=False,subtract_spec_median=True,verbose=True):
