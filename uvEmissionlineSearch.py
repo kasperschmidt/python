@@ -2962,9 +2962,9 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     for sig in sigmas:
         tcdic = {}
-        tcdic['HEII']                  = ['GAUSS', linelam, sig, 0.0, 1.0, 'HeII1640A']
+        tcdic['HeII']                  = ['GAUSS', linelam, sig, 0.0, 1.0, 'HeII1640A']
 
-        valstring = '_HEII'+\
+        valstring = '_HeII'+\
                     '_sig_'+str(sig).replace('.','p')
 
         if addLSF:
@@ -3173,8 +3173,8 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
                             if len(linewaves) == 2:
                                 tempdic['line2'] = [templatedat['type'][tt], linewaves[1] * (1+zval),
                                                     linesigma, lineskew,
-                                                    lineflux*fratio, templatedat['headerinfo'][tt]+'_2']
-                                Ftotspec         = lineflux + lineflux*fratio
+                                                    lineflux / fratio, templatedat['headerinfo'][tt]+'_2']
+                                Ftotspec         = lineflux + lineflux / fratio
                             else:
                                 Ftotspec         = lineflux
 
@@ -3200,7 +3200,7 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
                                                    verbose=verbose_buildtemp,
                                                    waveunits=waveunits,fluxunits=fluxunits)
                             except:
-                                print(' fbt.build_template failed... stopping to enable invesitgations')
+                                print('\n\n ERROR: fbt.build_template failed... stopping to enable invesitgations')
                                 pdb.set_trace()
 
                             if verbose: print(' - Genreated spectrum:   '+mockspec)
@@ -3242,7 +3242,7 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
                     for zval in redshifts:
                         for fratio in fratios:
                             if len(linewaves) == 2:
-                                Ftotspec         = lineflux + lineflux*fratio
+                                Ftotspec         = lineflux + lineflux/fratio
                             else:
                                 Ftotspec         = lineflux
 
