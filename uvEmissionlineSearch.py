@@ -3267,6 +3267,68 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
 
     paramtable = np.genfromtxt(outputfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,200a')
     return paramtable
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults=False,verbose=True):
+    """
+    Wrapper around match_mockspectrum_to_templates() to match templates to all mockspectra.
+
+
+    --- INPUT ---
+    outputdir          Directory to store picklefiles with cross-correlation results to
+    CCwavewindow       Window around line to perform cross-correlations over
+    plot_allCCresults  To plot all CC results set this to True. Plots will be stored in outputdir
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults/'
+    uves.match_mockspectra_to_templates(outputdir)
+
+    """
+
+
+    if verbose: print(' - Decide which templates to fit to what mock spectra (through a dictionary)')
+    mockVStemp_lines = {}
+    mockVStemp_lines['CIIIdoublet'] = ['CIII']
+    mockVStemp_lines['CIVdoublet']  = ['CIV']
+    mockVStemp_lines['EL']          = ['HEII','CIIb']
+    mockVStemp_lines['testsinglet'] = ['HEII']
+    mockVStemp_lines['testdoublet'] = ['CIII']
+    # mockVStemp_lines['Lya']   =
+
+    waverest     = {'CIII':1908.0, 'CIV':1550.0, 'HEII':1640.0, 'NV':1241.0, 'OIII':1663.0}
+
+    if verbose: print(' - Defining files to perform matches between (hardcoded)')
+    basestr      = 'uves_mock_spectrum_fromsetup'
+    parentdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    templatedir  = parentdir+'felis_templates_190704/'
+    paramfile    = parentdir+'mockspectra_setup_parametertable.txt'
+    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,200a')
+
+    if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
+    for ss, mockspec in enumerate(paramtable['specname']):
+        # if mockspec.split('/')[-1] != 'uves_mock_spectrum_fromsetup_CIIIdoublet_noisespec_sigma1p00_skew0p00_Ftot7p20_Fratio1p40_z2p00.fits':
+        #     continue
+        mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
+        templines = mockVStemp_lines[mockline]
+
+        for templine in templines:
+            picklefile = outputdir+mockspec.split('/')[-1].replace('.fits',
+                                                                   '_CCresults_TEMP'+templine+'_matchto_SPEC'+mockline+'.pkl')
+            templates  = glob.glob(templatedir+'uves_felis_template_*'+templine+'*.fits')
+
+            if not plot_allCCresults:
+                plotdir  = None
+
+            ccdic      = felis.match_templates2specs(templates,[mockspec],[paramtable['redshift'][ss]],
+                                                     picklefile,wavewindow=[CCwavewindow],
+                                                     plotdir=outputdir,wavecen_restframe=[waverest[templine]],
+                                                     vshift=None,min_template_level=1e-2,
+                                                     plot_allCCresults=plot_allCCresults,
+                                                     subtract_spec_median=False)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
