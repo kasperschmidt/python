@@ -3497,6 +3497,236 @@ def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,v
     fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=29,dtype=fmt,comments='#',names=True)
     return summarydat
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',overwrite=False,verbose=True):
+    """
+    plotting and evaluating the output from uves.gen_mocspecFELISresults_summary()
+
+    --- INPUT ---
+    summaryfile        Path and name to summary file to evaluate
+    plotbasename       The based name for the plots to generate (incl. output directory)
+    overwrite          Overwrite the plots if they already exist?
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    summaryfile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary.txt'
+    plotbasename   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary_plots/190815test_'
+    uves.plot_mocspecFELISresults_summary(summaryfile,plotbasename)
+
+    """
+    if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=29,dtype=fmt,comments='#',names=True)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'FluxRatio'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['Fratio_spec'])
+    yvalues  = np.asarray(summarydat['Fratio_temp'])
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Flux ratio mock spectrum doublet lines'
+    ylabel   = 'Flux ratio best-fit template doublet lines'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'LineSigma'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['sigma_spec_ang_rf'])
+    yvalues  = np.asarray(summarydat['sigma_temp_ang_rf'])
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Mock spectrum $\sigma_\\textrm{Gauss, restframe}$ [\AA]'
+    ylabel   = 'Best-fit template $\sigma_\\textrm{Gauss, restframe}$ [\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ftot_intrinsic'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['Ftot_spec_intr'])
+    yvalues  = np.asarray(summarydat['Ftot_temp_trapz'])
+    xerr     = [None]*len(xvalues)
+    yerr     = summarydat['Ftot_temp_trapz_err']
+    xlabel   = 'Total flux in mock spectrum \\\\(intrinsic; no noise) [1e-18 erg/s/cm$^2$]'
+    ylabel   = 'Total flux in best-fit template \\\\(integrated; mock spec noise) [1e-18 erg/s/cm$^2$]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ftot_observed'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['Ftot_spec_trapz'])
+    yvalues  = np.asarray(summarydat['Ftot_temp_trapz'])
+    xerr     = summarydat['Ftot_spec_trapz_err']
+    yerr     = summarydat['Ftot_temp_trapz_fsclaeerr']
+    xlabel   = 'Total flux in mock spectrum \\\\("observed"; with noise) [1e-18 erg/s/cm$^2$]'
+    ylabel   = 'Total flux in best-fit template \\\\(integrated; flux scale "noise") [1e-18 erg/s/cm$^2$]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Redshift'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['z_spec'])
+    yvalues  = np.asarray(summarydat['z_temp_S2Nmax'])
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Intrinsic redshift mock spectrum'
+    ylabel   = 'Redshift of best-fit template'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   colortype='vshift',colorcode=True,overwrite=overwrite,verbose=verbose)
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'dFtot_vs_S2N'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['S2Nmax'])
+    yvalues  = np.asarray(summarydat['Ftot_spec_intr']) - np.asarray(summarydat['Ftot_temp_trapz'])
+    xerr     = [None]*len(xvalues)
+    yerr     = summarydat['Ftot_temp_trapz_err']
+    xlabel   = 'S/N of template cross match to mock spectrum'
+    ylabel   = 'Total flux (intrinsic mock spec - best-fit template) [1e-18 erg/s/cm$^2$]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   yrange=[-3,3],colortype='redshift',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'dsigma_vs_S2N'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['S2Nmax'])
+    yvalues  = np.asarray(summarydat['sigma_spec_ang_rf']) - np.asarray(summarydat['sigma_temp_ang_rf'])
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(yvalues)
+    xlabel   = 'S/N of template cross match to mock spectrum'
+    ylabel   = '$\sigma_\\textrm{Gauss, restframe}$ (intrinsic mock spec - best-fit template) [\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   yrange=[-0.05,0.05],colortype='redshift',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                              yrange=None,xrange=None,
+                                              colortype=None,colorcode=True,overwrite=False,verbose=True):
+    """
+
+    """
+    if verbose: print(' - Setting up and generating plot')
+    if os.path.isfile(plotname) & (not overwrite):
+        if verbose: print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
+    else:
+        fig = plt.figure(figsize=(6, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
+        Fsize    = 14
+        lthick   = 2
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        if colorcode:
+            cmap    = plt.cm.get_cmap('viridis')
+
+            if colortype.lower() == 'redshift':
+                clabel  = 'Redshift'
+                cdatvec = summarydat['z_spec']
+                cmin    = 1.4
+                cmax    = 6.2
+            elif colortype.lower() == 's2n':
+                clabel  = 'S/N'
+                cdatvec = summarydat['S2Nmax']
+                cmin    = 1.0
+                cmax    = 20.0
+            elif colortype.lower() == 'vshift':
+                clabel  = 'Velocity shift (spec vs. template match) [km/s]'
+                cdatvec = summarydat['vshift_CCmatch']
+                cmin    = 0.0
+                cmax    = 200.0
+            else:
+                sys.exit(' Color type '+colortype+' not enabled ')
+
+            colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+            cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+            m       = plt.cm.ScalarMappable(cmap=cmap)
+            m.set_array(cmaparr)
+            cb      = plt.colorbar(m)
+
+            cb.set_label(clabel)
+
+            colvec   = []
+            for ii,xval in enumerate(xvalues):
+                colvec.append(cmap(colnorm(cdatvec[ii])))
+            facecol  = colvec
+            alphaval = 1.0
+        else:
+            colvec   = ['k']*len(xvalues)
+            facecol  = ['gray']*len(xvalues)
+            alphaval = 0.5
+
+        for ii,xval in enumerate(xvalues): # loop necessary for coloring
+            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
+                         marker='o',lw=lthick, markersize=marksize,alpha=alphaval,
+                         markerfacecolor=facecol[ii],ecolor=colvec[ii],
+                         markeredgecolor=colvec[ii],zorder=10)
+
+
+        plt.plot([-1,1000],[-1,1000],'--',color='gray',lw=lthick,zorder=5)
+        plt.plot([-1000,1000],[0,0],'--',color='gray',lw=lthick,zorder=5)
+        #--------- RANGES ---------
+        if not xrange:
+            xmin = np.min(xvalues[np.isfinite(xvalues)])
+            xmax = np.max(xvalues[np.isfinite(xvalues)])
+            dx   = xmax-xmin
+            plt.xlim([xmin-dx*0.05,xmax+dx*0.05])
+        else:
+            plt.xlim(xrange)
+
+        if not yrange:
+            ymin = np.min(yvalues[np.isfinite(yvalues)])
+            ymax = np.max(yvalues[np.isfinite(yvalues)])
+            dy   = ymax-ymin
+            plt.ylim([ymin-dy*0.05,ymax+dy*0.05])
+        else:
+            plt.ylim(yrange)
+
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+
+        #--------- LEGEND ---------
+        # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+        #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
+        # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+        #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+        # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+        #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+        #
+        # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
+        #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
+        # leg.get_frame().set_alpha(0.7)
+        #--------------------------
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
