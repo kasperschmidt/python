@@ -3328,13 +3328,13 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
     """
     if verbose: print(' - Decide which templates to fit to what mock spectra (through a dictionary)')
     mockVStemp_lines = {}
-    mockVStemp_lines['Lya']         = ['Lya']
-    mockVStemp_lines['CIIIdoublet'] = ['CIII']
-    mockVStemp_lines['CIVdoublet']  = ['CIV']
-    mockVStemp_lines['NVdoublet']   = ['NV']
-    mockVStemp_lines['EL']          = ['HeII']
-    mockVStemp_lines['OIIIdoublet'] = ['OIII']
-    mockVStemp_lines['MgIIdoublet'] = ['MgII']
+    mockVStemp_lines['Lya']             = ['Lya']
+    mockVStemp_lines['CIIIdoublet']     = ['CIII']
+    mockVStemp_lines['CIVdoublet']      = ['CIV']
+    mockVStemp_lines['NVdoublet']       = ['NV']
+    mockVStemp_lines['singleline']      = ['HeII']
+    mockVStemp_lines['OIII1663doublet'] = ['OIII']
+    mockVStemp_lines['MgIIdoublet']     = ['MgII']
 
     mockVStemp_lines['testsinglet'] = ['HeII']
     mockVStemp_lines['testdoublet'] = ['CIII']
@@ -3349,12 +3349,15 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
 
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
     for ss, mockspec in enumerate(paramtable['specname']):
+        if ('CIII' in mockspec) or ('CIV' in mockspec) or ('NV' in mockspec):
+            continue
         mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
         templines = mockVStemp_lines[mockline]
 
         for templine in templines:
             picklefile = outputdir+mockspec.split('/')[-1].replace('.fits',
-                                                                   '_CCresults_TEMP'+templine+'_matchto_SPEC'+mockline+'.pkl')
+                                                                   '_CCresults_template'+templine+
+                                                                   '_matchto_spectrum'+mockline+'.pkl')
             templates  = glob.glob(templatedir+'uves_felis_template_*'+templine+'*.fits')
 
             if not plot_allCCresults:
@@ -5164,11 +5167,16 @@ def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/median_eff_noise_spe
         effstatarr = afits.open(cube)['EFF_STAT'].data
         mediannoisevec = np.sqrt(np.median(np.median(effstatarr[:,150:250,150:250],axis=1),axis=1))
         if dd == 0:
-            noisearr  = mediannoisevec
-            cubehdr   = afits.open(cube)['EFF_STAT'].header
-            wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+            noisearr               = mediannoisevec
+            cubehdr_0              = afits.open(cube)['EFF_STAT'].header
+            wavevec_0              = np.arange(cubehdr_0['NAXIS3'])*cubehdr_0['CD3_3']+cubehdr_0['CRVAL3']
         else:
-            noisearr  = np.vstack([noisearr,mediannoisevec])
+            cubehdr                = afits.open(cube)['EFF_STAT'].header
+            wavevec                = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+            func                   = scipy.interpolate.interp1d(wavevec,mediannoisevec,kind='linear',fill_value="extrapolate")
+            mediannoisevec_interp  = func(wavevec_0)
+
+            noisearr  = np.vstack([noisearr,mediannoisevec_interp])
 
     noisevec = np.median(noisearr,axis=0)
 
