@@ -3332,7 +3332,7 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
     mockVStemp_lines['CIIIdoublet']     = ['CIII']
     mockVStemp_lines['CIVdoublet']      = ['CIV']
     mockVStemp_lines['NVdoublet']       = ['NV']
-    mockVStemp_lines['singleline']      = ['HeII']
+    mockVStemp_lines['HeII']            = ['HeII']
     mockVStemp_lines['OIII1663doublet'] = ['OIII']
     mockVStemp_lines['MgIIdoublet']     = ['MgII']
 
@@ -3371,14 +3371,14 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
                                                      subtract_spec_median=False)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,verbose=True):
+def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verbose=True):
     """
     Generate a summary of the template characteristics FELIS determined to match the mock spectra
     the best, i.e. with the highest S/N.
 
     --- INPUT ---
     summaryfile        Path and name to summary file to generate.
-    FELISoutputdir     Path to directory containing the FELIS pickle files to summarize.
+    picklefiles        List of FELIS pickle files to summarize.
     overwrite          Overwrite the summary file if it already exists?
     verbose            Toggle verbosity
 
@@ -3386,8 +3386,9 @@ def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,v
     import uvEmissionlineSearch as uves
 
     FELISoutputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults/'
-    summaryfile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary.txt'
-    summarydat     = uves.gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir)
+    summaryfile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary_all.txt'
+    picklefiles    = glob.glob(FELISoutputdir+'*.pkl')
+    summarydat     = uves.gen_mocspecFELISresults_summary(summaryfile,picklefiles)
 
     """
     if verbose: print(' - Generating a summary of the best-fit template in:\n   '+summaryfile)
@@ -3395,8 +3396,8 @@ def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,v
         sys.exit(' Summary file '+summaryfile+' already exists and overwrite=False ')
 
     fout = open(summaryfile,'w')
-    fout.write('# Summary of FELIS pickle found in '+FELISoutputdir+' \n')
-    fout.write('# Contains the characteristics of the templates with max S/N from the FELIS template fits \n')
+    fout.write('# Summary of '+str(len(picklefiles))+' FELIS pickle files provided \n')
+    fout.write('# File contains the characteristics of the templates with max S/N from the FELIS template fits \n')
     fout.write('# The summary was generated with uves.compate_mockspec_to_FELISresults() on '+kbs.DandTstr2()+' \n')
     fout.write('# \n')
     fout.write('# Columns are:\n')
@@ -3431,8 +3432,11 @@ def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,v
                'vshift_spec vshift_CCmatch     fluxscale_S2Nmax fluxscaleerr_S2Nmax    '
                'S2Nmax Ngoodent chi2     spectrum template \n')
 
-    picklefiles = glob.glob(FELISoutputdir+'*.pkl')
-    for picklefile in picklefiles:
+    for pp, picklefile in enumerate(picklefiles):
+        if verbose:
+            infostr = ' - Summarizing picklefile  '+str("%.5d" % (pp+1))+' / '+str("%.5d" % len(picklefiles))+'     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
         loaddic       = felis.load_picklefile(picklefile)
 
         for specname in loaddic.keys():
@@ -3444,12 +3448,12 @@ def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,v
                 felis.getresult4maxS2N(loaddic,specname)
 
             # load matched spec and move to restframe
-            s_wave   , s_flux   , s_df   , s_s2n    = felis.load_spectrum(specname,verbose=verbose)
+            s_wave   , s_flux   , s_df   , s_s2n    = felis.load_spectrum(specname,verbose=False)
             s_wave_rf, s_flux_rf, s_df_rf, s_s2n_rf = s_wave / (1+z_spec), s_flux * (1+z_spec), s_df * (1+z_spec), s_s2n
 
             # interpolate max S/N template to spec grid
             min_template_level = 1e-4
-            t_wave_init, t_flux_init, t_df_init, t_s2n_init = felis.load_spectrum(template,verbose=verbose)
+            t_wave_init, t_flux_init, t_df_init, t_s2n_init = felis.load_spectrum(template,verbose=False)
             func       = scipy.interpolate.interp1d(t_wave_init,t_flux_init,kind='linear',fill_value="extrapolate")
             t_flux     = func(s_wave_rf)
             t_flux[t_flux < min_template_level] = 0.0
@@ -3530,7 +3534,7 @@ def gen_mocspecFELISresults_summary(summaryfile,FELISoutputdir,overwrite=False,v
                      specname+'  '+\
                      template+'  '
             fout.write(outstr+'\n')
-
+    if verbose: print('   ...done')
     fout.close()
 
     fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
@@ -3655,6 +3659,20 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
                                                    yrange=[-0.05,0.05],colortype='redshift',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'dsigma_vs_sigmaspec'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['sigma_spec_ang_rf'])
+    yvalues  = np.asarray(summarydat['sigma_spec_ang_rf']) - np.asarray(summarydat['sigma_temp_ang_rf'])
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(yvalues)
+    xlabel   = 'Mock spec intrinsic $\sigma_\\textrm{Gauss, restframe}$ [\AA]'
+    ylabel   = '$\sigma_\\textrm{Gauss, restframe}$ (intrinsic mock spec - best-fit template) [\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   yrange=[-0.05,0.05],colortype=colortype,
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
@@ -3692,7 +3710,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 clabel  = 'S/N'
                 cdatvec = summarydat['S2Nmax']
                 cmin    = 1.0
-                cmax    = 20.0
+                cmax    = 200.0
             elif colortype.lower() == 'vshift':
                 clabel  = 'Velocity shift (spec vs. template match) [km/s]'
                 cdatvec = summarydat['vshift_CCmatch']
