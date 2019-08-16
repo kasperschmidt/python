@@ -3329,26 +3329,27 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
 
     if verbose: print(' - Decide which templates to fit to what mock spectra (through a dictionary)')
     mockVStemp_lines = {}
+    mockVStemp_lines['Lya']         = ['Lya']
     mockVStemp_lines['CIIIdoublet'] = ['CIII']
     mockVStemp_lines['CIVdoublet']  = ['CIV']
-    mockVStemp_lines['EL']          = ['HEII','CIIb']
-    mockVStemp_lines['testsinglet'] = ['HEII']
-    mockVStemp_lines['testdoublet'] = ['CIII']
-    # mockVStemp_lines['Lya']   =
+    mockVStemp_lines['NVdoublet']   = ['NV']
+    mockVStemp_lines['EL']          = ['HeII']
+    mockVStemp_lines['OIIIdoublet'] = ['OIII']
+    mockVStemp_lines['MgIIdoublet'] = ['MgII']
 
-    waverest     = {'CIII':1908.0, 'CIV':1550.0, 'HEII':1640.0, 'NV':1241.0, 'OIII':1663.0}
+    mockVStemp_lines['testsinglet'] = ['HeII']
+    mockVStemp_lines['testdoublet'] = ['CIII']
+
+    waverest     = {'Lya':1215.67, 'CIII':1908.0, 'CIV':1550.0, 'NV':1241.0, 'HeII':1640.0, 'OIII':1663.0, 'MgII':2800.}
 
     if verbose: print(' - Defining files to perform matches between (hardcoded)')
-    basestr      = 'uves_mock_spectrum_fromsetup'
     parentdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
-    templatedir  = parentdir+'felis_templates_190704/'
+    templatedir  = parentdir+'felis_templates_190816/'
     paramfile    = parentdir+'mockspectra_setup_parametertable.txt'
     paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,200a')
 
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
     for ss, mockspec in enumerate(paramtable['specname']):
-        # if mockspec.split('/')[-1] != 'uves_mock_spectrum_fromsetup_CIIIdoublet_noisespec_sigma1p00_skew0p00_Ftot7p20_Fratio1p40_z2p00.fits':
-        #     continue
         mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
         templines = mockVStemp_lines[mockline]
 
