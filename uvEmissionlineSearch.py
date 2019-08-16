@@ -2830,7 +2830,7 @@ def gen_singlelinetemplate(outfits='./felis_testing/uves_felis_template_singleli
     tempname = outfits.replace('.fits',valstring+'.fits')
     fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose=True):
+def gen_felistemplates(outfits='./uves_felis_template.fits',overwrite=False,addLSF=False,verbose=True):
     """
     Wrapper to generate spectral templates for cross-correlation with spectra.
 
@@ -2877,7 +2877,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - CIV doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1548.195,1550.770]
@@ -2904,7 +2904,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - NV doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1238.821,1242.804]
@@ -2931,7 +2931,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - OIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1660.809,1666.150]
@@ -2958,7 +2958,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - HeII gauss - - - - - - - - - - - - - - - - - -
     linelam     = 1640.420
@@ -2979,7 +2979,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
             valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
         tempname = outfits.replace('.fits',valstring+'.fits')
-        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - SiIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1882.71,1892.03] # See detection from Berg+19
@@ -3006,7 +3006,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
 
     # - - - - - - - - - - - - - - - - - - CII gauss - - - - - - - - - - - - - - - - - -
@@ -3028,7 +3028,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
             valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
         tempname = outfits.replace('.fits',valstring+'.fits')
-        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - CII] gauss - - - - - - - - - - - - - - - - - -
     linelam     = 2326.113
@@ -3049,7 +3049,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
             valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
         tempname = outfits.replace('.fits',valstring+'.fits')
-        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+        fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
     # - - - - - - - - - - - - - - - - - - MgII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [2795.528,2802.705]
@@ -3076,7 +3076,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
 
     # - - - - - - - - - - - - - - - - - - Width and raange setup - - - - - - - - - - - - - - - - - -
@@ -3107,7 +3107,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
                 valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
 
             tempname = outfits.replace('.fits',valstring+'.fits')
-            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=overwrite)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_felismockspec(outfits='./uves_felis_mock_MUSEspectrum.fits',redshift=3.5,
@@ -3179,9 +3179,10 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
     fluxunits   = '1e-18erg/s/cm2/A'
     # ----- load error spectrum to use for noise simulations -----
     noisespec   = True
-    skyspec     = '/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-36_av.fits'
-    noisewave   = afits.open(skyspec)[1].data['lambda']
-    noiseflux   = afits.open(skyspec)[1].data['data']
+    skyspec     = None # should be noise spectrum '/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-36_av.fits'
+    errspec     = '/Users/kschmidt/work/MUSE/median_eff_noise_spectrum_190816.fits'
+    noisewave   = afits.open(errspec)[1].data['wave']
+    noiseflux   = afits.open(errspec)[1].data['flux']
     noise       = ['SPECTRUM', noisewave, noiseflux/100.]
 
     if not noisespec:
@@ -3325,8 +3326,6 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
     uves.match_mockspectra_to_templates(outputdir)
 
     """
-
-
     if verbose: print(' - Decide which templates to fit to what mock spectra (through a dictionary)')
     mockVStemp_lines = {}
     mockVStemp_lines['Lya']         = ['Lya']
@@ -5140,5 +5139,41 @@ def get_infofile_nondetections(infofile,goodmatchsep=0.25,outdir=None,magcuts=No
                 fout_pS.write('# magtocuton[udf]   = '+str(magtocuton[3])+' \n')
                 fout_pS.write('# magcuts[udf]      = '+str(magcuts[3])+' \n# \n')
             for nonid in pointing_nondetections_s: fout_pS.write(str(nonid)+'\n')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/median_eff_noise_spectrum.fits',
+                         overwrite=False,verbose=True):
+    """
+    Build a median noise spectrum for the MUSE-Wide fields
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/median_eff_noise_spectrum.fits')
+
+    """
+    if os.path.isfile(outfile) & (not overwrite):
+        sys.exit(' - The output file '+outfile+' exists and overwrite=False')
+
+    datacubes = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_candels-*_v1.0_dcbgc_effnoised.fits')
+
+    if verbose: print(' - Generating median vec for: ')
+    for dd, cube in enumerate(datacubes):
+        if verbose: print('   '+cube+'  (spec '+str(dd+1)+'/'+str(len(datacubes))+')')
+        effstatarr = afits.open(cube)['EFF_STAT'].data
+        mediannoisevec = np.sqrt(np.median(np.median(effstatarr[:,150:250,150:250],axis=1),axis=1))
+        if dd == 0:
+            noisearr  = mediannoisevec
+            cubehdr   = afits.open(cube)['EFF_STAT'].header
+            wavevec   = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
+        else:
+            noisearr  = np.vstack([noisearr,mediannoisevec])
+
+    noisevec = np.median(noisearr,axis=0)
+
+    felis.save_spectrum(outfile,wavevec,noisevec,noisevec*0.0,
+                        headerinfo=None,waveunits='Angstrom',fluxunits='1e-20 erg/s/cm2/A',
+                        overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
