@@ -2841,17 +2841,22 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
     uves.gen_felistemplates(outfits=outdir+'uves_felis_template.fits')
 
     """
-    sigmas = [0.10,0.30,0.50,0.70,0.90,1.10] # "velocity braodening" of lines
     # - - - - - - - - - - - - - - - - - - LSF setup  - - - - - - - - - - - - - - - - - - -
     MUSELSFfwhm  = 1.0 #[A]
     MUSELSFsigma = MUSELSFfwhm/2.354
     LSFparam     = ['LSF', MUSELSFsigma,  'MUSE GAUSS LSF']
 
+    # - - - - - - - - - - - - - - - - - - Width and raange setup - - - - - - - - - - - - - - - - - -
+    sigmas_ang_rf = np.array([0.01,0.02,0.03,0.04,0.05,0.06]) # line width of emission lines in agnstrom (rest-frame)
+    dlam          = 0.05                                      # wavelength grid spacing in angstrom/pix
+    tempwidth     = 10.0                                      # the wavelength range of template (half the width)
+    sigmas        = sigmas_ang_rf / dlam # line width in pixels
+
     # - - - - - - - - - - - - - - - - - - CIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1906.68,1908.73]
-    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    rangeDlam   = [np.min(doubletlam)-tempwidth,np.max(doubletlam)+tempwidth,dlam]
     fluxCIII1   = 1.0
-    fluxratios  = [0.3,0.6,0.9,1.2,1.5,1.8] # Osterbrock predicts CIII1/CIII2 < 1.6
+    fluxratios  = [0.1,0.4,0.7,1.0,1.3,1.6,1.9] # Osterbrock predicts CIII1/CIII2 < 1.6
 
     Ntemps      = len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CIII doublet (varying sigma and flux ratio)')
@@ -2876,7 +2881,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - CIV doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1548.195,1550.770]
-    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    rangeDlam   = [np.min(doubletlam)-tempwidth,np.max(doubletlam)+tempwidth,dlam]
     fluxCIV1    = 1.0
     fluxratios  = [0.5,1.0,1.5,2.0,2.5,3.0] # Feibelman 1983 predicts CIV1/CIV2=2 from theory (Mainali+17 used CIV1/CIV2=1)
 
@@ -2903,7 +2908,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - NV doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1238.821,1242.804]
-    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    rangeDlam   = [np.min(doubletlam)-tempwidth,np.max(doubletlam)+tempwidth,dlam]
     fluxNV1     = 1.0
     fluxratios  = [0.5,1.0,1.5,2.0,2.5,3.0] # Torres-Peimbert, S. & Pena, M. 1984; emissivity ratio of NV1/NV2~2 like CIV
 
@@ -2930,7 +2935,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - OIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1660.809,1666.150]
-    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    rangeDlam   = [np.min(doubletlam)-tempwidth,np.max(doubletlam)+tempwidth,dlam]
     fluxOIII1   = 1.0
     fluxratios  = [0.1,0.3,0.5,0.7,0.9,1.1] # Morton1991tab2 OIII1/OIII2~0.5 (can be lower and higher but 1666 strongest, see eg. Mainali+17, Vanzella+16, )
 
@@ -2957,7 +2962,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - HeII gauss - - - - - - - - - - - - - - - - - -
     linelam     = 1640.420
-    rangeDlam   = [linelam-10.0,linelam+10.0,0.1]
+    rangeDlam   = [linelam-tempwidth,linelam+tempwidth,dlam]
 
     Ntemps      = len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the HeII line (varying sigma)')
@@ -2978,9 +2983,9 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - SiIII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [1882.71,1892.03] # See detection from Berg+19
-    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    rangeDlam   = [np.min(doubletlam)-tempwidth,np.max(doubletlam)+tempwidth,dlam]
     fluxSiIII1  = 1.0
-    fluxratios  = [0.1,0.3,0.5,0.7,0.9,1.1] # ???
+    fluxratios  = [0.1,0.4,0.7,1.0,1.3,1.6,1.9] # Osterbrock predicts SIII1/SIII2 < 1.7 similar to CIII doublet
 
     Ntemps      = len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the NV doublet (varying sigma and flux ratio)')
@@ -3006,7 +3011,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - CII gauss - - - - - - - - - - - - - - - - - -
     linelam     = 1335.6627
-    rangeDlam   = [linelam-10.0,linelam+10.0,0.1]
+    rangeDlam   = [linelam-tempwidth,linelam+tempwidth,dlam]
 
     Ntemps      = len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CII line (varying sigma)')
@@ -3027,7 +3032,7 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - CII] gauss - - - - - - - - - - - - - - - - - -
     linelam     = 2326.113
-    rangeDlam   = [linelam-10.0,linelam+10.0,0.1]
+    rangeDlam   = [linelam-tempwidth,linelam+tempwidth,dlam]
 
     Ntemps      = len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the CII] line (varying sigma)')
@@ -3048,9 +3053,9 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
 
     # - - - - - - - - - - - - - - - - - - MgII doublet - - - - - - - - - - - - - - - - - -
     doubletlam  = [2795.528,2802.705]
-    rangeDlam   = [np.min(doubletlam)-10.0,np.max(doubletlam)+10.0,0.1]
+    rangeDlam   = [np.min(doubletlam)-tempwidth,np.max(doubletlam)+tempwidth,dlam]
     fluxMgII1   = 1.0
-    fluxratios  = [0.1,0.3,0.5,0.7,0.9,1.1] # ???
+    fluxratios  = [0.1,0.4,0.7,1.0,1.3,1.6,1.9] # ???
 
     Ntemps      = len(fluxratios)*len(sigmas)
     if verbose: print(' - generating '+str(Ntemps)+' templates for the NV doublet (varying sigma and flux ratio)')
@@ -3065,6 +3070,37 @@ def gen_felistemplates(outfits='./uves_felis_template.fits',addLSF=False,verbose
             valstring = '_MgIIdoublet'+\
                         '_sig_'+str(sig).replace('.','p')+\
                         '_fluxratio_'+str(fr).replace('.','p')
+
+            if addLSF:
+                tcdic['LSF']        = LSFparam
+                valstring = valstring+'_LSF_'+str(LSFparam[1]).replace('.','p')
+
+            tempname = outfits.replace('.fits',valstring+'.fits')
+            fbt.build_template(rangeDlam,tcdic,tempfile=tempname,overwrite=True)
+
+
+    # - - - - - - - - - - - - - - - - - - Width and raange setup - - - - - - - - - - - - - - - - - -
+    #FWHM observed for MW LAEs <~10 which corresponds to 10/2.35 / (1+3) <~ 1.06 Angstrom rest-frame
+    sigmas_ang_rf = np.array([0.016,0.032,0.064,0.128,0.256,0.512]) # line width of emission lines in agnstrom (rest-frame)
+    dlam          = 0.05                                      # wavelength grid spacing in angstrom/pix
+    tempwidth     = 20.0                                      # the wavelength range of template (half the width)
+    sigmas        = sigmas_ang_rf / dlam # line width in pixels
+    # - - - - - - - - - - - - - - - - - - Lya skew gauss - - - - - - - - - - - - - - - - - -
+    linelam     = 1215.6737
+    rangeDlam   = [linelam-tempwidth,linelam+tempwidth,dlam]
+    Lyaskew     = [0.0,3.0,6.0,9.0,12.0]
+
+    Ntemps      = len(sigmas)*len(Lyaskew)
+    if verbose: print(' - generating '+str(Ntemps)+' templates for the Lya line (varying sigma and skew)')
+
+    for sig in sigmas:
+        for skew in Lyaskew:
+            tcdic = {}
+            tcdic['Lya']                  = ['GAUSS', linelam, sig, skew, 1.0, 'Lya1216A']
+
+            valstring = '_Lya'+\
+                        '_sig_'+str(sig).replace('.','p')+\
+                        '_skew_'+str(skew).replace('.','p')
 
             if addLSF:
                 tcdic['LSF']        = LSFparam
