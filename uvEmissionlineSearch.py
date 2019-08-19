@@ -3173,17 +3173,15 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
 
     """
     if verbose: print(' - Building mockspectra using FELIS tools')
-    templatedat = np.genfromtxt(specsetup,names=True,skip_header=7,comments='#',dtype='40a,40a,40a,40a,40a,40a,40a,40a,40a,f')
-    dwave       = 0.25  # spectral resolution to use
-    waveunits   = 'Angstroms'
-    fluxunits   = '1e-18erg/s/cm2/A'
+    templatedat = np.genfromtxt(specsetup,names=True,skip_header=7,comments='#',
+                                dtype='40a,40a,40a,40a,40a,40a,40a,40a,40a,f,f,40a,40a')
     # ----- load error spectrum to use for noise simulations -----
     noisespec   = True
     skyspec     = None # should be noise spectrum '/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-36_av.fits'
-    errspec     = '/Users/kschmidt/work/MUSE/median_eff_noise_spectrum_190816.fits'
+    errspec     = '/Users/kschmidt/work/MUSE/spectra_noise/median_eff_noise_spectrum_70fields190819.fits'
     noisewave   = afits.open(errspec)[1].data['wave']
     noiseflux   = afits.open(errspec)[1].data['flux']
-    noise       = ['SPECTRUM', noisewave, noiseflux/100.]
+    noise       = ['SPECTRUM', noisewave, noiseflux]
 
     if not noisespec:
         noisesigma  = 0.2
@@ -3233,11 +3231,13 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
                                 outstr = outstr.replace('_noisestd'+str(noisesigma).replace('.','p'),'_noisespec')
                             mockspec = basename.replace('.fits',outstr)
                             try:
-                                fbt.build_template([wavemin,wavemax,dwave],tempdic,tempfile=mockspec,
+                                fbt.build_template([wavemin,wavemax,templatedat['dwave'][tt]],
+                                                   tempdic,tempfile=mockspec,
                                                    noise=noise,overwrite=overwrite,
                                                    plottemplate=plotspectra,zoomxplot=[wavemin,wavemax],
                                                    verbose=verbose_buildtemp,
-                                                   waveunits=waveunits,fluxunits=fluxunits)
+                                                   waveunits=templatedat['waveunits'][tt],
+                                                   fluxunits=templatedat['fluxunits'][tt])
                             except:
                                 print('\n\n ERROR: fbt.build_template failed... stopping to enable invesitgations')
                                 pdb.set_trace()
@@ -3259,14 +3259,14 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
 
     """
     templatedat = np.genfromtxt(setupfile,names=True,skip_header=skip_header,
-                                comments='#',dtype='40a,40a,40a,40a,40a,40a,40a,40a,40a,f')
+                                comments='#',dtype='40a,40a,40a,40a,40a,40a,40a,40a,40a,f,f,40a,40a')
     outputfile  = setupfile.replace('.txt','_parametertable.txt')
 
     fout = open(outputfile,'w')
     fout.write('# Parameter table of spectra generated with uves.gen_felismockspec_fromsetupfile() based on the setup\n')
     fout.write('# '+setupfile+'\n')
     fout.write('# \n')
-    fout.write('#  linesigma     lineskew     lineflux     Ftotspec     redshift       Fratio     specname \n')
+    fout.write('#  linesigma     lineskew     lineflux     Ftotspec     redshift       Fratio       dwave              waveunits    fluxunits            specname \n')
     for tt, tempname in enumerate(templatedat['namekey']):
         linewaves  = np.asarray(templatedat['linewaves'][tt][1:-1].split(',')).astype(float)
         linesigmas = np.asarray(templatedat['sigmas'][tt][1:-1].split(',')).astype(float)
@@ -3274,6 +3274,9 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
         linefluxes = np.asarray(templatedat['scaling'][tt][1:-1].split(',')).astype(float)
         redshifts  = np.asarray(templatedat['redshift'][tt][1:-1].split(',')).astype(float)
         fratios    = np.asarray(templatedat['fratios'][tt][1:-1].split(',')).astype(float)
+        dwave      = templatedat['dwave'][tt]
+        fluxunits  = templatedat['fluxunits'][tt]
+        waveunits  = templatedat['waveunits'][tt]
 
         for linesigma in linesigmas:
             for lineskew in lineskews:
@@ -3300,11 +3303,14 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
                                         str("%12.4f" % lineflux)+' '+\
                                         str("%12.4f" % Ftotspec)+' '+\
                                         str("%12.4f" % zval)+' '+\
-                                        str("%12.4f" % fratio)
+                                        str("%12.4f" % fratio)+' '+\
+                                        str("%12.4f" % dwave)+' '+\
+                                        str("%20s" % waveunits)+' '+\
+                                        str("%20s" % fluxunits)
                             fout.write(paramlist+'     '+specname+'\n')
     fout.close()
 
-    paramtable = np.genfromtxt(outputfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,200a')
+    paramtable = np.genfromtxt(outputfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,f,20a,20a,200a')
     return paramtable
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -3345,12 +3351,10 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
     parentdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
     templatedir  = parentdir+'felis_templates_190816/'
     paramfile    = parentdir+'mockspectra_setup_parametertable.txt'
-    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,200a')
+    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,f,20a,20a,200a')
 
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
     for ss, mockspec in enumerate(paramtable['specname']):
-        if ('CIII' in mockspec) or ('CIV' in mockspec) or ('NV' in mockspec):
-            continue
         mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
         templines = mockVStemp_lines[mockline]
 
@@ -3534,7 +3538,7 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
                      specname+'  '+\
                      template+'  '
             fout.write(outstr+'\n')
-    if verbose: print('   ...done')
+    if verbose: print('\n   ...done')
     fout.close()
 
     fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
@@ -5190,7 +5194,7 @@ def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/spectra_noise/median
     fluxunits = '1e-20 erg/s/cm2/A'
 
     if verbose: print(' - Generating median vec for: ')
-    for dd, cube in enumerate(datacubes[:2]):
+    for dd, cube in enumerate(datacubes):
         if verbose: print('   '+cube+'  (spec '+str(dd+1)+'/'+str(len(datacubes))+')')
         effstatarr = afits.open(cube)[noiseext].data
         mediannoisevec = np.sqrt(np.nanmedian(np.nanmedian(effstatarr[:,150:250,150:250],axis=1),axis=1))
