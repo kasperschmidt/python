@@ -5162,7 +5162,7 @@ def get_infofile_nondetections(infofile,goodmatchsep=0.25,outdir=None,magcuts=No
             for nonid in pointing_nondetections_s: fout_pS.write(str(nonid)+'\n')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/median_eff_noise_spectrum.fits',
+def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/spectra_noise/median_eff_noise_spectrum_RENAME.fits',
                          overwrite=False,verbose=True):
     """
     Build a median noise spectrum for the MUSE-Wide fields
@@ -5177,29 +5177,39 @@ def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/median_eff_noise_spe
     if os.path.isfile(outfile) & (not overwrite):
         sys.exit(' - The output file '+outfile+' exists and overwrite=False')
 
+    #### UDF ####
+    # datacubes = glob.glob('/Users/kschmidt/work/MUSE/QtClassify/*/udf-*_mfs-and-effvar-cube.fits')
+    # noiseext  = 'EFFVAR'
+    # waveunits = 'Angstrom'
+    # fluxunits = '1e-20 erg/s/cm2/A'
+
+    #### CDFS/COSMOS MUSE-Wide ####
     datacubes = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_candels-*_v1.0_dcbgc_effnoised.fits')
+    noiseext  = 'EFF_STAT'
+    waveunits = 'Angstrom'
+    fluxunits = '1e-20 erg/s/cm2/A'
 
     if verbose: print(' - Generating median vec for: ')
-    for dd, cube in enumerate(datacubes):
+    for dd, cube in enumerate(datacubes[:2]):
         if verbose: print('   '+cube+'  (spec '+str(dd+1)+'/'+str(len(datacubes))+')')
-        effstatarr = afits.open(cube)['EFF_STAT'].data
-        mediannoisevec = np.sqrt(np.median(np.median(effstatarr[:,150:250,150:250],axis=1),axis=1))
+        effstatarr = afits.open(cube)[noiseext].data
+        mediannoisevec = np.sqrt(np.nanmedian(np.nanmedian(effstatarr[:,150:250,150:250],axis=1),axis=1))
         if dd == 0:
             noisearr               = mediannoisevec
-            cubehdr_0              = afits.open(cube)['EFF_STAT'].header
+            cubehdr_0              = afits.open(cube)[noiseext].header
             wavevec_0              = np.arange(cubehdr_0['NAXIS3'])*cubehdr_0['CD3_3']+cubehdr_0['CRVAL3']
         else:
-            cubehdr                = afits.open(cube)['EFF_STAT'].header
+            cubehdr                = afits.open(cube)[noiseext].header
             wavevec                = np.arange(cubehdr['NAXIS3'])*cubehdr['CD3_3']+cubehdr['CRVAL3']
             func                   = scipy.interpolate.interp1d(wavevec,mediannoisevec,kind='linear',fill_value="extrapolate")
             mediannoisevec_interp  = func(wavevec_0)
 
             noisearr  = np.vstack([noisearr,mediannoisevec_interp])
 
-    noisevec = np.median(noisearr,axis=0)
+    noisevec = np.nanmedian(noisearr,axis=0)
 
     felis.save_spectrum(outfile,wavevec,noisevec,noisevec*0.0,
-                        headerinfo=None,waveunits='Angstrom',fluxunits='1e-20 erg/s/cm2/A',
+                        headerinfo=None,waveunits=waveunits,fluxunits=fluxunits,
                         overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
