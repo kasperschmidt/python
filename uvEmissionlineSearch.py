@@ -5247,3 +5247,27 @@ def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/spectra_noise/median
                         overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def strip_cube_from_spectra(specdir,outputdir,overwrite=False,verbose=True):
+    """
+    Remoce source cube extension from spectra.
+
+    --- INPUT ---
+    specdir            Directory containing spectra to strip soource cube extension from
+    outputdir          Directory to store the stripped spectra to.
+    overwrite          Overwrite output if it already exists.
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/spectra_aperture/'
+    specdir   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/spectra_test/original/'
+
+    uves.strip_cube_from_spectra(specdir,outputdir,overwrite=False,verbose=True)
+
+    """
+    spectra   = glob.glob(specdir+'tdose_spectrum_*.fits')
+    for spectrum in spectra:
+        tu.strip_extension_from_fitsfile(spectrum,outputdir,removeextension='SOURCECUBE',overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
