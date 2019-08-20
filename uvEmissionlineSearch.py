@@ -3567,6 +3567,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
     fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=29,dtype=fmt,comments='#',names=True)
+    specnumber = np.arange(len(summarydat))+1.0
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'FluxRatio'
@@ -3579,6 +3580,20 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     ylabel   = 'Flux ratio best-fit template doublet lines'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'dFluxRatio_vs_specno'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = specnumber
+    yvalues  = np.asarray(summarydat['Fratio_spec'])-np.asarray(summarydat['Fratio_temp'])
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Spectrum number - according to summary file \n'+summaryfile.split('/')[-1].replace('_','\_')
+    ylabel   = '$\Delta$Flux ratio; mock spectrum - template match'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   diffspec=True,
                                                    colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3601,8 +3616,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     yvalues  = np.asarray(summarydat['Ftot_temp_trapz'])
     xerr     = [None]*len(xvalues)
     yerr     = summarydat['Ftot_temp_trapz_err']
-    xlabel   = 'Total flux in mock spectrum \\\\(intrinsic; no noise) [1e-18 erg/s/cm$^2$]'
-    ylabel   = 'Total flux in best-fit template \\\\(integrated; mock spec noise) [1e-18 erg/s/cm$^2$]'
+    xlabel   = 'Total flux in mock spectrum \\\\(intrinsic; no noise) [1e-20 erg/s/cm$^2$]'
+    ylabel   = 'Total flux in best-fit template \\\\(integrated; mock spec noise) [1e-20 erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
@@ -3614,10 +3629,11 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     yvalues  = np.asarray(summarydat['Ftot_temp_trapz'])
     xerr     = summarydat['Ftot_spec_trapz_err']
     yerr     = summarydat['Ftot_temp_trapz_fsclaeerr']
-    xlabel   = 'Total flux in mock spectrum \\\\("observed"; with noise) [1e-18 erg/s/cm$^2$]'
-    ylabel   = 'Total flux in best-fit template \\\\(integrated; flux scale "noise") [1e-18 erg/s/cm$^2$]'
+    xlabel   = 'Total flux in mock spectrum \\\\("observed"; with noise) [1e-20 erg/s/cm$^2$]'
+    ylabel   = 'Total flux in best-fit template \\\\(integrated; flux scale "noise") [1e-20 erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   xlog=True,ylog=True,xrange=[10,1e4],yrange=[10,1e4],
                                                    colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3643,10 +3659,12 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     xerr     = [None]*len(xvalues)
     yerr     = summarydat['Ftot_temp_trapz_err']
     xlabel   = 'S/N of template cross match to mock spectrum'
-    ylabel   = 'Total flux (intrinsic mock spec - best-fit template) [1e-18 erg/s/cm$^2$]'
+    ylabel   = '$\Delta$Total flux; intrinsic mock spec - best-fit template [1e-20 erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   yrange=[-3,3],colortype='redshift',
+                                                   diffspec=True,
+                                                   # yrange=[-3,3],colortype='redshift',
+                                                   yrange=None,colortype='redshift',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3657,10 +3675,12 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     xerr     = [None]*len(xvalues)
     yerr     = [None]*len(yvalues)
     xlabel   = 'S/N of template cross match to mock spectrum'
-    ylabel   = '$\sigma_\\textrm{Gauss, restframe}$ (intrinsic mock spec - best-fit template) [\AA]'
+    ylabel   = '$\Delta\sigma_\\textrm{Gauss, restframe}$; intrinsic mock spec - best-fit template [\AA]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   yrange=[-0.05,0.05],colortype='redshift',
+                                                   diffspec=True,
+                                                   # yrange=[-0.05,0.05],colortype='redshift',
+                                                   yrange=None,colortype='redshift',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3671,16 +3691,18 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',ov
     xerr     = [None]*len(xvalues)
     yerr     = [None]*len(yvalues)
     xlabel   = 'Mock spec intrinsic $\sigma_\\textrm{Gauss, restframe}$ [\AA]'
-    ylabel   = '$\sigma_\\textrm{Gauss, restframe}$ (intrinsic mock spec - best-fit template) [\AA]'
+    ylabel   = '$\Delta\sigma_\\textrm{Gauss, restframe}$; intrinsic mock spec - best-fit template [\AA]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   yrange=[-0.05,0.05],colortype=colortype,
+                                                   diffspec=True,
+                                                   # yrange=[-0.05,0.05],colortype=colortype,
+                                                   yrange=None,colortype=colortype,
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                              yrange=None,xrange=None,
+                                              yrange=None,xrange=None,diffspec=False,ylog=False,xlog=False,
                                               colortype=None,colorcode=True,overwrite=False,verbose=True):
     """
 
@@ -3693,7 +3715,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
         Fsize    = 14
         lthick   = 2
-        marksize = 6
+        marksize = 4
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif',size=Fsize)
         plt.rc('xtick', labelsize=Fsize)
@@ -3714,7 +3736,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 clabel  = 'S/N'
                 cdatvec = summarydat['S2Nmax']
                 cmin    = 1.0
-                cmax    = 200.0
+                cmax    = 10.0
             elif colortype.lower() == 'vshift':
                 clabel  = 'Velocity shift (spec vs. template match) [km/s]'
                 cdatvec = summarydat['vshift_CCmatch']
@@ -3747,9 +3769,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                          markerfacecolor=facecol[ii],ecolor=colvec[ii],
                          markeredgecolor=colvec[ii],zorder=10)
 
+        if diffspec:
+            plt.plot([-10000,10000],[0,0],'--',color='gray',lw=lthick,zorder=5)
+        else:
+            plt.plot([-1,10000],[-1,10000],'--',color='gray',lw=lthick,zorder=5)
 
-        plt.plot([-1,1000],[-1,1000],'--',color='gray',lw=lthick,zorder=5)
-        plt.plot([-1000,1000],[0,0],'--',color='gray',lw=lthick,zorder=5)
         #--------- RANGES ---------
         if not xrange:
             xmin = np.min(xvalues[np.isfinite(xvalues)])
@@ -3769,6 +3793,12 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+
+        if ylog:
+            plt.yscale('log')
+        if xlog:
+            plt.xscale('log')
+
 
         #--------- LEGEND ---------
         # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
