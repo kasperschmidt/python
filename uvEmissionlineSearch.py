@@ -3427,6 +3427,14 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
     fout.write('# S2Nmax                     The S/N value of the (scaled) template match to the mock spectrum \n')
     fout.write('# Ngoodent                   The number of good pixels used in the cross correlation \n')
     fout.write('# chi2                       Chi^2 value between the mock spectrum and the template match \n')
+    fout.write('# lineS2N                    Estimated S/N of spectral feature within [lineS2Nwavemin,lineS2Nwavemin] \n')
+    fout.write('# lineS2Nwavemin             Lower integration limit for S/N estimate \n')
+    fout.write('# lineS2Nwavemax             Upper integration limit for S/N estimate \n')
+    fout.write('# lineS2N_rf                 Estimated S/N (rest-frame) of spectral feature within [lineS2Nwavemin_rf,lineS2Nwavemin_rf] \n')
+    fout.write('# lineS2Nwavemin_rf          Lower integration limit for rest-frame S/N estimate \n')
+    fout.write('# lineS2Nwavemax_rf          Upper integration limit for rest-frame S/N estimate \n')
+    fout.write('# Ftot                       Total flux of spectral feature (sum(f)*dwave) used to estimate line S/N \n')
+    fout.write('# Ftot_sigma                 Squaroot of the variance/sqrt(Npix) of Ftot \n')
     fout.write('# spectrum                   The mock spectrum the templates were matched to \n')
     fout.write('# template                   The maxS/N template \n')
     fout.write('# \n')
@@ -3435,7 +3443,9 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
                'Ftot_spec_intr Ftot_spec_trapz Ftot_spec_trapz_err '
                'Ftot_temp_trapz Ftot_temp_trapz_err Ftot_temp_trapz_fsclaeerr     '
                'vshift_spec vshift_CCmatch     fluxscale_S2Nmax fluxscaleerr_S2Nmax    '
-               'S2Nmax Ngoodent chi2     spectrum template \n')
+               'S2Nmax Ngoodent chi2    '
+               'lineS2N lineS2Nwavemin lineS2Nwavemax lineS2N_rf lineS2Nwavemin_rf lineS2Nwavemax_rf     '
+               'Ftot Ftot_sigma     spectrum template \n')
 
     for pp, picklefile in enumerate(picklefiles):
         if verbose:
@@ -3443,6 +3453,8 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
             sys.stdout.write("%s\r" % infostr)
             sys.stdout.flush()
         loaddic       = felis.load_picklefile(picklefile)
+
+        Nsigma_integration = 3.0
 
         for specname in loaddic.keys():
             keydic = loaddic[specname]
@@ -3470,12 +3482,6 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
                 temp_sum = np.sum(t_flux)
                 t_flux   = t_flux / temp_sum
 
-            # Ftot_trapz = np.trapz(fluxscale_S2Nmax * t_flux,s_wave_rf)
-            datarr               = unumpy.uarray(fluxscale_S2Nmax * t_flux, s_df_rf)
-            Ftot_trapz           = np.trapz(datarr,s_wave_rf)
-            datarr_fscaleerr     = unumpy.uarray(fluxscale_S2Nmax * t_flux, fluxscaleerr_S2Nmax + t_flux*0.0)
-            Ftot_trapz_fscaleerr = np.trapz(datarr_fscaleerr,s_wave_rf)
-
             # extract info on template and mockspec from fits headers
             spec_hdr        = afits.open(specname)[1].header
             spec_sigma_ang  = np.array([])
@@ -3496,8 +3502,26 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
             else:
                 Fratio_spec = 0.0
 
-            datarr_spec        = unumpy.uarray(s_flux_rf, s_df_rf)
-            Ftot_trapz_spec    = np.trapz(datarr_spec,s_wave_rf)
+
+            lineS2Nwavemin = np.min(spec_line_wave)-Nsigma_integration*np.median(spec_sigma_ang)
+            lineS2Nwavemax = np.max(spec_line_wave)+Nsigma_integration*np.median(spec_sigma_ang)
+            waverange      = [lineS2Nwavemin,lineS2Nwavemax]
+            goodent        = np.where((s_wave >= waverange[0]) & (s_wave <= waverange[1]))
+
+            lineS2Nwavemin_rf = np.min(spec_line_wave/(1.0+z_spec))-Nsigma_integration*spec_sigma_ang_rf
+            lineS2Nwavemax_rf = np.max(spec_line_wave/(1.0+z_spec))+Nsigma_integration*spec_sigma_ang_rf
+            waverange_rf      = [lineS2Nwavemin_rf,lineS2Nwavemax_rf]
+            goodent_rf        = np.where((s_wave_rf >= waverange_rf[0]) & (s_wave_rf <= waverange_rf[1]))
+
+            # Ftot_trapz = np.trapz(fluxscale_S2Nmax * t_flux,s_wave_rf)
+            datarr               = unumpy.uarray(fluxscale_S2Nmax * t_flux[goodent_rf], s_df_rf[goodent_rf])
+            Ftot_trapz           = np.trapz(datarr,s_wave_rf[goodent_rf])
+
+            datarr_fscaleerr     = unumpy.uarray(fluxscale_S2Nmax * t_flux[goodent_rf], fluxscaleerr_S2Nmax + t_flux[goodent_rf]*0.0)
+            Ftot_trapz_fscaleerr = np.trapz(datarr_fscaleerr,s_wave_rf[goodent_rf])
+
+            datarr_spec        = unumpy.uarray(s_flux_rf[goodent_rf], s_df_rf[goodent_rf])
+            Ftot_trapz_spec    = np.trapz(datarr_spec,s_wave_rf[goodent_rf])
 
             temp_hdr        = afits.open(template)[1].header
             temp_sigma_ang  = np.asarray([])
@@ -3517,6 +3541,19 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
             else:
                 Fratio_temp = 0.0
 
+            #------------ Estimating S/N ------------
+            Ftot, vartot, Npixgood, lineS2N = uves.calc_1Dspec_S2N(s_wave,s_flux,s_df**2.0,
+                                                                   waverange,verbose=False)
+            Ftot_sigma = np.sqrt(vartot)
+
+            Ftot_rf, vartot_rf, Npixgood_rf, lineS2N_rf = uves.calc_1Dspec_S2N(s_wave_rf,s_flux_rf,s_df_rf**2.0,
+                                                                               waverange_rf,verbose=False)
+
+            if (Ftot-Ftot_rf) > 1.0:
+                print(' - Ftot-Ftot_rf is less than 1e-20cgs; stopping to enable investigation')
+                pdb.set_trace()
+
+            #------------ Writing to output file ------------
             outstr = str("%7.4f" % z_spec)+'  '+\
                      str("%7.4f" % zS2Nmax)+'      '+\
                      str("%7.4f" % np.mean(spec_sigma_pix))+'  '+\
@@ -3538,16 +3575,83 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
                      str("%12.4f" % S2Nmax)+'  '+\
                      str("%12.4f" % Ngoodent)+'  '+\
                      str("%12.4f" % chi2)+'  '+\
+                     str("%12.4f" % lineS2N)+'  '+\
+                     str("%12.4f" % lineS2Nwavemin)+'  '+\
+                     str("%12.4f" % lineS2Nwavemax)+'  '+\
+                     str("%12.4f" % lineS2N_rf)+'  '+\
+                     str("%12.4f" % lineS2Nwavemin_rf)+'  '+\
+                     str("%12.4f" % lineS2Nwavemax_rf)+'  '+\
+                     str("%12.4f" % Ftot)+'  '+\
+                     str("%12.4f" % Ftot_sigma)+'  '+\
                      specname+'  '+\
                      template+'  '
             fout.write(outstr+'\n')
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
-    summarydat = np.genfromtxt(summaryfile,skip_header=29,dtype=fmt,comments='#',names=True)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=36,dtype=fmt,comments='#',names=True)
     return summarydat
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
+    """
+    Estimating the signal to noise ratio of a defined region in a 1D spectrum.
+    Signal and noise is obtained by summing (over wavelength) of the flux and vairance spectra, respectively
 
+    --- INPUT ---
+    wavelengths      Wavelength vector of 1D spec
+    fluxes           Flux values of pixels in 1D spec
+    variance         Variances for fluxes in 1D spec
+    waverange        Wavelenght range to estimate S/N over
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import astropy.io.fits as afits
+    import uvEmissionlineSearch as uves
+    import glob
+
+    specs = glob.glob('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra/uves_mock_spectrum_fromsetup_CIIIdoublet_noisespec_sigma0p50_skew0p00_Ftot85p71_Fratio1p40_z*fits')
+
+    for spec in specs:
+        redshift    = float(spec.split('io1p40_z')[-1].split('.fit')[0].replace('p','.'))
+        wavelengths = afits.open(spec)[1].data['wave']
+        fluxes      = afits.open(spec)[1].data['flux']
+        variances   = afits.open(spec)[1].data['fluxerror']**2.0
+        dwave_rest  = 5.0
+        waverange   = [(1908.0-dwave_rest/2.)*(1.0+redshift),(1908.0+dwave_rest/2.)*(1.0+redshift)]
+
+        print(' --- Calc for '+spec.split('/')[-1]+';\n --- waverange='+str(waverange))
+        Ftot, vartot, Npix, S2N = uves.calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange)
+
+    """
+    if verbose: print(' - Estimating S/N of 1D spectral range '+str(waverange))
+    goodent = np.where((wavelengths >= waverange[0]) & (wavelengths <= waverange[1]))
+    if len(goodent) == 0.0:
+        if verbose: print(' - No pixels in wavelength range '+str(waverange)+'; returning 0s')
+        Ftot, vartot, Npix, S2N = 0.0, 0.0, 0.0, 0.0
+    else:
+        Npix   = len(goodent[0])
+        dwave  = np.median(np.diff(wavelengths[goodent]))
+        Ftot   = np.sum(fluxes[goodent])*dwave
+        vartot = np.sum(variances[goodent])*dwave**2 /np.sqrt(len(goodent[0]))
+        S2N    = Ftot/np.sqrt(vartot)
+        if verbose: print(' - Returning values (sum*dwave)  Ftot, vartot, Npix, S/N = '+
+                          str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N)+'')
+
+        # Ftot   = np.trapz(fluxes[goodent],wavelengths[goodent])
+        # vartot = np.trapz(variances[goodent],wavelengths[goodent])#/np.sqrt(Npix)
+        # S2N    = Ftot/np.sqrt(vartot*dwave)
+        # if verbose: print('\n - Returning values (trapz)      Ftot, vartot, Npix, S/N = '
+        #                   +str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N))
+        #
+        # Ftot   = np.sum(fluxes[goodent])
+        # vartot = np.sum(variances[goodent])#/np.sqrt(len(goodent[0]))
+        # S2N    = Ftot/np.sqrt(vartot)
+        # dwave  = np.median(np.diff(wavelengths[goodent]))
+        # if verbose: print(' - Returning values (sum)        Ftot, vartot, Npix, S/N = '+
+        #                   str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N)+' \n')
+
+    return Ftot, vartot, Npix, S2N
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',histaxes=False,Nbins=50,
                                      overwrite=False,verbose=True):
@@ -3569,8 +3673,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
-    summarydat = np.genfromtxt(summaryfile,skip_header=29,dtype=fmt,comments='#',names=True)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=36,dtype=fmt,comments='#',names=True)
     specnumber = np.arange(len(summarydat))+1.0
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
