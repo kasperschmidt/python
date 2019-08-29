@@ -3420,6 +3420,9 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
     fout.write('# Ftot_temp_trapz            Integreated total flux of normalized template scaled by fluxscale_S2Nmax\n')
     fout.write('# Ftot_temp_trapz_err        Uncertainty on Ftot_temp_trapz (mock spectrum flux errors propogated) \n')
     fout.write('# Ftot_temp_trapz_fsclaeerr  Uncertainty on Ftot_temp_trapz (using fluxscaleerr_S2Nmax for all pixels) \n')
+    fout.write('# Ftot_temp_sum              Summed total flux of normalized template scaled by fluxscale_S2Nmax\n')
+    fout.write('# Ftot_temp_sum_err          Uncertainty on Ftot_sum_trapz (mock spectrum flux errors propogated) \n')
+    fout.write('# Ftot_temp_sum_fsclaeerr    Uncertainty on Ftot_sum_trapz (using fluxscaleerr_S2Nmax for all pixels) \n')
     fout.write('# vshift_spec                Known intrinsic velocity shift of mock spectrum \n')
     fout.write('# vshift_CCmatch             Estimated velocity shift from template match [ c*(z_spec-z_temp_S2Nmax)/(1+z_temp_S2Nmax) ]\n')
     fout.write('# fluxscale_S2Nmax           Flux scale applied to normalized template to obtain maxS/N match \n')
@@ -3442,6 +3445,7 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
                ' Fratio_spec Fratio_temp     '
                'Ftot_spec_intr Ftot_spec_trapz Ftot_spec_trapz_err '
                'Ftot_temp_trapz Ftot_temp_trapz_err Ftot_temp_trapz_fsclaeerr     '
+               'Ftot_temp_sum Ftot_temp_sum_err Ftot_temp_sum_fsclaeerr '
                'vshift_spec vshift_CCmatch     fluxscale_S2Nmax fluxscaleerr_S2Nmax    '
                'S2Nmax Ngoodent chi2    '
                'lineS2N lineS2Nwavemin lineS2Nwavemax lineS2N_rf lineS2Nwavemin_rf lineS2Nwavemax_rf     '
@@ -3516,9 +3520,11 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
             # Ftot_trapz = np.trapz(fluxscale_S2Nmax * t_flux,s_wave_rf)
             datarr               = unumpy.uarray(fluxscale_S2Nmax * t_flux[goodent_rf], s_df_rf[goodent_rf])
             Ftot_trapz           = np.trapz(datarr,s_wave_rf[goodent_rf])
+            Ftot_sum             = np.sum(datarr) * np.median(np.diff(s_wave_rf[goodent_rf]))
 
             datarr_fscaleerr     = unumpy.uarray(fluxscale_S2Nmax * t_flux[goodent_rf], fluxscaleerr_S2Nmax + t_flux[goodent_rf]*0.0)
             Ftot_trapz_fscaleerr = np.trapz(datarr_fscaleerr,s_wave_rf[goodent_rf])
+            Ftot_sum_fscaleerr   = np.sum(datarr) * np.median(np.diff(s_wave_rf[goodent_rf]))
 
             datarr_spec        = unumpy.uarray(s_flux_rf[goodent_rf], s_df_rf[goodent_rf])
             Ftot_trapz_spec    = np.trapz(datarr_spec,s_wave_rf[goodent_rf])
@@ -3568,6 +3574,9 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
                      str("%12.4f" % Ftot_trapz.nominal_value)+'  '+\
                      str("%12.4f" % Ftot_trapz.std_dev)+'  '+\
                      str("%12.4f" % Ftot_trapz_fscaleerr.std_dev)+'           '+\
+                     str("%12.4f" % Ftot_sum.nominal_value)+'  '+\
+                     str("%12.4f" % Ftot_sum.std_dev)+'  '+\
+                     str("%12.4f" % Ftot_sum_fscaleerr.std_dev)+'           '+\
                      str("%12.4f" % vshift_intr)+'  '+\
                      str("%12.4f" % vshift_match)+'      '+\
                      str("%12.4f" % fluxscale_S2Nmax)+'  '+\
@@ -3589,8 +3598,8 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
-    summarydat = np.genfromtxt(summaryfile,skip_header=36,dtype=fmt,comments='#',names=True)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     return summarydat
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
@@ -3673,23 +3682,25 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
-    summarydat = np.genfromtxt(summaryfile,skip_header=36,dtype=fmt,comments='#',names=True)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     specnumber = np.arange(len(summarydat))+1.0
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    nameext  = 'FluxRatio'
+    nameext  = 'S2NvsS2N'
     plotname = plotbasename+nameext+'.pdf'
-    xvalues  = np.asarray(summarydat['Fratio_spec'])
-    yvalues  = np.asarray(summarydat['Fratio_temp'])
+    xvalues  = np.asarray(summarydat['lineS2N_rf'])
+    yvalues  = np.asarray(summarydat['S2Nmax'])
     xerr     = [None]*len(xvalues)
     yerr     = [None]*len(xvalues)
-    xlabel   = 'Flux ratio mock spectrum doublet lines'
-    ylabel   = 'Flux ratio best-fit template doublet lines'
+    xlabel   = 'Rest-frame emission line S/N'
+    ylabel   = 'Template match S/N'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   histaxes=histaxes,Nbins=Nbins,
-                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+                                                   histaxes=histaxes,Nbins=Nbins,colortype='Ftot',
+                                                   xlog=True,ylog=True,xrange=[1,1000],yrange=[1,1000],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'LineSigma'
@@ -3717,6 +3728,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
                                                    colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3731,7 +3743,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   xlog=False,ylog=False,xrange=[10,1e4],yrange=[10,1e4],
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
                                                    colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3799,50 +3811,6 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
                                                    yrange=None,colortype=colortype,
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    nameext  = 'dFluxRatio_vs_specno'
-    plotname = plotbasename+nameext+'.pdf'
-    xvalues  = specnumber
-    yvalues  = np.asarray(summarydat['Fratio_spec'])-np.asarray(summarydat['Fratio_temp'])
-    xerr     = [None]*len(xvalues)
-    yerr     = [None]*len(xvalues)
-    xlabel   = 'Spectrum number - according to summary file \n'+summaryfile.split('/')[-1].replace('_','\_')
-    ylabel   = '$\Delta$Flux ratio; mock spec- temp match'
-
-    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='Fratio_spec',
-                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    nameext  = 'dFluxRatio_vs_Fluxratio'
-    plotname = plotbasename+nameext+'.pdf'
-    xvalues  = np.asarray(summarydat['Fratio_spec'])
-    yvalues  = np.asarray(summarydat['Fratio_spec'])-np.asarray(summarydat['Fratio_temp'])
-    xerr     = [None]*len(xvalues)
-    yerr     = [None]*len(xvalues)
-    xlabel   = 'Flux ratio mock spec'
-    ylabel   = '$\Delta$Flux ratio; mock spec - temp match'
-
-    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='Fratio_temp',
-                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    nameext  = 'Ratio_FluxRatio_vs_Fluxratio'
-    plotname = plotbasename+nameext+'.pdf'
-    xvalues  = np.asarray(summarydat['Fratio_spec'])
-    yvalues  = (np.asarray(summarydat['Fratio_temp'])/np.asarray(summarydat['Fratio_spec'])) - 1.0
-    xerr     = [None]*len(xvalues)
-    yerr     = [None]*len(xvalues)
-    xlabel   = 'Flux ratio mock spec '
-    ylabel   = '(Flux ratio temp match / Flux ratio mock spec) - 1'
-
-    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-                                                   histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='Fratio_temp',
-                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
-
-
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'dFtot_vs_specno'
@@ -3857,7 +3825,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='Ftot_spec_intr',
+                                                   diffspec=True,colortype='Sigma',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'dFtot_vs_Ftot'
@@ -3871,7 +3839,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='Ftot_temp_trapz',
+                                                   diffspec=True,colortype='Sigma',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'Ratio_Ftot_vs_Ftot'
@@ -3885,9 +3853,50 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='Ftot_temp_trapz',
+                                                   diffspec=True,colortype='Sigma',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ratio_Ftot_vs_lineS2N'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['lineS2N_rf'])
+    yvalues  = (np.asarray(summarydat['Ftot_temp_trapz'])/np.asarray(summarydat['Ftot_spec_intr'])) -1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Line S/N'
+    ylabel   = '(Ftot temp match / Ftot mock spec) - 1 '
 
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   diffspec=True,colortype='Ftot_spec_intr',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ratio_Ftot_vs_lineS2N_sum_temp'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['lineS2N_rf'])
+    yvalues  = (np.asarray(summarydat['Ftot_temp_sum'])/np.asarray(summarydat['Ftot_spec_intr'])) -1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Line S/N'
+    ylabel   = '(Ftot sum tempalte / Ftot intrinsic) - 1 '
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,yrange=[-0.7,0.7],
+                                                   diffspec=True,colortype='Ftot_spec_intr',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ratio_Ftot_vs_lineS2N_sum_spec'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['lineS2N_rf'])
+    yvalues  = (np.asarray(summarydat['Ftot'])/np.asarray(summarydat['Ftot_spec_intr'])) -1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Line S/N'
+    ylabel   = '(Ftot sum mock spec w. noise / Ftot intrinsic) - 1 '
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,yrange=[-0.7,0.7],
+                                                   diffspec=True,colortype='Ftot_spec_intr',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'dsigma_vs_specno'
@@ -3901,7 +3910,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='sigma_spec_ang_rf',
+                                                   diffspec=True,colortype='lineS2N_rf',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'dsigma_vs_sigma'
@@ -3915,7 +3924,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='sigma_temp_ang_rf',
+                                                   diffspec=True,colortype='lineS2N_rf',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'Ratio_sigma_vs_sigma'
@@ -3929,7 +3938,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
-                                                   diffspec=True,colortype='sigma_temp_ang_rf',
+                                                   diffspec=True,colortype='lineS2N_rf',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
 
@@ -3948,6 +3957,79 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='S2N',hi
                                                    diffspec=True,colortype='redshift',
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
+    #-------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------------------------------------
+    goodFratio = np.where(summarydat['Fratio_spec'] > 0)
+    if len(goodFratio[0]) > 0:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'FluxRatio'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = np.asarray(summarydat['Fratio_spec'][goodFratio])
+        yvalues  = np.asarray(summarydat['Fratio_temp'][goodFratio])
+        xerr     = [None]*len(xvalues)
+        yerr     = [None]*len(xvalues)
+        xlabel   = 'Flux ratio mock spectrum doublet lines'
+        ylabel   = 'Flux ratio best-fit template doublet lines'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'dFluxRatio_vs_specno'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = specnumber[goodFratio]
+        yvalues  = np.asarray(summarydat['Fratio_spec'][goodFratio])-np.asarray(summarydat['Fratio_temp'][goodFratio])
+        xerr     = [None]*len(xvalues)
+        yerr     = [None]*len(xvalues)
+        xlabel   = 'Spectrum number - according to summary file \n'+summaryfile.split('/')[-1].replace('_','\_')
+        ylabel   = '$\Delta$Flux ratio; mock spec- temp match'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       diffspec=True,colortype='Sigma',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'dFluxRatio_vs_Fluxratio'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = np.asarray(summarydat['Fratio_spec'][goodFratio])
+        yvalues  = np.asarray(summarydat['Fratio_spec'][goodFratio])-np.asarray(summarydat['Fratio_temp'][goodFratio])
+        xerr     = [None]*len(xvalues)
+        yerr     = [None]*len(xvalues)
+        xlabel   = 'Flux ratio mock spec'
+        ylabel   = '$\Delta$Flux ratio; mock spec - temp match'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       diffspec=True,colortype='Sigma',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'Ratio_FluxRatio_vs_Fluxratio'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = np.asarray(summarydat['Fratio_spec'][goodFratio])
+        yvalues  = (np.asarray(summarydat['Fratio_temp'][goodFratio])/np.asarray(summarydat['Fratio_spec'][goodFratio])) - 1.0
+        xerr     = [None]*len(xvalues)
+        yerr     = [None]*len(xvalues)
+        xlabel   = 'Flux ratio mock spec '
+        ylabel   = '(Flux ratio temp match / Flux ratio mock spec) - 1'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       diffspec=True,colortype='Sigma',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'Ratio_FluxRatio_vs_specno'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = specnumber[goodFratio]
+        yvalues  = (np.asarray(summarydat['Fratio_temp'][goodFratio])/np.asarray(summarydat['Fratio_spec'][goodFratio])) - 1.0
+        xerr     = [None]*len(xvalues)
+        yerr     = [None]*len(xvalues)
+        xlabel   = 'Spectrum number - according to summary file \n'+summaryfile.split('/')[-1].replace('_','\_')
+        ylabel   = '(Flux ratio temp match / Flux ratio mock spec) - 1'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       diffspec=True,colortype='Sigma',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
@@ -4004,6 +4086,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cdatvec = summarydat['vshift_CCmatch']
                 cmin    = 0.0
                 cmax    = 200.0
+            elif colortype.lower() == 'sigma':
+                clabel  = 'Line $\sigma_\\textrm{rest}$ [\AA]'
+                cdatvec = summarydat['sigma_spec_ang_rf']
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
             elif colortype in summarydat.dtype.names:
                 # if colortype == 'Fratio_spec': pdb.set_trace()
                 clabel  = colortype.replace('_','\_')
@@ -4044,9 +4131,9 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                          markeredgecolor=colvec[ii],zorder=10)
 
         if diffspec:
-            plt.plot([-10000,10000],[0,0],'--',color='gray',lw=lthick,zorder=5)
+            plt.plot([-1e5,1e5],[0,0],'--',color='gray',lw=lthick,zorder=5)
         else:
-            plt.plot([-1,10000],[-1,10000],'--',color='gray',lw=lthick,zorder=5)
+            plt.plot([-1,1e5],[-1,1e5],'--',color='gray',lw=lthick,zorder=5)
 
         #--------- RANGES ---------
         if not xrange:
@@ -4079,18 +4166,22 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             axHisty.yaxis.set_major_formatter(NullFormatter())
 
             binwidth_x = np.diff(xrange)/Nbins
-            axHistx.hist(xvalues, bins=np.arange(xrange[0], xrange[1]+binwidth_x, binwidth_x),histtype='step',color='k')
+            bindefs    = np.arange(xrange[0], xrange[1]+binwidth_x, binwidth_x)
             if xlog:
+                bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
                 axHistx.set_xscale('log')
+
+            axHistx.hist(xvalues, bins=bindefs,histtype='step',color='k')
             axHistx.set_xticks([])
             axHistx.set_xlim(xrange)
 
-
             binwidth_y = np.diff(yrange)/Nbins
-            axHisty.hist(yvalues, bins=np.arange(yrange[0], yrange[1]+binwidth_y, binwidth_y),histtype='step',color='k',
-                         orientation='horizontal')
+            bindefs    = np.arange(yrange[0], yrange[1]+binwidth_y, binwidth_y)
             if ylog:
+                bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
                 axHisty.set_yscale('log')
+
+            axHisty.hist(yvalues, bins=bindefs,histtype='step',color='k', orientation='horizontal')
             axHisty.set_yticks([])
             axHisty.set_ylim(yrange)
 
