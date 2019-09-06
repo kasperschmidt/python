@@ -3326,7 +3326,7 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
 
     --- INPUT ---
     outputdir          Directory to store picklefiles with cross-correlation results to
-    CCwavewindow       Window around line to perform cross-correlations over
+    CCwavewindow       Window around line to perform cross-correlations over (rest frame)
     plot_allCCresults  To plot all CC results set this to True. Plots will be stored in outputdir
     noisefree          To matcht the noise-free version of the mock spectra set to True
     verbose            Toggle verbosity
@@ -3376,10 +3376,11 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
             if not plot_allCCresults:
                 plotdir  = None
 
+            windowcen  = CCwavewindow * (1+paramtable['redshift'][ss])
             ccdic      = felis.match_templates2specs(templates,[mockspec],[paramtable['redshift'][ss]],
-                                                     picklefile,wavewindow=[CCwavewindow],
+                                                     picklefile,wavewindow=[windowcen],
                                                      plotdir=outputdir,wavecen_restframe=[waverest[templine]],
-                                                     vshift=None,min_template_level=1e-2,
+                                                     vshift=None,min_template_level=1e-4,
                                                      plot_allCCresults=plot_allCCresults,
                                                      subtract_spec_median=False)
 
