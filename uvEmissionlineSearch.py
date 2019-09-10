@@ -3319,7 +3319,8 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
     return paramtable
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults=False,noisefree=False,verbose=True):
+def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults=False,noisefree=False,
+                                   spec2match='all',verbose=True):
     """
     Wrapper around match_mockspectrum_to_templates() to match templates to all mockspectra.
 
@@ -3329,6 +3330,7 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
     CCwavewindow       Window around line to perform cross-correlations over (rest frame)
     plot_allCCresults  To plot all CC results set this to True. Plots will be stored in outputdir
     noisefree          To matcht the noise-free version of the mock spectra set to True
+    spec2match         To only match a a subsample of spectra provide their parameter tabel line index here
     verbose            Toggle verbosity
 
     --- EXAMPLE OF RUN ---
@@ -3362,6 +3364,13 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
 
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
     for ss, mockspec in enumerate(paramtable['specname']):
+        if spec2match != 'all':
+            if ss not in spec2match:
+                continue
+            else:
+                print('------ spec2match: following spectrum in list so matching:')
+                print('                   '+mockspec)
+
         if noisefree:
             mockspec = mockspec.replace('noisespec','noisestdNone')
         mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
@@ -3728,37 +3737,37 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
                                                    colortype='s2n',cdatvec = summarydat['lineS2N_rf'],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
-    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # nameext  = 'Ftot_intrinsic'
-    # plotname = plotbasename+nameext+'.pdf'
-    # xvalues  = np.asarray(summarydat['Ftot_spec_intr'])
-    # yvalues  = np.asarray(summarydat['Ftot_temp_trapz'])
-    # xerr     = [None]*len(xvalues)
-    # yerr     = summarydat['Ftot_temp_trapz_err']
-    # xlabel   = 'Total flux in mock spectrum \\\\(intrinsic; no noise) [1e-20 erg/s/cm$^2$]'
-    # ylabel   = 'Total flux in best-fit template \\\\(integrated; mock spec noise) [1e-20 erg/s/cm$^2$]'
-    #
-    # uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-    #                                                histaxes=histaxes,Nbins=Nbins,
-    #                                                linetype='onetoone',
-    #                                                xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
-    #                                                colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
-    #
-    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # nameext  = 'Ftot_observed'
-    # plotname = plotbasename+nameext+'.pdf'
-    # xvalues  = np.asarray(summarydat['Ftot_spec_trapz'])
-    # yvalues  = np.asarray(summarydat['Ftot_temp_trapz'])
-    # xerr     = summarydat['Ftot_spec_trapz_err']
-    # yerr     = summarydat['Ftot_temp_trapz_fsclaeerr']
-    # xlabel   = 'Total flux in mock spectrum \\\\("observed"; with noise) [1e-20 erg/s/cm$^2$]'
-    # ylabel   = 'Total flux in best-fit template \\\\(integrated; flux scale "noise") [1e-20 erg/s/cm$^2$]'
-    #
-    # uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
-    #                                                histaxes=histaxes,Nbins=Nbins,
-    #                                                linetype='onetoone',
-    #                                                xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
-    #                                                colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ftot_intrinsic'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['Ftot_spec_intr'])
+    yvalues  = np.asarray(summarydat['fluxscale_S2Nmax'])
+    xerr     = [None]*len(xvalues)
+    yerr     = summarydat['fluxscaleerr_S2Nmax']
+    xlabel   = 'Intrinsic (pre-noise) flux in mock spectrum \\\\ [1e-20 erg/s/cm$^2$]'
+    ylabel   = '$\\alpha$; FELIS template flux estimate \\\\ [1e-20 erg/s/cm$^2$]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Ftot_observed'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = np.asarray(summarydat['Ftot_spec_trapz'])
+    yvalues  = np.asarray(summarydat['fluxscale_S2Nmax'])
+    xerr     = summarydat['Ftot_spec_trapz_err']
+    yerr     = summarydat['fluxscaleerr_S2Nmax']
+    xlabel   = 'Observed (post-noise) flux in mock spectrum \\\\ [1e-20 erg/s/cm$^2$]'
+    ylabel   = '$\\alpha$; FELIS template flux estimate \\\\ [1e-20 erg/s/cm$^2$]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colortype=colortype,colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'Ftot_intrinsic_sum'
@@ -5809,5 +5818,87 @@ def strip_cube_from_spectra(specdir,outputdir,overwrite=False,verbose=True):
     spectra   = glob.glob(specdir+'tdose_spectrum_*.fits')
     for spectrum in spectra:
         tu.strip_extension_from_fitsfile(spectrum,outputdir,removeextension='SOURCECUBE',overwrite=overwrite,verbose=verbose)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def checkfluxscales():
+    """
+    function to check conversion of output flux scales to integrated line fluxes
+
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.checkfluxscales()
+
+    """
+    # - - - - - - - - - - - - - - - INPUT - - - - - - - - - - - - - - - - - -
+    specdat = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra/'
+                         'uves_mock_spectrum_fromsetup_CIIIdoublet_noisespec_sigma2p00_skew0p00_Ftot1028p57_Fratio1p40_z2p70.fits')[1].data
+    threesigma_obs = 6.0 #A
+    wavemin = 1906.68*(1+2.7)-threesigma_obs
+    wavemax = 1908.73*(1+2.7)+threesigma_obs
+
+
+
+    tempdat = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_templates_fromsetup/'
+                         'uves_felis_template_fromsetup_CIIIdoublet_noisestdNone_sigma0p50_skew0p00_Ftot1p83_Fratio1p20_z0p00.fits')[1].data
+    threesigma_rf = 1.5
+    wavemin_rf = 1906.68-threesigma_rf
+    wavemax_rf = 1908.73+threesigma_rf
+
+    alpha = 2859.
+    z_obj = 2.7
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    specent   = np.where((specdat['wave'] > wavemin) & (specdat['wave'] < wavemax))[0]
+    tempent   = np.where((tempdat['wave'] > wavemin_rf) & (tempdat['wave'] < wavemax_rf))[0]
+
+    print(' --------- Observed frame: ----------')
+    Ftot_spec_full = np.sum(specdat['flux'])*np.median(np.diff(specdat['wave']))
+    Ftot_temp_full = np.sum(tempdat['flux']/(1+z_obj))*np.median(np.diff(tempdat['wave']*(1+z_obj)))
+    Ftot_spec_cut = np.sum(specdat['flux'][specent])*np.median(np.diff(specdat['wave'][specent]))
+    Ftot_temp_cut = np.sum(tempdat['flux'][tempent]/(1+z_obj))*np.median(np.diff(tempdat['wave'][tempent]*(1+z_obj)))
+    print('Ftot_spec_full = '+str(Ftot_spec_full))
+    print('Ftot_temp_full = '+str(Ftot_temp_full))
+    print('Ftot_spec_cut = '+str(Ftot_spec_cut))
+    print('Ftot_temp_cut = '+str(Ftot_temp_cut))
+
+    print(' --------- Rest frame: ----------')
+    Ftot_spec_full = np.sum(specdat['flux']*(1+z_obj))*np.median(np.diff(specdat['wave']/(1+z_obj)))
+    Ftot_temp_full = np.sum(tempdat['flux'])*np.median(np.diff(tempdat['wave']))
+    Ftot_spec_cut = np.sum(specdat['flux'][specent]*(1+z_obj))*np.median(np.diff(specdat['wave'][specent]/(1+z_obj)))
+    Ftot_temp_cut = np.sum(tempdat['flux'][tempent])*np.median(np.diff(tempdat['wave'][tempent]))
+    print('Ftot_spec_full = '+str(Ftot_spec_full))
+    print('Ftot_temp_full = '+str(Ftot_temp_full))
+    print('Ftot_spec_cut = '+str(Ftot_spec_cut))
+    print('Ftot_temp_cut = '+str(Ftot_temp_cut))
+
+    fluxscale = alpha * np.median(np.diff(tempdat['wave'][tempent]))
+    template_scaled = tempdat['flux'] * fluxscale
+    Ftot_scaled_full  = np.sum(template_scaled) * np.median(np.diff(tempdat['wave']))*(1+z_obj)
+
+    print('Fluxscale, i.e., alpha * dlambda_template  = '+str(fluxscale))
+    print('Ftot_FELIS_estimate = '+str(Ftot_scaled_full))
+
+    import matplotlib.pyplot as plt
+
+    plt.plot(specdat['wave'],specdat['flux'],color='gray')
+    plt.plot(tempdat['wave']*(1+z_obj),template_scaled,color='pink')
+
+    plt.plot([wavemin,wavemin],[np.min(specdat['flux'][specent]),np.max(specdat['flux'][specent])],color='k',ls=':')
+    plt.plot([wavemax,wavemax],[np.min(specdat['flux'][specent]),np.max(specdat['flux'][specent])],color='k',ls=':')
+    plt.plot(specdat['wave'][specent],specdat['flux'][specent],color='k')
+
+    plt.plot([wavemin_rf*(1+z_obj),wavemin_rf*(1+z_obj)],
+             [np.min(template_scaled[tempent]),np.max(template_scaled[tempent])],color='red',ls=':')
+    plt.plot([wavemax_rf*(1+z_obj),wavemax_rf*(1+z_obj)],
+             [np.min(template_scaled[tempent]),np.max(template_scaled[tempent])],color='red',ls=':')
+    plt.plot(tempdat['wave'][tempent]*(1+z_obj),tempdat['flux'][tempent],color='green')
+
+    plt.plot(tempdat['wave'][tempent]*(1+z_obj),template_scaled[tempent],color='red')
+
+    plt.savefig('/Users/kschmidt/Desktop/fluxscalecheck.pdf')
+    plt.clf()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
