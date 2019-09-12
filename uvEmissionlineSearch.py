@@ -3394,10 +3394,14 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
                                                      subtract_spec_median=False)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verbose=True):
+def gen_mocspecFELISresults_summary_pre190911(summaryfile,picklefiles,overwrite=False,verbose=True):
     """
     Generate a summary of the template characteristics FELIS determined to match the mock spectra
     the best, i.e. with the highest S/N.
+
+    - - - - - - - - - - - - - - - - - - - - - -  NB - - - - - - - - - - - - - - - - - - - - - - -
+    - - -  After correcting the FELIS normalization this function was depreciated on 190911 - - -
+    - - -  Instead the summarizing can now be done with the new version of the function     - - -
 
     --- INPUT ---
     summaryfile        Path and name to summary file to generate.
@@ -3620,70 +3624,15 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
     summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     return summarydat
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
-    """
-    Estimating the signal to noise ratio of a defined region in a 1D spectrum.
-    Signal and noise is obtained by summing (over wavelength) of the flux and vairance spectra, respectively
-
-    --- INPUT ---
-    wavelengths      Wavelength vector of 1D spec
-    fluxes           Flux values of pixels in 1D spec
-    variance         Variances for fluxes in 1D spec
-    waverange        Wavelenght range to estimate S/N over
-    verbose          Toggle verbosity
-
-    --- EXAMPLE OF USE ---
-    import astropy.io.fits as afits
-    import uvEmissionlineSearch as uves
-    import glob
-
-    specs = glob.glob('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra/uves_mock_spectrum_fromsetup_CIIIdoublet_noisespec_sigma0p50_skew0p00_Ftot85p71_Fratio1p40_z*fits')
-
-    for spec in specs:
-        redshift    = float(spec.split('io1p40_z')[-1].split('.fit')[0].replace('p','.'))
-        wavelengths = afits.open(spec)[1].data['wave']
-        fluxes      = afits.open(spec)[1].data['flux']
-        variances   = afits.open(spec)[1].data['fluxerror']**2.0
-        dwave_rest  = 5.0
-        waverange   = [(1908.0-dwave_rest/2.)*(1.0+redshift),(1908.0+dwave_rest/2.)*(1.0+redshift)]
-
-        print(' --- Calc for '+spec.split('/')[-1]+';\n --- waverange='+str(waverange))
-        Ftot, vartot, Npix, S2N = uves.calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange)
-
-    """
-    if verbose: print(' - Estimating S/N of 1D spectral range '+str(waverange))
-    goodent = np.where((wavelengths >= waverange[0]) & (wavelengths <= waverange[1]))
-    if len(goodent) == 0.0:
-        if verbose: print(' - No pixels in wavelength range '+str(waverange)+'; returning 0s')
-        Ftot, vartot, Npix, S2N = 0.0, 0.0, 0.0, 0.0
-    else:
-        Npix   = len(goodent[0])
-        dwave  = np.median(np.diff(wavelengths[goodent]))
-        Ftot   = np.sum(fluxes[goodent])*dwave
-        vartot = np.sum(variances[goodent])*dwave**2 /np.sqrt(len(goodent[0]))
-        S2N    = Ftot/np.sqrt(vartot)
-        if verbose: print(' - Returning values (sum*dwave)  Ftot, vartot, Npix, S/N = '+
-                          str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N)+'')
-
-        # Ftot   = np.trapz(fluxes[goodent],wavelengths[goodent])
-        # vartot = np.trapz(variances[goodent],wavelengths[goodent])#/np.sqrt(Npix)
-        # S2N    = Ftot/np.sqrt(vartot*dwave)
-        # if verbose: print('\n - Returning values (trapz)      Ftot, vartot, Npix, S/N = '
-        #                   +str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N))
-        #
-        # Ftot   = np.sum(fluxes[goodent])
-        # vartot = np.sum(variances[goodent])#/np.sqrt(len(goodent[0]))
-        # S2N    = Ftot/np.sqrt(vartot)
-        # dwave  = np.median(np.diff(wavelengths[goodent]))
-        # if verbose: print(' - Returning values (sum)        Ftot, vartot, Npix, S/N = '+
-        #                   str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N)+' \n')
-
-    return Ftot, vartot, Npix, S2N
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N_rf',histaxes=False,Nbins=50,
+def plot_mocspecFELISresults_summary_pre190911(summaryfile,plotbasename,colortype='lineS2N_rf',histaxes=False,Nbins=50,
                                      overwrite=False,verbose=True):
     """
     plotting and evaluating the output from uves.gen_mocspecFELISresults_summary()
+
+    - - - - - - - - - - - - - - - - - - - - - -  NB - - - - - - - - - - - - - - - - - - - - - - -
+    - - -  After correcting the FELIS normalization this function was depreciated on 190911 - - -
+    - - -  Instead the plotting can now be done with the new version of the function        - - -
+
 
     --- INPUT ---
     summaryfile        Path and name to summary file to evaluate
@@ -3744,8 +3693,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = np.asarray(summarydat['fluxscale_S2Nmax'])
     xerr     = [None]*len(xvalues)
     yerr     = summarydat['fluxscaleerr_S2Nmax']
-    xlabel   = 'Intrinsic (pre-noise) flux in mock spectrum \\\\ [1e-20 erg/s/cm$^2$]'
-    ylabel   = '$\\alpha$; FELIS template flux estimate \\\\ [1e-20 erg/s/cm$^2$]'
+    xlabel   = 'Intrinsic (pre-noise) flux in mock spectrum [1e-20 erg/s/cm$^2$]'
+    ylabel   = '$\\alpha$ FELIS template flux estimate [1e-20 erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -3760,8 +3709,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = np.asarray(summarydat['fluxscale_S2Nmax'])
     xerr     = summarydat['Ftot_spec_trapz_err']
     yerr     = summarydat['fluxscaleerr_S2Nmax']
-    xlabel   = 'Observed (post-noise) flux in mock spectrum \\\\ [1e-20 erg/s/cm$^2$]'
-    ylabel   = '$\\alpha$; FELIS template flux estimate \\\\ [1e-20 erg/s/cm$^2$]'
+    xlabel   = 'Observed (post-noise) flux in mock spectrum [1e-20 erg/s/cm$^2$]'
+    ylabel   = '$\\alpha$ FELIS template flux estimate [1e-20 erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4180,7 +4129,560 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
                                                    cdatvec=cdatvec,
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verbose=True):
+    """
+    Generate a summary of the template characteristics FELIS determined to match the mock spectra
+    the best, i.e. with the highest S/N.
 
+    - - - - - - - - - - - - - - - - - - - - - -  NB - - - - - - - - - - - - - - - - - - - - - - -
+    - - -  After correcting the FELIS normalization this function was depreciated on 190911 - - -
+    - - -  Instead the summarizing can now be done with the new version of the function     - - -
+
+    --- INPUT ---
+    summaryfile        Path and name to summary file to generate.
+    picklefiles        List of FELIS pickle files to summarize.
+    overwrite          Overwrite the summary file if it already exists?
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    FELISoutputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults/'
+    summaryfile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary_all.txt'
+    picklefiles    = glob.glob(FELISoutputdir+'*.pkl')
+    summarydat     = uves.gen_mocspecFELISresults_summary(summaryfile,picklefiles)
+
+    """
+    if verbose: print(' - Generating a summary of the best-fit template in:\n   '+summaryfile)
+    if os.path.isfile(summaryfile) & (not overwrite):
+        sys.exit(' Summary file '+summaryfile+' already exists and overwrite=False ')
+
+    fout = open(summaryfile,'w')
+    fout.write('# Summary of '+str(len(picklefiles))+' FELIS pickle files provided \n')
+    fout.write('# File contains the characteristics of the templates with max S/N from the FELIS template fits \n')
+    fout.write('# The summary was generated with uves.compate_mockspec_to_FELISresults() on '+kbs.DandTstr2()+' \n')
+    fout.write('# \n')
+    fout.write('# Columns are:\n')
+    fout.write('# z_spec                     Instrinspic redshift of matched mock spectrum \n')
+    fout.write('# z_temp_S2Nmax              Estimated redshift from template match\n')
+    fout.write('# sigma_spec_ang_obs         Observed line width in angstroms for mock spectrum \n')
+    fout.write('# sigma_spec_ang_rf          Rest-frame line width in angstroms for mock spectrum \n')
+    fout.write('# sigma_temp_ang_rf          Rest-frame line width in angstroms for maxS/N template \n')
+    fout.write('# Fratio_spec                Flux ratio of doublets in mock spectrum (line_lowwave/line_highwave) \n')
+    fout.write('# Fratio_temp                Flux ratio of doublets in template      (line_lowwave/line_highwave) \n')
+    fout.write('# Ftot_spec_intr             Intrinsic (input) total flux of mock spectrum \n')
+    fout.write('# Ftot_spec_trapz            Integreated (trapz) total flux of noisy mock spectrum \n')
+    fout.write('# Ftot_spec_trapz_err        Uncertainty on Ftot_spec_trapz (mock spectrum flux errors propogated) \n')
+    fout.write('# Ftot_spec_sum              Integreated (sum*dwave) total flux of noisy mock spectrum \n')
+    fout.write('# Ftot_spec_sum_err          Integreated (sum*dwave) total flux of noisy mock spectrum \n')
+    fout.write('# Ftot_FELIS_S2Nmax          Estimated total flux from FELIS template match for maxS/N match \n')
+    fout.write('# Ftot_FELIS_S2Nmax_err      Uncertainty on FELISflux_S2Nmax [sqrt(Ftot_FELIS_S2Nmax_variance)]\n')
+    fout.write('# FELIS_S2Nmax               The S/N value of the (scaled) template match to the mock spectrum \n')
+    fout.write('# Ngoodent                   The number of good pixels used in the cross correlation \n')
+    fout.write('# chi2                       Chi^2 value between the mock spectrum and the template match \n')
+    fout.write('# vshift_spec                Known intrinsic velocity shift of mock spectrum \n')
+    fout.write('# vshift_CCmatch             Estimated velocity shift from template match '
+               ' [ c*(z_spec-z_temp_S2Nmax)/(1+z_temp_S2Nmax) ]\n')
+    fout.write('# lineS2N                    Estimated S/N of spectral feature within [lineS2Nwavemin,lineS2Nwavemin] \n')
+    fout.write('# lineS2Nwavemin             Lower integration limit for S/N estimate \n')
+    fout.write('# lineS2Nwavemax             Upper integration limit for S/N estimate \n')
+    fout.write('# lineS2N_rf                 Estimated S/N (rest-frame) of spectral feature within [lineS2Nwavemin_rf,lineS2Nwavemin_rf] \n')
+    fout.write('# lineS2Nwavemin_rf          Lower integration limit for rest-frame S/N estimate \n')
+    fout.write('# lineS2Nwavemax_rf          Upper integration limit for rest-frame S/N estimate \n')
+    fout.write('# Ftot_lineS2N               Total flux of spectral feature (sum(f)*dwave) used to estimate line S/N \n')
+    fout.write('# Ftot_lineS2N_sigma         Square root of the variance/sqrt(Npix) of Ftot \n')
+    fout.write('# spectrum                   The mock spectrum the templates were matched to \n')
+    fout.write('# template                   The maxS/N template \n')
+    fout.write('# \n')
+    fout.write('# z_spec z_temp_S2Nmax sigma_spec_ang_obs sigma_spec_ang_rf sigma_temp_ang_rf Fratio_spec Fratio_temp Ftot_spec_intr Ftot_spec_trapz Ftot_spec_trapz_err Ftot_spec_sum Ftot_spec_sum_err Ftot_FELIS_S2Nmax Ftot_FELIS_S2Nmax_err FELIS_S2Nmax Ngoodent chi2 vshift_spec vshift_CCmatch lineS2N lineS2Nwavemin lineS2Nwavemax lineS2N_rf lineS2Nwavemin_rf lineS2Nwavemax_rf Ftot_lineS2N Ftot_lineS2N_sigma spectrum template \n')
+
+    for pp, picklefile in enumerate(picklefiles):
+        if verbose:
+            infostr = ' - Summarizing picklefile  '+str("%.5d" % (pp+1))+' / '+str("%.5d" % len(picklefiles))+'     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+        pkldic  = felis.load_picklefile(picklefile)
+
+        Nsigma_integration = 3.0
+
+        for specname in pkldic.keys():
+            tempdic = pkldic[specname]
+
+            #------ load info about max S/N template ------
+            template, vshift_intr, vshift_match, Ftot_FELIS_S2Nmax, Ftot_FELIS_S2Nmax_err, \
+            FELIS_S2Nmax, Ngoodent, chi2, z_spec, zS2Nmax =  \
+                felis.getresult4maxS2N(pkldic,specname)
+
+            #------ load matched spec and move to restframe ------
+            s_wave   , s_flux   , s_df   , s_s2n    = felis.load_spectrum(specname,verbose=False)
+            s_wave_rf, s_flux_rf, s_df_rf, s_s2n_rf = s_wave / (1+z_spec), s_flux * (1+z_spec), s_df * (1+z_spec), s_s2n
+
+            #------ extract info on mock spectrum from fits headers ------
+            spec_hdr        = afits.open(specname)[1].header
+            spec_sigma_ang  = np.array([])
+            spec_flux       = np.array([])
+            spec_line_wave  = np.array([])
+            for hdrkey in spec_hdr.keys():
+                if ('noise' not in hdrkey.lower()) & ('err' not in hdrkey.lower()):
+                    if '_1' in hdrkey: spec_line_wave = np.append(spec_line_wave,spec_hdr[hdrkey])
+                    if '_2' in hdrkey: spec_sigma_ang = np.append(spec_sigma_ang,spec_hdr[hdrkey])
+                    if '_4' in hdrkey: spec_flux      = np.append(spec_flux,spec_hdr[hdrkey])
+
+            spec_sigma_ang_obs = np.mean(spec_sigma_ang)
+            spec_sigma_ang_rf  = spec_sigma_ang_obs / (1.0+z_spec)
+            Ftot_spec_intr     = np.sum(spec_flux)
+            if len(spec_flux) == 2:
+                Fratio_spec = spec_flux[np.where(spec_line_wave == np.min(spec_line_wave))] / \
+                              spec_flux[np.where(spec_line_wave == np.max(spec_line_wave))]
+            else:
+                Fratio_spec = 0.0
+
+            #------ extract info on template from fits headers ------
+            temp_hdr        = afits.open(template)[1].header
+            temp_sigma_ang  = np.array([])
+            temp_flux       = np.array([])
+            temp_line_wave  = np.array([])
+            for hdrkey in temp_hdr.keys():
+                if ('noise' not in hdrkey.lower()) & ('err' not in hdrkey.lower()):
+                    if '_1' in hdrkey: temp_line_wave = np.append(temp_line_wave,temp_hdr[hdrkey])
+                    if '_2' in hdrkey: temp_sigma_ang = np.append(temp_sigma_ang,temp_hdr[hdrkey])
+                    if '_4' in hdrkey: temp_flux      = np.append(temp_flux,temp_hdr[hdrkey])
+
+            temp_sigma_ang_rf  = np.mean(temp_sigma_ang)
+            if len(temp_flux) == 2:
+                Fratio_temp = temp_flux[np.where(temp_line_wave == np.min(temp_line_wave))] / \
+                              temp_flux[np.where(temp_line_wave == np.max(temp_line_wave))]
+            else:
+                Fratio_temp = 0.0
+
+            #------ integrate mock spectrum to obtain observed total fluxes (rest-frame) ------
+            lineS2Nwavemin = np.min(spec_line_wave)-Nsigma_integration*spec_sigma_ang_obs
+            lineS2Nwavemax = np.max(spec_line_wave)+Nsigma_integration*spec_sigma_ang_obs
+            waverange      = [lineS2Nwavemin,lineS2Nwavemax]
+            goodent        = np.where((s_wave >= waverange[0]) & (s_wave <= waverange[1]))
+
+            lineS2Nwavemin_rf = np.min(spec_line_wave/(1.0+z_spec))-Nsigma_integration*spec_sigma_ang_rf
+            lineS2Nwavemax_rf = np.max(spec_line_wave/(1.0+z_spec))+Nsigma_integration*spec_sigma_ang_rf
+            waverange_rf      = [lineS2Nwavemin_rf,lineS2Nwavemax_rf]
+            goodent_rf        = np.where((s_wave_rf >= waverange_rf[0]) & (s_wave_rf <= waverange_rf[1]))
+
+            datarr_spec       = unumpy.uarray(s_flux_rf[goodent_rf], s_df_rf[goodent_rf])
+            Ftot_trapz_spec   = np.trapz(datarr_spec,s_wave_rf[goodent_rf])
+            Ftot_sum_spec     = np.sum(datarr_spec) * np.median(np.diff(s_wave_rf[goodent_rf]))
+
+            #------ estimate signal to noise of emission feature ------
+            Ftot_lineS2N, Ftot_lineS2N_var, Npixgood, lineS2N = uves.calc_1Dspec_S2N(s_wave,s_flux,s_df**2.0,
+                                                                   waverange,verbose=False)
+            Ftot_lineS2N_sigma = np.sqrt(Ftot_lineS2N_var)
+
+            Ftot_rf, vartot_rf, Npixgood_rf, lineS2N_rf = uves.calc_1Dspec_S2N(s_wave_rf,s_flux_rf,s_df_rf**2.0,
+                                                                               waverange_rf,verbose=False)
+
+            if np.abs(Ftot_lineS2N-Ftot_rf) > 1.0:
+                print(' - Ftot-Ftot_rf is larger than 1e-20cgs; stopping to enable investigation')
+                pdb.set_trace()
+
+            if np.abs(lineS2N-lineS2N_rf) > 0.1:
+                print(' - linsS2N-lineS2N_ref is larger than 10%; stopping to enable investigation')
+                pdb.set_trace()
+
+
+            #------------ Writing to output file ------------
+            outstr = str("%7.4f" % z_spec)+'  '+\
+                     str("%7.4f" % zS2Nmax)+'      '+\
+                     str("%7.4f" % spec_sigma_ang_obs)+'  '+\
+                     str("%7.4f" % spec_sigma_ang_rf)+'  '+\
+                     str("%7.4f" % temp_sigma_ang_rf)+'      '+\
+                     str("%7.2f" % Fratio_spec)+'  '+\
+                     str("%7.2f" % Fratio_temp)+'      '+\
+                     str("%12.4f" % Ftot_spec_intr)+'  '+\
+                     str("%12.4f" % Ftot_trapz_spec.nominal_value)+'  '+\
+                     str("%12.4f" % Ftot_trapz_spec.std_dev)+'  '+\
+                     str("%12.4f" % Ftot_sum_spec.nominal_value)+'  '+\
+                     str("%12.4f" % Ftot_sum_spec.std_dev)+'  '+\
+                     str("%12.4f" % Ftot_FELIS_S2Nmax)+'  '+\
+                     str("%12.4f" % Ftot_FELIS_S2Nmax_err)+'  '+\
+                     str("%12.4f" % FELIS_S2Nmax)+'  '+\
+                     str("%12.4f" % Ngoodent)+'  '+\
+                     str("%12.4f" % chi2)+'  '+\
+                     str("%12.4f" % vshift_intr)+'  '+\
+                     str("%12.4f" % vshift_match)+'      '+\
+                     str("%12.4f" % lineS2N)+'  '+\
+                     str("%12.4f" % lineS2Nwavemin)+'  '+\
+                     str("%12.4f" % lineS2Nwavemax)+'  '+\
+                     str("%12.4f" % lineS2N_rf)+'  '+\
+                     str("%12.4f" % lineS2Nwavemin_rf)+'  '+\
+                     str("%12.4f" % lineS2Nwavemax_rf)+'  '+\
+                     str("%12.4f" % Ftot_lineS2N)+'  '+\
+                     str("%12.4f" % Ftot_lineS2N_sigma)+'  '+\
+                     specname+'  '+\
+                     template+'  '
+            fout.write(outstr+'\n')
+    if verbose: print('\n   ...done')
+    fout.close()
+
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=34,dtype=fmt,comments='#',names=True)
+    return summarydat
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N_rf',histaxes=False,Nbins=50,
+                                     overwrite=False,verbose=True):
+    """
+    plotting and evaluating the output from uves.gen_mocspecFELISresults_summary()
+
+    --- INPUT ---
+    summaryfile        Path and name to summary file to evaluate
+    plotbasename       The based name for the plots to generate (incl. output directory)
+    overwrite          Overwrite the plots if they already exist?
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    summaryfile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary.txt'
+    plotbasename   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary_plots/190815test_'
+    uves.plot_mocspecFELISresults_summary(summaryfile,plotbasename)
+
+    """
+    if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=34,dtype=fmt,comments='#',names=True)
+    specnumber = np.arange(len(summarydat))+1.0
+
+
+    line         = summaryfile.split('cgs_')[-1].split('19')[0].lower()
+
+    sigmaerrval  = {'ciii':0.1, 'civ':0.1, 'siiii':0.1, 'nv':0.1, 'mgii':0.1, 'oiii':0.1, 'heii':0.1, 'lya':0.3, 'all':0.1}
+    fratioerrval = {'ciii':0.1, 'civ':0.2, 'siiii':0.1, 'nv':0.2, 'mgii':0.2, 'oiii':0.1, 'all':0.2}
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_z_lineVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['z_spec']
+    yvalues  = summarydat['z_temp_S2Nmax']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = '$z$(mock spectrum)'
+    ylabel   = '$z$(FELIS)'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[.1,600],yrange=[.1,600],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_S2N_lineVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['lineS2N_rf']
+    yvalues  = summarydat['FELIS_S2Nmax']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Rest-frame emission line S/N'
+    ylabel   = 'FELIS template match S/N'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='Ftot_spec_intr',cdatvec=summarydat['Ftot_spec_intr'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[.1,600],yrange=[.1,600],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_intrVStrapz'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    xerr     = [None]*len(xvalues)
+    yvalues  = summarydat['Ftot_spec_trapz']
+    yerr     = summarydat['Ftot_spec_trapz_err']
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_intrVStrapz_sigma'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    xerr     = [None]*len(xvalues)
+    yvalues  = summarydat['Ftot_spec_trapz']
+    yerr     = summarydat['Ftot_spec_trapz_err']
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='sigma',cdatvec=summarydat['sigma_spec_ang_rf'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_intrVSsum'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    xerr     = [None]*len(xvalues)
+    yvalues  = summarydat['Ftot_spec_sum']
+    yerr     = summarydat['Ftot_spec_sum_err']
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'Sum*dwave mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_intrVSline'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    xerr     = [None]*len(xvalues)
+    yvalues  = summarydat['Ftot_lineS2N']
+    yerr     = summarydat['Ftot_lineS2N_sigma']
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'Trapz int +/- 3 sigma mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_intrVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    xerr     = [None]*len(xvalues)
+    yvalues  = summarydat['Ftot_FELIS_S2Nmax']
+    yerr     = summarydat['Ftot_FELIS_S2Nmax_err']
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_trapzVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_trapz']
+    xerr     = summarydat['Ftot_spec_trapz_err']
+    yvalues  = summarydat['Ftot_FELIS_S2Nmax']
+    yerr     = summarydat['Ftot_FELIS_S2Nmax_err']
+
+    xlabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_trapzVSfelis_sigma'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_trapz']
+    xerr     = summarydat['Ftot_spec_trapz_err']
+    yvalues  = summarydat['Ftot_FELIS_S2Nmax']
+    yerr     = summarydat['Ftot_FELIS_S2Nmax_err']
+
+    xlabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='sigma',cdatvec=summarydat['sigma_spec_ang_rf'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_sigma_intrVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['sigma_spec_ang_rf']
+    xerr     = [None]*len(xvalues)
+    yvalues  = summarydat['sigma_temp_ang_rf']
+    yerr     = [None]*len(yvalues)
+
+    xlabel   = '$\sigma$(mock spectrum) [\AA]'
+    ylabel   = '$\sigma$(FELIS) [\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=False,ylog=False,xrange=[0.0,2.7],yrange=[0.0,2.7],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'horizontal_FtotVSFtot'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    yvalues  = summarydat['Ftot_spec_trapz']/summarydat['Ftot_FELIS_S2Nmax']-1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = np.sqrt( (summarydat['Ftot_spec_trapz_err']   / summarydat['Ftot_spec_trapz'])**2 +
+                        (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 )
+    xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'F(mock spectrum)/F(FELIS) - 1'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'horizontal_FtotVSFtot_sigma'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['Ftot_spec_intr']
+    yvalues  = summarydat['Ftot_spec_trapz']/summarydat['Ftot_FELIS_S2Nmax']-1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = np.sqrt( (summarydat['Ftot_spec_trapz_err']   / summarydat['Ftot_spec_trapz'])**2 +
+                        (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 )
+    xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'F(mock spectrum)/F(FELIS) - 1'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='sigma',cdatvec=summarydat['sigma_spec_ang_rf'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'horizontal_sigmaVSsigma'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['sigma_spec_ang_rf']
+    yvalues  = summarydat['sigma_spec_ang_rf']/summarydat['sigma_temp_ang_rf']-1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = np.sqrt( (summarydat['sigma_temp_ang_rf']*0.0+sigmaerrval[line] / summarydat['sigma_temp_ang_rf'])**2 +
+                        (summarydat['sigma_spec_ang_rf']*0.0+0.0 / summarydat['sigma_spec_ang_rf'])**2 )
+
+    xlabel   = '$\sigma$(mock spectrum) [\AA]'
+    ylabel   = '$\sigma$(mock spectrum)/$\sigma$(FELIS) - 1'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'horizontal_zVSz'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['z_spec']
+    yvalues  = summarydat['z_spec']/summarydat['z_temp_S2Nmax']-1.0
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(yvalues)
+
+    xlabel   = '$z$(mock spectrum)'
+    ylabel   = '$z$(mock spectrum)/$z$(FELIS) - 1'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'horizontal_zVSvshift'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['z_spec']
+    yvalues  = summarydat['vshift_CCmatch']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(yvalues)
+
+    xlabel   = '$z$(mock spectrum)'
+    ylabel   = '$\Delta v$/[km/s] = $c$[$z$(mock spectrum) - $z$(FELIS)] / [1+ $z$(FELIS)]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    #-------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------------------------------------
+    goodFratio = np.where(summarydat['Fratio_spec'] > 0)
+    if len(goodFratio[0]) > 0:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'onetoone_Fratio_intrVSfelis'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = summarydat['Fratio_spec'][goodFratio]
+        xerr     = [None]*len(xvalues)
+        yvalues  = summarydat['Fratio_temp'][goodFratio]
+        yerr     = [fratioerrval[line]]*len(yvalues)
+
+        xlabel   = 'Doublet flux ratio mock spec'
+        ylabel   = 'Doublet flux ratio FELIS match'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][goodFratio],
+                                                       linetype='onetoone',
+                                                       xlog=False,ylog=False,xrange=[0.0,3.3],yrange=[0.0,3.3],
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'horizontal_fluxratioVSfluxratio'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = summarydat['Fratio_spec'][goodFratio]
+        yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
+        xerr     = [None]*len(xvalues)
+        yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
+                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 )
+
+        xlabel   = 'Doublet flux ratio (FR) of mock spectrum'
+        ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][goodFratio],
+                                                       linetype='horizontal',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'horizontal_sigmaVSfluxratio'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = summarydat['sigma_spec_ang_rf'][goodFratio]
+        yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
+        xerr     = [None]*len(xvalues)
+        yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
+                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 )
+
+        xlabel   = '$\sigma$(mock spectrum) [\AA]'
+        ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][goodFratio],
+                                                       linetype='horizontal',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'horizontal_sigmafelisVSfluxratio'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = summarydat['sigma_temp_ang_rf'][goodFratio]
+        yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
+        xerr     = [None]*len(xvalues)
+        yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
+                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 )
+
+        xlabel   = '$\sigma$(FELIS) [\AA]'
+        ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][goodFratio],
+                                                       linetype='horizontal',
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
@@ -4227,26 +4729,36 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cdatvec = summarydat[colortype]
 
             if colortype.lower() == 'redshift':
-                clabel  = 'Redshift'
+                clabel  = '$z$'
                 cmin    = 1.4
                 cmax    = 6.2
-            elif colortype.lower() == 's2n':
+                cextend = 'neither'
+            elif colortype.lower() == 's2nfelis':
+                clabel  = 'S/N(FELIS)'
+                cmin    = 3.0
+                cmax    = 10.0
+                cextend = 'both'
+            elif colortype.lower() == 's2':
                 clabel  = 'S/N'
                 cmin    = 3.0
                 cmax    = 10.0
+                cextend = 'both'
             elif colortype.lower() == 'vshift':
                 clabel  = 'Velocity shift (spec vs. template match) [km/s]'
                 cmin    = 0.0
                 cmax    = 200.0
+                cextend = 'both'
             elif colortype.lower() == 'sigma':
-                clabel  = 'Line $\sigma_\\textrm{rest}$ [\AA]'
+                clabel  = '$\sigma$ [\AA]'
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
                 cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
             elif colortype in summarydat.dtype.names:
                 # if colortype == 'Fratio_spec': pdb.set_trace()
                 clabel  = colortype.replace('_','\_')
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
                 cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
             else:
                 sys.exit(' Color type '+colortype+' not enabled ')
 
@@ -4260,7 +4772,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 # cb      = plt.colorbar(m,extend='neither',orientation='vertical',
                 #                        pad=0.01,aspect=40,shrink=0.3,anchor=(1.0,1.0),use_gridspec=False)
             else:
-                cb      = plt.colorbar(m,extend='neither',orientation='vertical',
+                cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
                                        pad=0.01,aspect=40,shrink=1.0,anchor=(0.0,0.5),use_gridspec=False)
                 cb.set_label(clabel)
 
@@ -4343,7 +4855,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             axHisty.set_yticks([])
             axHisty.set_ylim([yminsys,ymaxsys])
 
-            cb      = plt.colorbar(m,extend='neither',orientation='vertical',
+            cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
                                    pad=0.01,aspect=10,shrink=0.35,anchor=(-15.0,1.58),use_gridspec=False)
             cb.set_label(clabel)
         else:
@@ -4366,7 +4878,52 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
+    """
+    Estimating the signal to noise ratio of a defined region in a 1D spectrum.
+    Signal and noise is obtained by trapexoidal integration of the flux propogating errors.
 
+    --- INPUT ---
+    wavelengths      Wavelength vector of 1D spec
+    fluxes           Flux values of pixels in 1D spec
+    variance         Variances for fluxes in 1D spec
+    waverange        Wavelenght range to estimate S/N over
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import astropy.io.fits as afits
+    import uvEmissionlineSearch as uves
+    import glob
+
+    specs = glob.glob('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra/uves_mock_spectrum_fromsetup_CIIIdoublet_noisespec_sigma0p50_skew0p00_Ftot85p71_Fratio1p40_z*fits')
+
+    for spec in specs:
+        redshift    = float(spec.split('io1p40_z')[-1].split('.fit')[0].replace('p','.'))
+        wavelengths = afits.open(spec)[1].data['wave']
+        fluxes      = afits.open(spec)[1].data['flux']
+        variances   = afits.open(spec)[1].data['fluxerror']**2.0
+        dwave_rest  = 5.0
+        waverange   = [(1908.0-dwave_rest/2.)*(1.0+redshift),(1908.0+dwave_rest/2.)*(1.0+redshift)]
+
+        print(' --- Calc for '+spec.split('/')[-1]+';\n --- waverange='+str(waverange))
+        Ftot, vartot, Npix, S2N = uves.calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange)
+
+    """
+    if verbose: print(' - Estimating S/N of 1D spectral range '+str(waverange))
+    goodent = np.where((wavelengths >= waverange[0]) & (wavelengths <= waverange[1]))
+    if len(goodent) == 0.0:
+        if verbose: print(' - No pixels in wavelength range '+str(waverange)+'; returning 0s')
+        Ftot, vartot, Npix, S2N = 0.0, 0.0, 0.0, 0.0
+    else:
+        Npix   = len(goodent[0])
+        datarr = unumpy.uarray(fluxes[goodent], np.sqrt(variances[goodent]))
+        Ftot   = np.trapz(datarr,wavelengths[goodent])
+        S2N    = Ftot.nominal_value/Ftot.std_dev
+        if verbose: print(' - Returning values  Ftot(trapz), vartot, Npix, S/N = '+
+                          str(Ftot.nominal_value)+', '+str(Ftot.std_dev**2)+', '+str(Npix)+', '+str(S2N)+'')
+
+    return Ftot.nominal_value, Ftot.std_dev**2, Npix, S2N
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
