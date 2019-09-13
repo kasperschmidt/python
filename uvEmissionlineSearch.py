@@ -3319,82 +3319,7 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
     return paramtable
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults=False,noisefree=False,
-                                   spec2match='all',verbose=True):
-    """
-    Wrapper around match_mockspectrum_to_templates() to match templates to all mockspectra.
-
-
-    --- INPUT ---
-    outputdir          Directory to store picklefiles with cross-correlation results to
-    CCwavewindow       Window around line to perform cross-correlations over (rest frame)
-    plot_allCCresults  To plot all CC results set this to True. Plots will be stored in outputdir
-    noisefree          To matcht the noise-free version of the mock spectra set to True
-    spec2match         To only match a a subsample of spectra provide their parameter tabel line index here
-    verbose            Toggle verbosity
-
-    --- EXAMPLE OF RUN ---
-    import uvEmissionlineSearch as uves
-
-    outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults/'
-    uves.match_mockspectra_to_templates(outputdir)
-
-    """
-    if verbose: print(' - Decide which templates to fit to what mock spectra (through a dictionary)')
-    mockVStemp_lines = {}
-    mockVStemp_lines['Lya']             = ['Lya']
-    mockVStemp_lines['CIIIdoublet']     = ['CIII']
-    mockVStemp_lines['CIVdoublet']      = ['CIV']
-    mockVStemp_lines['NVdoublet']       = ['NV']
-    mockVStemp_lines['HeII']            = ['HeII']
-    mockVStemp_lines['OIII1663doublet'] = ['OIII']
-    mockVStemp_lines['MgIIdoublet']     = ['MgII']
-
-    mockVStemp_lines['testsinglet'] = ['HeII']
-    mockVStemp_lines['testdoublet'] = ['CIII']
-
-    waverest     = {'Lya':1215.67, 'CIII':1908.0, 'CIV':1550.0, 'NV':1241.0, 'HeII':1640.0, 'OIII':1663.0, 'MgII':2800.}
-
-    if verbose: print(' - Defining files to perform matches between (hardcoded)')
-    parentdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
-    # templatedir  = parentdir+'felis_templates_190816/'
-    templatedir  = parentdir+'felis_templates_fromsetup/'
-    paramfile    = parentdir+'mockspectra_setup_parametertable.txt'
-    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,f,20a,20a,200a')
-
-    if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
-    for ss, mockspec in enumerate(paramtable['specname']):
-        if spec2match != 'all':
-            if ss not in spec2match:
-                continue
-            else:
-                print('------ spec2match: following spectrum in list so matching:')
-                print('                   '+mockspec)
-
-        if noisefree:
-            mockspec = mockspec.replace('noisespec','noisestdNone')
-        mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
-        templines = mockVStemp_lines[mockline]
-
-        for templine in templines:
-            picklefile = outputdir+mockspec.split('/')[-1].replace('.fits',
-                                                                   '_CCresults_template'+templine+
-                                                                   '_matchto_spectrum'+mockline+'.pkl')
-            templates  = glob.glob(templatedir+'uves_felis_template_*'+templine+'*.fits')
-
-            if not plot_allCCresults:
-                plotdir  = None
-
-            windowcen  = CCwavewindow * (1+paramtable['redshift'][ss])
-            ccdic      = felis.match_templates2specs(templates,[mockspec],[paramtable['redshift'][ss]],
-                                                     picklefile,wavewindow=[windowcen],
-                                                     plotdir=outputdir,wavecen_restframe=[waverest[templine]],
-                                                     vshift=None,min_template_level=1e-4,
-                                                     plot_allCCresults=plot_allCCresults,
-                                                     subtract_spec_median=False)
-
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def gen_mocspecFELISresults_summary_pre190911(summaryfile,picklefiles,overwrite=False,verbose=True):
+def pre190911_gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verbose=True):
     """
     Generate a summary of the template characteristics FELIS determined to match the mock spectra
     the best, i.e. with the highest S/N.
@@ -3624,7 +3549,7 @@ def gen_mocspecFELISresults_summary_pre190911(summaryfile,picklefiles,overwrite=
     summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     return summarydat
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_mocspecFELISresults_summary_pre190911(summaryfile,plotbasename,colortype='lineS2N_rf',histaxes=False,Nbins=50,
+def pre190911_plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N_rf',histaxes=False,Nbins=50,
                                      overwrite=False,verbose=True):
     """
     plotting and evaluating the output from uves.gen_mocspecFELISresults_summary()
@@ -4129,15 +4054,87 @@ def plot_mocspecFELISresults_summary_pre190911(summaryfile,plotbasename,colortyp
                                                    cdatvec=cdatvec,
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults=False,noisefree=False,
+                                   spec2match='all',verbose=True):
+    """
+    Wrapper around match_mockspectrum_to_templates() to match templates to all mockspectra.
+
+
+    --- INPUT ---
+    outputdir          Directory to store picklefiles with cross-correlation results to
+    CCwavewindow       Window around line to perform cross-correlations over (rest frame)
+    plot_allCCresults  To plot all CC results set this to True. Plots will be stored in outputdir
+    noisefree          To matcht the noise-free version of the mock spectra set to True
+    spec2match         To only match a a subsample of spectra provide their parameter tabel line index here
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults/'
+    uves.match_mockspectra_to_templates(outputdir)
+
+    """
+    if verbose: print(' - Decide which templates to fit to what mock spectra (through a dictionary)')
+    mockVStemp_lines = {}
+    mockVStemp_lines['Lya']             = ['Lya']
+    mockVStemp_lines['CIIIdoublet']     = ['CIII']
+    mockVStemp_lines['CIVdoublet']      = ['CIV']
+    mockVStemp_lines['NVdoublet']       = ['NV']
+    mockVStemp_lines['HeII']            = ['HeII']
+    mockVStemp_lines['OIII1663doublet'] = ['OIII']
+    mockVStemp_lines['MgIIdoublet']     = ['MgII']
+
+    mockVStemp_lines['testsinglet'] = ['HeII']
+    mockVStemp_lines['testdoublet'] = ['CIII']
+
+    waverest     = {'Lya':1215.67, 'CIII':1908.0, 'CIV':1550.0, 'NV':1241.0, 'HeII':1640.0, 'OIII':1663.0, 'MgII':2800.}
+
+    if verbose: print(' - Defining files to perform matches between (hardcoded)')
+    parentdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    # templatedir  = parentdir+'felis_templates_190816/'
+    templatedir  = parentdir+'felis_templates_fromsetup/'
+    paramfile    = parentdir+'mockspectra_setup_parametertable.txt'
+    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,f,20a,20a,200a')
+
+    if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
+    for ss, mockspec in enumerate(paramtable['specname']):
+        if spec2match != 'all':
+            if ss not in spec2match:
+                continue
+            else:
+                print('------ spec2match: following spectrum in list so matching:')
+                print('                   '+mockspec)
+
+        if noisefree:
+            mockspec = mockspec.replace('noisespec','noisestdNone')
+        mockline  = mockspec.split('fromsetup_')[-1].split('_')[0]
+        templines = mockVStemp_lines[mockline]
+
+        for templine in templines:
+            picklefile = outputdir+mockspec.split('/')[-1].replace('.fits',
+                                                                   '_CCresults_template'+templine+
+                                                                   '_matchto_spectrum'+mockline+'.pkl')
+            templates  = glob.glob(templatedir+'uves_felis_template_*'+templine+'*.fits')
+
+            if not plot_allCCresults:
+                plotdir  = None
+
+            windowcen  = CCwavewindow * (1+paramtable['redshift'][ss])
+            ccdic      = felis.match_templates2specs(templates,[mockspec],[paramtable['redshift'][ss]],
+                                                     picklefile,wavewindow=[windowcen],
+                                                     plotdir=outputdir,wavecen_restframe=[waverest[templine]],
+                                                     vshift=None,min_template_level=1e-4,
+                                                     plot_allCCresults=plot_allCCresults,
+                                                     subtract_spec_median=False)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verbose=True):
     """
     Generate a summary of the template characteristics FELIS determined to match the mock spectra
     the best, i.e. with the highest S/N.
-
-    - - - - - - - - - - - - - - - - - - - - - -  NB - - - - - - - - - - - - - - - - - - - - - - -
-    - - -  After correcting the FELIS normalization this function was depreciated on 190911 - - -
-    - - -  Instead the summarizing can now be done with the new version of the function     - - -
 
     --- INPUT ---
     summaryfile        Path and name to summary file to generate.
@@ -4878,6 +4875,86 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENAME',
+                                    subtract_spec_median=True,
+                                    lines2find=['CIII','CIV','HeII','NV','OIII','SiIII','MgII'],
+                                    CCwavewindow=10.0,plot_allCCresults=False,
+                                    verbose_FELIS=False,verbose=True):
+    """
+    Wrapper around felis.match_templates2specs() to match FELIS templates to a sample of TDOSE spectra.
+
+    --- INPUT ---
+    spectra                List of spectra to search for emission features via the FELIS template matches.
+    outputdir              Directory to contiain the output (plots and *pkl files).
+    outkeystr              String used in naming output.
+    subtract_spec_median   Subtract the median during the template match to approximate the continuum in the
+                           matched region of the spectrum.
+    lines2find             List of lines to look for; determines what templates to match to each spectrum.
+    CCwavewindow           Rest-frame width (central wavelengths +/- CCwavewindow) to match templates in.
+    plot_allCCresults      Plot all template matches; timeconsuming so default is False. Can always be done afterwards.
+    verbose_FELIS          Set to true to get vebosity of FELIS matching
+    verbose                Set to true to get vebpsity of progress of the matching by the wrapper.
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    specdir   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/spectra_aperture/'
+    spectra   = glob.glob(specdir+'tdose_spectrum*aperture_07209*.fits')
+    outputdir = ' /Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/'
+    uves.match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch2udf10_07209starUVESobj190913')
+
+    """
+    templatedir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/felis_templates_fromsetup/'
+    uvesobjinfo = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits')[1].data
+    MUSEwaves   = np.array([4790,9310])
+    waverest    = {'lya':1215.67, 'ciii':1907.7, 'civ':1549.5, 'nv':1240.8,
+                   'heii':1640.4, 'oiii':1663.5, 'mgii':2799.1, 'siiii':1887.4}
+    matchno     = 0
+    if verbose: print('\n - Will match the '+str(len(spectra))+' spectra to templates of the lines '+str(lines2find))
+    for ss, spectrum in enumerate(spectra):
+        obj_id       = int(spectrum.split('_')[-1].split('.fit')[0])
+        obj_ent      = np.where(uvesobjinfo['id'] == obj_id)[0]
+        if len(obj_ent) != 1:
+            sys.exit('ERROR - There are '+str(len(obj_ent))+' matches in the UVES info file to object '+str(obj_id))
+
+        obj_zLya      = uvesobjinfo['redshift'][0]
+        MUSEwaves_rf  = MUSEwaves / (1.0 + obj_zLya)
+
+        for templine in lines2find:
+            Nmatch      = len(spectra)*len(lines2find)
+            matchno     = matchno+1
+            if verbose:
+                infostr = '   FELIS match '+str("%.5d" % (matchno))+' / '+str("%.5d" % Nmatch)+'     '
+                sys.stdout.write("%s\r" % infostr)
+                sys.stdout.flush()
+
+            linewave_rf  = waverest[templine.lower()]
+            if (MUSEwaves_rf[0]+CCwavewindow < linewave_rf) & (linewave_rf < MUSEwaves_rf[1]-CCwavewindow):
+                templates  = glob.glob(templatedir+'uves_felis_template_fromsetup_'+templine+'*.fits')
+                if len(templates) == 0:
+                    print('\n WARNING: No templates found for "lines2find"='+str(templine))
+                else:
+                    picklefile = outputdir+spectrum.split('/')[-1].replace('.fits','_CCresults_template'+
+                                                                           templine+'_'+outkeystr+'.pkl')
+
+                    wavewindow = CCwavewindow * (1+obj_zLya) # turn CCwavewindow into observed frame
+                    ccdic      = felis.match_templates2specs(templates,[spectrum],[obj_zLya],
+                                                             picklefile,wavewindow=[wavewindow],
+                                                             plotdir=outputdir,
+                                                             wavecen_restframe=[linewave_rf],
+                                                             vshift=None,min_template_level=1e-4,
+                                                             plot_allCCresults=plot_allCCresults,
+                                                             subtract_spec_median=subtract_spec_median,
+                                                             verbose=verbose_FELIS)
+            else:
+                pass
+    if verbose: print('\n   done...\n')
+
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
     """
@@ -4924,6 +5001,7 @@ def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
                           str(Ftot.nominal_value)+', '+str(Ftot.std_dev**2)+', '+str(Npix)+', '+str(S2N)+'')
 
     return Ftot.nominal_value, Ftot.std_dev**2, Npix, S2N
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
                        wave_restframe=1908.0,generateplots=False,specificobj=None,
