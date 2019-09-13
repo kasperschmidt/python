@@ -4920,7 +4920,7 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
         if len(obj_ent) != 1:
             sys.exit('ERROR - There are '+str(len(obj_ent))+' matches in the UVES info file to object '+str(obj_id))
 
-        obj_zLya      = uvesobjinfo['redshift'][0]
+        obj_zLya      = uvesobjinfo['redshift'][obj_ent]
         MUSEwaves_rf  = MUSEwaves / (1.0 + obj_zLya)
 
         for templine in lines2find:
@@ -4952,6 +4952,154 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
             else:
                 pass
     if verbose: print('\n   done...\n')
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verbose=True):
+    """
+    Generate a summary of the template characteristics FELIS determined to match the tdose spectra
+    the best, i.e. with the highest S/N.
+
+    --- INPUT ---
+    summaryfile        Path and name of summary file to generate.
+    picklefiles        List of FELIS pickle files to summarize.
+    overwrite          Overwrite the summary file if it already exists?
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    FELISoutputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults/'
+    summaryfile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/mockspectra_CCresults_summary_all.txt'
+    picklefiles    = glob.glob(FELISoutputdir+'*.pkl')
+    summarydat     = uves.gen_mocspecFELISresults_summary(summaryfile,picklefiles)
+
+    """
+    if verbose: print(' - Generating a summary of the best-fit template in:\n   '+summaryfile)
+    if os.path.isfile(summaryfile) & (not overwrite):
+        sys.exit(' Summary file '+summaryfile+' already exists and overwrite=False ')
+
+    fout = open(summaryfile,'w')
+    fout.write('# Summary of '+str(len(picklefiles))+' FELIS pickle files provided \n')
+    fout.write('# File contains the characteristics of the templates with max S/N from the FELIS template fits \n')
+    fout.write('# The summary was generated with uves.gen_tdosespecFELISresults_summary() on '+kbs.DandTstr2()+' \n')
+    fout.write('# \n')
+    fout.write('# Columns are:\n')
+    fout.write('# z_spec                     Instrinspic redshift of matched mock spectrum \n')
+    fout.write('# z_temp_S2Nmax              Estimated redshift from template match\n')
+    fout.write('# sigma_temp_ang_rf          Rest-frame line width in angstroms for maxS/N template \n')
+    fout.write('# Fratio_temp                Flux ratio of doublets in template      (line_lowwave/line_highwave) \n')
+    fout.write('# Ftot_FELIS_S2Nmax          Estimated total flux from FELIS template match for maxS/N match \n')
+    fout.write('# Ftot_FELIS_S2Nmax_err      Uncertainty on FELISflux_S2Nmax [sqrt(Ftot_FELIS_S2Nmax_variance)]\n')
+    fout.write('# FELIS_S2Nmax               The S/N value of the (scaled) template match to the mock spectrum \n')
+    fout.write('# Ngoodent                   The number of good pixels used in the cross correlation \n')
+    fout.write('# chi2                       Chi^2 value between the mock spectrum and the template match \n')
+    fout.write('# vshift_spec                Known intrinsic velocity shift of mock spectrum \n')
+    fout.write('# vshift_CCmatch             Estimated velocity shift from template match '
+               ' [ c*(z_spec-z_temp_S2Nmax)/(1+z_temp_S2Nmax) ]\n')
+    fout.write('# lineS2N_rf                 Estimated S/N (rest-frame) of spectral feature within [lineS2Nwavemin_rf,lineS2Nwavemin_rf] \n')
+    fout.write('# lineS2Nwavemin_rf          Lower integration limit for rest-frame S/N estimate \n')
+    fout.write('# lineS2Nwavemax_rf          Upper integration limit for rest-frame S/N estimate \n')
+    fout.write('# Ftot_lineS2N_rf            Total flux of spectral feature (sum(f)*dwave) used to estimate line S/N \n')
+    fout.write('# Ftot_lineS2N_sigma_rf      Square root of the variance/sqrt(Npix) of Ftot \n')
+    fout.write('# spectrum                   The mock spectrum the templates were matched to \n')
+    fout.write('# template                   The maxS/N template \n')
+    fout.write('# \n')
+    fout.write('# z_spec z_temp_S2Nmax sigma_temp_ang_rf Fratio_temp Ftot_FELIS_S2Nmax Ftot_FELIS_S2Nmax_err FELIS_S2Nmax Ngoodent chi2 vshift_spec vshift_CCmatch lineS2N_rf lineS2Nwavemin_rf lineS2Nwavemax_rf Ftot_lineS2N_rf Ftot_lineS2N_sigma_rf spectrum template \n')
+
+    for pp, picklefile in enumerate(picklefiles):
+        if verbose:
+            infostr = ' - Summarizing picklefile  '+str("%.5d" % (pp+1))+' / '+str("%.5d" % len(picklefiles))+'     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+        pkldic  = felis.load_picklefile(picklefile)
+
+        Nsigma_integration = 3.0
+
+        for specname in pkldic.keys():
+            tempdic = pkldic[specname]
+
+            #------ load info about max S/N template ------
+            template, vshift_intr, vshift_match, Ftot_FELIS_S2Nmax, Ftot_FELIS_S2Nmax_err, \
+            FELIS_S2Nmax, Ngoodent, chi2, z_spec, zS2Nmax =  \
+                felis.getresult4maxS2N(pkldic,specname)
+
+            #------ load matched spec and move to restframe ------
+            s_wave   , s_flux   , s_df   , s_s2n    = felis.load_spectrum(specname,verbose=False)
+            s_wave_rf, s_flux_rf, s_df_rf, s_s2n_rf = s_wave / (1+z_spec), s_flux * (1+z_spec), s_df * (1+z_spec), s_s2n
+
+            #------ extract info on mock spectrum from fits headers ------
+            spec_hdr        = afits.open(specname)[1].header
+            spec_sigma_ang  = np.array([])
+            spec_flux       = np.array([])
+            spec_line_wave  = np.array([])
+            for hdrkey in spec_hdr.keys():
+                if ('noise' not in hdrkey.lower()) & ('err' not in hdrkey.lower()):
+                    if '_1' in hdrkey: spec_line_wave = np.append(spec_line_wave,spec_hdr[hdrkey])
+                    if '_2' in hdrkey: spec_sigma_ang = np.append(spec_sigma_ang,spec_hdr[hdrkey])
+                    if '_4' in hdrkey: spec_flux      = np.append(spec_flux,spec_hdr[hdrkey])
+
+            spec_sigma_ang_obs = np.mean(spec_sigma_ang)
+            spec_sigma_ang_rf  = spec_sigma_ang_obs / (1.0+z_spec)
+            Ftot_spec_intr     = np.sum(spec_flux)
+            if len(spec_flux) == 2:
+                Fratio_spec = spec_flux[np.where(spec_line_wave == np.min(spec_line_wave))] / \
+                              spec_flux[np.where(spec_line_wave == np.max(spec_line_wave))]
+            else:
+                Fratio_spec = 0.0
+
+            #------ extract info on template from fits headers ------
+            temp_hdr        = afits.open(template)[1].header
+            temp_sigma_ang  = np.array([])
+            temp_flux       = np.array([])
+            temp_line_wave  = np.array([])
+            for hdrkey in temp_hdr.keys():
+                if ('noise' not in hdrkey.lower()) & ('err' not in hdrkey.lower()):
+                    if '_1' in hdrkey: temp_line_wave = np.append(temp_line_wave,temp_hdr[hdrkey])
+                    if '_2' in hdrkey: temp_sigma_ang = np.append(temp_sigma_ang,temp_hdr[hdrkey])
+                    if '_4' in hdrkey: temp_flux      = np.append(temp_flux,temp_hdr[hdrkey])
+
+            temp_sigma_ang_rf  = np.mean(temp_sigma_ang)
+            if len(temp_flux) == 2:
+                Fratio_temp = temp_flux[np.where(temp_line_wave == np.min(temp_line_wave))] / \
+                              temp_flux[np.where(temp_line_wave == np.max(temp_line_wave))]
+            else:
+                Fratio_temp = 0.0
+
+            #------ estimate signal to noise by integrating observed spectrum in restfram ------
+            lineS2Nwavemin_rf = np.min(temp_line_wave)-Nsigma_integration*temp_sigma_ang_rf
+            lineS2Nwavemax_rf = np.max(temp_line_wave)+Nsigma_integration*temp_sigma_ang_rf
+            waverange_rf      = [lineS2Nwavemin_rf,lineS2Nwavemax_rf]
+            Ftot_lineS2N_rf, Ftot_lineS2N_var_rf, Npixgood_rf, lineS2N_rf = \
+                uves.calc_1Dspec_S2N(s_wave_rf,s_flux_rf,s_df_rf**2.0,waverange_rf,verbose=False)
+            Ftot_lineS2N_sigma_rf = np.sqrt(Ftot_lineS2N_var_rf)
+
+            #------------ Writing to output file ------------
+            outstr = str("%7.8f" % z_spec)+'  '+\
+                     str("%7.8f" % zS2Nmax)+'      '+\
+                     str("%7.4f" % temp_sigma_ang_rf)+'      '+\
+                     str("%7.2f" % Fratio_temp)+'      '+\
+                     str("%12.4f" % Ftot_FELIS_S2Nmax)+'  '+\
+                     str("%12.4f" % Ftot_FELIS_S2Nmax_err)+'  '+\
+                     str("%12.4f" % FELIS_S2Nmax)+'  '+\
+                     str("%12.4f" % Ngoodent)+'  '+\
+                     str("%12.4f" % chi2)+'  '+\
+                     str("%12.4f" % vshift_intr)+'  '+\
+                     str("%12.4f" % vshift_match)+'      '+\
+                     str("%12.4f" % lineS2N_rf)+'  '+\
+                     str("%12.4f" % lineS2Nwavemin_rf)+'  '+\
+                     str("%12.4f" % lineS2Nwavemax_rf)+'  '+\
+                     str("%12.4f" % Ftot_lineS2N_rf)+'  '+\
+                     str("%12.4f" % Ftot_lineS2N_sigma_rf)+'  '+\
+                     specname+'  '+\
+                     template+'  '
+            fout.write(outstr+'\n')
+    if verbose: print('\n   ...done')
+    fout.close()
+
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
+    return summarydat
 
 
 
