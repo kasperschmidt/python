@@ -5102,6 +5102,195 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
     return summarydat
 
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N_rf',
+                                       histaxes=True,Nbins=50,S2Ncut=[0.0,1000.0],
+                                       overwrite=False,verbose=True):
+    """
+    plotting and evaluating the output from uves.gen_tdosespecFELISresults_summary()
+
+    --- INPUT ---
+    summaryfile        Path and name to summary file to evaluate
+    plotbasename       The based name for the plots to generate (incl. output directory)
+    overwrite          Overwrite the plots if they already exist?
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    outdir         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/CCresults_summary/'
+    summaryfile    = outdir+'CCresults_summary_templateCIII_FELISmatch2udf10_07209starUVESobj190913.txt'
+    plotbasename   = outdir+'plottest_'
+    uves.plot_mocspecFELISresults_summary(summaryfile,plotbasename)
+
+    """
+    if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
+    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat  = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
+    Nspecin     = len(summarydat['spectrum'])
+
+    if verbose: print(' - Plotting FELIS matches in summary file\   '+summaryfile+'\n   where the following holds:')
+    if verbose: print('    S/N(FELIS)          = ['+str(S2Ncut[0])+','+str(S2Ncut[1])+']    (both ends included)')
+    selection   = np.where( (summarydat['FELIS_S2Nmax'] >= S2Ncut[0]) & (summarydat['FELIS_S2Nmax'] <= S2Ncut[1]) )[0]
+    Nselspec    = len(selection)
+    if Nselspec > 0:
+        selecteddat = summarydat[selection]
+        if verbose: print(' - '+str(Nselspec)+'/'+str(Nspecin)+' matched spectra in summary satisfies the cuts\n')
+    else:
+        if verbose: print(' WARNING No FELIS matches found in summary file satisfying cuts; returning...')
+        return
+
+    specnumber   = np.arange(len(selecteddat))+1.0
+    line         = summaryfile.split('template')[-1].split('_')[0].lower()
+    sigmaerrval  = {'ciii':0.1, 'civ':0.1, 'siiii':0.1, 'nv':0.1, 'mgii':0.1, 'oiii':0.1, 'heii':0.1, 'lya':0.3, 'all':0.1}
+    fratioerrval = {'ciii':0.1, 'civ':0.2, 'siiii':0.1, 'nv':0.2, 'mgii':0.2, 'oiii':0.1, 'all':0.2}
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_z_lineVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = selecteddat['z_spec']
+    yvalues  = selecteddat['z_temp_S2Nmax']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = '$z$(spectrum)'
+    ylabel   = '$z$(FELIS)'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=False,ylog=False,xrange=[1,6.5],yrange=[1,6.5],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_S2N_lineVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = selecteddat['lineS2N_rf']
+    yvalues  = selecteddat['FELIS_S2Nmax']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(xvalues)
+    xlabel   = 'Integrated spectrum flux S/N (+/-3$\sigma$)'
+    ylabel   = 'S/N(FELIS)'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='sigma',cdatvec=selecteddat['sigma_temp_ang_rf'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[1.,200],yrange=[1.,200],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_lineVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = selecteddat['Ftot_lineS2N_rf']
+    xerr     = selecteddat['Ftot_lineS2N_sigma_rf']
+    yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
+    yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
+
+    xlabel   = 'Integrated spectrum flux (+/-3$\sigma$) [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_Ftot_lineVSfelis_sigma'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = selecteddat['Ftot_lineS2N_rf']
+    xerr     = selecteddat['Ftot_lineS2N_sigma_rf']
+    yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
+    yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
+
+    xlabel   = 'Integrated spectrum flux (+/-3$\sigma$) [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='sigma',cdatvec=selecteddat['sigma_temp_ang_rf'],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_sigmaVSfelisflux'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = selecteddat['sigma_temp_ang_rf']
+    xerr     = [None]*len(xvalues)
+    yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
+    yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
+
+    xlabel   = '$\sigma$(FELIS) [\AA]'
+    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'],
+                                                   linetype='onetoone',
+                                                   xlog=False,ylog=True,xrange=[0.0,2.7],yrange=[10.0,2e4],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'horizontal_zVSvshift'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['z_spec']
+    yvalues  = summarydat['vshift_CCmatch']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(yvalues)
+
+    xlabel   = '$z$(spectrum)'
+    ylabel   = '$\Delta v$/[km/s] = $c$[$z$(spectrum)-$z$(FELIS)] / [1+$z$(FELIS)]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'onetoone_vshift_literatureVSfelis'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = summarydat['vshift_spec']
+    yvalues  = summarydat['vshift_CCmatch']
+    xerr     = [None]*len(xvalues)
+    yerr     = [None]*len(yvalues)
+
+    xlabel   = '$\Delta v$(Literature)/[km/s]'
+    ylabel   = '$\Delta v$/[km/s] = $c$[$z$(spectrum)-$z$(FELIS)] / [1+$z$(FELIS)]'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
+                                                   histaxes=histaxes,Nbins=Nbins,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
+                                                   linetype='horizontal',
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    #-------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------------------------------------
+    goodFratio = np.where(selecteddat['Fratio_temp'] > 0)
+    if len(goodFratio[0]) > 0:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        nameext  = 'onetoone_FratioVSs2n'
+        plotname = plotbasename+nameext+'.pdf'
+        xvalues  = selecteddat['Fratio_temp'][goodFratio]
+        xerr     = [None]*len(xvalues)
+        yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
+        yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
+
+        xlabel   = 'FR(FELIS)'
+        ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
+                                                       histaxes=histaxes,Nbins=Nbins,
+                                                       colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'][goodFratio],
+                                                       linetype='onetoone',
+                                                       xlog=False,ylog=True,xrange=[0.0,3.3],yrange=[10.0,2e4],
+                                                       colorcode=True,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
