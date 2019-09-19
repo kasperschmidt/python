@@ -4395,8 +4395,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yvalues  = summarydat['Ftot_spec_trapz']
     yerr     = summarydat['Ftot_spec_trapz_err']
-    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4412,8 +4412,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yvalues  = summarydat['Ftot_spec_trapz']
     yerr     = summarydat['Ftot_spec_trapz_err']
-    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4428,8 +4428,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yvalues  = summarydat['Ftot_spec_sum']
     yerr     = summarydat['Ftot_spec_sum_err']
-    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'Sum*dwave mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'Sum*dwave mock spectrum line flux [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4444,8 +4444,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yvalues  = summarydat['Ftot_lineS2N']
     yerr     = summarydat['Ftot_lineS2N_sigma']
-    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'Trapz int +/- 3 sigma mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'Trapz int +/- 3 sigma mock spectrum line flux [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4460,8 +4460,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yvalues  = summarydat['Ftot_FELIS_S2Nmax']
     yerr     = summarydat['Ftot_FELIS_S2Nmax_err']
-    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Intrinsic mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4477,8 +4477,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = summarydat['Ftot_FELIS_S2Nmax']
     yerr     = summarydat['Ftot_FELIS_S2Nmax_err']
 
-    xlabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4494,8 +4494,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = summarydat['Ftot_FELIS_S2Nmax']
     yerr     = summarydat['Ftot_FELIS_S2Nmax_err']
 
-    xlabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Trapz int mock spectrum line flux [1e-20erg/s/cm$^2$]'
+    ylabel   = 'FELIS line flux estimate [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -4530,7 +4530,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yerr     = np.sqrt( (summarydat['Ftot_spec_trapz_err']   / summarydat['Ftot_spec_trapz'])**2 +
                         (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 )
-    xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$]'
     ylabel   = 'F(mock spectrum)/F(FELIS) - 1'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
@@ -4546,7 +4546,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     xerr     = [None]*len(xvalues)
     yerr     = np.sqrt( (summarydat['Ftot_spec_trapz_err']   / summarydat['Ftot_spec_trapz'])**2 +
                         (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 )
-    xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$]'
     ylabel   = 'F(mock spectrum)/F(FELIS) - 1'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
@@ -4684,7 +4684,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
-                                              colortype=None,colorcode=True,cdatvec=None,
+                                              colortype=None,colorcode=True,cdatvec=None,point_text=None,
                                               overwrite=False,verbose=True,
                                               histaxes=False,Nbins=50):
     """
@@ -4816,6 +4816,12 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             yrange = [ymin-dy*0.05,ymax+dy*0.05]
         plt.ylim(yrange)
         yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
+
+        for ii,xval in enumerate(xvalues): # loop necessary for coloring
+            if point_text is not None:
+                plt.text(xvalues[ii]*1.03,yvalues[ii]*1.03,
+                         point_text[ii],color='white',fontsize=Fsize*0.2,zorder=20,
+                         bbox=dict(boxstyle="round",edgecolor='k',facecolor=colvec[ii],linewidth=lthick*0.2))
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
@@ -5189,8 +5195,8 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
     yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
 
-    xlabel   = 'Integrated spectrum flux (+/-3$\sigma$) [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Integrated spectrum flux (+/-3$\sigma$) [1e-20erg/s/cm$^2$]'
+    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -5207,8 +5213,8 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
     yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
 
-    xlabel   = 'Integrated spectrum flux (+/-3$\sigma$) [1e-20erg/s/cm$^2$/\AA]'
-    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+    xlabel   = 'Integrated spectrum flux (+/-3$\sigma$) [1e-20erg/s/cm$^2$]'
+    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -5229,7 +5235,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
 
     xlabel   = '$\sigma$(FELIS) [\AA]'
-    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+    ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$]'
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
@@ -5285,7 +5291,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
         yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
 
         xlabel   = 'FR(FELIS)'
-        ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$/\AA]'
+        ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$]'
 
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                        histaxes=histaxes,Nbins=Nbins,
@@ -6950,26 +6956,73 @@ def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
     masedadat    = np.genfromtxt(masedainfo,skip_header=1,dtype=fmt,comments='#',names=True)
     sortindex_M  = np.argsort(masedadat['id_uves'])
 
-
+    Nsigmaplot   = 3.0 # the size of the error bars to show
 
     plotbasename = outdir+'UDF10_CIIIemitters_Maseda17comparison'
     if verbose: print(' - Plotting FELIS matches in summary file\n   '+summaryfile+'\n   where the following holds:')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    nameext  = 'Comparison_onetoone_Fciii'
-    plotname = plotbasename+nameext+'.pdf'
-    xvalues  = masedadat['f_ciii'][sortindex_M]
-    xerr     = masedadat['df_ciii'][sortindex_M]*3.
-    yvalues  = summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]
-    yerr     = summarydat['Ftot_FELIS_S2Nmax_err'][sortindex_S]*3.
-    xlabel   = 'Flux(CIII,Maseda)'
-    ylabel   = 'Flux(CIII,FELIS)'
+    nameext    = 'Comparison_onetoone_Fciii'
+    plotname   = plotbasename+nameext+'.pdf'
+    xvalues    = masedadat['f_ciii'][sortindex_M]
+    xerr       = masedadat['df_ciii'][sortindex_M]*Nsigmaplot
+    yvalues    = summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]
+    yerr       = summarydat['Ftot_FELIS_S2Nmax_err'][sortindex_S]*Nsigmaplot
+    xlabel     = 'Flux(CIII,Maseda)'
+    ylabel     = 'Flux(CIII,FELIS)'
+    point_text = (summarydat['id'][sortindex_S].astype(int)).astype(str)
+
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
                                                    histaxes=True,Nbins=30,
                                                    colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
-                                                   linetype='onetoone',
+                                                   linetype='onetoone',point_text=point_text,
                                                    xlog=True,ylog=True,xrange=[10,1200],yrange=[10,1200],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext    = 'Comparison_horizontal_FciiiVSz'
+    plotname   = plotbasename+nameext+'.pdf'
+    xvalues    = summarydat['z_temp_S2Nmax'][sortindex_S]
+    xerr       = [None]*len(xvalues)
+    yvalues    = (summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]/masedadat['f_ciii'][sortindex_M]) - 1
+    yerr       = np.sqrt((summarydat['Ftot_FELIS_S2Nmax_err'][sortindex_S] /
+                          summarydat['Ftot_FELIS_S2Nmax'][sortindex_S])**2.0+
+                         (masedadat['df_ciii'][sortindex_M] /
+                          masedadat['f_ciii'][sortindex_M])**2.0) * Nsigmaplot
+    xlabel     = '$z$(FELIS)'
+    ylabel     = '[Flux(CIII,FELIS)-Flux(CIII,Maseda)] - 1'
+    point_text = (summarydat['id'][sortindex_S].astype(int)).astype(str)
+
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
+                                                   histaxes=True,Nbins=30,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
+                                                   linetype='horizontal',point_text=point_text,
+                                                   xlog=False,ylog=False,xrange=[1.0,3.0],yrange=[-0.5,0.5],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext    = 'Comparison_horizontal_FciiiVSsigma'
+    plotname   = plotbasename+nameext+'.pdf'
+    xvalues    = summarydat['sigma_temp_ang_rf'][sortindex_S]
+    xerr       = [None]*len(xvalues)
+    yvalues    = (summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]/masedadat['f_ciii'][sortindex_M]) - 1
+    yerr       = np.sqrt((summarydat['Ftot_FELIS_S2Nmax_err'][sortindex_S] /
+                          summarydat['Ftot_FELIS_S2Nmax'][sortindex_S])**2.0+
+                         (masedadat['df_ciii'][sortindex_M]/
+                          masedadat['f_ciii'][sortindex_M])**2.0) * Nsigmaplot
+    xlabel     = '$\sigma$(FELIS)'
+    ylabel     = '[Flux(CIII,FELIS)-Flux(CIII,Maseda)] - 1'
+    point_text = (summarydat['id'][sortindex_S].astype(int)).astype(str)
+
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
+                                                   histaxes=True,Nbins=30,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
+                                                   linetype='horizontal',point_text=point_text,
+                                                   xlog=False,ylog=False,xrange=[0.2,0.8],yrange=[-0.5,0.5],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
