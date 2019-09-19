@@ -5129,7 +5129,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     summarydat  = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
     Nspecin     = len(summarydat['spectrum'])
 
-    if verbose: print(' - Plotting FELIS matches in summary file\   '+summaryfile+'\n   where the following holds:')
+    if verbose: print(' - Plotting FELIS matches in summary file\n   '+summaryfile+'\n   where the following holds:')
     if verbose: print('    S/N(FELIS)          = ['+str(S2Ncut[0])+','+str(S2Ncut[1])+']    (both ends included)')
     selection   = np.where( (summarydat['FELIS_S2Nmax'] >= S2Ncut[0]) & (summarydat['FELIS_S2Nmax'] <= S2Ncut[1]) )[0]
     Nselspec    = len(selection)
@@ -6919,5 +6919,55 @@ def checkfluxscales(specWnoise=True):
     # plt.savefig('/Users/kschmidt/Desktop/fluxscalecheck_'+noisestr+'.pdf')
     print('Saved plot to '+plotname)
     plt.clf()
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
+    """
+    plotting information on FELIS match to Maseda UDF-10 CIII emitters
+
+    --- INPUT ---
+    overwrite          Overwrite the plots if they already exist?
+    verbose            Toggle verbosity
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+    uves.plot_UDF10masedaobjcomparison(summaryfile,plotbasename)
+
+    """
+    outdir       = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/CCresults_summary/'
+
+    summaryfile  = outdir+'CCresults_summary_templateCIII_FELISmatch2udf10masedaobj190913.txt'
+    fmt          = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat   = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
+    sortindex_S  = np.argsort(summarydat['id'])
+    Nspecin      = len(summarydat['spectrum'])
+
+    masedainfo   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/masedaUDF10emitters.txt'
+    fmt          = '12a,f,f,f,f,f,f,f,f,f,f,f'
+    masedadat    = np.genfromtxt(masedainfo,skip_header=1,dtype=fmt,comments='#',names=True)
+    sortindex_M  = np.argsort(masedadat['id_uves'])
+
+
+
+    plotbasename = outdir+'UDF10_CIIIemitters_Maseda17comparison'
+    if verbose: print(' - Plotting FELIS matches in summary file\n   '+summaryfile+'\n   where the following holds:')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nameext  = 'Comparison_onetoone_Fciii'
+    plotname = plotbasename+nameext+'.pdf'
+    xvalues  = masedadat['f_ciii'][sortindex_M]
+    xerr     = masedadat['df_ciii'][sortindex_M]*3.
+    yvalues  = summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]
+    yerr     = summarydat['Ftot_FELIS_S2Nmax_err'][sortindex_S]*3.
+    xlabel   = 'Flux(CIII,Maseda)'
+    ylabel   = 'Flux(CIII,FELIS)'
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
+                                                   histaxes=True,Nbins=30,
+                                                   colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
+                                                   linetype='onetoone',
+                                                   xlog=True,ylog=True,xrange=[10,1200],yrange=[10,1200],
+                                                   colorcode=True,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
