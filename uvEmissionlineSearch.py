@@ -4985,6 +4985,7 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
     fout.write('# The summary was generated with uves.gen_tdosespecFELISresults_summary() on '+kbs.DandTstr2()+' \n')
     fout.write('# \n')
     fout.write('# Columns are:\n')
+    fout.write('# id                         ID of object matched \n')
     fout.write('# z_spec                     Instrinspic redshift of matched mock spectrum \n')
     fout.write('# z_temp_S2Nmax              Estimated redshift from template match\n')
     fout.write('# sigma_temp_ang_rf          Rest-frame line width in angstroms for maxS/N template \n')
@@ -5005,7 +5006,7 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
     fout.write('# spectrum                   The mock spectrum the templates were matched to \n')
     fout.write('# template                   The maxS/N template \n')
     fout.write('# \n')
-    fout.write('# z_spec z_temp_S2Nmax sigma_temp_ang_rf Fratio_temp Ftot_FELIS_S2Nmax Ftot_FELIS_S2Nmax_err FELIS_S2Nmax Ngoodent chi2 vshift_spec vshift_CCmatch lineS2N_rf lineS2Nwavemin_rf lineS2Nwavemax_rf Ftot_lineS2N_rf Ftot_lineS2N_sigma_rf spectrum template \n')
+    fout.write('# id z_spec z_temp_S2Nmax sigma_temp_ang_rf Fratio_temp Ftot_FELIS_S2Nmax Ftot_FELIS_S2Nmax_err FELIS_S2Nmax Ngoodent chi2 vshift_spec vshift_CCmatch lineS2N_rf lineS2Nwavemin_rf lineS2Nwavemax_rf Ftot_lineS2N_rf Ftot_lineS2N_sigma_rf spectrum template \n')
 
     for pp, picklefile in enumerate(picklefiles):
         if verbose:
@@ -5075,7 +5076,8 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
             Ftot_lineS2N_sigma_rf = np.sqrt(Ftot_lineS2N_var_rf)
 
             #------------ Writing to output file ------------
-            outstr = str("%7.8f" % z_spec)+'  '+\
+            outstr = specname.split('_')[-1].split('.fit')[0]+'  '+\
+                     str("%7.8f" % z_spec)+'  '+\
                      str("%7.8f" % zS2Nmax)+'      '+\
                      str("%7.4f" % temp_sigma_ang_rf)+'      '+\
                      str("%7.2f" % Fratio_temp)+'      '+\
@@ -5097,8 +5099,8 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
-    summarydat = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
+    fmt = '12a,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     return summarydat
 
 
@@ -5125,8 +5127,8 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
-    summarydat  = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
+    fmt = '12a,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    summarydat  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     Nspecin     = len(summarydat['spectrum'])
 
     if verbose: print(' - Plotting FELIS matches in summary file\n   '+summaryfile+'\n   where the following holds:')
