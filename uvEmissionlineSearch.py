@@ -5907,6 +5907,226 @@ def check_neighbors(ids=[214063213],
         print(' ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, onesigmalimit=100.0, verbose=True):
+    """
+    Function to calculate the flux and line ratios for a set of summary files generated with
+    containing the results from FELIS template matches to TDOSE spectra.
+
+    Based (partially) on uves.calculatelineratios() below.
+
+    --- INPUT ---
+    summaryfiles     A list of summaryfiles to generate flux ratio output for
+    lineindicators   List of strings indicating the content of the summary files (i.e. the lines that were
+                     searched for with the FELIS template match). These are used to name output columns.
+    outputfile       The ascii file to write results to.
+    onesigmalimit    1 sigma flux limit to use for ratio limits (in units of spectra 10.0)
+    verbose          Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+
+    """
+    if len(summaryfiles) != len(lineindicators):
+        sys.exit('\nThe '+str(len(summaryfiles))+' provided do not match the '+str(len(lineindicators))+' provided \n')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Loading content of the '+str(lineindicators)+' summary files provided')
+    dic_summarydat = {}
+    fmt = '12a,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    for ss, sfile in enumerate(summaryfiles):
+        summarydat  = np.genfromtxt(sfile,skip_header=25,dtype=fmt,comments='#',names=True)
+        dic_summarydat[lineindicators[ss]] = summarydat
+
+    ids = []
+    for ll in lineindicators:
+        ids = ids+list(dic_summarydat[ll]['id'])
+    ids = np.unique(np.array(ids).astype(int))
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Initializing the output file: \n   '+outputfile)
+    fout = open(outputfile,'w')
+    fout.write('# Flux and line ratios estimated based on FELIS template match results summarized in:\n')
+    fout.write('# '+str(summaryfiles)+'\n')
+    fout.write('# \n')
+    fout.write('# Upper and lower limits are given as negative values with uncertainty of +99 or -99, respectively. \n')
+    fout.write('# For the limits a 1sigma limit of '+str(onesigmalimit)+' was used \n')
+    fout.write('# \n')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Determine columns to fill in output')
+    fluxratiodic = collections.OrderedDict()
+    fluxratiodic['id'] = np.array([])
+    for ll, numerator_line in enumerate(lineindicators):
+        fluxratiodic['f_'+numerator_line]       = np.array([])
+        fluxratiodic['ferr_'+numerator_line]    = np.array([])
+        fluxratiodic['s2n_'+numerator_line]     = np.array([])
+        fluxratiodic['sigma_'+numerator_line]   = np.array([])
+        fluxratiodic['vshift_'+numerator_line]  = np.array([])
+
+        if len(dic_summarydat[numerator_line]['id']) == 0:
+            continue
+        elif dic_summarydat[numerator_line]['Fratio_temp'][0] != 0:
+            fluxratiodic['f1_'+numerator_line]      = np.array([])
+            fluxratiodic['f1err_'+numerator_line]   = np.array([])
+            fluxratiodic['f2_'+numerator_line]      = np.array([])
+            fluxratiodic['f2err_'+numerator_line]   = np.array([])
+            fluxratiodic['FR_'+numerator_line+'1'+numerator_line+'2']     = np.array([])
+            fluxratiodic['FRerr_'+numerator_line+'1'+numerator_line+'2']  = np.array([])
+            fluxratiodic['FRs2n_'+numerator_line+'1'+numerator_line+'2']  = np.array([])
+
+        for kk, denominator_line in enumerate(lineindicators):
+            if numerator_line == denominator_line:
+                continue
+            elif len(dic_summarydat[denominator_line]['id']) == 0:
+                continue
+            else:
+                fluxratiodic['FR_'+numerator_line+denominator_line]     = np.array([])
+                fluxratiodic['FRerr_'+numerator_line+denominator_line]  = np.array([])
+                fluxratiodic['FRs2n_'+numerator_line+denominator_line]  = np.array([])
+
+                if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
+                        (dic_summarydat[denominator_line]['Fratio_temp'][0] == 0):
+                    fluxratiodic['FR_'+numerator_line+'1'+denominator_line]     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+'1'+denominator_line]  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+'1'+denominator_line]  = np.array([])
+                    fluxratiodic['FR_'+numerator_line+'2'+denominator_line]     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+'2'+denominator_line]  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+'2'+denominator_line]  = np.array([])
+                elif (dic_summarydat[numerator_line]['Fratio_temp'][0] == 0) & \
+                        (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
+                    fluxratiodic['FR_'+numerator_line+denominator_line+'1']     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+denominator_line+'1']  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+denominator_line+'1']  = np.array([])
+                    fluxratiodic['FR_'+numerator_line+denominator_line+'2']     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+denominator_line+'2']  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+denominator_line+'2']  = np.array([])
+                else:
+                    fluxratiodic['FR_'+numerator_line+'1'+denominator_line+'1']     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+'1'+denominator_line+'1']  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+'1'+denominator_line+'1']  = np.array([])
+                    fluxratiodic['FR_'+numerator_line+'1'+denominator_line+'2']     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+'1'+denominator_line+'2']  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+'1'+denominator_line+'2']  = np.array([])
+                    fluxratiodic['FR_'+numerator_line+'2'+denominator_line+'1']     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+'2'+denominator_line+'1']  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+'2'+denominator_line+'1']  = np.array([])
+                    fluxratiodic['FR_'+numerator_line+'2'+denominator_line+'2']     = np.array([])
+                    fluxratiodic['FRerr_'+numerator_line+'2'+denominator_line+'2']  = np.array([])
+                    fluxratiodic['FRs2n_'+numerator_line+'2'+denominator_line+'2']  = np.array([])
+
+    Ncols      = len(fluxratiodic.keys())
+    # a simple dictionary containing the column locations in the output array (indexes)
+    colents    = {}
+    for oo, colname in enumerate(fluxratiodic.keys()):
+        colents[colname] = oo
+    if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
+    fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
+    fout.write('# '+' '.join(fluxratiodic.keys())+'  \n')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Filling the columns with data ')
+    fluxratioarray = np.zeros([len(ids),Ncols])*np.nan
+    for ii, id in enumerate(ids):
+        if verbose: print('   Filling output for object '+str(id))
+        fluxratioarray[ii,0] = float(id)
+
+        for ll, numerator_line in enumerate(lineindicators):
+            numerator_dat = dic_summarydat[numerator_line]
+            ent_num       = np.where(numerator_dat['id'].astype(int) == id)[0]
+            if len(ent_num) > 1:
+                if verbose: print('       >>>WARNING<<<< '+str(id)+' appeared '+str(len(ent_num))+
+                                  ' times in '+numerator_line+' summary ')
+                continue
+            elif len(ent_num) == 0:
+                if verbose: print('       object '+str(id)+' not found in '+numerator_line+' summary (numerator)')
+                continue
+
+            fluxratioarray[ii,colents['f_'+numerator_line]]      = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]
+            fluxratioarray[ii,colents['ferr_'+numerator_line]]   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num]
+            fluxratioarray[ii,colents['s2n_'+numerator_line]]    = numerator_dat['FELIS_S2Nmax'][ent_num]
+            fluxratioarray[ii,colents['sigma_'+numerator_line]]  = numerator_dat['sigma_temp_ang_rf'][ent_num]
+            fluxratioarray[ii,colents['vshift_'+numerator_line]] = numerator_dat['vshift_CCmatch'][ent_num]
+
+            if dic_summarydat[numerator_line]['Fratio_temp'][0] != 0:
+                # error on q=|B|x where |B| is known exact is just dq=|B|dx
+                f1      = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]     / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
+                f1err   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num] / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
+                f2      = f1    / numerator_dat['Fratio_temp'][ent_num]
+                f2err   = f1err / numerator_dat['Fratio_temp'][ent_num]
+                FR12    = f1/f2
+                FR12err = np.sqrt((f1err/f1)**2+(f2err/f2)**2)
+
+                fluxratioarray[ii,colents['f1_'+numerator_line]]                            = f1
+                fluxratioarray[ii,colents['f1err_'+numerator_line]]                         = f1err
+                fluxratioarray[ii,colents['f2_'+numerator_line]]                            = f2
+                fluxratioarray[ii,colents['f2err_'+numerator_line]]                         = f2err
+                fluxratioarray[ii,colents['FR_'+numerator_line+'1'+numerator_line+'2']]     = FR12
+                fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+numerator_line+'2']]  = FR12err
+                fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+numerator_line+'2']]  = FR12/FR12err
+
+            for kk, denominator_line in enumerate(lineindicators):
+                denominator_dat = dic_summarydat[denominator_line]
+                ent_denom       = np.where(denominator_dat['id'].astype(int) == id)[0]
+                if len(ent_denom) > 1:
+                    if verbose: print('       >>>WARNING<<<< '+str(id)+' appeared '+str(len(ent_denom))+
+                                      ' times in '+numerator_line+' summary ')
+                    continue
+                elif len(ent_denom) == 0:
+                    if verbose: print('       object '+str(id)+' not found in '+denominator_line+' summary (denominator) ')
+                    continue
+
+                if numerator_line == denominator_line:
+                    continue
+                else:
+                    fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line]]     = 55
+                    fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line]]  = 55
+                    fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line]]  = 55
+
+                    if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
+                        (dic_summarydat[denominator_line]['Fratio_temp'][0] == 0):
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line]]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line]]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line]]  = 55
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line]]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line]]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line]]  = 55
+                    elif (dic_summarydat[numerator_line]['Fratio_temp'][0] == 0) & \
+                        (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
+                        fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'1']]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'1']]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'1']]  = 55
+                        fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'2']]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'2']]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'2']]  = 55
+                    else:
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'1']]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'1']]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'1']]  = 55
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'2']]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'2']]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'2']]  = 55
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'1']]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'1']]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'1']]  = 55
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'2']]     = 55
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'2']]  = 55
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'2']]  = 55
+
+
+    for ll in np.arange(len(ids)):
+        outstr = str(int(fluxratioarray[ll,0]))+' '+' '.join([str("%10.4f" % ff) for ff in fluxratioarray[ll,1:]])
+
+        # outstr = ' '
+        # for key in fluxratiodic.keys():
+        #     if key =='id':
+        #         outstr = outstr+str(fluxratiodic[key][ll])+' '
+        #     else:
+        #         outstr = outstr+str("%10.4f" % fluxratiodic[key][ll])+' '
+        fout.write(outstr+' \n')
+    fout.close()
+    if verbose: print('\n - Wrote the flux ratio output to \n   '+outputfile)
+    fmt = ','.join(Ncols*['f'])
+    fluxratiodat = np.genfromtxt(outputfile,skip_header=7,dtype=fmt,comments='#',names=True)
+    return fluxratiodat
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,100.0], zspecrange=[0.0,10.0],
                         voffsetrange=[-1500.0,1500.0], onesigmalimit=100.0, plotdir=None, verbose=True):
     """
