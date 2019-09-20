@@ -6439,17 +6439,33 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
 def set_ratios(tempnum,tempdenom,numerator,numeratorerr,denominator,denominatorerr):
     """
 
+    Function to set the flux ratios of emission lines.
+    Upper limits (denominator is 1sigma level) are returned with errors of +99
+    Lower limits (numerator is 1sigma level) are returned with errors of -99
+
+    --- INPUT ---
+    tempnum           String to indicate whether a reliable template match for the numerator existis,
+                      i.e. if tempnum='None' provide the Nsigma limit for the numerator.
+                      If any other string is provided is is assumed that the numerator contains reliable flux value.
+    tempdenom         Indicate whether a reliable template match for the denominator existis,
+                      i.e. if tempdenom='None' provide the Nsigma limit for the denominator
+                      If any other string is provided is is assumed that the denominator contains reliable flux value.
+    numerator         Flux value of the numerator in the flux ratio
+    numeratorerr      Uncertainty on the numerator
+    denominator       Flux value of the denominator in the flux ratio
+    denominatorerr    Uncertainty on the denominator
+
     """
-    if (tempnum is 'None') & (tempdenom is 'None' ):
-        ratio      = -99
-        ratioerr   = -99
-    elif (tempnum is not 'None') & (tempdenom is not 'None' ):
+    ratio      = -99
+    ratioerr   = -99
+
+    if (tempnum.lower() is not 'none') & (tempdenom.lower() is not 'none' ):
         ratio      = numerator/denominator
-        ratioerr   = np.sqrt(numerator**2+denominatorerr**2)
-    elif (tempnum is 'None') & (tempdenom is not 'None' ):
+        ratioerr   = np.sqrt( (numeratorerr/numerator)**2+(denominatorerr/denominator)**2)
+    elif (tempnum.lower() is 'none') & (tempdenom.lower() is not 'none' ):
         ratio      = numerator/denominator
         ratioerr   = -99
-    elif (tempnum is not 'None') & (tempdenom is 'None' ):
+    elif (tempnum.lower() is not 'none') & (tempdenom.lower() is 'none' ):
         ratio      = numerator/denominator
         ratioerr   = +99
     else:
