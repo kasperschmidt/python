@@ -5983,23 +5983,22 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
                 fluxratiodic['FRerr_'+numerator_line+denominator_line]  = np.array([])
                 fluxratiodic['FRs2n_'+numerator_line+denominator_line]  = np.array([])
 
-                if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
-                        (dic_summarydat[denominator_line]['Fratio_temp'][0] == 0):
+                if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0):
                     fluxratiodic['FR_'+numerator_line+'1'+denominator_line]     = np.array([])
                     fluxratiodic['FRerr_'+numerator_line+'1'+denominator_line]  = np.array([])
                     fluxratiodic['FRs2n_'+numerator_line+'1'+denominator_line]  = np.array([])
                     fluxratiodic['FR_'+numerator_line+'2'+denominator_line]     = np.array([])
                     fluxratiodic['FRerr_'+numerator_line+'2'+denominator_line]  = np.array([])
                     fluxratiodic['FRs2n_'+numerator_line+'2'+denominator_line]  = np.array([])
-                elif (dic_summarydat[numerator_line]['Fratio_temp'][0] == 0) & \
-                        (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
+                if (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
                     fluxratiodic['FR_'+numerator_line+denominator_line+'1']     = np.array([])
                     fluxratiodic['FRerr_'+numerator_line+denominator_line+'1']  = np.array([])
                     fluxratiodic['FRs2n_'+numerator_line+denominator_line+'1']  = np.array([])
                     fluxratiodic['FR_'+numerator_line+denominator_line+'2']     = np.array([])
                     fluxratiodic['FRerr_'+numerator_line+denominator_line+'2']  = np.array([])
                     fluxratiodic['FRs2n_'+numerator_line+denominator_line+'2']  = np.array([])
-                else:
+                if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
+                        (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
                     fluxratiodic['FR_'+numerator_line+'1'+denominator_line+'1']     = np.array([])
                     fluxratiodic['FRerr_'+numerator_line+'1'+denominator_line+'1']  = np.array([])
                     fluxratiodic['FRs2n_'+numerator_line+'1'+denominator_line+'1']  = np.array([])
@@ -6039,24 +6038,27 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
                 if verbose: print('       object '+str(id)+' not found in '+numerator_line+' summary (numerator)')
                 continue
 
-            fluxratioarray[ii,colents['f_'+numerator_line]]      = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]
-            fluxratioarray[ii,colents['ferr_'+numerator_line]]   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num]
+            f_num    = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]
+            ferr_num = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num]
+
+            fluxratioarray[ii,colents['f_'+numerator_line]]      = f_num
+            fluxratioarray[ii,colents['ferr_'+numerator_line]]   = ferr_num
             fluxratioarray[ii,colents['s2n_'+numerator_line]]    = numerator_dat['FELIS_S2Nmax'][ent_num]
             fluxratioarray[ii,colents['sigma_'+numerator_line]]  = numerator_dat['sigma_temp_ang_rf'][ent_num]
             fluxratioarray[ii,colents['vshift_'+numerator_line]] = numerator_dat['vshift_CCmatch'][ent_num]
 
             if dic_summarydat[numerator_line]['Fratio_temp'][0] != 0:
                 # error on q=|B|x where |B| is known exact is just dq=|B|dx
-                f1      = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]     / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
-                f1err   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num] / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
-                f2      = f1    / numerator_dat['Fratio_temp'][ent_num]
-                f2err   = f1err / numerator_dat['Fratio_temp'][ent_num]
-                FR12, FR12err = uves.set_ratios('goodmatch','goodmatch',f1,f1err,f2,f2err)
+                f1_num      = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]     / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
+                f1err_num   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num] / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
+                f2_num      = f1_num    / numerator_dat['Fratio_temp'][ent_num]
+                f2err_num   = f1err_num / numerator_dat['Fratio_temp'][ent_num]
+                FR12, FR12err = uves.set_ratios('goodmatch','goodmatch',f1_num,f1err_num,f2_num,f2err_num)
 
-                fluxratioarray[ii,colents['f1_'+numerator_line]]                            = f1
-                fluxratioarray[ii,colents['f1err_'+numerator_line]]                         = f1err
-                fluxratioarray[ii,colents['f2_'+numerator_line]]                            = f2
-                fluxratioarray[ii,colents['f2err_'+numerator_line]]                         = f2err
+                fluxratioarray[ii,colents['f1_'+numerator_line]]                            = f1_num
+                fluxratioarray[ii,colents['f1err_'+numerator_line]]                         = f1err_num
+                fluxratioarray[ii,colents['f2_'+numerator_line]]                            = f2_num
+                fluxratioarray[ii,colents['f2err_'+numerator_line]]                         = f2err_num
                 fluxratioarray[ii,colents['FR_'+numerator_line+'1'+numerator_line+'2']]     = FR12
                 fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+numerator_line+'2']]  = FR12err
                 fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+numerator_line+'2']]  = FR12/FR12err
@@ -6075,55 +6077,68 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
                 if numerator_line == denominator_line:
                     continue
                 else:
-                    FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',
-                                                numerator_dat['Ftot_FELIS_S2Nmax'][ent_num],
-                                                numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num],
-                                                denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom],
-                                                denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom],)
-                    fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line]]     = 55
-                    fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line]]  = 55
-                    fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line]]  = 55
+                    f_denom    = denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom]
+                    ferr_denom = denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom]
+
+                    FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f_denom,ferr_denom)
+                    fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line]]     = FR
+                    fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line]]  = FRerr
+                    fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line]]  = FR/FRerr
+
+                    if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0):
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f_denom,ferr_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line]]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line]]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line]]  = FR/FRerr
+
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f_denom,ferr_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line]]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line]]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line]]  = FR/FRerr
+
+                    if (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
+                        f1_denom    = denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom]     / \
+                                      (1 + 1/denominator_dat['Fratio_temp'][ent_denom])
+                        f1err_denom = denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom] / \
+                                      (1 + 1/denominator_dat['Fratio_temp'][ent_denom])
+                        f2_denom    = f1_denom    / denominator_dat['Fratio_temp'][ent_denom]
+                        f2err_denom = f1err_denom / denominator_dat['Fratio_temp'][ent_denom]
+
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f1_denom,f1err_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'1']]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'1']]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'1']]  = FR/FRerr
+
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f2_denom,f2err_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'2']]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'2']]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'2']]  = FR/FRerr
 
                     if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
-                        (dic_summarydat[denominator_line]['Fratio_temp'][0] == 0):
-                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line]]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line]]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line]]  = 55
-                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line]]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line]]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line]]  = 55
-                    elif (dic_summarydat[numerator_line]['Fratio_temp'][0] == 0) & \
                         (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
-                        fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'1']]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'1']]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'1']]  = 55
-                        fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'2']]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'2']]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'2']]  = 55
-                    else:
-                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'1']]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'1']]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'1']]  = 55
-                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'2']]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'2']]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'2']]  = 55
-                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'1']]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'1']]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'1']]  = 55
-                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'2']]     = 55
-                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'2']]  = 55
-                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'2']]  = 55
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f1_denom,f1err_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'1']]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'1']]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'1']]  = FR/FRerr
+
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f2_denom,f2err_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'2']]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'2']]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'2']]  = FR/FRerr
+
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f1_denom,f1err_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'1']]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'1']]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'1']]  = FR/FRerr
+
+                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f2_denom,f2err_denom)
+                        fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'2']]     = FR
+                        fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'2']]  = FRerr
+                        fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'2']]  = FR/FRerr
 
 
     for ll in np.arange(len(ids)):
         outstr = str(int(fluxratioarray[ll,0]))+' '+' '.join([str("%10.4f" % ff) for ff in fluxratioarray[ll,1:]])
-
-        # outstr = ' '
-        # for key in fluxratiodic.keys():
-        #     if key =='id':
-        #         outstr = outstr+str(fluxratiodic[key][ll])+' '
-        #     else:
-        #         outstr = outstr+str("%10.4f" % fluxratiodic[key][ll])+' '
         fout.write(outstr+' \n')
     fout.close()
     if verbose: print('\n - Wrote the flux ratio output to \n   '+outputfile)
