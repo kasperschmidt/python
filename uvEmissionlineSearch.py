@@ -4635,8 +4635,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
         xvalues  = summarydat['Fratio_spec'][goodFratio]
         yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
         xerr     = [None]*len(xvalues)
-        yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
-                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 ) * np.abs(yvalues)
+        yerr     = np.sqrt( (summarydat['Fratio_temp'][goodFratio]*0.0+fratioerrval[line] / summarydat['Fratio_temp'][goodFratio])**2 +
+                            (summarydat['Fratio_spec'][goodFratio]*0.0+0.0 / summarydat['Fratio_spec'][goodFratio])**2 ) * np.abs(yvalues)
 
         xlabel   = 'Doublet flux ratio (FR) of mock spectrum'
         ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
@@ -4652,8 +4652,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
         xvalues  = summarydat['sigma_spec_ang_rf'][goodFratio]
         yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
         xerr     = [None]*len(xvalues)
-        yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
-                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 ) * np.abs(yvalues)
+        yerr     = np.sqrt( (summarydat['Fratio_temp'][goodFratio]*0.0+fratioerrval[line] / summarydat['Fratio_temp'][goodFratio])**2 +
+                            (summarydat['Fratio_spec'][goodFratio]*0.0+0.0 / summarydat['Fratio_spec'][goodFratio])**2 ) * np.abs(yvalues)
 
         xlabel   = '$\sigma$(mock spectrum) [\AA]'
         ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
@@ -4669,8 +4669,8 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
         xvalues  = summarydat['sigma_temp_ang_rf'][goodFratio]
         yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
         xerr     = [None]*len(xvalues)
-        yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
-                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 ) * np.abs(yvalues)
+        yerr     = np.sqrt( (summarydat['Fratio_temp'][goodFratio]*0.0+fratioerrval[line] / summarydat['Fratio_temp'][goodFratio])**2 +
+                            (summarydat['Fratio_spec'][goodFratio]*0.0+0.0 / summarydat['Fratio_spec'][goodFratio])**2 ) * np.abs(yvalues)
 
         xlabel   = '$\sigma$(FELIS) [\AA]'
         ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
@@ -6051,8 +6051,7 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
                 f1err   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num] / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
                 f2      = f1    / numerator_dat['Fratio_temp'][ent_num]
                 f2err   = f1err / numerator_dat['Fratio_temp'][ent_num]
-                FR12    = f1/f2
-                FR12err = np.sqrt((f1err/f1)**2+(f2err/f2)**2)
+                FR12, FR12err = uves.set_ratios('goodmatch','goodmatch',f1,f1err,f2,f2err)
 
                 fluxratioarray[ii,colents['f1_'+numerator_line]]                            = f1
                 fluxratioarray[ii,colents['f1err_'+numerator_line]]                         = f1err
@@ -6076,6 +6075,11 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
                 if numerator_line == denominator_line:
                     continue
                 else:
+                    FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',
+                                                numerator_dat['Ftot_FELIS_S2Nmax'][ent_num],
+                                                numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num],
+                                                denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom],
+                                                denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom],)
                     fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line]]     = 55
                     fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line]]  = 55
                     fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line]]  = 55
