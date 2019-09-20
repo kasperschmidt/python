@@ -4529,7 +4529,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = summarydat['Ftot_spec_trapz']/summarydat['Ftot_FELIS_S2Nmax']-1.0
     xerr     = [None]*len(xvalues)
     yerr     = np.sqrt( (summarydat['Ftot_spec_trapz_err']   / summarydat['Ftot_spec_trapz'])**2 +
-                        (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 )
+                        (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 ) * np.abs(yvalues)
     xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$]'
     ylabel   = 'F(mock spectrum)/F(FELIS) - 1'
 
@@ -4545,7 +4545,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = summarydat['Ftot_spec_trapz']/summarydat['Ftot_FELIS_S2Nmax']-1.0
     xerr     = [None]*len(xvalues)
     yerr     = np.sqrt( (summarydat['Ftot_spec_trapz_err']   / summarydat['Ftot_spec_trapz'])**2 +
-                        (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 )
+                        (summarydat['Ftot_FELIS_S2Nmax_err'] / summarydat['Ftot_FELIS_S2Nmax'])**2 ) * np.abs(yvalues)
     xlabel   = 'F(Intrinsic) [1e-20erg/s/cm$^2$]'
     ylabel   = 'F(mock spectrum)/F(FELIS) - 1'
 
@@ -4562,7 +4562,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
     yvalues  = summarydat['sigma_spec_ang_rf']/summarydat['sigma_temp_ang_rf']-1.0
     xerr     = [None]*len(xvalues)
     yerr     = np.sqrt( (summarydat['sigma_temp_ang_rf']*0.0+sigmaerrval[line] / summarydat['sigma_temp_ang_rf'])**2 +
-                        (summarydat['sigma_spec_ang_rf']*0.0+0.0 / summarydat['sigma_spec_ang_rf'])**2 )
+                        (summarydat['sigma_spec_ang_rf']*0.0+0.0 / summarydat['sigma_spec_ang_rf'])**2 ) * np.abs(yvalues)
 
     xlabel   = '$\sigma$(mock spectrum) [\AA]'
     ylabel   = '$\sigma$(mock spectrum)/$\sigma$(FELIS) - 1'
@@ -4636,7 +4636,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
         yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
         xerr     = [None]*len(xvalues)
         yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
-                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 )
+                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 ) * np.abs(yvalues)
 
         xlabel   = 'Doublet flux ratio (FR) of mock spectrum'
         ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
@@ -4653,7 +4653,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
         yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
         xerr     = [None]*len(xvalues)
         yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
-                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 )
+                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 ) * np.abs(yvalues)
 
         xlabel   = '$\sigma$(mock spectrum) [\AA]'
         ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
@@ -4670,7 +4670,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
         yvalues  = summarydat['Fratio_spec'][goodFratio]/summarydat['Fratio_temp'][goodFratio]-1.0
         xerr     = [None]*len(xvalues)
         yerr     = np.sqrt( (summarydat['Fratio_temp']*0.0+fratioerrval[line] / summarydat['Fratio_temp'])**2 +
-                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 )
+                            (summarydat['Fratio_spec']*0.0+0.0 / summarydat['Fratio_spec'])**2 ) * np.abs(yvalues)
 
         xlabel   = '$\sigma$(FELIS) [\AA]'
         ylabel   = 'FR(mock spectrum)/FR(FELIS) - 1'
@@ -6461,7 +6461,7 @@ def set_ratios(tempnum,tempdenom,numerator,numeratorerr,denominator,denominatore
 
     if (tempnum.lower() is not 'none') & (tempdenom.lower() is not 'none' ):
         ratio      = numerator/denominator
-        ratioerr   = np.sqrt( (numeratorerr/numerator)**2+(denominatorerr/denominator)**2)
+        ratioerr   = np.sqrt( (numeratorerr/numerator)**2+(denominatorerr/denominator)**2) * np.abs(ratio)
     elif (tempnum.lower() is 'none') & (tempdenom.lower() is not 'none' ):
         ratio      = numerator/denominator
         ratioerr   = -99
