@@ -4685,7 +4685,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
                                               colortype=None,colorcode=True,cdatvec=None,point_text=None,
-                                              overwrite=False,verbose=True,
+                                              overwrite=False,verbose=True,title=None,
                                               histaxes=False,Nbins=50):
     """
 
@@ -4707,7 +4707,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             rect_histy = [left_h, bottom, 0.2, height]
         else:
             fig = plt.figure(2, figsize=(6, 5))
-            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
         Fsize    = 14
         lthick   = 2
         marksize = 4
@@ -4717,7 +4717,8 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         plt.rc('ytick', labelsize=Fsize)
         plt.clf()
         plt.ioff()
-        #plt.title(inforstr[:-2],fontsize=Fsize)
+        if (title is not None) & (histaxes == False):
+            plt.title(title,fontsize=Fsize-4)
 
         if colorcode:
             cmap    = plt.cm.get_cmap('viridis_r')
@@ -4735,7 +4736,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cmin    = 3.0
                 cmax    = 10.0
                 cextend = 'both'
-            elif colortype.lower() == 's2':
+            elif colortype.lower() == 's2n':
                 clabel  = 'S/N'
                 cmin    = 3.0
                 cmax    = 10.0
@@ -4783,9 +4784,53 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             facecol  = ['gray']*len(xvalues)
             alphaval = 0.5
 
-        for ii,xval in enumerate(xvalues): # loop necessary for coloring
+        for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
+            # checking for upper/lower limits
+            markersym   = 'o'
+            ms          = marksize
+            markerscale = 3.0
+            if (xerr[ii] == -99) & (yerr[ii] == -99):
+                markersym ='$\nearrow$'
+                ms        = marksize * markerscale
+                xerr[ii]  = None
+                yerr[ii]  = None
+            elif (xerr[ii] == +99) & (yerr[ii] == +99):
+                markersym ='$\swarrow$'
+                ms        = marksize * markerscale
+                xerr[ii]  = None
+                yerr[ii]  = None
+            elif (xerr[ii] == -99) & (yerr[ii] == +99):
+                markersym ='$\nwarrow$'
+                ms        = marksize * markerscale
+                xerr[ii]  = None
+                yerr[ii]  = None
+            elif (xerr[ii] == +99) & (yerr[ii] == -99):
+                markersym ='$\searrow$'
+                ms        = marksize * markerscale
+                xerr[ii]  = None
+                yerr[ii]  = None
+            elif (xerr[ii] == -99) & (yerr[ii] not in [-99,0,+99]):
+                markersym ='$\rightarrow$'
+                ms        = marksize * markerscale
+                xerr[ii]  = None
+            elif (xerr[ii] == +99) & (yerr[ii] not in [-99,0,+99]):
+                markersym ='$\leftarrow$'
+                ms        = marksize * markerscale
+                xerr[ii]  = None
+            elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == -99):
+                markersym ='$\uparrow$'
+                ms        = marksize * markerscale
+                yerr[ii]  = None
+            elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == +99):
+                markersym ='$\downarrow$'
+                ms        = marksize * markerscale
+                yerr[ii]  = None
+            elif (xerr[ii] == 0) or (yerr[ii] == 0):
+                xvalues[ii] = None
+                yvalues[ii] = None
+
             plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
-                         marker='o',lw=lthick, markersize=marksize,alpha=alphaval,
+                         marker=markersym,lw=lthick, markersize=ms,alpha=alphaval,
                          markerfacecolor=facecol[ii],ecolor=colvec[ii],
                          markeredgecolor=colvec[ii],zorder=10)
 
@@ -4833,6 +4878,9 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
 
         if histaxes:
             axHistx = plt.axes(rect_histx)
+            if (title is not None):
+                plt.title(title,fontsize=Fsize-4)
+
             axHisty = plt.axes(rect_histy)
 
             axHistx.xaxis.set_major_formatter(NullFormatter())
@@ -4858,9 +4906,10 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             axHisty.set_yticks([])
             axHisty.set_ylim([yminsys,ymaxsys])
 
-            cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
-                                   pad=0.01,aspect=10,shrink=0.35,anchor=(-15.0,1.58),use_gridspec=False)
-            cb.set_label(clabel)
+            if colorcode:
+                cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+                                       pad=0.01,aspect=10,shrink=0.35,anchor=(-15.0,1.58),use_gridspec=False)
+                cb.set_label(clabel)
         else:
             pass
 
@@ -5907,7 +5956,7 @@ def check_neighbors(ids=[214063213],
         print(' ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, onesigmalimit=100.0, verbose=True):
+def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, onesigmalimit=100.0, verbose=True):
     """
     Function to calculate the flux and line ratios for a set of summary files generated with
     containing the results from FELIS template matches to TDOSE spectra.
@@ -5925,6 +5974,11 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
 
+    outfile        = outputdir+'fluxratios190919_'+outkeystr+'.txt'
+    summaryfiles   = glob.glob(outputdir+'CCresults_summary/CCresults_summary_template*_'+outkeystr+'.txt')
+    lineindicators = [sf.split('template')[-1].split('_')[0] for sf in summaryfiles]
+
+    fluxratiodat   = uves.calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outfile)
 
     """
     if len(summaryfiles) != len(lineindicators):
@@ -6145,6 +6199,180 @@ def calculatelineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile,
     fmt = ','.join(Ncols*['f'])
     fluxratiodat = np.genfromtxt(outputfile,skip_header=7,dtype=fmt,comments='#',names=True)
     return fluxratiodat
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, overwrite=False, verbose=True):
+    """
+    Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
+
+    --- INPUT ---
+
+
+    --- EXAMPLE OF USE ---
+    uves.plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, overwrite=False, verbose=True)
+
+    """
+    if verbose: print(' - Loading flux ratio data to plot ')
+    fluxratiodat = np.genfromtxt(lineratiofile,skip_header=7,dtype='f',comments='#',names=True)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fluxes_range       = [10,1e4]
+    linesetlist_fluxes = []
+    linesetlist_fluxes.append(['CIII','CIV',None,None,fluxes_range, fluxes_range,   'Check title on hist plots'])
+    linesetlist_fluxes.append(['CIII','OIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','HeII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','MgII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','NV',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['CIV','OIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','HeII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','MgII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','NV',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','SiIII',None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['OIII','HeII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','MgII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','NV',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['HeII','MgII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','NV',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['MgII','NV',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['MgII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['NV','SiIII',None,None,fluxes_range, fluxes_range,   None])
+
+    Nhistbins = 30
+    histaxes  = True
+    cdatvec   = fluxratiodat['s2n_CIII']
+    for lineset in linesetlist_fluxes:
+        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+                                                 Nsigma=Nsigma,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ratios_range = [1e-4,1e3]
+    linesetlist  = []
+    linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
+    linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
+    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
+    #linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
+    linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
+    linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
+    linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
+    #linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
+    linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
+    #linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
+    #linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
+    #linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
+    linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+
+    linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+
+    Nhistbins = 30
+    histaxes  = False
+    cdatvec   = fluxratiodat['s2n_CIII']
+    for lineset in linesetlist:
+        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+                                                 Nsigma=Nsigma,overwrite=overwrite,verbose=verbose)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+                                             overwrite=False,Nsigma=3.0,verbose=True):
+    """
+    Wrapper to define input data and excecute plot command
+
+    """
+    line1,line2,line3,line4,xrange,yrange,title = lineset
+
+    if (line3 is None) & (line4 is None):
+        plotname = plotbasename+'_linefluxes_'+line1+'vs'+line2+'_Nsigma'+str(Nsigma).replace('.','p')+'.pdf'
+        goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) )[0]
+
+        if len(goodent) == 0:
+            if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
+            return
+        else:
+            xvalues  = fluxratiodat['f_'+line1][goodent]
+            xerr     = fluxratiodat['ferr_'+line1][goodent]*Nsigma
+            xlabel   = line1
+            yvalues  = fluxratiodat['f_'+line2][goodent]
+            yerr     = fluxratiodat['ferr_'+line2][goodent]*Nsigma
+            ylabel   = line2
+
+            xlimits_ent  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
+            if len(xlimits_ent) > 0:
+                xvalues[xlimits_ent] = xerr[xlimits_ent] * Nsigma
+                xerr[xlimits_ent]    = +99 # upper limit
+
+            ylimits_ent  = np.where(fluxratiodat['s2n_'+line2][goodent] < Nsigma)[0]
+            if len(ylimits_ent) > 0:
+                yvalues[ylimits_ent] = yerr[ylimits_ent] * Nsigma
+                yerr[ylimits_ent]    = +99 # upper limit
+
+    else:
+        plotname = plotbasename+'_lineratios_'+line1+line2+'vs'+line3+line4+'_Nsigma'+str(Nsigma).replace('.','p')+'.pdf'
+        goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) )[0]
+
+        if len(goodent) == 0:
+            if verbose: print('\n - WARNING No good values found for the plot \n           '+plotname.split('/')[-1]+'\n')
+            return
+        else:
+            xvalues  = fluxratiodat['FR_'+line1+line2][goodent]
+            xerr     = fluxratiodat['FRerr_'+line1+line2][goodent]*Nsigma
+            xlabel   = line1+'/'+line2
+            yvalues  = fluxratiodat['FR_'+line3+line4][goodent]
+            yerr     = fluxratiodat['FRerr_'+line3+line4][goodent]*Nsigma
+            ylabel   = line3+'/'+line4
+
+            xlimits_ent_num  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
+            xlimits_ent_den  = np.where(fluxratiodat['s2n_'+line2][goodent] < Nsigma)[0]
+            for xent, xval in enumerate(xvalues):
+                if (xent in xlimits_ent_num) & (xent in xlimits_ent_den):
+                    xvalues[xent]     = -99
+                    xerr[xent] = 0      # no constraint
+                elif (xent in xlimits_ent_num) & (xent not in xlimits_ent_den):
+                    xvalues[xent] = xerr[xent] * Nsigma
+                    xerr[xent]    = -99 # lower limit
+                elif (xent not in xlimits_ent_num) & (xent in xlimits_ent_den):
+                    xvalues[xent] = xerr[xent] * Nsigma
+                    xerr[xent]    = +99 # upper limit
+
+            ylimits_ent_num  = np.where(fluxratiodat['s2n_'+line3][goodent] < Nsigma)[0]
+            ylimits_ent_den  = np.where(fluxratiodat['s2n_'+line4][goodent] < Nsigma)[0]
+            for yent, yval in enumerate(yvalues):
+                if (yent in ylimits_ent_num) & (yent in ylimits_ent_den):
+                    yvalues[yent]   = -99
+                    yerr[yent]      = 0      # no constraint
+                elif (yent in ylimits_ent_num) & (yent not in ylimits_ent_den):
+                    yvalues[yent] = yerr[yent] * Nsigma
+                    yerr[yent]    = -99 # lower limit
+                elif (yent not in ylimits_ent_num) & (yent in ylimits_ent_den):
+                    yvalues[yent] = yerr[yent] * Nsigma
+                    yerr[yent]    = +99 # upper limit
+
+            if (xerr == 0).all():
+                if verbose: print('\n - WARNING all values for '+line1+' and '+line2+' were below '+str(Nsigma)+
+                                  'sigma for the plot \n           '+plotname.split('/')[-1]+'\n')
+                return
+            if (yerr == 0).all():
+                if verbose: print('\n - WARNING all values for '+line3+' and '+line4+' were below '+str(Nsigma)+
+                                  'sigma for the plot \n           '+plotname.split('/')[-1]+'\n')
+                return
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                   'dummydat',linetype='onetoone',title=title,
+                                                   ylog=True,xlog=True,yrange=yrange,xrange=xrange,
+                                                   colortype='s2n',colorcode=True,cdatvec=cdatvec[goodent],
+                                                   point_text=None,
+                                                   histaxes=histaxes,Nbins=Nhistbins,
+                                                   overwrite=overwrite,verbose=verbose)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,100.0], zspecrange=[0.0,10.0],
                         voffsetrange=[-1500.0,1500.0], onesigmalimit=100.0, plotdir=None, verbose=True):
