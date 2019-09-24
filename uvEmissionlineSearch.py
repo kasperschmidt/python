@@ -7413,7 +7413,7 @@ def checkfluxscales(specWnoise=True):
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
+def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
     """
     plotting information on FELIS match to Maseda UDF-10 CIII emitters
 
@@ -7423,12 +7423,16 @@ def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
 
     --- EXAMPLE OF RUN ---
     import uvEmissionlineSearch as uves
-    uves.plot_UDF10masedaobjcomparison(summaryfile,plotbasename)
+    uves.plot_UDF10masedaobjcomparison(gaussspec=True,overwrite=True)
+    uves.plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=True)
 
     """
+    Nsigmaplot   = 3.0 # the size of the error bars to show
     outdir       = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/CCresults_summary/'
 
     summaryfile  = outdir+'CCresults_summary_templateCIII_FELISmatch2udf10masedaobj190913.txt'
+    if gaussspec:
+        summaryfile = summaryfile.replace('.txt','_gauss.txt')
     fmt          = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
     summarydat   = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
     sortindex_S  = np.argsort(summarydat['id'])
@@ -7439,14 +7443,14 @@ def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
     masedadat    = np.genfromtxt(masedainfo,skip_header=1,dtype=fmt,comments='#',names=True)
     sortindex_M  = np.argsort(masedadat['id_uves'])
 
-    Nsigmaplot   = 3.0 # the size of the error bars to show
-
     plotbasename = outdir+'UDF10_CIIIemitters_Maseda17comparison'
     if verbose: print(' - Plotting FELIS matches in summary file\n   '+summaryfile+'\n   where the following holds:')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext    = 'Comparison_onetoone_Fciii'
     plotname   = plotbasename+nameext+'.pdf'
+    if gaussspec:
+        plotname = plotname.replace('.pdf','_gauss.pdf')
     xvalues    = masedadat['f_ciii'][sortindex_M]
     xerr       = masedadat['df_ciii'][sortindex_M]*Nsigmaplot
     yvalues    = summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]
@@ -7466,6 +7470,8 @@ def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext    = 'Comparison_horizontal_FciiiVSz'
     plotname   = plotbasename+nameext+'.pdf'
+    if gaussspec:
+        plotname = plotname.replace('.pdf','_gauss.pdf')
     xvalues    = summarydat['z_temp_S2Nmax'][sortindex_S]
     xerr       = [None]*len(xvalues)
     yvalues    = (summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]/masedadat['f_ciii'][sortindex_M]) - 1
@@ -7488,6 +7494,8 @@ def plot_UDF10masedaobjcomparison(overwrite=False,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext    = 'Comparison_horizontal_FciiiVSsigma'
     plotname   = plotbasename+nameext+'.pdf'
+    if gaussspec:
+        plotname = plotname.replace('.pdf','_gauss.pdf')
     xvalues    = summarydat['sigma_temp_ang_rf'][sortindex_S]
     xerr       = [None]*len(xvalues)
     yvalues    = (summarydat['Ftot_FELIS_S2Nmax'][sortindex_S]/masedadat['f_ciii'][sortindex_M]) - 1
