@@ -2532,11 +2532,11 @@ def get_3DHSTspecname(ids,spec1D=False,field='goodss',verbose=True):
     if field.lower() == 'goodss':
         dat_spec      = np.genfromtxt(cat_spec,comments='#',
                                       names=['id','s1','s2','s3','s4','s5','s6','s7'],
-                                      dtype='f,40a,40a,40a,40a,40a,40a,40a')
+                                      dtype='d,40a,40a,40a,40a,40a,40a,40a')
     elif field.lower() == 'cosmos':
         dat_spec      = np.genfromtxt(cat_spec,comments='#',
                                       names=['id','s1','s2','s3','s4'],
-                                      dtype='f,40a,40a,40a,40a')
+                                      dtype='d,40a,40a,40a,40a')
 
     else:
         sys.exit(' No 3D-HST directory setup available for the field "'+field+'"')
@@ -3177,7 +3177,7 @@ def gen_felismockspec_fromsetupfile(specsetup,basename='./uves_felis_mock_spectr
     """
     if verbose: print(' - Building mockspectra using FELIS tools')
     templatedat = np.genfromtxt(specsetup,names=True,skip_header=7,comments='#',
-                                dtype='80a,80a,80a,80a,80a,80a,80a,80a,80a,f,f,80a,80a')
+                                dtype='80a,80a,80a,80a,80a,80a,80a,80a,80a,d,d,80a,80a')
     # ----- load error spectrum to use for noise simulations -----
     if noisesetup.lower() == 'errspec':
         skyspec     = None # should be noise spectrum '/Users/kschmidt/work/MUSE/skyspectra/SKY_SPECTRUM_candels-cdfs-36_av.fits'
@@ -3264,7 +3264,7 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
 
     """
     templatedat = np.genfromtxt(setupfile,names=True,skip_header=skip_header,
-                                comments='#',dtype='80a,80a,80a,80a,80a,80a,80a,80a,80a,f,f,80a,80a')
+                                comments='#',dtype='80a,80a,80a,80a,80a,80a,80a,80a,80a,d,d,80a,80a')
     outputfile  = setupfile.replace('.txt','_parametertable.txt')
 
     fout = open(outputfile,'w')
@@ -3315,7 +3315,7 @@ def build_mockspeck_setup_parametertable(setupfile,skip_header=7,noisestr='_nois
                             fout.write(paramlist+'     '+specname+'\n')
     fout.close()
 
-    paramtable = np.genfromtxt(outputfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,f,20a,20a,200a')
+    paramtable = np.genfromtxt(outputfile,names=True,comments='#',skip_header=3,dtype='d,d,d,d,d,d,d,20a,20a,200a')
     return paramtable
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -3545,7 +3545,7 @@ def pre190911_gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     return summarydat
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -3574,7 +3574,7 @@ def pre190911_plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortyp
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     specnumber = np.arange(len(summarydat))+1.0
 
@@ -4097,7 +4097,7 @@ def match_mockspectra_to_templates(outputdir,CCwavewindow=25.0,plot_allCCresults
     # templatedir  = parentdir+'felis_templates_190816/'
     templatedir  = parentdir+'felis_templates_fromsetup/'
     paramfile    = parentdir+'mockspectra_setup_parametertable.txt'
-    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='f,f,f,f,f,f,f,20a,20a,200a')
+    paramtable   = np.genfromtxt(paramfile,names=True,comments='#',skip_header=3,dtype='d,d,d,d,d,d,d,20a,20a,200a')
 
     if verbose: print(' - Crosscorrelating templates to spectra using FELIS')
     for ss, mockspec in enumerate(paramtable['specname']):
@@ -4319,7 +4319,7 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=34,dtype=fmt,comments='#',names=True)
     return summarydat
 
@@ -4344,7 +4344,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=34,dtype=fmt,comments='#',names=True)
     specnumber = np.arange(len(summarydat))+1.0
 
@@ -4741,8 +4741,8 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cmin    = 3.0
                 cmax    = 10.0
                 cextend = 'both'
-            elif colortype.lower() == 's2nciii':
-                clabel  = 'S/N CIII(FELIS)'
+            elif colortype.lower() == 's2n_ciii':
+                clabel  = 'CIII S/N(FELIS)'
                 cmin    = 3.0
                 cmax    = 10.0
                 cextend = 'both'
@@ -4777,7 +4777,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     colanchor = (0.0,0.5)
                 else:
                     colbarscale = 2.1
-                    colanchor   = (-1.05,0.0)
+                    colanchor   = (-1.1,0.0)
                     colshrink   = colshrink/colbarscale
                     colaspect   = colaspect/colbarscale
 
@@ -5384,7 +5384,7 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = '12a,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     return summarydat
 
@@ -5412,7 +5412,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = '12a,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     Nspecin     = len(summarydat['spectrum'])
 
@@ -6216,7 +6216,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading content of the '+str(lineindicators)+' summary files provided')
     dic_summarydat = {}
-    fmt = '12a,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     for ss, sfile in enumerate(summaryfiles):
         summarydat  = np.genfromtxt(sfile,skip_header=25,dtype=fmt,comments='#',names=True)
         dic_summarydat[lineindicators[ss]] = summarydat
@@ -6426,12 +6426,13 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
         fout.write(outstr+' \n')
     fout.close()
     if verbose: print('\n - Wrote the flux ratio output to \n   '+outputfile)
-    fmt = ','.join(Ncols*['f'])
+    fmt = ','.join(Ncols*['d'])
     fluxratiodat = np.genfromtxt(outputfile,skip_header=7,dtype=fmt,comments='#',names=True)
     return fluxratiodat
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, colorvar='logUs', overwrite=False, verbose=True):
+def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII',
+                                     Nsigma=3.0, colorvar_pi='logUs', overwrite=False, verbose=True):
     """
     Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
 
@@ -6443,7 +6444,23 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, co
 
     """
     if verbose: print(' - Loading flux ratio data to plot ')
-    fluxratiodat = np.genfromtxt(lineratiofile,skip_header=7,dtype='f',comments='#',names=True)
+    fluxratiodat = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    infofiledat  = afits.open(infofile)[1].data
+
+    if colorvar_obj in fluxratiodat.dtype.names:
+        cdatvec   = fluxratiodat[colorvar_obj]
+    elif colorvar_obj in infofiledat.columns.names:
+        cdatvec = np.zeros(len(fluxratiodat['id']))*np.nan
+        for ii, id in enumerate(fluxratiodat['id']):
+            infoent     = np.where(infofiledat['id'] == int(id))
+            cdatvec[ii] = infofiledat[colorvar_obj][infoent]
+
+    if colorvar_obj.lower() == 's2n_ciii':
+        cdattype = 's2n_ciii'
+    elif colorvar_obj.lower() == 'redshift':
+        cdattype = colorvar_obj.lower()
+    else:
+        cdattype = None
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxes_range       = [10,1e4]
@@ -6477,9 +6494,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, co
 
     Nhistbins = 30
     histaxes  = True
-    cdatvec   = fluxratiodat['s2n_CIII']
     for lineset in linesetlist_fluxes:
-        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -6505,7 +6521,6 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, co
 
     Nhistbins = 30
     histaxes  = False
-    cdatvec   = fluxratiodat['s2n_CIII']
     for lineset in linesetlist:
         if 'MgII' in lineset:                # No MgII columns in the NEOGAL photoionisation models
             photoionizationplotparam = None
@@ -6513,17 +6528,17 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, co
         #     continue
         else:
             #varyparam, cutSFmodels, markersize, SFmarker, AGNmarker, linestrings, doubletratios, histaxes = piplotparam
-            photoionizationplotparam = colorvar, False, 1.5, 's', 'D', \
+            photoionizationplotparam = colorvar_pi, False, 1.5, 's', 'D', \
                                        [uves.linenameUVES2NEOGAL(lineset[0]),uves.linenameUVES2NEOGAL(lineset[1]),
                                         uves.linenameUVES2NEOGAL(lineset[2]),uves.linenameUVES2NEOGAL(lineset[3])], \
                                        [None,None,None,None], True
 
-        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,overwrite=overwrite,verbose=verbose,
                                                  photoionizationplotparam=photoionizationplotparam)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                              photoionizationplotparam=None,
                                              overwrite=False,Nsigma=3.0,verbose=True):
     """
@@ -6613,7 +6628,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
-                                                   colortype='s2nciii',colorcode=True,cdatvec=cdatvec[goodent],
+                                                   colortype=cdattype,colorcode=True,cdatvec=cdatvec[goodent],
                                                    point_text=None,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
@@ -7703,13 +7718,13 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
     summaryfile  = outdir+'CCresults_summary_templateCIII_FELISmatch2udf10masedaobj190913.txt'
     if gaussspec:
         summaryfile = summaryfile.replace('.txt','_gauss.txt')
-    fmt          = 'f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,200a,200a'
+    fmt          = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
     summarydat   = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
     sortindex_S  = np.argsort(summarydat['id'])
     Nspecin      = len(summarydat['spectrum'])
 
     masedainfo   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/masedaUDF10emitters.txt'
-    fmt          = '12a,f,f,f,f,f,f,f,f,f,f,f'
+    fmt          = '12a,d,d,d,d,d,d,d,d,d,d,d'
     masedadat    = np.genfromtxt(masedainfo,skip_header=1,dtype=fmt,comments='#',names=True)
     sortindex_M  = np.argsort(masedadat['id_uves'])
 
