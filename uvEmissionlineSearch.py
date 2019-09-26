@@ -4686,6 +4686,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
                                               colortype=None,colorcode=True,cdatvec=None,point_text=None,
                                               overwrite=False,verbose=True,title=None,
+                                              photoionizationplotparam=None,
                                               histaxes=False,Nbins=50):
     """
 
@@ -4708,6 +4709,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         else:
             fig = plt.figure(2, figsize=(6, 5))
             fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
+
         Fsize    = 14
         lthick   = 2
         marksize = 4
@@ -4717,8 +4719,6 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         plt.rc('ytick', labelsize=Fsize)
         plt.clf()
         plt.ioff()
-        if (title is not None) & (histaxes == False):
-            plt.title(title,fontsize=Fsize-4)
 
         if colorcode:
             cmap    = plt.cm.get_cmap('viridis_r')
@@ -4738,6 +4738,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cextend = 'both'
             elif colortype.lower() == 's2n':
                 clabel  = 'S/N'
+                cmin    = 3.0
+                cmax    = 10.0
+                cextend = 'both'
+            elif colortype.lower() == 's2nciii':
+                clabel  = 'S/N CIII(FELIS)'
                 cmin    = 3.0
                 cmax    = 10.0
                 cextend = 'both'
@@ -4765,13 +4770,19 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             m       = plt.cm.ScalarMappable(cmap=cmap)
             m.set_array(cmaparr)
 
-            if histaxes:
-                x =1
-                # cb      = plt.colorbar(m,extend='neither',orientation='vertical',
-                #                        pad=0.01,aspect=40,shrink=0.3,anchor=(1.0,1.0),use_gridspec=False)
-            else:
+            if not histaxes:
+                colshrink = 1.0
+                colaspect = 30
+                if photoionizationplotparam is None:
+                    colanchor = (0.0,0.5)
+                else:
+                    colbarscale = 2.1
+                    colanchor   = (-1.05,0.0)
+                    colshrink   = colshrink/colbarscale
+                    colaspect   = colaspect/colbarscale
+
                 cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
-                                       pad=0.01,aspect=40,shrink=1.0,anchor=(0.0,0.5),use_gridspec=False)
+                                       pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
                 cb.set_label(clabel)
 
             colvec   = []
@@ -4783,67 +4794,6 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             colvec   = ['k']*len(xvalues)
             facecol  = ['gray']*len(xvalues)
             alphaval = 0.5
-
-        for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
-            # checking for upper/lower limits
-            markersym   = 'o'
-            ms          = marksize
-            markerscale = 3.0
-            if (xerr[ii] == -99) & (yerr[ii] == -99):
-                markersym ='$\nearrow$'
-                ms        = marksize * markerscale
-                xerr[ii]  = None
-                yerr[ii]  = None
-            elif (xerr[ii] == +99) & (yerr[ii] == +99):
-                markersym ='$\swarrow$'
-                ms        = marksize * markerscale
-                xerr[ii]  = None
-                yerr[ii]  = None
-            elif (xerr[ii] == -99) & (yerr[ii] == +99):
-                markersym ='$\nwarrow$'
-                ms        = marksize * markerscale
-                xerr[ii]  = None
-                yerr[ii]  = None
-            elif (xerr[ii] == +99) & (yerr[ii] == -99):
-                markersym ='$\searrow$'
-                ms        = marksize * markerscale
-                xerr[ii]  = None
-                yerr[ii]  = None
-            elif (xerr[ii] == -99) & (yerr[ii] not in [-99,0,+99]):
-                markersym ='$\rightarrow$'
-                ms        = marksize * markerscale
-                xerr[ii]  = None
-            elif (xerr[ii] == +99) & (yerr[ii] not in [-99,0,+99]):
-                markersym ='$\leftarrow$'
-                ms        = marksize * markerscale
-                xerr[ii]  = None
-            elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == -99):
-                markersym ='$\uparrow$'
-                ms        = marksize * markerscale
-                yerr[ii]  = None
-            elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == +99):
-                markersym ='$\downarrow$'
-                ms        = marksize * markerscale
-                yerr[ii]  = None
-            elif (xerr[ii] == 0) or (yerr[ii] == 0):
-                xvalues[ii] = None
-                yvalues[ii] = None
-
-            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
-                         marker=markersym,lw=lthick, markersize=ms,alpha=alphaval,
-                         markerfacecolor=facecol[ii],ecolor=colvec[ii],
-                         markeredgecolor=colvec[ii],zorder=10)
-
-        if linetype == 'horizontal':
-            plt.plot([-1e5,1e5],[0,0],'--',color='gray',lw=lthick,zorder=5)
-        elif linetype == 'onetoone':
-            plt.plot([-1,1e5],[-1,1e5],'--',color='gray',lw=lthick,zorder=5)
-        elif linetype == 'plus':
-            plt.plot([-1e5,1e5],[0,0],'--',color='gray',lw=lthick,zorder=5)
-            plt.plot([0,0],[-1e5,1e5],'--',color='gray',lw=lthick,zorder=5)
-        else:
-            sys.exit(' Unknown value of linetype = "'+linetype+'"')
-
 
         #--------- RANGES ---------
         if not xrange:
@@ -4862,10 +4812,112 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         plt.ylim(yrange)
         yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
 
+        #--------- X and Y limits ---------
+        y_uplimarr = (yerr == +99)
+        y_lolimarr = (yerr == -99)
+        x_uplimarr = (xerr == +99)
+        x_lolimarr = (xerr == -99)
+        for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
+            # checking for upper/lower limits
+            markersym   = 'o'
+            ms          = marksize
+            limsizefrac = 0.05
+
+            if y_uplimarr[ii]:
+                if ylog:
+                    dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                    yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])-dlog))
+                else:
+                    yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+            if y_lolimarr[ii]:
+                if ylog:
+                    dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                    yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])+dlog))
+                else:
+                    yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+            if x_uplimarr[ii]:
+                if xlog:
+                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                    xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])-dlog))
+                else:
+                    xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+            if x_lolimarr[ii]:
+                if xlog:
+                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                    xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])+dlog))
+                else:
+                    xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+
+            drawLaTeXarrows = False
+            if drawLaTeXarrows:
+                markerscale = 3.0
+                if (xerr[ii] == -99) & (yerr[ii] == -99):
+                    markersym ='$\\nearrow$'
+                    ms        = marksize * markerscale
+                    xerr[ii]  = None
+                    yerr[ii]  = None
+                elif (xerr[ii] == +99) & (yerr[ii] == +99):
+                    markersym ='$\swarrow$'
+                    ms        = marksize * markerscale
+                    xerr[ii]  = None
+                    yerr[ii]  = None
+                elif (xerr[ii] == -99) & (yerr[ii] == +99):
+                    markersym ='$\\nwarrow$'
+                    ms        = marksize * markerscale
+                    xerr[ii]  = None
+                    yerr[ii]  = None
+                elif (xerr[ii] == +99) & (yerr[ii] == -99):
+                    markersym ='$\searrow$'
+                    ms        = marksize * markerscale
+                    xerr[ii]  = None
+                    yerr[ii]  = None
+                elif (xerr[ii] == -99) & (yerr[ii] not in [-99,0,+99]):
+                    markersym ='$\rightarrow$'
+                    ms        = marksize * markerscale
+                    xerr[ii]  = None
+                elif (xerr[ii] == +99) & (yerr[ii] not in [-99,0,+99]):
+                    markersym ='$\leftarrow$'
+                    ms        = marksize * markerscale
+                    xerr[ii]  = None
+                elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == -99):
+                    markersym ='$\uparrow$'
+                    ms        = marksize * markerscale
+                    yerr[ii]  = None
+                elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == +99):
+                    markersym ='$\downarrow$'
+                    ms        = marksize * markerscale
+                    yerr[ii]  = None
+                elif (xerr[ii] == 0) or (yerr[ii] == 0):
+                    xvalues[ii] = None
+                    yvalues[ii] = None
+
+            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
+                         uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
+                         marker=markersym,lw=lthick, markersize=ms,alpha=alphaval,
+                         markerfacecolor=facecol[ii],ecolor=colvec[ii],
+                         markeredgecolor=colvec[ii],zorder=20)
+
+        if linetype == 'horizontal':
+            plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
+        elif linetype == 'onetoone':
+            plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
+        elif linetype == 'plus':
+            plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([0,0],[-1e5,1e5],'--',color='black',lw=lthick,zorder=10)
+        else:
+            sys.exit(' Unknown value of linetype = "'+linetype+'"')
+
+        #--------- PHOTOIONIZATION GRIDS ---------
+        if photoionizationplotparam is not None:
+            titleaddition = uves.add_photoionization_models_to_lineratioplot(photoionizationplotparam)
+
+        if (title is not None) & (histaxes == False):
+            plt.title(title+titleaddition,fontsize=Fsize-4)
+
         for ii,xval in enumerate(xvalues): # loop necessary for coloring
             if point_text is not None:
                 plt.text(xvalues[ii]*1.03,yvalues[ii]*1.03,
-                         point_text[ii],color='white',fontsize=Fsize*0.2,zorder=20,
+                         point_text[ii],color='white',fontsize=Fsize*0.2,zorder=30,
                          bbox=dict(boxstyle="round",edgecolor='k',facecolor=colvec[ii],linewidth=lthick*0.2))
 
         plt.xlabel(xlabel)
@@ -4879,7 +4931,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         if histaxes:
             axHistx = plt.axes(rect_histx)
             if (title is not None):
-                plt.title(title,fontsize=Fsize-4)
+                plt.title(title+titleaddition,fontsize=Fsize-4)
 
             axHisty = plt.axes(rect_histy)
 
@@ -4932,6 +4984,184 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
     plt.close('all')
 
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
+    """
+    Wrapper to add NEOGAL photoionization model grids to flux ratio plots generated with
+    uves.plot_mocspecFELISresults_summary_plotcmds() - see e.g. uves.plot_lineratios_fromsummaryfiles_wrapper()
+
+    plotting based on rxj2248_BooneBalestraSource.plot_feltregutkinmodels()
+    which is based on NEOGALmodels.plot_lineratios()
+
+    --- INPUT ---
+    piplotparam            The photoionization plot parameters.
+
+    --- EXAMPLE OF RUN ---
+
+    """
+    modeldataSF  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
+    modeldataAGN = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/AGN_NLR_nebular_feltre16/')
+
+    varyparam, cutSFmodels, markersize, SFmarker, AGNmarker, linestrings, doubletratios, histaxes = piplotparam
+    # varyparam options: 'Zgas','logUs','xid','nh','COratio','Mcutoff'
+    logcolors = ['Zgas']
+
+    if cutSFmodels:
+        if verbose: print(' - Performing cut on model SF model grid')
+        xid     = 'dummy'
+        nh      = 'dummy'
+        COratio = 1.00
+        Mcutoff = 100
+    else:
+        if verbose: print(' - Showing all SF model grids, i.e., setting xid, nh, COratio and Mcutoff to dummy values')
+        xid     = 'dummy'
+        nh      = 'dummy'
+        COratio = 'dummy'
+        Mcutoff = 'dummy'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - -
+    legenddic = {}
+    legenddic['Zgas']     = r'Z$_\textrm{gas}$'
+    legenddic['logUs']    = r'log U'
+    legenddic['xid']      = r'$\xi_\textrm{d}$'
+    legenddic['nh']       = r'n$_\textrm{H}$  [cm$^3$]'
+    legenddic['COCOsol']  = r'C/O / [C/O]$_\odot$'
+    legenddic['mup']      = r'M$_\textrm{cut IMF}$ / [M$_\odot]$'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if cutSFmodels:
+        goodentSF  = np.where( (modeldataSF['mup'] == Mcutoff) &
+                                #(modeldata['xid'] == xid) &
+                                #(modeldata['nh'] == nh) &
+                                (modeldataSF['COCOsol'] == COratio) )[0]
+        modeldataSF  = modeldataSF[goodentSF]
+        infostrSFcut = '(Mcutoff(SF)='+str(Mcutoff)+', COratio(SF)='+str(COratio)+') '#+\
+                       #' Showing Zgas=all, zid=all, nh=all, logU=all '
+    else:
+        infostrSFcut = ''
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    NgoodentSF  = len(modeldataSF)
+
+    if NgoodentSF > 1:
+        if verbose: print(' - Getting data for '+str(NgoodentSF)+' data points satisfying (SFR)model selection ')
+        varydatSF  = modeldataSF[varyparam]
+        if varyparam in logcolors:
+            varydatSF  = np.log10(modeldataSF[varyparam])
+
+        linedataSF = []
+        for ll, linestr in enumerate(linestrings):
+            if linestr == 'CIV1550':
+                linedataSF.append(modeldataSF['CIV1548']+modeldataSF['CIV1551'])
+            elif linestr == 'CIII1907':
+                linedataSF.append(modeldataSF['CIII1908']/(1.+1./doubletratios[ll]))
+            elif linestr == 'CIII1910':
+                ciii1907 = modeldataSF['CIII1908']/(1.+1./doubletratios[ll])
+                linedataSF.append(ciii1907/doubletratios[ll])
+            elif linestr == 'OIII1663':
+                linedataSF.append(modeldataSF['OIII1661']+modeldataSF['OIII1666'])
+            elif linestr == 'SiIII1892':
+                linedataSF.append(modeldataSF['SiIII1888']-modeldataSF['SiIII1883'])
+            else:
+                linedataSF.append(modeldataSF[linestr])
+
+        # --------- Line Ratios ---------
+        ratioSF_x   = linedataSF[0]/linedataSF[1]
+        ratioSF_y   = linedataSF[2]/linedataSF[3]
+
+    else:
+        print(' WARNING: uves.add_photoionization_models_to_lineratioplot >>>'
+              ' Less than 2 (SFR)model grid points to plot; no data added to plot')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    NgoodentAGN  = len(modeldataAGN)
+
+    if NgoodentAGN > 1:
+        if verbose: print(' - Getting data for '+str(NgoodentAGN)+' data points satisfying (AGN)model selection ')
+        varydatAGN  = modeldataAGN[varyparam]
+        if varyparam in logcolors:
+            varydatAGN = np.log10(modeldataAGN[varyparam])
+
+        linedataAGN = []
+        for ll, linestr in enumerate(linestrings):
+            if linestr == 'CIV1550':
+                linedataAGN.append(modeldataAGN['CIV1548']+modeldataAGN['CIV1551'])
+            elif linestr == 'OIII1663':
+                linedataAGN.append(modeldataAGN['OIII1661']+modeldataAGN['OIII1666'])
+            elif linestr == 'CIII1908':
+                linedataAGN.append(modeldataAGN['CIII1907']+modeldataAGN['CIII1910'])
+            elif linestr == 'SiIII1892':
+                linedataAGN.append(modeldataSF['SiIII1888']-modeldataAGN['SiIII1883'])
+            else:
+                linedataAGN.append(modeldataAGN[linestr])
+
+        # --------- Line Ratios ---------
+        ratioAGN_x   = linedataAGN[0]/linedataAGN[1]
+        ratioAGN_y   = linedataAGN[2]/linedataAGN[3]
+    else:
+        print(' WARNING: uves.add_photoionization_models_to_lineratioplot >>>'
+              ' Less than 2 (AGN)model grid points to plot; no data added to plot')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    edgecol  = 'None'
+
+    cmap    = plt.cm.get_cmap('copper_r') #'plasma', 'Reds_r'
+    cmin    = np.min(np.append(varydatSF,varydatAGN))
+    cmax    = np.max(np.append(varydatSF,varydatAGN))
+    colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, 30) #cmax-cmin)
+    mm      = plt.cm.ScalarMappable(cmap=cmap)
+    mm.set_array(cmaparr)
+
+    if varyparam == 'Zgas':
+        # colortickvals   = [1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 0.003048, 4e-3, 6e-3, 8e-3, 0.01, 0.01524, 0.02, 0.03, 0.04, 0.07] # 0.014, 0.017,
+        colortickvals   = [1e-4, 3e-4, 7e-4, 1e-4, 0.003048, 0.007, 0.01524, 0.03, 0.07]
+        colorlabels     = [ str(ct) for ct in colortickvals]
+        colorlabels[4]  =  '0.2Z$_\odot$' # = 0.003048
+        colorlabels[6] =  'Z$_\odot$'     # = 0.01524
+        colortickvals   = np.log10(np.asarray(colortickvals))
+        cbarlegend      = legenddic[varyparam]
+    elif varyparam == 'logUs':
+        colortickvals = [-5.0,-4.5,-4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0]
+        colorlabels   = [ str(ct) for ct in colortickvals]
+        cbarlegend    = legenddic[varyparam]
+    else:
+        ncolticks     = 10.
+        colortickvals = np.arange(cmin,cmax,np.abs(cmax-cmin)/ncolticks)
+        colorlabels   = [ str(ct) for ct in colortickvals]
+
+        if varyparam in logcolors:
+            cbarlegend = 'log10('+legenddic[varyparam]+')'
+        else:
+            cbarlegend = legenddic[varyparam]
+
+    colshrink   = 1.0
+    colaspect   = 30
+    colbarscale = 2.1
+    colanchor   = (0.0,1.0)
+    colshrink   = colshrink/colbarscale
+    colaspect   = colaspect/colbarscale
+    cextend     = 'neither'
+
+    cb1      = plt.colorbar(mm,extend=cextend,orientation='vertical',ticks=colortickvals,
+                            pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+    cb1.ax.set_yticklabels(colorlabels,rotation=0)
+    cb1.set_label(cbarlegend)     #Zgas is unitless as it is a mass ratio (see Gutkin et al. 2016 Eq. 10)
+
+    for vdSF in np.unique(varydatSF):
+        SFcol    = cmap(colnorm(vdSF))
+        SFcolent = np.where(varydatSF == vdSF)
+
+        plt.scatter(ratioSF_x[SFcolent],ratioSF_y[SFcolent],s=markersize,
+                    marker=SFmarker,lw=0.2, facecolor='None',edgecolor=SFcol, zorder=5)
+
+    for vdAGN in np.unique(varydatAGN):
+        AGNcol    = 'gray' # cmap(colnorm(vdAGN))
+        AGNcolent = np.where(varydatAGN == vdAGN)
+
+        plt.scatter(ratioAGN_x[AGNcolent],ratioAGN_y[AGNcolent],s=markersize,
+                    marker=AGNmarker,lw=0.2, facecolor='None',edgecolor=AGNcol, zorder=5)
+
+    titleaddition = infostrSFcut
+    return titleaddition
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENAME',
                                     subtract_spec_median=True,
@@ -6019,10 +6249,10 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
         if len(dic_summarydat[numerator_line]['id']) == 0:
             continue
         elif dic_summarydat[numerator_line]['Fratio_temp'][0] != 0:
-            fluxratiodic['f1_'+numerator_line]      = np.array([])
-            fluxratiodic['f1err_'+numerator_line]   = np.array([])
-            fluxratiodic['f2_'+numerator_line]      = np.array([])
-            fluxratiodic['f2err_'+numerator_line]   = np.array([])
+            fluxratiodic['f_'+numerator_line+'1']      = np.array([])
+            fluxratiodic['ferr_'+numerator_line+'1']   = np.array([])
+            fluxratiodic['f_'+numerator_line+'2']      = np.array([])
+            fluxratiodic['ferr_'+numerator_line+'2']   = np.array([])
             fluxratiodic['FR_'+numerator_line+'1'+numerator_line+'2']     = np.array([])
             fluxratiodic['FRerr_'+numerator_line+'1'+numerator_line+'2']  = np.array([])
             fluxratiodic['FRs2n_'+numerator_line+'1'+numerator_line+'2']  = np.array([])
@@ -6109,10 +6339,10 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
                 f2err_num   = f1err_num / numerator_dat['Fratio_temp'][ent_num]
                 FR12, FR12err = uves.set_ratios('goodmatch','goodmatch',f1_num,f1err_num,f2_num,f2err_num)
 
-                fluxratioarray[ii,colents['f1_'+numerator_line]]                            = f1_num
-                fluxratioarray[ii,colents['f1err_'+numerator_line]]                         = f1err_num
-                fluxratioarray[ii,colents['f2_'+numerator_line]]                            = f2_num
-                fluxratioarray[ii,colents['f2err_'+numerator_line]]                         = f2err_num
+                fluxratioarray[ii,colents['f_'+numerator_line+'1']]                         = f1_num
+                fluxratioarray[ii,colents['ferr_'+numerator_line+'1']]                      = f1err_num
+                fluxratioarray[ii,colents['f_'+numerator_line+'2']]                         = f2_num
+                fluxratioarray[ii,colents['ferr_'+numerator_line+'2']]                      = f2err_num
                 fluxratioarray[ii,colents['FR_'+numerator_line+'1'+numerator_line+'2']]     = FR12
                 fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+numerator_line+'2']]  = FR12err
                 fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+numerator_line+'2']]  = FR12/FR12err
@@ -6201,7 +6431,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
     return fluxratiodat
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, overwrite=False, verbose=True):
+def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, colorvar='logUs', overwrite=False, verbose=True):
     """
     Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
 
@@ -6218,7 +6448,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, ov
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxes_range       = [10,1e4]
     linesetlist_fluxes = []
-    linesetlist_fluxes.append(['CIII','CIV',None,None,fluxes_range, fluxes_range,   'Check title on hist plots'])
+    linesetlist_fluxes.append(['CIII','CIV',None,None,fluxes_range, fluxes_range,   None])
     linesetlist_fluxes.append(['CIII','OIII',None,None,fluxes_range, fluxes_range,   None])
     linesetlist_fluxes.append(['CIII','HeII',None,None,fluxes_range, fluxes_range,   None])
     linesetlist_fluxes.append(['CIII','MgII',None,None,fluxes_range, fluxes_range,   None])
@@ -6258,15 +6488,15 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, ov
     linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
     linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
     linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
-    #linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
+    linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
     linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
     linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
     linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
-    #linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
+    linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
     linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
-    #linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
-    #linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
-    #linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
+    linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
+    linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
+    linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
     linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
     linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
 
@@ -6277,12 +6507,24 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, Nsigma=3.0, ov
     histaxes  = False
     cdatvec   = fluxratiodat['s2n_CIII']
     for lineset in linesetlist:
-        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
-                                                 Nsigma=Nsigma,overwrite=overwrite,verbose=verbose)
+        if 'MgII' in lineset:                # No MgII columns in the NEOGAL photoionisation models
+            photoionizationplotparam = None
+        # elif 'NV' in lineset:                # No columns with NV in Maseda line ratio summaryfile
+        #     continue
+        else:
+            #varyparam, cutSFmodels, markersize, SFmarker, AGNmarker, linestrings, doubletratios, histaxes = piplotparam
+            photoionizationplotparam = colorvar, False, 1.5, 's', 'D', \
+                                       [uves.linenameUVES2NEOGAL(lineset[0]),uves.linenameUVES2NEOGAL(lineset[1]),
+                                        uves.linenameUVES2NEOGAL(lineset[2]),uves.linenameUVES2NEOGAL(lineset[3])], \
+                                       [None,None,None,None], True
 
+        plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+                                                 Nsigma=Nsigma,overwrite=overwrite,verbose=verbose,
+                                                 photoionizationplotparam=photoionizationplotparam)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,
+                                             photoionizationplotparam=None,
                                              overwrite=False,Nsigma=3.0,verbose=True):
     """
     Wrapper to define input data and excecute plot command
@@ -6317,7 +6559,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
 
     else:
         plotname = plotbasename+'_lineratios_'+line1+line2+'vs'+line3+line4+'_Nsigma'+str(Nsigma).replace('.','p')+'.pdf'
-        goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) )[0]
+        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
+            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) )[0]
+        else:
+            goodent  = []
 
         if len(goodent) == 0:
             if verbose: print('\n - WARNING No good values found for the plot \n           '+plotname.split('/')[-1]+'\n')
@@ -6368,10 +6613,35 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
-                                                   colortype='s2n',colorcode=True,cdatvec=cdatvec[goodent],
-                                                   point_text=None,
+                                                   colortype='s2nciii',colorcode=True,cdatvec=cdatvec[goodent],
+                                                   point_text=None,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linenameUVES2NEOGAL(uvesname):
+    """
+    Translateror between the UVES names of emission lines and the NEOGAL emission line names
+
+    """
+    translatedic = {}
+    # - - - - - - - UVES -> NEOGAL - - - - - - -
+    translatedic['NV']        = 'NV1240'
+    translatedic['CIV1']      = 'CIV1549'
+    translatedic['CIV']       = 'CIV1550'# Not a NEOGAL column but calculated in uves.add_photoionization_models_to_lineratioplot()
+    translatedic['CIV2']      = 'CIV1551'
+    translatedic['CIII']      = 'CIII1908'
+    translatedic['CIII1']     = 'CIII1907'
+    translatedic['CIII2']     = 'CIII1910'
+    translatedic['HeII']      = 'HeII1640'
+    translatedic['OIII1']     = 'OIII1661'
+    translatedic['OIII']      = 'OIII1663'
+    translatedic['OIII2']     = 'OIII1666'
+    translatedic['SiIII1']    = 'SiIII1883'
+    translatedic['SiIII']     = 'SiIII1888'
+    translatedic['SiIII2']    = 'SiIII1892'# Not a NEOGAL column but calculated in uves.add_photoionization_models_to_lineratioplot()
+
+    return translatedic[uvesname]
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,100.0], zspecrange=[0.0,10.0],
