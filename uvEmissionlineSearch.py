@@ -6549,7 +6549,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
 
     if (line3 is None) & (line4 is None):
         plotname = plotbasename+'_linefluxes_'+line1+'vs'+line2+'_Nsigma'+str(Nsigma).replace('.','p')+'.pdf'
-        goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) )[0]
+        if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names):
+            goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) )[0]
+        else:
+            goodent  = []
 
         if len(goodent) == 0:
             if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
