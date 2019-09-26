@@ -4813,10 +4813,10 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
 
         #--------- X and Y limits ---------
-        y_uplimarr = (yerr == +99)
-        y_lolimarr = (yerr == -99)
-        x_uplimarr = (xerr == +99)
-        x_lolimarr = (xerr == -99)
+        y_uplimarr = (np.asarray(yerr) == +99)
+        y_lolimarr = (np.asarray(yerr) == -99)
+        x_uplimarr = (np.asarray(xerr) == +99)
+        x_lolimarr = (np.asarray(xerr) == -99)
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
             # checking for upper/lower limits
             markersym   = 'o'
