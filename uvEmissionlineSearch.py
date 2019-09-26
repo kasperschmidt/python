@@ -6431,8 +6431,9 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
     return fluxratiodat
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII',
-                                     Nsigma=3.0, colorvar_pi='logUs', overwrite=False, verbose=True):
+def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII', point_text=None,
+                                     Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5,
+                                     overwrite=False, verbose=True):
     """
     Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
 
@@ -6461,6 +6462,9 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         cdattype = colorvar_obj.lower()
     else:
         cdattype = None
+
+    if point_text is not None:
+        point_text = fluxratiodat['id'].astype(str)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxes_range       = [10,1e4]
@@ -6496,7 +6500,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     histaxes  = True
     for lineset in linesetlist_fluxes:
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                                 Nsigma=Nsigma,overwrite=overwrite,verbose=verbose)
+                                                 Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                                 overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ratios_range = [1e-4,1e3]
@@ -6534,13 +6539,14 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                                        [None,None,None,None], True
 
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                                 Nsigma=Nsigma,overwrite=overwrite,verbose=verbose,
+                                                 Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                                 overwrite=overwrite,verbose=verbose,
                                                  photoionizationplotparam=photoionizationplotparam)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                             photoionizationplotparam=None,
-                                             overwrite=False,Nsigma=3.0,verbose=True):
+                                             photoionizationplotparam=None,point_text=None,
+                                             overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True):
     """
     Wrapper to define input data and excecute plot command
 
@@ -6548,9 +6554,13 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
     line1,line2,line3,line4,xrange,yrange,title = lineset
 
     if (line3 is None) & (line4 is None):
-        plotname = plotbasename+'_linefluxes_'+line1+'vs'+line2+'_Nsigma'+str(Nsigma).replace('.','p')+'.pdf'
+        plotname = plotbasename+'_linefluxes_'+line1+'vs'+line2+\
+                   '_Nsigma'+str(Nsigma).replace('.','p')+\
+                   '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
         if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names):
-            goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) )[0]
+            goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) &
+                                (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) )[0]
         else:
             goodent  = []
 
@@ -6576,9 +6586,17 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                 yerr[ylimits_ent]    = +99 # upper limit
 
     else:
-        plotname = plotbasename+'_lineratios_'+line1+line2+'vs'+line3+line4+'_Nsigma'+str(Nsigma).replace('.','p')+'.pdf'
+        plotname = plotbasename+'_lineratios_'+line1+line2+'vs'+line3+line4+\
+                   '_Nsigma'+str(Nsigma).replace('.','p')+\
+                   '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
+
         if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
-            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) )[0]
+            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                                (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) )[0]
+
         else:
             goodent  = []
 
@@ -6628,11 +6646,14 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                   'sigma for the plot \n           '+plotname.split('/')[-1]+'\n')
                 return
 
+    if point_text is not None:
+        point_text = point_text[goodent]
+
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
                                                    colortype=cdattype,colorcode=True,cdatvec=cdatvec[goodent],
-                                                   point_text=None,photoionizationplotparam=photoionizationplotparam,
+                                                   point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
