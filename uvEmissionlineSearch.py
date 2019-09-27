@@ -5167,7 +5167,7 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
                                     subtract_spec_median=True,
                                     lines2find=['CIII','CIV','HeII','NV','OIII','SiIII','MgII'],
                                     CCwavewindow=10.0,plot_allCCresults=False,
-                                    verbose_FELIS=False,verbose=True):
+                                    overwrite=False,verbose_FELIS=False,verbose=True):
     """
     Wrapper around felis.match_templates2specs() to match FELIS templates to a sample of TDOSE spectra.
 
@@ -5180,6 +5180,7 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
     lines2find             List of lines to look for; determines what templates to match to each spectrum.
     CCwavewindow           Rest-frame width (central wavelengths +/- CCwavewindow) to match templates in.
     plot_allCCresults      Plot all template matches; timeconsuming so default is False. Can always be done afterwards.
+    overwrite              Overwrite the output pickle file if it already exists?
     verbose_FELIS          Set to true to get vebosity of FELIS matching
     verbose                Set to true to get vebpsity of progress of the matching by the wrapper.
 
@@ -5233,6 +5234,7 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
                                                              vshift=None,min_template_level=1e-4,
                                                              plot_allCCresults=plot_allCCresults,
                                                              subtract_spec_median=subtract_spec_median,
+                                                             overwrite=overwrite,
                                                              verbose=verbose_FELIS)
             else:
                 pass
