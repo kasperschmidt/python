@@ -5392,8 +5392,8 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N_rf',
-                                       histaxes=True,Nbins=50,S2Ncut=[0.0,1000.0],
+def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N_rf',obj2show='all',
+                                       histaxes=True,Nbins=50,S2Ncut=[0.0,1000.0],point_text=None,
                                        overwrite=False,verbose=True):
     """
     plotting and evaluating the output from uves.gen_tdosespecFELISresults_summary()
@@ -5401,6 +5401,8 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     --- INPUT ---
     summaryfile        Path and name to summary file to evaluate
     plotbasename       The based name for the plots to generate (incl. output directory)
+    colortype          The type of color bar to show
+    obj2show           To only show a sumbsample of objects from the summary file provide the ids here.
     overwrite          Overwrite the plots if they already exist?
     verbose            Toggle verbosity
 
@@ -5418,9 +5420,24 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     summarydat  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     Nspecin     = len(summarydat['spectrum'])
 
+    if obj2show is not 'all':
+        showent = np.array([])
+        for objid in obj2show:
+            objent = np.where( summarydat['id'].astype(int) == objid)[0]
+            if len(objent) > 0:
+                showent = np.append(showent,objent)
+    else:
+        showent = np.arange(len(summarydat))
+
     if verbose: print(' - Plotting FELIS matches in summary file\n   '+summaryfile+'\n   where the following holds:')
     if verbose: print('    S/N(FELIS)          = ['+str(S2Ncut[0])+','+str(S2Ncut[1])+']    (both ends included)')
-    selection   = np.where( (summarydat['FELIS_S2Nmax'] >= S2Ncut[0]) & (summarydat['FELIS_S2Nmax'] <= S2Ncut[1]) )[0]
+    selectionAll  = np.where( (summarydat['FELIS_S2Nmax'] >= S2Ncut[0]) & (summarydat['FELIS_S2Nmax'] <= S2Ncut[1]) )[0]
+
+    selection     = []
+    for selent in selectionAll:
+        if selent in showent:
+            selection.append(selent)
+
     Nselspec    = len(selection)
     if Nselspec > 0:
         selecteddat = summarydat[selection]
@@ -5428,11 +5445,6 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     else:
         if verbose: print(' WARNING No FELIS matches found in summary file satisfying cuts; returning...')
         return
-
-    specnumber   = np.arange(len(selecteddat))+1.0
-    line         = summaryfile.split('template')[-1].split('_')[0].lower()
-    sigmaerrval  = {'ciii':0.1, 'civ':0.1, 'siiii':0.1, 'nv':0.1, 'mgii':0.1, 'oiii':0.1, 'heii':0.1, 'lya':0.3, 'all':0.1}
-    fratioerrval = {'ciii':0.1, 'civ':0.2, 'siiii':0.1, 'nv':0.2, 'mgii':0.2, 'oiii':0.1, 'all':0.2}
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'onetoone_z_lineVSfelis'
@@ -5447,7 +5459,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'],
-                                                   linetype='onetoone',
+                                                   linetype='onetoone',point_text=point_text,
                                                    xlog=False,ylog=False,xrange=[1,6.5],yrange=[1,6.5],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
@@ -5464,7 +5476,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='sigma',cdatvec=selecteddat['sigma_temp_ang_rf'],
-                                                   linetype='onetoone',
+                                                   linetype='onetoone',point_text=point_text,
                                                    xlog=True,ylog=True,xrange=[1.,200],yrange=[1.,200],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
@@ -5482,7 +5494,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'],
-                                                   linetype='onetoone',
+                                                   linetype='onetoone',point_text=point_text,
                                                    xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
@@ -5500,7 +5512,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='sigma',cdatvec=selecteddat['sigma_temp_ang_rf'],
-                                                   linetype='onetoone',
+                                                   linetype='onetoone',point_text=point_text,
                                                    xlog=True,ylog=True,xrange=[10,2e4],yrange=[10,2e4],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
@@ -5521,15 +5533,15 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'],
-                                                   linetype='onetoone',
+                                                   linetype='onetoone',point_text=point_text,
                                                    xlog=False,ylog=True,xrange=[0.0,2.7],yrange=[10.0,2e4],
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'horizontal_zVSvshift'
     plotname = plotbasename+nameext+'.pdf'
-    xvalues  = summarydat['z_spec']
-    yvalues  = summarydat['vshift_CCmatch']
+    xvalues  = selecteddat['z_spec']
+    yvalues  = selecteddat['vshift_CCmatch']
     xerr     = [None]*len(xvalues)
     yerr     = [None]*len(yvalues)
 
@@ -5539,14 +5551,14 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
-                                                   linetype='horizontal',
+                                                   linetype='horizontal',point_text=point_text,
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     nameext  = 'onetoone_vshift_literatureVSfelis'
     plotname = plotbasename+nameext+'.pdf'
-    xvalues  = summarydat['vshift_spec']
-    yvalues  = summarydat['vshift_CCmatch']
+    xvalues  = selecteddat['vshift_spec']
+    yvalues  = selecteddat['vshift_CCmatch']
     xerr     = [None]*len(xvalues)
     yerr     = [None]*len(yvalues)
 
@@ -5556,7 +5568,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                                    histaxes=histaxes,Nbins=Nbins,
                                                    colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'],
-                                                   linetype='horizontal',
+                                                   linetype='horizontal',point_text=point_text,
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
     #-------------------------------------------------------------------------------------------------------------------
@@ -5568,8 +5580,8 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
         plotname = plotbasename+nameext+'.pdf'
         xvalues  = selecteddat['Fratio_temp'][goodFratio]
         xerr     = [None]*len(xvalues)
-        yvalues  = selecteddat['Ftot_FELIS_S2Nmax']
-        yerr     = selecteddat['Ftot_FELIS_S2Nmax_err']
+        yvalues  = selecteddat['Ftot_FELIS_S2Nmax'][goodFratio]
+        yerr     = selecteddat['Ftot_FELIS_S2Nmax_err'][goodFratio]
 
         xlabel   = 'FR(FELIS)'
         ylabel   = 'F(FELIS) [1e-20erg/s/cm$^2$]'
@@ -5577,7 +5589,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,selecteddat,
                                                        histaxes=histaxes,Nbins=Nbins,
                                                        colortype='s2nfelis',cdatvec=selecteddat['FELIS_S2Nmax'][goodFratio],
-                                                       linetype='onetoone',
+                                                       linetype='onetoone',point_text=point_text,
                                                        xlog=False,ylog=True,xrange=[0.0,3.3],yrange=[10.0,2e4],
                                                        colorcode=True,overwrite=overwrite,verbose=verbose)
 
@@ -6442,7 +6454,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII', point_text=None,
-                                     Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5,
+                                     Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5, obj2show='all',
                                      overwrite=False, verbose=True):
     """
     Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
@@ -6455,7 +6467,25 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     """
     if verbose: print(' - Loading flux ratio data to plot ')
-    fluxratiodat = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+
+    if obj2show is not 'all':
+        showent = np.array([])
+        for objid in obj2show:
+            objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
+            if len(objent) > 0:
+                showent = np.append(showent,objent)
+    else:
+        showent = np.arange(len(fluxratiodatALL))
+
+    Nselspec    = len(showent)
+    if Nselspec > 0:
+        fluxratiodat = fluxratiodatALL[showent.astype(int)]
+        if verbose: print(' - '+str(Nselspec)+'/'+str(len(fluxratiodatALL))+' spectra in flux ratio summary satisfies the cuts\n')
+    else:
+        if verbose: print(' WARNING No flux ratio matches found in summary file satisfying cuts; returning...')
+        return
+
     infofiledat  = afits.open(infofile)[1].data
 
     if colorvar_obj in fluxratiodat.dtype.names:
