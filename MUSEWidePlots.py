@@ -977,7 +977,7 @@ def plot_comp_hist(ax,xlabel,hist1,hist2,colors,fontsize,lthick,bins):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshift, voffset=0,
                         outputfigure='default', plotSN=False, skyspectra=None, wavecols_sky=None, fluxcols_sky=None,
-                        yrangefull=None, xrangefull=[4500,18000], speccols=None, verbose=True):
+                        yrangefull=None, xrangefull=[4500,18000], speccols=None, linenames=None, verbose=True):
     """
 
     Plotting overview with zoom-ins of 1D spectrum.
@@ -1005,6 +1005,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     fluxcols_sky  Columns containing flux in sky spectra
 
     yrangefull    To fix the y-range for the overview panel including all spectra set it with this keyword
+    linenames     List of (9) line names to generate zoom-ins around. If None hardcoded setups will be used
     verbose       Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -1038,14 +1039,14 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     if plotSN:
         specfigure = specfigure.replace('.pdf','_SN.pdf')
-    if verbose: print ' - 1D overview figure will be saved to:\n   '+specfigure
+    if verbose: print(' - 1D overview figure will be saved to:\n   '+specfigure)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     redshiftplot = redshift + (voffset*(redshift+1.0) / 299792.458)
-    if verbose: print ' - Will plot emission line markers at redshift '+str("%.6f" % redshift)+\
-                      ' (z~'+str("%.6f" % redshiftplot)+' incl. (Lya) velocity offset = '+str(voffset)+'km/s)'
+    if verbose: print(' - Will plot emission line markers at redshift '+str("%.6f" % redshift)+\
+                      ' (z~'+str("%.6f" % redshiftplot)+' incl. (Lya) velocity offset = '+str(voffset)+'km/s)')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Nspec = len(spectra)
-    if verbose: print ' - Loading the '+str(Nspec)+' spectra provided for plotting'
+    if verbose: print(' - Loading the '+str(Nspec)+' spectra provided for plotting')
 
     datadic = collections.OrderedDict()
 
@@ -1078,11 +1079,11 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
                              'spec_flux_sky':spec_flux_sky}
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Defining quanteties to plot; checking wavelength coverage of lines given redshift'
+    if verbose: print(' - Defining quanteties to plot; checking wavelength coverage of lines given redshift')
     llistdic      = MiGs.linelistdic(listversion='full') # loading line list for plots
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Plotting figure '
+    if verbose: print(' - Plotting figure ')
     figuresize_x = 13
     figuresize_y = 10
     fig          = plt.figure(figsize=(figuresize_x,figuresize_y))
@@ -1119,12 +1120,13 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     xrangedic    = {}
     yrangedic    = {}
 
-    if redshift > 2.5:
-        linenames    = ['Lyb','Lya','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
-    elif (redshift > 1.5) & (redshift <= 2.5):
-        linenames    = ['CIV','HeII','CIII','MgII','OII','NeIII','Hg','Hb','OIII']
-    else:
-        linenames    = ['MgII','OII','NeIII','Hg','Hb','OIII','HeI','Ha','SII']
+    if linenames is None:
+        if redshift > 2.5:
+            linenames    = ['Lyb','Lya','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
+        elif (redshift > 1.5) & (redshift <= 2.5):
+            linenames    = ['CIV','HeII','CIII','MgII','OII','NeIII','Hg','Hb','OIII']
+        else:
+            linenames    = ['MgII','OII','NeIII','Hg','Hb','OIII','HeI','Ha','SII']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for ll, linename in enumerate(linenames):
@@ -1191,7 +1193,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     plt.savefig(specfigure, dpi=300) # dpi = dot per inch for rasterized points
     plt.clf()
     plt.close('all')
-    if verbose: print ' - Saved figure to ',specfigure
+    if verbose: print(' - Saved figure to ',specfigure)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_checkcoverage(spectra,datadic,checkwave):
@@ -1218,14 +1220,16 @@ def plot_1DspecOverview_subplotinfo():
     #                             linewave    wavecenter,    wavewidth,    latexname
     subplotinfodic['Lyg']     =  [ 973.0,      973.0,        20.0,         'Ly$\gamma$']
     subplotinfodic['Lyb']     =  [1026.0,     1030.0,        20.0,         'Ly$\\beta$ + OVI doublet']
-    subplotinfodic['Lya']     =  [1216.0,     1229.0,        28.0,         'Ly$\\alpha$ + NV doublet']
+    subplotinfodic['Lya']     =  [1216.0,     1229.0,        30.0,         'Ly$\\alpha$ + NV doublet']
     subplotinfodic['CII']     =  [1335.0,     1335.0,        10.0,         'CII$\\lambda$1336']
     subplotinfodic['SiIVOIV'] =  [1400.0,     1400.0,        13.0,         'SiIV and OIV] doublets']
     subplotinfodic['CIV']     =  [1549.0,     1549.0,        10.0,         'CIV doublet']
-    subplotinfodic['HeII']    =  [1640.0,     1653.0,        26.0,         'HeII and OIII] doublet']
+    subplotinfodic['HeII']    =  [1640.0,     1640.0,        10.0,         'HeII']
+    subplotinfodic['OIII1663']=  [1663.0,     1663.0,        10.0,         'OIII] doublet']
+    subplotinfodic['SiIII']   =  [1888.0,     1886.0,        10.0,         'SiIII doublet']
     subplotinfodic['CIII']    =  [1909.0,     1908.0,        10.0,         'CIII] doublet']
     subplotinfodic['CIIb']    =  [2326.0,     2326.0,        26.0,         'CIIb']
-    subplotinfodic['MgII']    =  [2795.0,     2795.0,        10.0,         'MgII doublet']
+    subplotinfodic['MgII']    =  [2795.0,     2798.0,        10.0,         'MgII doublet']
     subplotinfodic['OII']     =  [3727.0,     3727.5,        10.0,         '[OII] doublet']
     subplotinfodic['NeIII']   =  [3869.0,     3869.0,        30.0,         '[NeIII]$\\lambda$3869']
     subplotinfodic['Hd']      =  [4101.0,     4101.0,        10.0,         'H\delta']
@@ -1301,8 +1305,8 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
                      alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
 
             try:
-                fluxmin = np.min(np.asarray([0,  np.min(datadic[specname]['spec_S2N'][waveent]) ]))
-                fluxmax = np.max(np.asarray([10, np.max(datadic[specname]['spec_S2N'][waveent]) ]))
+                fluxmin = np.min(np.asarray([0,  np.min(np.isfinite(datadic[specname]['spec_S2N'][waveent])) ]))
+                fluxmax = np.max(np.asarray([10, np.max(np.isfinite(datadic[specname]['spec_S2N'][waveent])) ]))
                 yrange  = [fluxmin,1.1*fluxmax]
             except:
                 yrange = [0,10]
@@ -1398,7 +1402,10 @@ def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,c
                 range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
                 lineymin = yrange[0]
                 lineymax = yrange[1]
-                plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.5,color=col_linemarker,zorder=10)
+                try:
+                    plt.fill_between(range,np.zeros(2)+lineymin,np.zeros(2)+lineymax,alpha=0.5,color=col_linemarker,zorder=10)
+                except:
+                    pdb.set_trace()
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 
