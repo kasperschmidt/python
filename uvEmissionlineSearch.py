@@ -6619,11 +6619,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                     xerr[xent] = 0      # no constraint
                 elif (xent in xlimits_ent_num) & (xent not in xlimits_ent_den):
                     xvalues[xent] = xerr[xent] * Nsigma
-                    xerr[xent]    = -99 # lower limit
+                    xerr[xent]    = +99 # upper limit
                 elif (xent not in xlimits_ent_num) & (xent in xlimits_ent_den):
                     xvalues[xent] = xerr[xent] * Nsigma
-                    xerr[xent]    = +99 # upper limit
-
+                    xerr[xent]    = -99 # lower limit
             ylimits_ent_num  = np.where(fluxratiodat['s2n_'+line3][goodent] < Nsigma)[0]
             ylimits_ent_den  = np.where(fluxratiodat['s2n_'+line4][goodent] < Nsigma)[0]
             for yent, yval in enumerate(yvalues):
@@ -6632,10 +6631,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                     yerr[yent]      = 0      # no constraint
                 elif (yent in ylimits_ent_num) & (yent not in ylimits_ent_den):
                     yvalues[yent] = yerr[yent] * Nsigma
-                    yerr[yent]    = -99 # lower limit
+                    yerr[yent]    = +99 # upper limit
                 elif (yent not in ylimits_ent_num) & (yent in ylimits_ent_den):
                     yvalues[yent] = yerr[yent] * Nsigma
-                    yerr[yent]    = +99 # upper limit
+                    yerr[yent]    = -99 # lower limit
 
             if (xerr == 0).all():
                 if verbose: print('\n - WARNING all values for '+line1+' and '+line2+' were below '+str(Nsigma)+
