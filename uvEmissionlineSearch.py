@@ -5614,19 +5614,27 @@ def calc_1Dspec_S2N(wavelengths,fluxes,variances,waverange,verbose=True):
 
     """
     if verbose: print(' - Estimating S/N of 1D spectral range '+str(waverange))
-    goodent = np.where((wavelengths >= waverange[0]) & (wavelengths <= waverange[1]))
-    if len(goodent) == 0.0:
-        if verbose: print(' - No pixels in wavelength range '+str(waverange)+'; returning 0s')
+    goodent = np.where((wavelengths >= waverange[0]) & (wavelengths <= waverange[1]) & np.isfinite(fluxes) & (variances != 0))
+
+    if len(goodent[0]) == 0.0:
+        if verbose: print(' - No good (finite) pixels in wavelength range '+str(waverange))
         Ftot, vartot, Npix, S2N = 0.0, 0.0, 0.0, 0.0
     else:
         Npix   = len(goodent[0])
-        datarr = unumpy.uarray(fluxes[goodent], np.sqrt(variances[goodent]))
-        Ftot   = np.trapz(datarr,wavelengths[goodent])
-        S2N    = Ftot.nominal_value/Ftot.std_dev
-        if verbose: print(' - Returning values  Ftot(trapz), vartot, Npix, S/N = '+
-                          str(Ftot.nominal_value)+', '+str(Ftot.std_dev**2)+', '+str(Npix)+', '+str(S2N)+'')
+        if Npix == 1:
+            dwave  = np.median(np.diff(wavelengths))
+            Ftot   = fluxes[goodent] * dwave
+            vartot = variances[goodent] * dwave**2
+            S2N    = Ftot/np.sqrt(vartot)
+        else:
+            datarr = unumpy.uarray(fluxes[goodent], np.sqrt(variances[goodent]))
+            Ftot   = np.trapz(datarr,wavelengths[goodent])
+            S2N    = Ftot.nominal_value/Ftot.std_dev
+            Ftot, vartot = Ftot.nominal_value, Ftot.std_dev**2
 
-    return Ftot.nominal_value, Ftot.std_dev**2, Npix, S2N
+    if verbose: print(' - Returning values  Ftot(trapz), vartot, Npix, S/N = '+
+                      str(Ftot)+', '+str(vartot)+', '+str(Npix)+', '+str(S2N)+'')
+    return Ftot, vartot, Npix, S2N
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def match_MUSEWideLAEs(templatedir,zrange=[1.516,3.874],datestr='dateofrun',line='CIII',
