@@ -6608,10 +6608,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         else:
             xvalues  = fluxratiodat['f_'+line1][goodent]
             xerr     = fluxratiodat['ferr_'+line1][goodent]*Nsigma
-            xlabel   = line1
+            xlabel   = line1+' [1e-20erg/s/cm$^2$]'
             yvalues  = fluxratiodat['f_'+line2][goodent]
             yerr     = fluxratiodat['ferr_'+line2][goodent]*Nsigma
-            ylabel   = line2
+            ylabel   = line2+' [1e-20erg/s/cm$^2$]'
 
             xlimits_ent  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
             if len(xlimits_ent) > 0:
@@ -7897,14 +7897,14 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
     else:
         objidlist = objectids
 
-    if verbose: print(' - Loading the data of the '+str(len(summaryfiles))+' summary files into memory')
+    if verbose: print('# - Loading the data of the '+str(len(summaryfiles))+' summary files into memory')
     summarfiledat_dic = {}
     for summaryfile in summaryfiles:
         fmt                             = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
         summarfiledat_dic[summaryfile]  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Looping over the '+str(len(objidlist))+
+    if verbose: print('# - Looping over the '+str(len(objidlist))+
                       ' object IDs to look for FELIS matches with S/N(FELIS) > '+str(S2Nmin)+
                       ' and vshift < '+str(vshiftmax)+' km/s ')
     matchcount = 0
@@ -7966,7 +7966,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
                     outstr = outstr+' '+mline+'_spec'+str(int(pfilenumber[ii]))+\
                              ' '+str(matchS2N[ii])+'  '+str(vshift[ii])
             if skipplotting:
-                print(str(objid)+' '+str(zobj)+' '+outstr)
+                print(str(objid)+' '+str("%12.6f" % zobj)+'   # '+outstr)
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if plot_overview & (NlinesMatchCuts  > 0) & (not skipplotting):
             uspec      = np.unique(spectra)
@@ -8042,7 +8042,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose:
-        print(' - Done; so that was '+str(matchcount)+' objects with at least one line matching the cuts: ')
-        print('   S2N(FELIS) > '+str(S2Nmin))
-        print('   vshift     < '+str(vshiftmax)+' km/s ')
+        print('# - Done; so that was '+str(matchcount)+' objects with at least one line matching the cuts: ')
+        print('#   S2N(FELIS) > '+str(S2Nmin))
+        print('#   vshift     < '+str(vshiftmax)+' km/s ')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
