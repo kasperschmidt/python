@@ -1674,14 +1674,12 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
             if verbose: print(' - Looping over spectra for line = '+keys[ll])
             for ss, spec in enumerate(spectra):
                 id       = spec.split('/')[-1].split('.fit')[0][-9:]
+                objent   = np.where(sourcecat['id'] == int(id))[0]
                 specdat  = afits.open(spec)[1].data
                 spec_lam = specdat['wave']
                 spec_f   = specdat['flux']
                 spec_err = specdat['fluxerror']
                 spec_s2n = specdat['s2n']
-
-                objid    = int(spec.split('_')[-1].split('-')[-1].split('.fit')[0])
-                objent   = np.where(sourcecat['id'] == objid)[0]
 
                 if use_sys:
                     try:
@@ -1710,7 +1708,6 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
                 SNval_Dlam_sum.append(lineinfo[10])
 
                 # - - - - -  Estimate EW  - - - - -
-                objent        = np.where(sourcecat['id'] == int(id))[0]
                 beta          = sourcecat['beta'][objent][0]
                 try:
                     bandswithLya  = uves.wavelength_in_bands( 1216 * (sourcecat['z_sys_AV17'][objent][0] + 1))
@@ -1757,22 +1754,22 @@ def estimate_limits(spectra,sourcecatalog,lines=['lya','civ','ciii'],deltalam=10
     if printresults:
         for ss, spec in enumerate(spectra):
             id = spec.split('/')[-1].split('.fit')[0][-9:]
-            print ' - - - - - - Object '+id+' (Dlam = lambda +/-'+str(outputdic['deltalam'])+'A)- - - - - -  '
+            print(' - - - - - - Object '+id+' (Dlam = lambda +/-'+str(outputdic['deltalam'])+'A)- - - - - -  ')
             for key in outputdic.keys():
                 if key is not 'deltalam':
-                    print ' - '+key+' flux           = '+str('%.4f' % outputdic[key][1][ss])+' +/- '+\
-                          str('%.4f' % outputdic[key][2][ss])
-                    print ' - '+key+' S/N            = '+str('%.4f' % outputdic[key][3][ss])
-                    print ' - '+key+' flux_Dlam      = '+str('%.4f' % outputdic[key][4][ss])+' +/- '+\
-                          str('%.4f' % outputdic[key][5][ss])
-                    print ' - '+key+' S/N_Dlam       = '+str('%.4f' % outputdic[key][7][ss])
-                    print ' - '+key+' flux_Dlam_max  = '+str('%.4f' % outputdic[key][8][ss])
-                    print ' - '+key+' S/N_Dlam_max   = '+str('%.4f' % outputdic[key][9][ss])
-                    print ' - '+key+' flux_Dlam_sum  = '+str('%.4f' % outputdic[key][10][ss])
-                    print ' - '+key+' S/N_Dlam_sum   = '+str('%.4f' % outputdic[key][11][ss])
-                    print ' - '+key+' EW             = '+str('%.4f' % outputdic[key][12][ss])
-                    print ' - '+key+' EW_Dlam        = '+str('%.4f' % outputdic[key][13][ss])
-                    print ' - '+key+' EW_Dlam_sum    = '+str('%.4f' % outputdic[key][14][ss])
+                    print(' - '+key+' flux           = '+str('%.4f' % outputdic[key][1][ss])+' +/- '+\
+                          str('%.4f' % outputdic[key][2][ss]))
+                    print(' - '+key+' S/N            = '+str('%.4f' % outputdic[key][3][ss]))
+                    print(' - '+key+' flux_Dlam      = '+str('%.4f' % outputdic[key][4][ss])+' +/- '+\
+                          str('%.4f' % outputdic[key][5][ss]))
+                    print(' - '+key+' S/N_Dlam       = '+str('%.4f' % outputdic[key][7][ss]))
+                    print(' - '+key+' flux_Dlam_max  = '+str('%.4f' % outputdic[key][8][ss]))
+                    print(' - '+key+' S/N_Dlam_max   = '+str('%.4f' % outputdic[key][9][ss]))
+                    print(' - '+key+' flux_Dlam_sum  = '+str('%.4f' % outputdic[key][10][ss]))
+                    print(' - '+key+' S/N_Dlam_sum   = '+str('%.4f' % outputdic[key][11][ss]))
+                    print(' - '+key+' EW             = '+str('%.4f' % outputdic[key][12][ss]))
+                    print(' - '+key+' EW_Dlam        = '+str('%.4f' % outputdic[key][13][ss]))
+                    print(' - '+key+' EW_Dlam_sum    = '+str('%.4f' % outputdic[key][14][ss]))
 
     return outputdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2280,15 +2277,16 @@ def lineinfofromspec(wavelength,spec_lam,spec_flux,spec_fluxerr,spec_s2n,deltala
         fluxerr       = spec_fluxerr[ent]
         SNval         = spec_s2n[ent]
 
-        fluxval_Dlam  = np.mean(spec_flux[ent_dlam])
+        fluxval_Dlam  = np.median(spec_flux[ent_dlam])
         fluxstd_Dlam  = np.std(spec_fluxerr[ent_dlam])
-        fluxerr_Dlam  = np.mean(spec_fluxerr[ent_dlam])
-        SNval_Dlam    = np.mean(spec_s2n[ent_dlam])
+        fluxerr_Dlam  = np.median(spec_fluxerr[ent_dlam])
+        SNval_Dlam    = np.median(spec_s2n[ent_dlam])
 
         fluxval_Dlam_max  = np.max(spec_flux[ent_dlam])
         SNval_Dlam_max    = np.max(spec_s2n[ent_dlam])
 
-        fluxval_Dlam_sum  = np.sum(spec_flux[ent_dlam])
+        deltawave         = np.median(np.diff(spec_lam[ent_dlam]))
+        fluxval_Dlam_sum  = np.sum(spec_flux[ent_dlam]) * deltawave
         SNval_Dlam_sum    = fluxval_Dlam_sum/fluxerr_Dlam
 
     else:
