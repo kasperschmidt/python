@@ -7863,8 +7863,9 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
                                                    colorcode=True,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,plot_overview=False,
-                      overwrite=False,verbose=True,verboseplots=False):
+def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshiftmax=1e4,
+                      plot_overview=False,skipplotting=False,
+                      verbose=True,verboseplots=False):
     """
     Wrapper to search for objects with line detections and then plot
     the corresponding FELIS template overview.
@@ -7875,8 +7876,8 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,plot
     summaryfiles       The summaryfile generate with uves.gen_tdosespecFELISresults_summary()
     outputdir          Directory to store plots in
     S2Nmin             Minimum FELIS S2N of line match to plot results for
+    vshiftmax          Maximum velocity shift of line match to plot results for
     plot_overview      Plot the overview of the spectrum with zoom-in on lines using mwp.
-    overwrite          Overwrite the plots if they already exist?
     verbose            Toggle verbosity
     verboseplots       Toggle verbosity of plotting functions
 
@@ -7887,7 +7888,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,plot
     objectids   = '7201*'
     summaryfile = glob.glob(parentdir+'CCresults_summary/CCresults_summary_template*_FELISmatch2udf10_190913.txt')
     outputdir   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/FELISmatches_plots/'
-    uves.plot_FELISmatches(objectids,parentdir,summaryfile,outputdir,S2Nmin=3.0,overwrite=True,plot_overview=True)
+    uves.plot_FELISmatches(objectids,parentdir,summaryfile,outputdir,S2Nmin=3.0,plot_overview=True)
 
     """
 
@@ -7904,18 +7905,23 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,plot
         fmt                             = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
         summarfiledat_dic[summaryfile]  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Looping over the '+str(len(objidlist))+
-                      ' object IDs to look for FELIS matches with S/N(FELIS) > '+str(S2Nmin))
+                      ' object IDs to look for FELIS matches with S/N(FELIS) > '+str(S2Nmin)+
+                      ' and vshift < '+str(vshiftmax)+' km/s ')
+    matchcount = 0
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for oo, objid in enumerate(objidlist):
-        if verbose: print('---- Checking object  '+str(objid)+' ----')
-        linesAboveS2Nmin = 0 # keeping track of number of lines above threshold
+        if verbose & (not skipplotting): print('---- Checking object  '+str(objid)+' ----')
+        NlinesMatchCuts  = 0 # keeping track of number of lines above threshold
         zobj             = np.array([])
         matchline        = np.array([])
+        pfilenumber      = np.array([])
         spectra          = np.array([])
         templates        = np.array([])
         matchS2N         = np.array([])
         vshift           = np.array([])
-
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         for summaryfile in summaryfiles:
             summarydat       = summarfiledat_dic[summaryfile]
             objsummary_ent   = np.where(summarydat['id'].astype(int) == objid)[0]
@@ -7925,33 +7931,46 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,plot
 
             if len(objsummary_ent) != 0:
                 if len(objsummary_ent) > 1:
-                    if verbose: print('     NOTE: Found '+str(len(objsummary_ent))+
-                                      ' spectra (template matches) in '+linesummarized+' summaryfile ')
+                    if verbose & (not skipplotting):
+                        print('     NOTE: Found '+str(len(objsummary_ent))+
+                              ' spectra (template matches) in '+linesummarized+' summaryfile ')
 
                 picklefiles = glob.glob(pickledir+'*'+str(objid)+'*template'+linesummarized+'*'+outkeystr+'*.pkl')
                 for pp, pfile in enumerate(picklefiles):
+                    pfilenumber      = np.append(pfilenumber,pp+1)
                     spectra          = np.append(spectra,summarydat['spectrum'][objsummary_ent[pp]])
                     templates        = np.append(templates,summarydat['template'][objsummary_ent[pp]])
                     matchline        = np.append(matchline,linesummarized)
                     matchS2N         = np.append(matchS2N,summarydat['FELIS_S2Nmax'][objsummary_ent[pp]])
                     vshift           = np.append(vshift,summarydat['vshift_CCmatch'][objsummary_ent[pp]])
 
-                    if summarydat['FELIS_S2Nmax'][objsummary_ent[pp]] > S2Nmin:
-                        linesAboveS2Nmin = linesAboveS2Nmin + 1
+                    if (summarydat['FELIS_S2Nmax'][objsummary_ent[pp]] > S2Nmin) & \
+                            (np.abs(summarydat['vshift_CCmatch'][objsummary_ent[pp]]) < vshiftmax):
+                        NlinesMatchCuts  = NlinesMatchCuts  + 1
                         for pp, pickle in enumerate(picklefiles):
                             plotname  = pickle.replace('.pkl','_CCwith_maxS2N.pdf')
-                            felis.plot_picklefilecontent([summarydat['spectrum'][objsummary_ent[pp]]],
-                                                         pickle,showspecerr=False,plotnames=[plotname],
-                                                         plotdir=outputdir,verbose=verboseplots)
-
-
+                            if not skipplotting:
+                                felis.plot_picklefilecontent([summarydat['spectrum'][objsummary_ent[pp]]],
+                                                             pickle,showspecerr=False,plotnames=[plotname],
+                                                             plotdir=outputdir,verbose=verboseplots)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         zobj = np.unique(zobj)[0]
-        if verbose: print('     Found '+str(linesAboveS2Nmin)+' lines with S2N(FELIS) > '+str(S2Nmin)+' at z='+str("%.6f" % zobj))
-        if linesAboveS2Nmin > 0:
+        if verbose & (not skipplotting):
+            print('     Found '+str(NlinesMatchCuts )+' lines with S2N(FELIS) > '+str(S2Nmin)+
+                  ' and vshift < '+str(vshiftmax)+' km/s at z='+str("%.6f" % zobj))
+        if NlinesMatchCuts  > 0:
+            matchcount = matchcount + 1
+            outstr = ''
             for ii, mline in enumerate(matchline):
-                if verbose: print('     '+mline+' @ S/N = '+str(matchS2N[ii])+'  (vshift='+str(vshift[ii])+'km/s)')
-
-        if plot_overview & (linesAboveS2Nmin > 0):
+                if verbose & (not skipplotting):
+                    print('     '+mline+' @ S/N = '+str(matchS2N[ii])+'  (vshift='+str(vshift[ii])+'km/s)')
+                if skipplotting:
+                    outstr = outstr+' '+mline+'_spec'+str(int(pfilenumber[ii]))+\
+                             ' '+str(matchS2N[ii])+'  '+str(vshift[ii])
+            if skipplotting:
+                print(str(objid)+' '+str(zobj)+' '+outstr)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if plot_overview & (NlinesMatchCuts  > 0) & (not skipplotting):
             uspec      = np.unique(spectra)
             gaussspec  = []
             aperspec   = []
@@ -8022,5 +8041,10 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,plot
                                     voffset=voffset, skyspectra=skyspectra, wavecols_sky=wavecols_sky,
                                     fluxcols_sky=fluxcols_sky, outputfigure=outputfigure,linenames=linenames,
                                     yrangefull=yrangefull, xrangefull=xrangefull, plotSN=True,verbose=verboseplots)
-
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose:
+        print(' - Done; so that was '+str(matchcount)+' objects with at least one line matching the cuts: ')
+        print('   S2N(FELIS) > '+str(S2Nmin))
+        print('   vshift     < '+str(vshiftmax)+' km/s ')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
