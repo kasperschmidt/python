@@ -6760,7 +6760,9 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overw
     for colname in fluxratiodatALL.dtype.names:
         if colname.startswith('f_'):
             fluxcols.append(colname)
-    Nfluxcol = len(fluxcols)
+    Nfluxcol   = len(fluxcols)
+    outcolumns = '# id  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]) for fc in fluxcols])
+    fout.write(outcolumns+'\n')
 
     EW0array = np.zeros([len(ids),Nfluxcol*3])*np.nan
 
@@ -6823,13 +6825,9 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overw
 
                     EW0array[ii,ff*3+2] = bandskey[cont_band.upper()]
                 # pdb.set_trace()
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Filling the output file... ')
-    outcolumns = '# id  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]) for fc in fluxcols])
-    fout.write(outcolumns+'\n')
-    for ii, id in enumerate(ids):
         outstr = str(int(id))+' '+str("%10.2f" % betavals[ii])+' '+' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])
-        fout.write(outstr.replace('.0000','')+' \n')
+        fout.write(outstr.replace('.0000','     ')+' \n')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fout.close()
     if verbose: print('\n - Wrote the EW0 estimates to \n   '+outputfile)
     fmt = ','.join((2+Nfluxcol*3)*['d'])
