@@ -6725,10 +6725,8 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overw
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
     ids             = fluxratiodatALL['id']
 
-    # ids = ids[:10]       # first 10
-
-    ids             = ids[-186:-175]              # UDF10 obj
-    fluxratiodatALL = fluxratiodatALL[-186:-175]  # UDF10 obj
+    # ids             = ids[-186:-175]              # UDF10 obj
+    # fluxratiodatALL = fluxratiodatALL[-186:-175]  # UDF10 obj
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Initializing output ')
     if outputfile == 'default':
