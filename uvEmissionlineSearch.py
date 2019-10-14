@@ -131,7 +131,6 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     catUDFmain        = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_udf-mosaic_v0.9.fits'
     # IDs in UDF mosaic catalog consist of 4 digits id followed by 4 digits running line number
 
-
     if verbose: print('   '+catE24main)
     datE24main  = afits.open(catE24main)[1].data
     if verbose: print('   Columns: '+str(datE24main.dtype.names)+'\n')
@@ -176,6 +175,11 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
     if verbose: print('   '+catLyaEW)
     datLyaEW  = afits.open(catLyaEW)[1].data
     if verbose: print('   Columns: '+str(datLyaEW.dtype.names)+'\n')
+
+    catLyaJKthesis    = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters190926_EWs_0_clumps_ratio_line_props.fits'
+    if verbose: print('   '+catLyaJKthesis)
+    datLyaJKthesis  = afits.open(catLyaJKthesis)[1].data
+    if verbose: print('   Columns: '+str(datLyaJKthesis.dtype.names)+'\n')
 
     catGuo     = '/Users/kschmidt/work/catalogs/guo/CANDELS.GOODSS.F160W.v1.fits'
     if verbose: print('   '+catGuo)
@@ -1400,6 +1404,8 @@ def wavelength_in_bands(wavelength):
 
     """
     infodic           = {}
+    infodic['F275W']  = [2286,3120]
+    infodic['F336W']  = [3014,3707]
     infodic['F435W']  = [3599,4861]
     infodic['F606W']  = [4634,7180]
     infodic['F775W']  = [6804,8632]
@@ -6507,32 +6513,32 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxes_range       = [10,1e4]
     linesetlist_fluxes = []
-    linesetlist_fluxes.append(['CIII','CIV',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','OIII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','HeII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','MgII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','NV',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','CIV'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
 
-    linesetlist_fluxes.append(['CIV','OIII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','HeII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','MgII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','NV',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','SiIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
 
-    linesetlist_fluxes.append(['OIII','HeII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['OIII','MgII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['OIII','NV',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['OIII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
 
-    linesetlist_fluxes.append(['HeII','MgII',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['HeII','NV',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['HeII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
 
-    linesetlist_fluxes.append(['MgII','NV',None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['MgII','SiIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
 
-    linesetlist_fluxes.append(['NV','SiIII',None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
 
     Nhistbins = 30
     histaxes  = True
@@ -6693,7 +6699,282 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overwrite=False,s2nlimit=3.0,
+                 fcontverbose=False,verbose=True):
+    """
+    Estimate the EWs for the fluxes in a lineratio summary file
 
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    lineratiofile = './all_aperture190926/fluxratios/fluxratios_FELISmatch2uves190926_aperture.txt'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits'
+    EW0data       = uves.estimate_EW0(lineratiofile,infofile,fixbeta=-2.0,overwrite=False)
+
+
+    """
+    if verbose: print(' - Estimating the continuum flux level for each source in \n   '+lineratiofile)
+    EW0dic = collections.OrderedDict()
+    EW0dic['id'] = np.array([])
+
+    if verbose: print(' - Loading flux ratio data and infofile ')
+    infofiledat     = afits.open(infofile)[1].data
+    fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    ids             = fluxratiodatALL['id']
+
+    # ids = ids[:10]       # first 10
+
+    ids             = ids[-186:-175]              # UDF10 obj
+    fluxratiodatALL = fluxratiodatALL[-186:-175]  # UDF10 obj
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Initializing output ')
+    if outputfile == 'default':
+        outputfile = lineratiofile.replace('.txt','_EW0estimates.txt')
+        if outputfile == lineratiofile:
+            sys.exit(' The default output name is the same as the lineratiofile (missing .txt?) whihc is \n '+lineratiofile)
+    if os.path.isfile(outputfile) & (overwrite == False):
+        pdb.set_trace()
+        sys.exit(' Overwrite=False and the expected output '+outputfile+' already exists so exiting')
+    else:
+        fout = open(outputfile,'w')
+        fout.write('# Estimated rest-frame EWs for the objects and fluxes in \n   '+lineratiofile+'\n')
+        fout.write('# Output generated with uves.estimate_EW0() on  '+kbs.DandTstr2()+'\n')
+        if fixbeta:
+            strout = '# Fixing beta = '+str(fixbeta)+'\n'
+            if verbose: print(strout.replace('# ',' - '))
+            fout.write(strout)
+        else:
+            strout = '# Using estimated beta from infofile (if unavailable beta = -2)\n'
+            if verbose: print(strout.replace('# ',' - '))
+            fout.write(strout)
+        fout.write('# EW0 upper(lower) limits are indicated by EW0err = +99(-99) and are '+str(s2nlimit)+'sigma limits. 0s indicate that both line flux and continuum flux were <'+str(s2nlimit)+'sigma \n')
+
+        bandskey = {'F275W':275,'F336W':336,'F435W':435,
+                    'F606W':606,'F775W':775,'F814W':814,'F850LP':850,
+                    'F105W':105,'F125W':125,'F160W':160}
+        fout.write('# The reference continuum band (before extrapolation to line location using beta) is based on the band indicated in the cont_band columns and use the keys: \n# '+str(bandskey)+'\n# \n')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fluxcols = []
+    for colname in fluxratiodatALL.dtype.names:
+        if colname.startswith('f_'):
+            fluxcols.append(colname)
+    Nfluxcol = len(fluxcols)
+
+    EW0array = np.zeros([len(ids),Nfluxcol*3])*np.nan
+
+    if verbose: print(' - Estimating continuum level based on band fluxes and from that EW0 for all lines for object: ')
+    betavals = np.zeros(len(ids))
+    for ii, id in enumerate(ids):
+        if verbose:
+            infostr = '   '+str(int(id))+'   ( '+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(ids))+' ) '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+        obj_infoent = np.where(infofiledat['id'].astype(int) == int(id))[0]
+        redshift    = infofiledat['redshift'][obj_infoent][0]
+        for ff, fluxcol in enumerate(fluxcols):
+            line_name    = fluxcol[2:]
+            line_wave    = uves.linewavesUVES(line_name) * (1.0 + redshift)
+            line_flux    = fluxratiodatALL[fluxcol][ii]
+            line_fluxerr = fluxratiodatALL[fluxcol.replace('f_','ferr_')][ii]
+
+            if np.isfinite(line_flux):
+                if fixbeta:
+                    beta    = fixbeta
+                else:
+                    if infofiledat['beta'][obj_infoent] != 0.0:
+                        beta  = infofiledat['beta'][obj_infoent]
+                    else:
+                        beta  = -2.0
+
+                f_conts      = uves.estimate_fcont(infofiledat,obj_infoent,line_wave,fixbeta=beta, verbose=fcontverbose)
+                betavals[ii] = beta
+                # selecting continuum band to extrapolate from as:
+                # The band with effective wavelength closest to the line that does not contain Lya or
+                # the line itself and is not from WFC3_UVIS
+                bands     = f_conts.keys()
+                goodbands = []
+                for band in bands:
+                    if (band not in ['F275W', 'F336W']) & (f_conts[band] !=  (-99, -99)) & (f_conts[band] !=  (np.nan, np.nan)):
+                        goodbands.append(band)
+
+                if len(goodbands) > 0:
+                    wavediff  = np.asarray([np.abs(uves.band_waveeff(bb) - line_wave) for bb in goodbands])
+                    cont_band = goodbands[np.where(wavediff == np.min(wavediff))[0][0]]
+
+                    f_cont, f_cont_err   = f_conts[cont_band]
+                    f_cont_restframe     = f_cont     * (1.0 + redshift)
+                    f_cont_err_restframe = f_cont_err * (1.0 + redshift)
+
+                    if (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err > s2nlimit):
+                        EW0array[ii,ff*3]   = line_flux / f_cont_restframe
+                        EW0array[ii,ff*3+1] = np.sqrt((line_fluxerr/line_flux)**2 +
+                                                      (f_cont_err_restframe/f_cont_restframe)**2) * EW0array[ii,ff*3]
+                    elif (line_flux/line_fluxerr < s2nlimit) & (f_cont/f_cont_err > s2nlimit): # upper limit
+                        EW0array[ii,ff*3]   = s2nlimit * line_fluxerr / f_cont_restframe
+                        EW0array[ii,ff*3+1] = +99 # indicate that EW0 value is "s2nlimit sigma upper limit"
+                    elif (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err < s2nlimit): # upper limit
+                        EW0array[ii,ff*3]   = line_flux / (s2nlimit * f_cont_err_restframe)
+                        EW0array[ii,ff*3+1] = -99 # indicate that EW0 value is "s2nlimit sigma lower limit"
+                    else:
+                        EW0array[ii,ff*3]   = 0.0
+                        EW0array[ii,ff*3+1] = 0.0
+
+                    EW0array[ii,ff*3+2] = bandskey[cont_band.upper()]
+                # pdb.set_trace()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Filling the output file... ')
+    outcolumns = '# id  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]) for fc in fluxcols])
+    fout.write(outcolumns+'\n')
+    for ii, id in enumerate(ids):
+        outstr = str(int(id))+' '+str("%10.2f" % betavals[ii])+' '+' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])
+        fout.write(outstr.replace('.0000','')+' \n')
+    fout.close()
+    if verbose: print('\n - Wrote the EW0 estimates to \n   '+outputfile)
+    fmt = ','.join((2+Nfluxcol*3)*['d'])
+    EW0dat = np.genfromtxt(outputfile,skip_header=8,dtype=fmt,comments='#',names=True)
+    return EW0dat
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim=0.5,verbose=True):
+    """
+    Estimate the rest-frame continuum flux at a given wavelength for an object in the infofile using the
+    observed broad band magnitudes and the estimate beta estimates.
+
+    """
+    objid         = infofiledat['id'][obj_infoent][0]
+    redshift      = infofiledat['redshift'][obj_infoent][0]
+    if fixbeta:
+        beta      = fixbeta
+    else:
+        beta      = infofiledat['beta'][obj_infoent][0]
+
+    catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    datSkeltonGS  = afits.open(catSkeltonGS)[1].data
+
+    catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+    datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
+
+    catRafelski   = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
+    datRafelski   = afits.open(catRafelski)[1].data
+
+    bands         = ['F275W','F336W','F435W','F606W','F775W','F814W','F880LP','F105W','F125W','F160W']
+
+    try:
+        bandswithLya  = uves.wavelength_in_bands( 1216 * (redshift + 1))
+    except:
+        bandswithLya  = uves.wavelength_in_bands( 1216 * (redshift + 1))
+
+    bandswithline = uves.wavelength_in_bands( wavelength )
+
+    f_cont        = {}
+    for bb, band in enumerate(bands):
+        if verbose: print(' - Getting flux estimate for band '+band)
+        if (band not in bandswithLya) & (band not in bandswithline):
+            # - - - - - first check infofile for flux estimate - - - - -
+            if band in ['F105W','F125W','F160W']:
+                hstinst = 'wfc3'
+            else:
+                hstinst = 'acs'
+
+            try:
+                f_ref     = infofiledat[ 'flux_'+hstinst+'_'+band.lower()[1:] ][obj_infoent][0] * 1e20
+                f_ref_err = infofiledat[ 'flux_err_'+hstinst+'_'+band.lower()[1:] ][obj_infoent][0] * 1e20
+            except:
+                f_ref     = 0.0
+                f_ref_err = 0.0
+
+            # - - - - - if not there try to get flux from photometric catalogs - - - - -
+            if f_ref == 0.0:
+                if verbose: print('   was not in the infofile; trying photmetric catalogs')
+                if str(objid)[0] in ['6', '7']:
+                    phot_id    = infofiledat['id_rafelski'][obj_infoent][0]
+                    phot_match = infofiledat['sep_rafelski'][obj_infoent][0]
+                    phot_ent   = np.where(datRafelski['id'] == phot_id)[0]
+
+                    if phot_match <= photmatchlim:
+                        try:
+                            f_cont_jy     =  datRafelski['FLUX_'+band.upper()][phot_ent] * 1e-6
+                            f_cont_jy_err =  datRafelski['FLUXERR_'+band.upper()][phot_ent] * 1e-6
+
+                            # ------ from http://www.stsci.edu/~strolger/docs/UNITS.txt: ------
+                            # [Y Jy]            = 3.33564095E+04 * [X1 erg/cm^2/s/A] * [X2 A]^2
+                            # [Y erg/cm^2/s/A]  = 2.99792458E-05 * [X1 Jy] / [X2 A]^2
+                            f_ref     = f_cont_jy     * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                            f_ref_err = f_cont_jy_err * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                        except:
+                            f_ref     = 0.0
+                            f_ref_err = 0.0
+                else:
+                    if str(objid)[0] in ['1','3','4']:
+                        datSkel = datSkeltonGS
+                    elif str(objid)[0] in ['2']:
+                        datSkel = datSkeltonCOS
+                    else:
+                        sys.exit(' - No Skelton data for ID = '+str(objid))
+
+                    phot_id    = infofiledat['id_skelton'][obj_infoent][0]
+                    phot_match = infofiledat['sep_skelton'][obj_infoent][0]
+                    phot_ent   = np.where(datSkel['id'] == phot_id)[0][0]
+
+                    if phot_match <= photmatchlim:
+                        try:
+                            # magAB    = -2.5*log10(f_nu/Jy) + 8.90    <- https://en.wikipedia.org/wiki/AB_magnitude
+                            skelflux   = datSkel['f_'+band.lower()][phot_ent]
+                            skelerr    = datSkel['e_'+band.lower()][phot_ent]
+                            magAB      = 25.0-2.5*np.log10(skelflux)
+                            magABerr   = np.abs(-2.5* np.log10(np.e) / skelflux * skelerr)
+
+                            f_cont_jy      = 10**( (magAB-8.90)/-2.5 )
+                            f_cont_jy_err  = np.abs(10**((magAB-8.90)/-2.5) * np.log(10)/-2.5 * magABerr) # deriv. from Schaums 15.28
+                            # ------ from http://www.stsci.edu/~strolger/docs/UNITS.txt: ------
+                            # [Y Jy]            = 3.33564095E+04 * [X1 erg/cm^2/s/A] * [X2 A]^2
+                            # [Y erg/cm^2/s/A]  = 2.99792458E-05 * [X1 Jy] / [X2 A]^2
+                            f_ref     = f_cont_jy     * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                            f_ref_err = f_cont_jy_err * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                        except:
+                            f_ref     = 0.0
+                            f_ref_err = 0.0
+            else:
+                phot_match = 0.0
+                if verbose: print('   found flux estimate in infofile')
+            # - - - - - if still not available set to NaNs - - - - -
+            if f_ref == 0.0:
+                if phot_match > photmatchlim:
+                    if verbose: print('   Photometric match further than '+str(photmatchlim)+' arcsec from object coordinates.')
+                else:
+                    if verbose: print('   Hmm; no value in photmetric catalogs either. Returning NaNs')
+                f_cont[band] = np.nan, np.nan
+            else:
+                if verbose: print('   Using flux value to estimate the continuum strength at lambda='+
+                                  str(wavelength)+' using beta='+str(beta))
+                f_wave       = uves.estimate_continuumlevel_viaBeta(wavelength, uves.band_waveeff(band), f_ref, beta, verbose=False)
+                f_wave_err   = f_ref_err * np.abs((wavelength / uves.band_waveeff(band))**beta)
+                f_cont[band] = f_wave, f_wave_err
+        else:
+            if verbose: print('   Band contains either Lya or the wavelength itself, so returning -99s')
+            f_cont[band] = -99, -99
+    return f_cont
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def band_waveeff(bandname):
+    """
+    Returning the effective wavelength of an HST band
+
+    """
+    #  WFC3-UVIS filters: F225W, F275W, and F336W
+    #  ACS-WFC  optical filters: F435W, F606W, F775W, and F850LP
+    #  WFC3-IR filters: F105W, F125W, F140W, and F160W
+    #
+    # effective wavelengths of ACS-WFC, WFC3-UVIS1 and WFC3-IR from
+    # http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?mode=browse&gname=HST&gname2=ACS_WFC
+    bands_wavecen = {'F275W':2720.9	,'F336W':3359.4,
+                     'F435W':4341.9,'F606W':5810.8,'F775W':7652.5,'F814W':7972.9,'F880LP':9008.7,
+                     'F105W':10431.7,'F125W':12364.6,'F160W':15279.1}
+    return bands_wavecen[bandname.upper()]
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linenameUVES2NEOGAL(uvesname):
     """
@@ -6718,7 +6999,35 @@ def linenameUVES2NEOGAL(uvesname):
     translatedic['SiIII2']    = 'SiIII1892'# Not a NEOGAL column but calculated in uves.add_photoionization_models_to_lineratioplot()
 
     return translatedic[uvesname]
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linewavesUVES(uvesname):
+    """
+    Return line wavelength for a UVES line
 
+    """
+    linewavedic = {}
+    # - - - - - - - UVES -> NEOGAL - - - - - - -
+    linewavedic['nv1']       = 1238.821
+    linewavedic['nv']        = 1240
+    linewavedic['nv2']       = 1242.804
+    linewavedic['civ1']      = 1548.195
+    linewavedic['civ']       = 1550.00
+    linewavedic['civ2']      = 1550.770
+    linewavedic['ciii1']     = 1906.68
+    linewavedic['ciii']      = 1908.00
+    linewavedic['ciii2']     = 1908.73
+    linewavedic['heii']      = 1640.420
+    linewavedic['oiii1']     = 1660.809
+    linewavedic['oiii']      = 1663.00
+    linewavedic['oiii2']     = 1666.150
+    linewavedic['siiii1']    = 1882.71
+    linewavedic['siiii']     = 1888.00
+    linewavedic['siiii2']    = 1892.03
+    linewavedic['mgii1']     = 2795.528
+    linewavedic['mgii']      = 2799.00
+    linewavedic['mgii2']     = 2802.705
+
+    return linewavedic[uvesname.lower()]
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,100.0], zspecrange=[0.0,10.0],
                         voffsetrange=[-1500.0,1500.0], onesigmalimit=100.0, plotdir=None, verbose=True):
@@ -7895,7 +8204,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
         idlist    = [int(pfile.split('_CCresults_')[0].split('_')[-1]) for pfile in pfiles]
         objidlist = np.unique(np.asarray(idlist))
     else:
-        objidlist = objectids
+        objidlist = np.unique(np.asarray(objectids))
 
     if verbose: print('# - Loading the data of the '+str(len(summaryfiles))+' summary files into memory')
     summarfiledat_dic = {}
@@ -7905,7 +8214,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('# - Looping over the '+str(len(objidlist))+
-                      ' object IDs to look for FELIS matches with S/N(FELIS) > '+str(S2Nmin)+
+                      ' (unique) object IDs to look for FELIS matches with S/N(FELIS) > '+str(S2Nmin)+
                       ' and vshift < '+str(vshiftmax)+' km/s ')
     matchcount = 0
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
