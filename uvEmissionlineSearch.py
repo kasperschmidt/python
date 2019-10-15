@@ -4755,6 +4755,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cmin    = 0.0
                 cmax    = 200.0
                 cextend = 'both'
+            elif colortype.lower() == 'ew_0':
+                clabel  = 'EW$_0$(Ly$\\alpha$) [\AA]'
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
             elif colortype.lower() == 'sigma':
                 clabel  = '$\sigma$ [\AA]'
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
@@ -6971,6 +6976,256 @@ def band_waveeff(bandname):
                      'F435W':4341.9,'F606W':5810.8,'F775W':7652.5,'F814W':7972.9,'F880LP':9008.7,
                      'F105W':10431.7,'F125W':12364.6,'F160W':15279.1}
     return bands_wavecen[bandname.upper()]
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0', point_text=None, showlimits=True,
+                      ErrNsigma=1.0, vshiftmax=1e5, obj2show='all', xlog=True, ylog=True, overwrite=False, verbose=True):
+    """
+    Function to plot the output containing EW0 estimates generated with uves.estimate_EW0()
+
+    --- INPUT ---
+
+
+    --- EXAMPLE OF USE ---
+
+
+    """
+    if verbose: print(' - Loading EW data to plot ')
+    fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    EW0file         = lineratiofile.replace('.txt','_EW0estimates.txt')
+    EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
+
+    if obj2show is not 'all':
+        showent = np.array([])
+        for objid in obj2show:
+            objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
+            if len(objent) > 0:
+                showent = np.append(showent,objent)
+    else:
+        showent = np.arange(len(fluxratiodatALL))
+
+    Nselspec    = len(showent)
+    if Nselspec > 0:
+        fluxratiodat = fluxratiodatALL[showent.astype(int)]
+        EW0dat       = EW0datALL[showent.astype(int)]
+        if verbose: print(' - '+str(Nselspec)+'/'+str(len(fluxratiodatALL))+
+                          ' spectra in flux ratio summary (and EW0 file) satisfies the cuts\n')
+    else:
+        if verbose: print(' WARNING No flux ratio matches found in summary file satisfying cuts; returning...')
+        return
+
+    # Getting info from infofile
+    infofiledat  = afits.open(infofile)[1].data
+
+    LyaEW         = np.zeros(len(fluxratiodat['id']))*np.nan
+    LyaEWerr      = np.zeros(len(fluxratiodat['id']))*np.nan
+
+    LyaFWHM       = np.zeros(len(fluxratiodat['id']))*np.nan
+    LyaFWHMerr    = np.zeros(len(fluxratiodat['id']))*np.nan
+
+    LyaPeaksep    = np.zeros(len(fluxratiodat['id']))*np.nan
+    LyaPeakseperr = np.zeros(len(fluxratiodat['id']))*np.nan
+
+
+    for ii, id in enumerate(fluxratiodat['id']):
+        infoent            = np.where(infofiledat['id'] == int(id))
+        LyaEW[ii]          = infofiledat['EW_0'][infoent]
+        LyaEWerr[ii]       = infofiledat['EW_0_err'][infoent]
+        LyaFWHM[ii]        = infofiledat['fwhm_kms'][infoent]
+        LyaFWHMerr[ii]     = infofiledat['fwhm_kms_std'][infoent]
+        LyaPeaksep[ii]     = infofiledat['peak_sep_kms'][infoent]
+        LyaPeakseperr[ii]  = infofiledat['peak_sep_kms_std'][infoent]
+
+    if colorvar_obj in fluxratiodat.dtype.names:
+        cdatvec   = fluxratiodat[colorvar_obj]
+    elif colorvar_obj in infofiledat.columns.names:
+        cdatvec = np.zeros(len(fluxratiodat['id']))*np.nan
+        for ii, id in enumerate(fluxratiodat['id']):
+            infoent     = np.where(infofiledat['id'] == int(id))
+            cdatvec[ii] = infofiledat[colorvar_obj][infoent]
+    else:
+        cdatvec = None
+
+    if colorvar_obj.lower() == 's2n_ciii':
+        cdattype = 's2n_ciii'
+    elif colorvar_obj.lower() == 'redshift':
+        cdattype = colorvar_obj.lower()
+    elif colorvar_obj.lower() == 'ew_0':
+        cdattype = colorvar_obj.lower()
+
+    if point_text is not None:
+        point_text = fluxratiodat['id'].astype(str)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if ylog:
+        EW0_range_y = [0.1,1000]
+    else:
+        EW0_range_y = [0,200]
+
+    if xlog:
+        EW0_range_x = [0.1,1000]
+    else:
+        EW0_range_x = [0,200]
+
+    if xlog:
+        LyaEW_range = [0.1,2000]
+    else:
+        LyaEW_range = [0,600]
+
+    if xlog:
+        LyaPS_range = [0.1,2000]
+    else:
+        LyaPS_range = [0,1000]
+
+
+    linesetlist_EWs = []
+
+    for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII']: #, 'NV'
+        linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
+                                yline   ,LyaEW_range, EW0_range_y,   None])
+        linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
+                                yline   ,LyaEW_range, EW0_range_y,   None])
+        linesetlist_EWs.append([['LyaPeaksep','Ly$\\alpha$ Peak Seperation [km/s]',LyaPeaksep,LyaPeakseperr],
+                                yline   ,LyaPS_range, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['CIII','CIV'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','OIII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['CIV','OIII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','HeII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','MgII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','NV'     ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','SiIII'  ,EW0_range_x, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['OIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['OIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['OIII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['OIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['HeII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['HeII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['HeII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['MgII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['MgII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['NV','SiIII'   ,EW0_range_x, EW0_range_y,   None])
+
+    Nhistbins = 30
+    histaxes  = True
+    for lineset in linesetlist_EWs:
+        plot_EW0estimates_wrapper(plotbasename,EW0dat,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
+                                  ErrNsigma=ErrNsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                  xlog=xlog,ylog=ylog,showlimits=showlimits,overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhistbins,cdatvec,cdattype,
+                              photoionizationplotparam=None,point_text=None,showlimits=True,
+                              xlog=True,ylog=True,overwrite=False,ErrNsigma=1.0,vshiftmax=1e4,verbose=True):
+    """
+    Wrapper to define input data and excecute plot command
+
+    """
+    lineEW1,lineEW2,xrange,yrange,title = EWset
+
+    if type(lineEW1) != str:
+        str1  = lineEW1[0]
+    else:
+        str1  = lineEW1
+
+    if type(lineEW2) != str:
+        str2 = lineEW2[0]
+    else:
+        str2 = lineEW2
+
+    plotname = plotbasename+'_EW0_'+str1+'vs'+str2+\
+               '_ErrNsigma'+str(ErrNsigma).replace('.','p')+\
+               '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
+    if not showlimits:
+        plotname = plotname.replace('.pdf','_nolimits.pdf')
+
+    if 'lya' in str1.lower():
+        if ('f_'+str2 in fluxratiodat.dtype.names) & showlimits:
+            goodent  = np.where(np.isfinite(EWdat['EW0_'+str2]) &  (lineEW1[2] != 0) &  np.isfinite(lineEW1[2]) &
+                                np.isfinite(fluxratiodat['f_'+str2]) &
+                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+        elif ('f_'+str2 in fluxratiodat.dtype.names) & (not showlimits):
+            goodent  = np.where((np.abs(EWdat['EW0err_'+str2]) != 99) & (lineEW1[2] != 0) & np.isfinite(lineEW1[2]) &
+                                (EWdat['EW0err_'+str2] != 0) &
+                                np.isfinite(EWdat['EW0_'+str2]) &
+                                np.isfinite(fluxratiodat['f_'+str2])  &
+                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+        else:
+            goodent  = []
+    elif 'lya' in str2.lower():
+        if ('f_'+str1 in fluxratiodat.dtype.names) & showlimits:
+            goodent  = np.where(np.isfinite(EWdat['EW0_'+str1]) & (lineEW2[2] != 0) & np.isfinite(lineEW2[2]) &
+                                np.isfinite(fluxratiodat['f_'+str1]) &
+                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) )[0]
+        elif ('f_'+str1 in fluxratiodat.dtype.names) & (not showlimits):
+            goodent  = np.where((np.abs(EWdat['EW0err_'+str1]) != 99) & (lineEW2[2] != 0) & np.isfinite(lineEW2[2]) &
+                                (EWdat['EW0err_'+str1] != 0) &
+                                np.isfinite(EWdat['EW0_'+str1]) &
+                                np.isfinite(fluxratiodat['f_'+str1])  &
+                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) )[0]
+        else:
+            goodent  = []
+    else:
+        if ('f_'+str1 in fluxratiodat.dtype.names) & ('f_'+str2 in fluxratiodat.dtype.names) & showlimits:
+            goodent  = np.where(np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(EWdat['EW0_'+str2]) &
+                                np.isfinite(fluxratiodat['f_'+str1]) & np.isfinite(fluxratiodat['f_'+str2]) &
+                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+        elif ('f_'+str1 in fluxratiodat.dtype.names) & ('f_'+str2 in fluxratiodat.dtype.names) & (not showlimits):
+            goodent  = np.where((np.abs(EWdat['EW0err_'+str1]) != 99) & (np.abs(EWdat['EW0err_'+str2]) != 99) &
+                                (EWdat['EW0err_'+str1] != 0) & (EWdat['EW0err_'+str2] != 0) &
+                                np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(EWdat['EW0_'+str2]) &
+                                np.isfinite(fluxratiodat['f_'+str1]) & np.isfinite(fluxratiodat['f_'+str2]) &
+                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+        else:
+            goodent  = []
+
+    if len(goodent) == 0:
+        if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
+        return
+    else:
+        if 'lya' in str1.lower():
+            xlabel   = lineEW1[1]
+            xvalues  = lineEW1[2][goodent]
+            xerr     = lineEW1[3][goodent]
+        else:
+            xlabel   = 'EW$_0$('+str1+') [\AA]'
+            xvalues  = EWdat['EW0_'+str1][goodent]
+            xerr     = EWdat['EW0err_'+str1][goodent]
+
+        if 'lya' in str2.lower():
+            ylabel   = lineEW2[1]
+            yvalues  = lineEW2[2][goodent]
+            yerr     = lineEW2[3][goodent]
+        else:
+            ylabel   = 'EW$_0$('+str2+') [\AA]'
+            yvalues  = EWdat['EW0_'+str2][goodent]
+            yerr     = EWdat['EW0err_'+str2][goodent]
+
+    xerr[np.abs(xerr) != 99] = xerr[np.abs(xerr) != 99]*ErrNsigma
+    yerr[np.abs(yerr) != 99] = yerr[np.abs(yerr) != 99]*ErrNsigma
+
+    if point_text is not None:
+        point_text = point_text[goodent]
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                   'dummydat',linetype='onetoone',title=title,
+                                                   ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
+                                                   colortype=cdattype,colorcode=True,cdatvec=cdatvec[goodent],
+                                                   point_text=point_text,photoionizationplotparam=photoionizationplotparam,
+                                                   histaxes=histaxes,Nbins=Nhistbins,
+                                                   overwrite=overwrite,verbose=verbose)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linenameUVES2NEOGAL(uvesname):
     """
