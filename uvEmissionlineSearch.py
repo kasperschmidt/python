@@ -8676,3 +8676,158 @@ def count_SpecOnArche(countfields):
     print('\n The fields with no aperture spectra at all are: '+str(emptyfields))
     return completefields, incompletefields, emptyfields
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3.0,
+                       infofile='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits',
+                       FELISsummary=False,EWestimates=False,overwrite=False,verbose=True):
+    """
+    Script to automize the vetting of the supposed FELIS emission line detections.
+
+    --- INPUT ---
+
+    --- EXAMPLE OF RUN ---
+    import uvEmissionlineSearch as uves
+
+    parentdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/all_aperture190926/'
+
+    idlist = [101005016,720190222,101011026,77]
+    lineratiosummary = parentdir+'fluxratios/fluxratios_FELISmatch2uves190926_aperture.txt'
+    EWestimates      = parentdir+'fluxratios/fluxratios_FELISmatch2uves190926_aperture_EW0estimates_191015run.txt'
+    plotdirs         = [parentdir+'../FELIS_bestmatches_plots_aperture/']
+
+    outputfile = parentdir+'vet_felisdetection_outputRENAME.txt'
+    uves.vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3.0,EWestimates=EWestimates,overwrite=True)
+
+    """
+    pversion = sys.version_info[0]
+    Nobj   = len(idlist)
+    if verbose: print(' - '+str(Nobj)+' IDs provided for vetting')
+    if verbose: print(' - Preparing output file '+outputfile)
+    if os.path.isfile(outputfile) & (not overwrite):
+        sys.exit('The output ('+outputfile+') alreaduy exists and overwrite=False so exiting.')
+    else:
+        fout = open(outputfile,'w')
+        fout.write('# Result from vetting the '+str(Nobj)+' IDs provided to uves.vet_felisdetection() on '+kbs.DandTstr2()+'\n')
+        fout.write('# \n')
+        fout.write('# Each of the "trustLINE" columns provide \n'
+                   '#        1  = yes   I would trust the line detection. \n'
+                   '#        0  = no    I would not the line detection. \n'
+                   '#        9  = maybe I would trust the line detection. \n'
+                   '#      -99  = no spectral coverage of the given line. \n'
+                   '#       99  = estimated S/N < '+str(S2Nmincheck)+'  (limit from "S2Nmincheck")  \n'
+                   '#      NaN  = ID missing in line flux ratio summary.\n')
+        fout.write('# The columns are followed by notes on the object \n')
+        fout.write('# \n')
+        fout.write('# Columns are:\n')
+        fout.write('#  id           trustCIII     trustCIV    trustHeII    trustOIII   trustSiIII      trustNV    trustMgII  \n')
+
+    if verbose: print(' - Loading main info file: '+infofile)
+    dat_maininfo = afits.open(infofile)[1].data
+
+    if verbose: print(' - Loading ancillary information to display for each object ')
+
+    dat_lineratio = np.genfromtxt(lineratiosummary,skip_header=7,dtype='d',comments='#',names=True)
+
+    if EWestimates:
+        dat_ew0 = np.genfromtxt(EWestimates,skip_header=8,dtype='d',comments='#',names=True)
+    else:
+        dat_ew0 = None
+
+    emlines    = ['CIII', 'CIV', 'HeII', 'OIII', 'SiIII', 'NV', 'MgII']
+    answerkeys = {'y':1, 'n':0, 'm':9, 'nocov':-99, 'lows2n':99, 'idmissing':np.nan}
+    if verbose: print(' - Loop over objects while opening figures and printing info ')
+    for ii, objid in enumerate(idlist):
+        objent_lineratio = uves.return_objent(objid,dat_lineratio,idcol='id',verbose=False)
+        objent_info      = uves.return_objent(objid,dat_maininfo,idcol='id',verbose=False)
+        objent_ew0       = uves.return_objent(objid,dat_ew0,idcol='id',verbose=False)
+
+        if verbose: print('--------- OBJECT  '+str(objid)+' --------- ')
+        opencommand = 'open -n -F '
+        for plotdir in plotdirs:
+            mainplots = ' '.join(glob.glob(plotdir+'overview_1DspecWzooms*'+str("%.9d" % objid)+'*.pdf'))
+
+        if mainplots != '':
+            pipe_mainplots = subprocess.Popen(opencommand+mainplots,shell=True,executable=os.environ["SHELL"])
+            time.sleep(1.1) # sleep to make sure process appears in PIDlist
+            pid_mainplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
+
+        if verbose: print(' (Info from summaries; -99 = no data file provided; None = ID missing) ')
+
+        outstr = str("%12s" % objid)+' '
+
+        for emline in emlines:
+            if verbose: print(' - Checking template matches to '+emline)
+            answer = ''
+            if objent_lineratio is None:
+                answer = 'idmissing'
+                outstr = outstr+str("%12s" % answerkeys[answer.lower()])+' '
+            else:
+                lineS2N    = dat_lineratio['s2n_'+emline][objent_lineratio][0]
+                ELquestion = '   -> Do you trust FELIS LLLL (y)es/(n)o/(m)aybe/(e)exit? '.replace('LLLL',str("%5s" % emline))
+
+                if lineS2N < S2Nmincheck:
+                    answer = 'lows2n'
+                elif ~np.isfinite(lineS2N):
+                    answer = 'nocov'
+                else:
+                    for plotdir in plotdirs:
+                        lineplots = ' '.join(glob.glob(plotdir+'*'+str("%.9d" %  objid)+'*'+str(emline)+'*.pdf'))+\
+                                    ' '.join(glob.glob(plotdir+'*'+str(emline)+'*'+str("%.9d" %objid)+'*.pdf'))
+                    if lineplots != '':
+                        pipe_lineplots = subprocess.Popen(opencommand+lineplots,shell=True,executable=os.environ["SHELL"])
+                        time.sleep(1.1) # sleep to make sure process appears in PIDlist
+                        pid_lineplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
+                    else:
+                        if verbose: print('   WARNING did not find a plot of the FELIS match to the line')
+
+                    while answer.lower() not in ['y','n','m']:
+                        if pversion == 2:
+                            answer = raw_input(ELquestion) # raw_input for python 2.X
+                        elif pversion == 3:
+                            answer = input(ELquestion)     # input for python 3.X
+                        else:
+                            sys.exit(' Unknown version of python: version = '+str(pversion))
+                        if answer == 'e':
+                            fout.close()
+                            sys.exit('   Exiting as answer provided was "e". Vetting summarized in\n   '+outputfile)
+                    if lineplots != '':
+                        killsignal = 1
+                        os.kill(pipe_lineplots.pid+1,killsignal)
+
+                outstr = outstr+str("%12i" % answerkeys[answer.lower()])+' '
+
+        if pversion == 2:
+            notes  = raw_input('   -> Anything to add for this object? ') # raw_input for python 2.X
+        elif pversion == 3:
+            notes  = input('   -> Anything to add for this object? ') # raw_input for python 3.X
+        else:
+            sys.exit(' Unknown version of python: version = '+str(pversion))
+
+        if notes == 'e':
+            fout.close()
+            sys.exit('   Exiting as input for notes was "e". Vetting summarized in\n   '+outputfile)
+        else:
+            outstr = outstr+'  #Notes: '+notes+' \n'
+
+        fout.write(outstr)
+        if mainplots != '':
+            killsignal = 1
+            os.kill(pid_mainplots,killsignal)
+
+    fout.close()
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def return_objent(id,dataarray,idcol='id',verbose=True):
+    """
+    Little script to match and return object index in data array
+    """
+    if dataarray is not None:
+        objents = np.where(dataarray[idcol].astype(int) == int(id))[0]
+        if len(objents) > 1:
+            sys.exit('   WARNING: Multiple matches ('+str(len(objents))+') to '+str(id)+' found by uves.return_objdat()')
+        elif len(objents) == 0:
+            if verbose: print('   WARNING: No matches to '+str(id)+' found in uves.return_objdat()')
+            objents = None
+    else:
+        objents = -99
+
+    return objents
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
