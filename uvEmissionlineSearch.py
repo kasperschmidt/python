@@ -6251,10 +6251,18 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
         summarydat  = np.genfromtxt(sfile,skip_header=25,dtype=fmt,comments='#',names=True)
         dic_summarydat[lineindicators[ss]] = summarydat
 
-    ids = []
+    spectra   = []
     for ll in lineindicators:
-        ids = ids+list(dic_summarydat[ll]['id'])
-    ids = np.unique(np.array(ids).astype(int))
+        spectra = spectra+list(dic_summarydat[ll]['spectrum'])
+    spectra = np.unique(np.array(spectra))
+
+    pointings = []
+    ids       = []
+    for spec in spectra:
+        pointings.append(spec.split('/tdose_spectrum_')[-1].split('-full')[0])
+        ids.append(int(spec.split('_')[-1].split('.fit')[0]))
+    pointings = np.asarray(pointings)
+    ids       = np.asarray(ids)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Initializing the output file: \n   '+outputfile)
@@ -6269,6 +6277,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
     if verbose: print(' - Determine columns to fill in output')
     fluxratiodic = collections.OrderedDict()
     fluxratiodic['id'] = np.array([])
+    fluxratiodic['pointing'] = pointings
     for ll, numerator_line in enumerate(lineindicators):
         fluxratiodic['f_'+numerator_line]       = np.array([])
         fluxratiodic['ferr_'+numerator_line]    = np.array([])
@@ -6338,18 +6347,14 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
     if verbose: print(' - Filling the columns with data ')
     fluxratioarray = np.zeros([len(ids),Ncols])*np.nan
     for ii, id in enumerate(ids):
-        if verbose: print('   Filling output for object '+str(id))
+        if verbose: print('   Filling output for object '+str(id)+'   (id '+str(ii+1)+'/'+str(len(ids))+')')
         fluxratioarray[ii,0] = float(id)
 
         for ll, numerator_line in enumerate(lineindicators):
             numerator_dat = dic_summarydat[numerator_line]
-            ent_num       = np.where(numerator_dat['id'].astype(int) == id)[0]
-            if len(ent_num) > 1:
-                if verbose: print('       >>>WARNING<<<< '+str(id)+' appeared '+str(len(ent_num))+
-                                  ' times in '+numerator_line+' summary ')
-                continue
-            elif len(ent_num) == 0:
-                if verbose: print('       object '+str(id)+' not found in '+numerator_line+' summary (numerator)')
+            ent_num       = np.where((numerator_dat['id'].astype(int) == id) & (numerator_dat['spectrum'] == spectra[ii]))[0]
+            if len(ent_num) == 0:
+                if verbose: print('       object '+str(id)+' in '+pointings[ii]+' not found in '+numerator_line+' summary (numerator)')
                 continue
 
             f_num    = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]
@@ -6379,13 +6384,15 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
 
             for kk, denominator_line in enumerate(lineindicators):
                 denominator_dat = dic_summarydat[denominator_line]
-                ent_denom       = np.where(denominator_dat['id'].astype(int) == id)[0]
+
+                ent_denom       = np.where((denominator_dat['id'].astype(int) == id) & (denominator_dat['spectrum'] == spectra[ii]))[0]
                 if len(ent_denom) > 1:
-                    if verbose: print('       >>>WARNING<<<< '+str(id)+' appeared '+str(len(ent_denom))+
-                                      ' times in '+numerator_line+' summary ')
-                    continue
-                elif len(ent_denom) == 0:
-                    if verbose: print('       object '+str(id)+' not found in '+denominator_line+' summary (denominator) ')
+                    sys.exit(' id pointing compbination '+str(id)+' '+pointings[ii]+' appears '+str(len(ent_denom))+
+                             ' times in '+numerator_line+' summary -> that should not ahppen!')
+
+                if len(ent_denom) == 0:
+                    if verbose: print('       object '+str(id)+' in '+pointings[ii]+' not found in '+
+                                      denominator_line+' summary (numerator)')
                     continue
 
                 if numerator_line == denominator_line:
@@ -6452,11 +6459,11 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
 
 
     for ll in np.arange(len(ids)):
-        outstr = str(int(fluxratioarray[ll,0]))+' '+' '.join([str("%10.4f" % ff) for ff in fluxratioarray[ll,1:]])
+        outstr = str(int(fluxratioarray[ll,0]))+'  '+pointings[ll]+' '+' '.join([str("%10.4f" % ff) for ff in fluxratioarray[ll,2:]])
         fout.write(outstr+' \n')
     fout.close()
     if verbose: print('\n - Wrote the flux ratio output to \n   '+outputfile)
-    fmt = ','.join(Ncols*['d'])
+    fmt = 'i,12a,'+','.join((Ncols-2)*['d'])
     fluxratiodat = np.genfromtxt(outputfile,skip_header=7,dtype=fmt,comments='#',names=True)
     return fluxratiodat
 
