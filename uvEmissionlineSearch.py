@@ -6217,7 +6217,7 @@ def check_neighbors(ids=[214063213],
         print(' ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, onesigmalimit=100.0, verbose=True):
+def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, verbose=True):
     """
     Function to calculate the flux and line ratios for a set of summary files generated with
     containing the results from FELIS template matches to TDOSE spectra.
@@ -6229,7 +6229,6 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
     lineindicators   List of strings indicating the content of the summary files (i.e. the lines that were
                      searched for with the FELIS template match). These are used to name output columns.
     outputfile       The ascii file to write results to.
-    onesigmalimit    1 sigma flux limit to use for ratio limits (in units of spectra 10.0)
     verbose          Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -6264,7 +6263,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, one
     fout.write('# '+str(summaryfiles)+'\n')
     fout.write('# \n')
     fout.write('# Upper and lower limits are given as negative values with uncertainty of +99 or -99, respectively. \n')
-    fout.write('# For the limits a 1sigma limit of '+str(onesigmalimit)+' was used \n')
+    fout.write('# \n')
     fout.write('# \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Determine columns to fill in output')
@@ -6992,7 +6991,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     """
     if verbose: print(' - Loading EW data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
-    EW0file         = lineratiofile.replace('.txt','_EW0estimates.txt')
+    EW0file         = lineratiofile.replace('.txt','_EW0estimates_191015run.txt')
     EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
 
     if obj2show is not 'all':
@@ -7060,17 +7059,17 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     if ylog:
         EW0_range_y = [0.1,1000]
     else:
-        EW0_range_y = [0,200]
+        EW0_range_y = [0,40]
 
     if xlog:
         EW0_range_x = [0.1,1000]
     else:
-        EW0_range_x = [0,200]
+        EW0_range_x = [0,40]
 
     if xlog:
         LyaEW_range = [0.1,2000]
     else:
-        LyaEW_range = [0,600]
+        LyaEW_range = [0,300]
 
     if xlog:
         LyaPS_range = [0.1,2000]
@@ -8605,4 +8604,75 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
         print('# - Done; so that was '+str(matchcount)+' objects with at least one line matching the cuts: ')
         print('#   S2N(FELIS) > '+str(S2Nmin))
         print('#   vshift     < '+str(vshiftmax)+' km/s ')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def count_SpecOnArche(countfields):
+    """
+    Small script that can be copy-pasted into ipython on Arche to count the spectra and keep track of the reductions.
+    Before this script I did copy-paste from muse notes Latex file.
+
+    """
+    import glob, sys
+    setupglobstr = 'tdose_setupfiles/tdose_setupfile_*_gauss.txt'
+    setupfiledir = {}
+    setupfiledir['rafelski']   = list(np.sort(glob.glob('Rafelski-UDF-*/'+setupglobstr)))
+    setupfiledir['rafudfmock'] = list(np.sort(glob.glob('Rafelski-UDF-MWmock-v1p0/'+setupglobstr)))
+    setupfiledir['rafudffull'] = list(np.sort(glob.glob('Rafelski-UDF-full-v1p0/'+setupglobstr)))
+
+    setupfiledir['skelton']         = list(np.sort(glob.glob('Skelton-*/'+setupglobstr)))
+    setupfiledir['skelcdfsfull']    = list(np.sort(glob.glob('Skelton-CDFS-full-v1p0/'+setupglobstr)))
+    setupfiledir['skelcdfsparfull'] = list(np.sort(glob.glob('Skelton-CDFSparallel-full-v1p0/'+setupglobstr)))
+    setupfiledir['skeludffull']     = list(np.sort(glob.glob('Skelton-UDF-full-v1p0/'+setupglobstr)))
+    setupfiledir['skeludf10full']   = list(np.sort(glob.glob('Skelton-UDF10-full-v1p0/'+setupglobstr)))
+    setupfiledir['skeludfmock']     = list(np.sort(glob.glob('Skelton-UDF-MWmock-v1p0/'+setupglobstr)))
+    setupfiledir['skelcosfull']     = list(np.sort(glob.glob('Skelton-COSMOS-full-v1p0/'+setupglobstr)))
+
+    setupfiledir['uves']        = list(np.sort(glob.glob('MWuves100full/MWuves-*/'+setupglobstr)))
+    setupfiledir['uvescos']     = list(np.sort(glob.glob('MWuves100full/MWuves-COSMOS*/'+setupglobstr)))
+    setupfiledir['uvescdfs']    = list(np.sort(glob.glob('MWuves100full/MWuves-CDFS-*/'+setupglobstr)))
+    setupfiledir['uvescdfspar'] = list(np.sort(glob.glob('MWuves100full/MWuves-CDFSpar*/'+setupglobstr)))
+    setupfiledir['uvesudf']     = list(np.sort(glob.glob('MWuves100full/MWuves-UDF-*/'+setupglobstr)))
+    setupfiledir['uvesudf10']   = list(np.sort(glob.glob('MWuves100full/MWuves-UDF10*/'+setupglobstr)))
+
+    if countfields == 'all':
+        setupfiles = setupfiledir['rafelski']+setupfiledir['skelton']+setupfiledir['uves']
+    else:
+        try:
+            setupfiles = setupfiledir[countfields]
+        except:
+            sys.exit('"'+countfields+'" is not a valid setup file selection. Choices are: '+str(setupfiledir.keys()))
+
+    print('                                 ExtractionDir               '
+          ' Fieldname           Ngaussspec        Naperturespec     missingGaussspec')
+    completefields   = []
+    incompletefields = []
+    emptyfields      = []
+    for sf in setupfiles :
+
+        extdir     = sf.split('/tdose')[0]
+        fieldname  = sf.split('_gauss')[0].split('v1p0-')[-1].split('v1p0_')[-1].split('andels-')[-1]
+
+
+        specsearchstr = sf.split('/tdose_setupfiles/')[0]+'/tdose_spectra/tdose_spec*'+fieldname+'*gauss*.fits'
+
+        Ng = len(glob.glob('/store/data/musewide/TDOSE/'+specsearchstr))
+        Na = len(glob.glob('/store/data/musewide/TDOSE/'+specsearchstr.replace('gauss*.fits','aperture*.fits')))
+
+        Ngmissing = Na-Ng
+        outstr    = str("%50s" % extdir)+' '+str("%20s" % fieldname)+' '+\
+                    str("%20s" % Ng)+' '+str("%20s" % Na)+' '+str("%20s" % Ngmissing)
+
+        if Ngmissing > 0:
+            print('\033[91m'+outstr+'\033[0m') # coloring output red if spectra are missing
+            incompletefields.append(fieldname)
+        else:
+            print(outstr)
+            if Ng > 0:
+                completefields.append(fieldname)
+        if Na == 0:
+            emptyfields.append(fieldname)
+
+    print('\n - Hence, the '+str(len(completefields))+'/'+str(len(setupfiles))+' completed fields are: \n'+str(completefields))
+
+    print('\n The fields with no aperture spectra at all are: '+str(emptyfields))
+    return completefields, incompletefields, emptyfields
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
