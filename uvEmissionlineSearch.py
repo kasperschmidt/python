@@ -8726,7 +8726,8 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
         fout.write('# The columns are followed by notes on the object \n')
         fout.write('# \n')
         fout.write('# Columns are:\n')
-        fout.write('#  id                    pointing    trustCIII     trustCIV    trustHeII    trustOIII   trustSiIII      trustNV    trustMgII  \n')
+        emlines    = ['NV', 'CIV', 'HeII', 'OIII', 'SiIII', 'CIII', 'MgII']
+        fout.write('#  id               pointing'+''.join([str("%13s" % ('trust'+el)) for el in emlines])+'\n')
 
     if verbose: print(' - Loading main info file: '+infofile)
     dat_maininfo = afits.open(infofile)[1].data
@@ -8744,7 +8745,7 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
     else:
         dat_ew0 = None
 
-    emlines    = ['CIII', 'CIV', 'HeII', 'OIII', 'SiIII', 'NV', 'MgII']
+
     answerkeys = {'y':1, 'n':0, 'm':9, 'nocov':-99, 'lows2n':99, 'idmissing':np.nan}
     if verbose: print(' - Loop over objects while opening figures and printing info ')
     for ii, objid in enumerate(idlist):
@@ -8778,7 +8779,7 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             if verbose: print(' (Info from summaries; -99 = no data file provided; None = ID missing) ')
-            outstr = str("%12s" % objid)+' '+str("%20s" % objpoint)+' '
+            outstr = str("%12s" % objid)+' '+str("%15s" % objpoint)+' '
 
             for emline in emlines:
                 if verbose: print(' - Checking template matches to '+emline)
