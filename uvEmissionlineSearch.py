@@ -8726,17 +8726,21 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
         fout.write('# The columns are followed by notes on the object \n')
         fout.write('# \n')
         fout.write('# Columns are:\n')
-        fout.write('#  id           trustCIII     trustCIV    trustHeII    trustOIII   trustSiIII      trustNV    trustMgII  \n')
+        fout.write('#  id                    pointing    trustCIII     trustCIV    trustHeII    trustOIII   trustSiIII      trustNV    trustMgII  \n')
 
     if verbose: print(' - Loading main info file: '+infofile)
     dat_maininfo = afits.open(infofile)[1].data
 
     if verbose: print(' - Loading ancillary information to display for each object ')
 
-    dat_lineratio = np.genfromtxt(lineratiosummary,skip_header=7,dtype='d',comments='#',names=True)
+    frdatBadFMT     = np.genfromtxt(lineratiosummary,skip_header=7,dtype='d',comments='#',names=True)
+    fmt             = 'd,12a,'+','.join((len(frdatBadFMT.dtype.names)-2)*['d'])
+    dat_lineratio   = np.genfromtxt(lineratiosummary,skip_header=7,dtype=fmt,comments='#',names=True)
 
     if EWestimates:
-        dat_ew0 = np.genfromtxt(EWestimates,skip_header=8,dtype='d',comments='#',names=True)
+        ew0BadFMT = np.genfromtxt(EWestimates,skip_header=8,dtype='d',comments='#',names=True)
+        fmt       = 'd,12a,'+','.join((len(ew0BadFMT.dtype.names)-2)*['d'])
+        dat_ew0   = np.genfromtxt(EWestimates,skip_header=8,dtype=fmt,comments='#',names=True)
     else:
         dat_ew0 = None
 
@@ -8744,83 +8748,102 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
     answerkeys = {'y':1, 'n':0, 'm':9, 'nocov':-99, 'lows2n':99, 'idmissing':np.nan}
     if verbose: print(' - Loop over objects while opening figures and printing info ')
     for ii, objid in enumerate(idlist):
-        objent_lineratio = uves.return_objent(objid,dat_lineratio,idcol='id',verbose=False)
         objent_info      = uves.return_objent(objid,dat_maininfo,idcol='id',verbose=False)
-        objent_ew0       = uves.return_objent(objid,dat_ew0,idcol='id',verbose=False)
+        #obj_maininfo     = dat_maininfo['id_skel'][objent_info]
 
-        if verbose: print('--------- OBJECT  '+str(objid)+' --------- ')
-        opencommand = 'open -n -F '
+        objent_lineratio = uves.return_objent(objid,dat_lineratio,idcol='id',verbose=False)
+        if objent_lineratio is None:
+            if verbose: print('--------- OBJECT  '+str("%.10d" % objid)+
+                              ' ('+str("%.5d" % (ii+1))+'/'+str("%.5d" % len(idlist))+') --------- ')
+            if verbose: print(' WARNING - No objects found in line ratio summary')
+            if verbose: print('           Continuing to next object ')
+            continue
+        objpointings     = dat_lineratio['pointing'][objent_lineratio]
+
         for plotdir in plotdirs:
             mainplots = ' '.join(glob.glob(plotdir+'overview_1DspecWzooms*'+str("%.9d" % objid)+'*.pdf'))
 
+        opencommand = 'open -n -F '
         if mainplots != '':
             pipe_mainplots = subprocess.Popen(opencommand+mainplots,shell=True,executable=os.environ["SHELL"])
             time.sleep(1.1) # sleep to make sure process appears in PIDlist
             pid_mainplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
 
-        if verbose: print(' (Info from summaries; -99 = no data file provided; None = ID missing) ')
+        for pp, objpoint in enumerate(objpointings):
+            objent_lr        = objent_lineratio[pp]
+            objent_ew0       = uves.return_objent([objid,objpoint],dat_ew0,idcol=['id','pointing'],verbose=False)
+            if verbose: print('--------- OBJECT  '+str("%.10d" % objid)+' ('+str("%.5d" % (ii+1))+'/'+str("%.5d" % len(idlist))+') POINTING '+str(objpoint)+' --------- ')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print('This is where the info will be printed...')
 
-        outstr = str("%12s" % objid)+' '
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' (Info from summaries; -99 = no data file provided; None = ID missing) ')
+            outstr = str("%12s" % objid)+' '+str("%20s" % objpoint)+' '
 
-        for emline in emlines:
-            if verbose: print(' - Checking template matches to '+emline)
-            answer = ''
-            if objent_lineratio is None:
-                answer = 'idmissing'
-                outstr = outstr+str("%12s" % answerkeys[answer.lower()])+' '
-            else:
-                lineS2N    = dat_lineratio['s2n_'+emline][objent_lineratio][0]
-                ELquestion = '   -> Do you trust FELIS LLLL (y)es/(n)o/(m)aybe/(e)exit? '.replace('LLLL',str("%5s" % emline))
-
-                if lineS2N < S2Nmincheck:
-                    answer = 'lows2n'
-                elif ~np.isfinite(lineS2N):
-                    answer = 'nocov'
+            for emline in emlines:
+                if verbose: print(' - Checking template matches to '+emline)
+                answer = ''
+                if objent_lr is None:
+                    answer = 'idmissing'
+                    outstr = outstr+str("%12s" % answerkeys[answer.lower()])+' '
                 else:
-                    for plotdir in plotdirs:
-                        lineplots = ' '.join(glob.glob(plotdir+'*'+str("%.9d" %  objid)+'*'+str(emline)+'*.pdf'))+\
-                                    ' '.join(glob.glob(plotdir+'*'+str(emline)+'*'+str("%.9d" %objid)+'*.pdf'))
-                    if lineplots != '':
-                        pipe_lineplots = subprocess.Popen(opencommand+lineplots,shell=True,executable=os.environ["SHELL"])
-                        time.sleep(1.1) # sleep to make sure process appears in PIDlist
-                        pid_lineplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
+                    lineS2N    = dat_lineratio['s2n_'+emline][objent_lr]
+                    ELquestion = '   -> Do you trust FELIS LLLL (y)es/(n)o/(m)aybe/(e)exit? '.replace('LLLL',str("%5s" % emline))
+
+                    if lineS2N < S2Nmincheck:
+                        answer = 'lows2n'
+                    elif ~np.isfinite(lineS2N):
+                        answer = 'nocov'
                     else:
-                        if verbose: print('   WARNING did not find a plot of the FELIS match to the line')
+                        for plotdir in plotdirs:
+                            lineplots = ' '.join(glob.glob(plotdir+'*'+str(objpoint)+'*'+
+                                                           str("%.9d" %  objid)+'*'+str(emline)+'*.pdf'))
 
-                    while answer.lower() not in ['y','n','m']:
-                        if pversion == 2:
-                            answer = raw_input(ELquestion) # raw_input for python 2.X
-                        elif pversion == 3:
-                            answer = input(ELquestion)     # input for python 3.X
+                        if lineplots != '':
+                            pipe_lineplots = subprocess.Popen(opencommand+lineplots,shell=True,executable=os.environ["SHELL"])
+                            time.sleep(1.1) # sleep to make sure process appears in PIDlist
+                            pid_lineplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
                         else:
-                            sys.exit(' Unknown version of python: version = '+str(pversion))
-                        if answer == 'e':
-                            fout.close()
-                            sys.exit('   Exiting as answer provided was "e". Vetting summarized in\n   '+outputfile)
-                    if lineplots != '':
-                        killsignal = 1
-                        os.kill(pipe_lineplots.pid+1,killsignal)
+                            if verbose: print('   WARNING did not find a plot of the FELIS match to the line')
 
-                outstr = outstr+str("%12i" % answerkeys[answer.lower()])+' '
+                        while answer.lower() not in ['y','n','m']:
+                            if pversion == 2:
+                                answer = raw_input(ELquestion) # raw_input for python 2.X
+                            elif pversion == 3:
+                                answer = input(ELquestion)     # input for python 3.X
+                            else:
+                                sys.exit(' Unknown version of python: version = '+str(pversion))
+                            if answer == 'e':
+                                fout.close()
+                                sys.exit('   Exiting as answer provided was "e". Vetting summarized in\n   '+outputfile)
+                        if lineplots != '':
+                            killsignal = 1
+                            os.kill(pipe_lineplots.pid+1,killsignal)
 
-        if pversion == 2:
-            notes  = raw_input('   -> Anything to add for this object? ') # raw_input for python 2.X
-        elif pversion == 3:
-            notes  = input('   -> Anything to add for this object? ') # raw_input for python 3.X
-        else:
-            sys.exit(' Unknown version of python: version = '+str(pversion))
+                    outstr = outstr+str("%12i" % answerkeys[answer.lower()])+' '
 
-        if notes == 'e':
+            if pversion == 2:
+                notes  = raw_input('   -> Anything to add for this object? ') # raw_input for python 2.X
+            elif pversion == 3:
+                notes  = input('   -> Anything to add for this object? ') # raw_input for python 3.X
+            else:
+                sys.exit(' Unknown version of python: version = '+str(pversion))
+
+            if notes == 'e':
+                fout.close()
+                sys.exit('   Exiting as input for notes was "e". Vetting summarized in\n   '+outputfile)
+            else:
+                outstr = outstr+'  #Notes: '+notes+' \n'
+
+            fout.write(outstr)
             fout.close()
-            sys.exit('   Exiting as input for notes was "e". Vetting summarized in\n   '+outputfile)
-        else:
-            outstr = outstr+'  #Notes: '+notes+' \n'
+            fout = open(outputfile,'a')
 
-        fout.write(outstr)
         if mainplots != '':
             killsignal = 1
             os.kill(pid_mainplots,killsignal)
-
+    if verbose: print('--------- Done --------- ')
+    if verbose: print(' Wrote output to:\n '+outputfile)
     fout.close()
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def return_objent(id,dataarray,idcol='id',verbose=True):
@@ -8828,9 +8851,13 @@ def return_objent(id,dataarray,idcol='id',verbose=True):
     Little script to match and return object index in data array
     """
     if dataarray is not None:
-        objents = np.where(dataarray[idcol].astype(int) == int(id))[0]
+        if type(id) is list: # list provided so ID and Pointing to be usef for selection
+            objents = np.where((dataarray[idcol[0]].astype(int) == int(id[0])) &
+                               (dataarray[idcol[1]] == str(id[1])))[0]
+        else:
+            objents = np.where(dataarray[idcol].astype(int) == int(id))[0]
         if len(objents) > 1:
-            sys.exit('   WARNING: Multiple matches ('+str(len(objents))+') to '+str(id)+' found by uves.return_objdat()')
+            if verbose: print('   WARNING: Multiple matches ('+str(len(objents))+') to '+str(id)+' found by uves.return_objdat()')
         elif len(objents) == 0:
             if verbose: print('   WARNING: No matches to '+str(id)+' found in uves.return_objdat()')
             objents = None
