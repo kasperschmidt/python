@@ -6733,11 +6733,11 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overw
 
     if verbose: print(' - Loading flux ratio data and infofile ')
     infofiledat     = afits.open(infofile)[1].data
-    fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    frdatBadFMT     = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    fmt             = 'd,12a,'+','.join((len(frdatBadFMT.dtype.names)-2)*['d'])
+    fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype=fmt,comments='#',names=True)
     ids             = fluxratiodatALL['id']
-
-    # ids             = ids[-186:-175]              # UDF10 obj
-    # fluxratiodatALL = fluxratiodatALL[-186:-175]  # UDF10 obj
+    pointings       = fluxratiodatALL['pointing']
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Initializing output ')
     if outputfile == 'default':
@@ -6772,7 +6772,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overw
         if colname.startswith('f_'):
             fluxcols.append(colname)
     Nfluxcol   = len(fluxcols)
-    outcolumns = '# id  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]) for fc in fluxcols])
+    outcolumns = '# id  pointing  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]) for fc in fluxcols])
     fout.write(outcolumns+'\n')
 
     EW0array = np.zeros([len(ids),Nfluxcol*3])*np.nan
@@ -6836,7 +6836,8 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overw
 
                     EW0array[ii,ff*3+2] = bandskey[cont_band.upper()]
                 # pdb.set_trace()
-        outstr = str(int(id))+' '+str("%10.2f" % betavals[ii])+' '+' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])
+        outstr = str(int(id))+' '+pointings[ii]+' '+str("%10.2f" % betavals[ii])+' '+\
+                 ' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])
         fout.write(outstr.replace('.0000','     ')+' \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fout.close()
@@ -6998,7 +6999,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     """
     if verbose: print(' - Loading EW data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
-    EW0file         = lineratiofile.replace('.txt','_EW0estimates_191015run.txt')
+    EW0file         = lineratiofile.replace('.txt','_EW0estimates_191026run.txt')
     EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
 
     if obj2show is not 'all':
