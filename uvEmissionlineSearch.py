@@ -6999,7 +6999,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     """
     if verbose: print(' - Loading EW data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
-    EW0file         = lineratiofile.replace('.txt','_EW0estimates_191026run.txt')
+    EW0file         = lineratiofile.replace('.txt','_EW0estimates_191028run.txt')
     EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
 
     if obj2show is not 'all':
