@@ -8482,6 +8482,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
         zobj             = np.array([])
         matchline        = np.array([])
         pfilenumber      = np.array([])
+        pointings        = np.array([])
         spectra          = np.array([])
         templates        = np.array([])
         matchS2N         = np.array([])
@@ -8502,8 +8503,10 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
 
                 picklefiles = glob.glob(pickledir+'*'+str(objid)+'*template'+linesummarized+'*'+outkeystr+'*.pkl')
                 for pp, pfile in enumerate(picklefiles):
+                    spec             = summarydat['spectrum'][objsummary_ent[pp]]
                     pfilenumber      = np.append(pfilenumber,pp+1)
-                    spectra          = np.append(spectra,summarydat['spectrum'][objsummary_ent[pp]])
+                    pointings        = np.append(pointings,spec.split('/tdose_spectrum_')[-1].split('-full')[0])
+                    spectra          = np.append(spectra,spec)
                     templates        = np.append(templates,summarydat['template'][objsummary_ent[pp]])
                     matchline        = np.append(matchline,linesummarized)
                     matchS2N         = np.append(matchS2N,summarydat['FELIS_S2Nmax'][objsummary_ent[pp]])
@@ -8530,8 +8533,8 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
                 if verbose & (not skipplotting):
                     print('     '+mline+' @ S/N = '+str(matchS2N[ii])+'  (vshift='+str(vshift[ii])+'km/s)')
                 if skipplotting:
-                    outstr = outstr+' '+mline+'_spec'+str(int(pfilenumber[ii]))+\
-                             ' '+str(matchS2N[ii])+'  '+str(vshift[ii])
+                    outstr = outstr+' S2N('+mline+'_'+str(pointings[ii])+\
+                             ')='+str(matchS2N[ii])+' w. Dv='+str(vshift[ii])+'km/s | '
             if skipplotting:
                 print(str(objid)+' '+str("%12.6f" % zobj)+'   # '+outstr)
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
