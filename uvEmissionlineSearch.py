@@ -8753,8 +8753,6 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
     if verbose: print(' - Loop over objects while opening figures and printing info ')
     for ii, objid in enumerate(idlist):
         objent_info      = uves.return_objent(objid,dat_maininfo,idcol='id',verbose=False)
-        #obj_maininfo     = dat_maininfo['id_skel'][objent_info]
-
         objent_lineratio = uves.return_objent(objid,dat_lineratio,idcol='id',verbose=False)
         if objent_lineratio is None:
             if verbose: print('--------- OBJECT  '+str("%.10d" % objid)+
@@ -8776,12 +8774,42 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
         for pp, objpoint in enumerate(objpointings):
             objent_lr        = objent_lineratio[pp]
             objent_ew0       = uves.return_objent([objid,objpoint],dat_ew0,idcol=['id','pointing'],verbose=False)
-            if verbose: print('--------- OBJECT  '+str("%.10d" % objid)+' ('+str("%.5d" % (ii+1))+'/'+str("%.5d" % len(idlist))+') POINTING '+str(objpoint)+' --------- ')
+            if verbose: print('\n--------- OBJECT  '+str("%.10d" % objid)+' ('+str("%.5d" % (ii+1))+'/'+str("%.5d" % len(idlist))+') POINTING '+str(objpoint)+' --------- ')
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            if verbose: print('This is where the info will be printed...')
-
+            if verbose:
+                print(' z(info)         = '+str("%7.4f" % dat_maininfo['redshift'][objent_info]))
+                print(' FWHM(Lya)       = '+str("%8.2f" % dat_maininfo['fwhm_kms'][objent_info])+' +\-'+
+                      str("%8.2f" % dat_maininfo['fwhm_kms_std'][objent_info])+'  km/s ')
+                print(' Dv_redpeak(V18) = '+str("%8.2f" % dat_maininfo['red_peak_shift_V18_kms'][objent_info])+' +\-'+
+                      str("%8.2f" % dat_maininfo['red_peak_shift_V18_kms_err'][objent_info])+'  km/s ')
+                print(' EW0(Lya)        = '+str("%8.2f" % dat_maininfo['EW_0'][objent_info])+' +\-'+
+                      str("%8.2f" % dat_maininfo['EW_0_err'][objent_info])+'  A ')
+                print(' beta            = '+str("%8.2f" % dat_maininfo['beta'][objent_info])+' +\-'+
+                      str("%8.2f" % dat_maininfo['beta_err'][objent_info]))
+                print(' f606wJK         = '+str("%10.4f" % (1e20*dat_maininfo['flux_acs_606w'][objent_info]))+' +\-'+
+                      str("%10.4f" % (1e20*dat_maininfo['flux_err_acs_606w'][objent_info]))+'  1e-20cgs')
+                print(' f814wJK         = '+str("%10.4f" % (1e20*dat_maininfo['flux_acs_814w'][objent_info]))+' +\-'+
+                      str("%10.4f" % (1e20*dat_maininfo['flux_err_acs_814w'][objent_info]))+'  1e-20cgs')
+                print(' id_Laigle       = '+str("%8.2f" % dat_maininfo['id_Laigle'][objent_info])+
+                      '         sep = '+str("%8.2f" % dat_maininfo['sep_Laigle'][objent_info]))
+                print(' id_Skelton      = '+str("%8.2f" % dat_maininfo['id_skelton'][objent_info])+
+                      '         sep = '+str("%8.2f" % dat_maininfo['sep_skelton'][objent_info]))
+                print(' id_Guo          = '+str("%8.2f" % dat_maininfo['id_guo'][objent_info])+
+                      '         sep = '+str("%8.2f" % dat_maininfo['sep_guo'][objent_info]))
+                print(' id_Rafelski     = '+str("%8.2f" % dat_maininfo['id_rafelski'][objent_info])+
+                      '         sep = '+str("%8.2f" % dat_maininfo['sep_rafelski'][objent_info])+'\n')
+                for el in emlines:
+                    print(' EW0('+str("%5s" % el)+') = '+str("%8.2f" % dat_ew0['EW0_'+el][objent_ew0])+' +\-'+
+                          str("%8.2f" % dat_ew0['EW0err_'+el][objent_ew0])+'   for beta = '+
+                          str("%8.4f" % dat_ew0['beta'][objent_ew0]))
+                print('\n')
+                for el in emlines:
+                    print(' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+' @ S/N ='+
+                          str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+'   with Dv = '+
+                          str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+' km/s  and  sigma = '+
+                          str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr]))
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            if verbose: print(' (Info from summaries; -99 = no data file provided; None = ID missing) ')
+            if verbose: print('\n (Info from summaries; -99 = no data file provided; None = ID missing) ')
             outstr = str("%12s" % objid)+' '+str("%15s" % objpoint)+' '
 
             for emline in emlines:
@@ -8822,14 +8850,19 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
                                 sys.exit('   Exiting as answer provided was "e". Vetting summarized in\n   '+outputfile)
                         if lineplots != '':
                             killsignal = 1
-                            os.kill(pipe_lineplots.pid+1,killsignal)
+                            try:
+                                os.kill(pipe_lineplots.pid+1,killsignal)
+                            except:
+                                print(' WARNING: Was unable to close lineplots ')
 
                     outstr = outstr+str("%12i" % answerkeys[answer.lower()])+' '
 
             if pversion == 2:
-                notes  = raw_input('   -> Anything to add for this object? ') # raw_input for python 2.X
+                notes  = raw_input('   -> Anything to add for this object?\n'
+                                   '      (AGN? Marginal detections? Bad spec?)    ') # raw_input for python 2.X
             elif pversion == 3:
-                notes  = input('   -> Anything to add for this object? ') # raw_input for python 3.X
+                notes  = input('   -> Anything to add for this object?\n'
+                               '      (AGN? Marginal detections? Bad spec?)    ') # raw_input for python 3.X
             else:
                 sys.exit(' Unknown version of python: version = '+str(pversion))
 
@@ -8845,8 +8878,11 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
 
         if mainplots != '':
             killsignal = 1
-            os.kill(pid_mainplots,killsignal)
-    if verbose: print('--------- Done --------- ')
+            try:
+                os.kill(pid_mainplots,killsignal)
+            except:
+                print(' WARNING: Was unable to close mainplots ')
+    if verbose: print('\n--------- Done --------- ')
     if verbose: print(' Wrote output to:\n '+outputfile)
     fout.close()
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
