@@ -8906,3 +8906,104 @@ def return_objent(id,dataarray,idcol='id',verbose=True):
 
     return objents
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def summarize_felisvetting(vetoutput,verbose=True):
+    """
+    Function summarizing the content of an output file from uves.vet_felisdetection()
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    vetoutput = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/all_aperture190926/vet_felisdetection_output_for_object_match_selection_all191029_aperture_s2nGT3_vshiftLT1000_191030vettingUDFonly.txt'
+    uves.summarize_felisvetting(vetoutput)
+
+    """
+    fmt    = ['d','12a','d','d','d','d','d','d','d']
+    vetdat = np.genfromtxt(vetoutput,skip_header=12,dtype=fmt,names=True,comments='#')
+
+    lines = [nn.replace('trust','') for nn in vetdat.dtype.names[2:]]
+    if verbose: print(' - Summarizing content of '+str(len(vetdat))+' entries in \n   '+vetoutput)
+    if verbose: print('   (entires for '+str(len(np.unique(vetdat['id'])))+' unique ids)\n')
+    for cc, col in enumerate(vetdat.dtype.names[2:]):
+        N_cov   = float(len(np.where(vetdat[col] >= 0)[0]))
+        N_yes   = float(len(np.where(vetdat[col] == 1)[0]))
+        N_no    = float(len(np.where(vetdat[col] == 0)[0]))
+        N_maybe = float(len(np.where(vetdat[col] == 9)[0]))
+        N_lim   = float(len(np.where(vetdat[col] == 99)[0]))
+        if verbose:
+            print('  '+str("%5s" % lines[cc])+' (numbers)  : '+str("%8i" % N_yes)+' '+str("%8i" % N_no)+' '+
+                  str("%8i" % N_maybe)+' '+str("%8i" % N_lim)+'   of '+str("%5i" % N_cov)+' entries')
+            print('        (fraction) : '+str("%8.4f" % (N_yes/N_cov))+' '+
+                  str("%8.4f" % (N_no/N_cov))+' '+str("%8.4f" % (N_maybe/N_cov))+' '+str("%8.4f" % (N_lim/N_cov)))
+
+    N_systemic           = 0.0
+    N_systemic_wCIV      = 0.0
+    N_systemic_wCIVaMgII = 0.0
+    id_sys               = []
+    id_sys_wCIV          = []
+    id_sys_wCIVaMgII     = []
+
+    for ii, objid in enumerate(vetdat['id']):
+        if  (vetdat['trustNV'][ii]    == 1) or (vetdat['trustHeII'][ii]  == 1) or (vetdat['trustOIII'][ii]  == 1) or (vetdat['trustSiIII'][ii] == 1) or (vetdat['trustCIII'][ii]  == 1):
+            N_systemic = N_systemic + 1.0
+            id_sys.append(int(objid))
+
+        if  (vetdat['trustNV'][ii]    == 1) or (vetdat['trustCIV'][ii]   == 1) or  (vetdat['trustHeII'][ii]  == 1) or (vetdat['trustOIII'][ii]  == 1) or (vetdat['trustSiIII'][ii] == 1) or (vetdat['trustCIII'][ii]  == 1):
+            N_systemic_wCIV = N_systemic_wCIV + 1.0
+            id_sys_wCIV.append(int(objid))
+
+        if  (vetdat['trustNV'][ii]    == 1) or (vetdat['trustCIV'][ii]   == 1) or (vetdat['trustHeII'][ii]  == 1) or (vetdat['trustOIII'][ii]  == 1) or (vetdat['trustSiIII'][ii] == 1) or (vetdat['trustCIII'][ii]  == 1) or (vetdat['trustMgII'][ii]  == 1):
+            N_systemic_wCIVaMgII = N_systemic_wCIVaMgII + 1.0
+            id_sys_wCIVaMgII.append(int(objid))
+
+    if verbose:
+        print('\n - Number of systemic redshifst = '+str(N_systemic)+'      (excl. CIV and MgII detections)')
+        print(' - Number of systemic redshifst = '+str(N_systemic_wCIV)+'      (incl. CIV but excl. MgII detections)')
+        print(' - Number of systemic redshifst = '+str(N_systemic_wCIVaMgII)+'      (incl. CIV and MgII detections)')
+
+    coordsepsel = 0.5
+    if verbose: print(' - Checking for dublicates/close neighbors within '+str(coordsepsel)+' arcsec:')
+    infofile ='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits'
+    datinfo  = afits.open(infofile)[1].data
+    ralist   = []
+    declist  = []
+    zlist    = []
+
+    for objid in np.unique(vetdat['id']):
+        ralist.append( datinfo['ra'][np.where(datinfo['id'].astype(int) == int(objid))[0][0]] )
+        declist.append( datinfo['dec'][np.where(datinfo['id'].astype(int) == int(objid))[0][0]] )
+        zlist.append( datinfo['redshift'][np.where(datinfo['id'].astype(int) == int(objid))[0][0]] )
+
+    for oo, objid in enumerate(np.unique(vetdat['id'])):
+        coordiff_deg = np.sqrt( (np.cos(np.deg2rad(np.asarray(declist)))*(np.asarray(ralist)-np.asarray(ralist)[oo]))**2.0 +
+                                (np.asarray(declist)-np.asarray(declist)[oo])**2.0 )
+        coordiff = coordiff_deg * 3600.
+        matchent = np.where((0 < coordiff) & (coordiff < coordsepsel))[0]
+        if len(matchent) > 0:
+            matchIDs = vetdat['id'][matchent]
+            coorsep  = coordiff[matchent]
+            if verbose: print('   matches to '+str(int(objid))+': '+str(matchIDs.astype(int))+'      @ sep = '+str("%.4f" % coorsep)+' arcsec')
+
+    regionfile = vetoutput.replace('.txt','.reg')
+    if regionfile != vetoutput:
+        if verbose: print('\n - Storing region file to\n'+regionfile)
+
+        colors = ['red']*len(ralist)
+        for oo, objid in enumerate(vetdat['id'].astype(int)):
+            if objid in id_sys_wCIVaMgII:
+                colors[oo] = 'magenta'
+            if objid in id_sys_wCIV:
+                colors[oo] = 'orange'
+            if objid in id_sys:
+                colors[oo] = 'cyan'
+
+        kbs.create_DS9region(regionfile,ralist,declist,color=colors,textlist=vetdat['id'].astype(str),clobber=True)
+
+        if verbose: print('\n - Storing LAEs to region file \n'+regionfile)
+
+        ent_wLya = np.where(np.asarray(zlist) > 2.9)[0]
+        regionfileLya = regionfile.replace('.reg','_zLT2p9.reg')
+        kbs.create_DS9region(regionfileLya,np.asarray(ralist)[ent_wLya],np.asarray(declist)[ent_wLya],
+                             color=np.asarray(colors)[ent_wLya],textlist=vetdat['id'].astype(str)[ent_wLya]
+                             ,circlesize=0.3,clobber=True)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
