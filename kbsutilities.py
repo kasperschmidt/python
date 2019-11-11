@@ -2149,6 +2149,121 @@ def calc_clumpiness(fitsimage,sigmasmooth,imgext=0,bckimg=None,bckimgext=0,negat
     Sval    = 10.0 * (imgpart - bckpart)
     if verbose: print('   Clumpiness values estimated to be '+str(Sval))
     return Sval
+
+
+
+#-------------------------------------------------------------------------------------------------------------
+def plot_template_spectra(xrange=[1000,3000],norm2max=True,verbose=True,noisesigma=None,
+                       temps2plot=['Arp220','BQSO1','Ell13','Ell2','Ell5','I19254','I20551','I22491','M82',
+                                   'Mrk231','N6090','N6240','QSO1','QSO2','S0','Sa','Sb','Sc','Sd','Sdm',
+                                   'Sey18','Sey2','Spi4','Torus','TQSO1']):
+    """
+
+    Plotting the Swire spectral galaxy templates from http://www.iasf-milano.inaf.it/~polletta/templates/swire_templates.html
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+    temps = ['QSO1','BQSO1','TQSO1','Mrk231','Sey2'] # QSOs
+    temps = ['M82','N6090','Sc','Sd'] # Starbursts
+    kbs.plot_template_spectra(xrange=[1000,3000],norm2max=True,temps2plot=temps,noisesigma=None)
+
+    """
+    cosmosspec = glob.glob('/Users/kschmidt/work/catalogs/cosmos_spectral_library/*.sed')
+    swirespec  = glob.glob('/Users/kschmidt/work/catalogs/swire_spectral_library/*.sed')
+
+    specall    = swirespec+cosmosspec
+
+    outname    = '/Users/kschmidt/work/catalogs/plot_template_spectra.pdf'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Fsize = 14
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Plotting figures to /Users/kschmidt/work/catalogs/swire_spectral_library/ ')
+    fig, ax      = plt.subplots(figsize=(8,4))
+    plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+    plt.rc('font', family='serif',size=Fsize)           # setting text font
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    left   = 0.12   # the left side of the subplots of the figure
+    right  = 0.80   # the right side of the subplots of the figure
+    bottom = 0.15     # the bottom of the subplots of the figure
+    top    = 0.98    # the top of the subplots of the figure
+    wspace = 0.20   # the amount of width reserved for blank space between subplots
+    hspace = 0.20   # the amount of height reserved for white space between subplots
+    plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    plt.gca().xaxis.grid(b=True, which='major',linestyle='--',zorder=0,color='lightgray')
+    # plt.minorticks_on()
+    # plt.gca().xaxis.grid(b=True, which='minor',linestyle=':',zorder=0,color='gray')
+    plt.gca().yaxis.grid(False)
+
+    xlabel  = 'Wavelenth [\AA]'
+
+    if norm2max:
+        yrange  = [-0.05,1.05]
+        ylabel  = 'Normalized flux'
+    else:
+        yrange  = None
+        ylabel  = 'Flux'
+
+    for ss, specfile in enumerate(specall):
+        templabel = specfile.split('/')[-1].split('.se')[0].replace('_template_norm','')
+
+        if (temps2plot == 'all'):
+            if ('q' not in templabel.lower()) & ('el' not in templabel.lower()) & ('sey' not in templabel.lower()) & \
+                    ('torus' not in templabel.lower()) & templabel.lower().startswith('s'):
+            # if (ss < 14):
+                templist = [templabel]
+            else:
+                continue
+        else:
+            templist  = temps2plot
+
+        if templabel.lower() in [tt.lower() for tt in templist]:
+            if verbose: print(' - Loading and plotting data of tempate: '+templabel)
+            specdat  = np.genfromtxt(specfile,dtype=['d','d'],comments='#',skip_header=0)
+
+            goodwave = np.where((specdat['f0'] > xrange[0]) & (specdat['f0'] < xrange[1]))
+
+            if len(goodwave[0]) > 2:
+                xvals    = specdat['f0'][goodwave]
+                if norm2max:
+                    yvals    = specdat['f1'][goodwave]/np.max(specdat['f1'][goodwave])
+                else:
+                    yvals    = specdat['f1'][goodwave]
+
+                if noisesigma is not None:
+                    yvals    = np.random.normal(yvals,noisesigma)
+
+                plt.plot(xvals,yvals,'-',linewidth=1.0,zorder=30,label=templabel.replace('_','\_'))
+
+    #plt.yticks('')
+    #plt.ylabels(linelabels)
+
+    #--------- LEGEND ---------
+    anchorpos = (1.0, 0.99)
+    leg = plt.legend(fancybox=True,numpoints=1, loc='upper left',prop={'size':Fsize},ncol=1,
+                     bbox_to_anchor=anchorpos)  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plt.savefig(outname)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - Saved figure to '+outname)
+
 #-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
