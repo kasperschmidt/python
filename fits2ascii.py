@@ -20,35 +20,35 @@ def fits2ascii(fitsfile,outpath=None,columns=['all'],verbose=True):
     NB! not tested as of 160118... download asciitable
     """
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Loading fits file '+fitsfile
+    if verbose: print(' - Loading fits file '+fitsfile)
     datfits  = pyfits.open(fitsfile)
     fitstab  = datfits[1].data
     fitscol  = fitstab.columns
 
     pdb.set_trace()
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Will write the following columns to the ascii file:'
+    if verbose: print(' - Will write the following columns to the ascii file:')
     if 'all' in columns:
         keys = fitscol.names
-        if verbose: print '   all ("all" was found in list of columns)'
+        if verbose: print('   all ("all" was found in list of columns)')
     else:
         keys = columns
-        if verbose: print '   '+','.join(keys)
+        if verbose: print('   '+','.join(keys)
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Initializing and fillling dictionary with data'
+    if verbose: print(' - Initializing and fillling dictionary with data')
     asciidata = {}
     for kk in keys:
         asciidata[kk] = []
         asciidata[kk][:] = fitstab[kk][:]
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Write dictionary to ascii file:'
+    if verbose: print(' - Write dictionary to ascii file:')
     head = fitsfile.split('.fit')[0]
     asciiname = head+'.ascii'
     if outpath != None:
         asciibase = outpath+asciiname.split('/')[-1]
     asciitable.write(asciidata, asciiname, Writer=asciitable.CommentedHeader, names=keys)
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Wrote data to: ',asciiname
+    if verbose: print(' - Wrote data to: '+asciiname)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='D',verbose=True):
@@ -57,7 +57,7 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='
 
     --- INPUT ---
     asciifile        Ascii file to convert
-    asciinames       Do the ascii file contain the column names in the header?
+    asciinames       Does the ascii file contain the column names in the header?
     skip_header      The number of header lines to skip when reading the ascii file.
     outpath          Alternative destination for the resulting fits file.
 
@@ -69,11 +69,11 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='
 
     """
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Reading ascii file ',asciifile
+    if verbose: print(' - Reading ascii file '+asciifile)
     data    = np.genfromtxt(asciifile,names=asciinames,skip_header=skip_header,comments='#',dtype=None)
     keys    = data.dtype.names
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Initialize and fill dictionary with data'
+    if verbose: print(' - Initialize and fill dictionary with data')
     datadic = {}
     for kk in keys:
         datadic[kk] = []
@@ -83,7 +83,7 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='
         except: # if only one row of data is to be written
             datadic[kk] = np.asarray([data[kk]])
 
-    if verbose: print ' - found the columns '+','.join(keys)
+    if verbose: print(' - found the columns '+','.join(keys))
 
     if len(fitsformat) != len(keys):
         fitsformat = np.asarray([fitsformat]*len(keys))
@@ -99,7 +99,7 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='
         try:
             columndefs.append(pyfits.Column(name=key  , format=fitsformat[kk], array=datadic[key]))
         except:
-            print ' ----ERROR---- in defining columns for fits file --> stopping with pdb.set_trace() to invest'
+            print(' ----ERROR---- in defining columns for fits file --> stopping with pdb.set_trace() to invest')
             pdb.set_trace()
 
 
@@ -109,6 +109,6 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='
     thdulist = pyfits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
     thdulist.writeto(outputfile,clobber=True)  # write fits file (clobber=True overwrites excisting file)
     #-------------------------------------------------------------------------------------------------------------
-    if verbose: print ' - Wrote the data to: ',outputfile
+    if verbose: print(' - Wrote the data to: '+outputfile)
     return outputfile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
