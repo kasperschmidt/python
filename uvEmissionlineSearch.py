@@ -4689,7 +4689,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
-                                              colortype=None,colorcode=True,cdatvec=None,point_text=None,
+                                              colortype=None,colorcode=True,cdatvec=None,point_text=None,ids=None,
                                               overwrite=False,verbose=True,title=None,
                                               photoionizationplotparam=None,
                                               histaxes=False,Nbins=50):
@@ -4717,7 +4717,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
 
         Fsize    = 14
         lthick   = 2
-        marksize = 4
+        marksize = 6
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif',size=Fsize)
         plt.rc('xtick', labelsize=Fsize)
@@ -4829,7 +4829,17 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         x_lolimarr = (np.asarray(xerr).astype(int) == -99)
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
             # checking for upper/lower limits
-            markersym   = 'o'
+            if ids is not None:
+                if (ids[ii] < 6e8): # CDFS and COSMOS
+                    markersym   = 'o'
+                elif (ids[ii] < 7e8) & (ids[ii] > 6e8): # UDF
+                    markersym   = 'D'
+                elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
+                    markersym   = 'X'
+                elif (ids[ii] > 1e10): # Literature objects
+                    markersym   = lce.get_reference(ids[ii],verbose=False)[4]
+            else:
+                markersym   = 'o'
             ms          = marksize
             limsizefrac = 0.05
 
@@ -4858,52 +4868,53 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 else:
                     xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
-            drawLaTeXarrows = False
-            if drawLaTeXarrows:
-                markerscale = 3.0
-                if (int(xerr[ii]) == -99) & (int(yerr[ii]) == -99):
-                    markersym ='$\\nearrow$'
-                    ms        = marksize * markerscale
-                    xerr[ii]  = None
-                    yerr[ii]  = None
-                elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == +99):
-                    markersym ='$\swarrow$'
-                    ms        = marksize * markerscale
-                    xerr[ii]  = None
-                    yerr[ii]  = None
-                elif (int(xerr[ii]) == -99) & (int(yerr[ii]) == +99):
-                    markersym ='$\\nwarrow$'
-                    ms        = marksize * markerscale
-                    xerr[ii]  = None
-                    yerr[ii]  = None
-                elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == -99):
-                    markersym ='$\searrow$'
-                    ms        = marksize * markerscale
-                    xerr[ii]  = None
-                    yerr[ii]  = None
-                elif (int(xerr[ii]) == -99) & (int(yerr[ii]) not in [-99,0,+99]):
-                    markersym ='$\rightarrow$'
-                    ms        = marksize * markerscale
-                    xerr[ii]  = None
-                elif (int(xerr[ii]) == +99) & (int(yerr[ii]) not in [-99,0,+99]):
-                    markersym ='$\leftarrow$'
-                    ms        = marksize * markerscale
-                    xerr[ii]  = None
-                elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == -99):
-                    markersym ='$\uparrow$'
-                    ms        = marksize * markerscale
-                    yerr[ii]  = None
-                elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == +99):
-                    markersym ='$\downarrow$'
-                    ms        = marksize * markerscale
-                    yerr[ii]  = None
-                elif (int(xerr[ii]) == 0) or (int(yerr[ii]) == 0):
-                    xvalues[ii] = None
-                    yvalues[ii] = None
+            # drawLaTeXarrows = False
+            # if drawLaTeXarrows:
+            #     markerscale = 3.0
+            #     if (int(xerr[ii]) == -99) & (int(yerr[ii]) == -99):
+            #         markersym ='$\\nearrow$'
+            #         ms        = marksize * markerscale
+            #         xerr[ii]  = None
+            #         yerr[ii]  = None
+            #     elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == +99):
+            #         markersym ='$\swarrow$'
+            #         ms        = marksize * markerscale
+            #         xerr[ii]  = None
+            #         yerr[ii]  = None
+            #     elif (int(xerr[ii]) == -99) & (int(yerr[ii]) == +99):
+            #         markersym ='$\\nwarrow$'
+            #         ms        = marksize * markerscale
+            #         xerr[ii]  = None
+            #         yerr[ii]  = None
+            #     elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == -99):
+            #         markersym ='$\searrow$'
+            #         ms        = marksize * markerscale
+            #         xerr[ii]  = None
+            #         yerr[ii]  = None
+            #     elif (int(xerr[ii]) == -99) & (int(yerr[ii]) not in [-99,0,+99]):
+            #         markersym ='$\rightarrow$'
+            #         ms        = marksize * markerscale
+            #         xerr[ii]  = None
+            #     elif (int(xerr[ii]) == +99) & (int(yerr[ii]) not in [-99,0,+99]):
+            #         markersym ='$\leftarrow$'
+            #         ms        = marksize * markerscale
+            #         xerr[ii]  = None
+            #     elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == -99):
+            #         markersym ='$\uparrow$'
+            #         ms        = marksize * markerscale
+            #         yerr[ii]  = None
+            #     elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == +99):
+            #         markersym ='$\downarrow$'
+            #         ms        = marksize * markerscale
+            #         yerr[ii]  = None
+            #     elif (int(xerr[ii]) == 0) or (int(yerr[ii]) == 0):
+            #         xvalues[ii] = None
+            #         yvalues[ii] = None
 
-            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],
+
+            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],capthick=0.5,
                          uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
-                         marker=markersym,lw=lthick, markersize=ms,alpha=alphaval,
+                         marker=markersym,lw=lthick/2., markersize=ms,alpha=alphaval,
                          markerfacecolor=facecol[ii],ecolor=colvec[ii],
                          markeredgecolor=colvec[ii],zorder=20)
 
@@ -6479,6 +6490,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII', point_text=None,
                                      Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5, obj2show='all',
+                                     addliteraturevalues = False,
                                      overwrite=False, verbose=True):
     """
     Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
@@ -6528,9 +6540,9 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         cdattype = None
 
     #------------------------------- Append literature measurements -------------------------------
-    addliteraturevalues = False
     if addliteraturevalues:
-        litcat  = '/Users/kschmidt/Desktop/photplots/literature_UVlinemeasurements.txt'
+        litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
+                  'literaturecollection_emissionlinestrengths.txt'
         litdat  = np.genfromtxt(litcat,names=True,skip_header=5,comments='#',dtype=None)
         Nlitobj = len(litdat)
         litarr  = np.array(np.zeros(Nlitobj)*np.nan,fluxratiodat.dtype)
@@ -6556,30 +6568,30 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist_fluxes = []
     linesetlist_fluxes.append(['CIII','CIV'   ,None,None,fluxes_range, fluxes_range,   None])
     linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-
-    linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
-
-    linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-
-    linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-
-    linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-
-    linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
 
     Nhistbins = 30
     histaxes  = True
@@ -6593,22 +6605,22 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist  = []
     linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
     linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
-    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
-    linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
-    linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
-    linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
-    linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
-    linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
-    linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
-    linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
-    linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
-    linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
-    linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
-
-    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
-    linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
-    linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
-    linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    # linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
+    # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
+    # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
+    # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
+    # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
+    # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
+    # linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
+    # linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
+    # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
+    # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
+    # linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    #
+    # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+    # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
+    # linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
     # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
@@ -6748,8 +6760,11 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                 return
 
     if point_text is not None:
-        point_text = point_text[goodent]
+        point_textALL = point_text[goodent]
+    else:
+        point_textALL = point_text
 
+    IDsALL     = fluxratiodat['id'][goodent]
     cdatvecALL = cdatvec[goodent]
 
     if len(cdatvecALL) == 0: # no objects found in FELIS output
@@ -6760,23 +6775,34 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
 
     # - - - - - - - - - Literature - - - - - - - - -
     if (line3 is None) & (line4 is None):
-        ##### NEED TO ADD LITERATURE SETUP FOR FLUX PLOTS 191111 #####
-        pass
-    else:
-        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
-            litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
-                               (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
-                               (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
-                               (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
-                               (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
+        if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names):
+            litent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) &
                                (fluxratiodat['id'].astype(float) > 1e10))[0]
 
             if len(litent) > 0:
-                xvalues  = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
-                xerr     = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
-                yvalues  = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
-                yerr     = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
+                xvalues    = np.append(xvalues,fluxratiodat['f_'+line1][litent])
+                xerr       = np.append(xerr,fluxratiodat['ferr_'+line1][litent])
+                yvalues    = np.append(yvalues,fluxratiodat['f_'+line2][litent])
+                yerr       = np.append(yerr,fluxratiodat['ferr_'+line2][litent])
                 cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
+                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+                if point_text is not None:
+                    point_textALL = np.append(point_textALL,point_text[litent])
+
+    else:
+        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
+            litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                               (fluxratiodat['id'].astype(float) > 1e10))[0]
+
+            if len(litent) > 0:
+                xvalues    = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
+                xerr       = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
+                yvalues    = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
+                yerr       = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
+                cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
+                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+                if point_text is not None:
+                    point_textALL = np.append(point_textALL,point_text[litent])
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -6789,10 +6815,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         cdatvecALL = np.asarray([0.0]*2)
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
-                                                   'dummydat',linetype='onetoone',title=title,
+                                                   'dummydat',linetype='onetoone',title=title,ids=IDsALL,
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
                                                    colortype=cdattype,colorcode=True,cdatvec=cdatvecALL,
-                                                   point_text=point_text,photoionizationplotparam=photoionizationplotparam,
+                                                   point_text=point_textALL,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
