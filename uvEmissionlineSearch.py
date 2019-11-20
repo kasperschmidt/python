@@ -4725,15 +4725,15 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         plt.ioff()
 
         if colorcode:
-            cmap    = plt.cm.get_cmap('autumn_r') # 'viridis_r'
+            cmap    = plt.cm.get_cmap('viridis_r') # 'autumn_r'
 
             if cdatvec is None:
                 cdatvec = summarydat[colortype]
 
             if colortype.lower() == 'redshift':
                 clabel  = '$z$'
-                cmin    = 0.0 # 1.4
-                cmax    = 10.2 # 6.2
+                cmin    = 0.5 # 0.0, 1.4
+                cmax    = 7.5 # 10.2, 6.2
                 cextend = 'neither'
             elif colortype.lower() == 's2nfelis':
                 clabel  = 'S/N(FELIS)'
@@ -6758,24 +6758,24 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         yerr    = np.array([])
 
     # - - - - - - - - - Literature - - - - - - - - -
-    if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
-        litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
-                           (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
-                           (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
-                           (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
-                           (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
-                           (fluxratiodat['id'].astype(float) > 1e10))[0]
+    if (line3 is None) & (line4 is None):
+        ##### NEED TO ADD LITERATURE SETUP FOR FLUX PLOTS 191111 #####
+        pass
+    else:
+        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
+            litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                               (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
+                               (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
+                               (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
+                               (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
+                               (fluxratiodat['id'].astype(float) > 1e10))[0]
 
-        if len(litent) > 0:
-            xvalues  = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
-            xerr     = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
-            yvalues  = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
-            yerr     = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
-            cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-
-
-    ##### NEED TO ADD LITERATURE SETUP FOR FLUX PLOTS 191111 #####
-
+            if len(litent) > 0:
+                xvalues  = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
+                xerr     = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
+                yvalues  = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
+                yerr     = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
+                cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
 
