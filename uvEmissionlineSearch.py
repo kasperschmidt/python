@@ -6228,7 +6228,7 @@ def check_neighbors(ids=[214063213],
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, verbose=True):
     """
-    Function to calculate the flux and line ratios for a set of summary files generated with
+    Function to calculate the flux and line ratios for a set of summary files
     containing the results from FELIS template matches to TDOSE spectra.
 
     Based (partially) on uves.calculatelineratios() below.
@@ -6279,8 +6279,8 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
     fout.write('# Flux and line ratios estimated based on FELIS template match results summarized in:\n')
     fout.write('# '+str(summaryfiles)+'\n')
     fout.write('# \n')
-    fout.write('# Upper and lower limits are given as negative values with uncertainty of +99 or -99, respectively. \n')
-    fout.write('# \n')
+    fout.write('# No limits are stored in file - s2n values are provided instead to determine limits in post-processing. \n')
+    fout.write('# See for instance uves.plot_lineratios_fromsummaryfiles_wrapper() \n')
     fout.write('# \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Determine columns to fill in output')
