@@ -34,6 +34,7 @@ import NEOGALmodels as nm
 import rxj2248_BooneBalestraSource as bbs
 import felis_build_template as fbt
 import felis
+import literaturecollection_emissionlinestrengths as lce
 import pickle
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
@@ -6380,7 +6381,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
                 f1err_num   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num] / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
                 f2_num      = f1_num    / numerator_dat['Fratio_temp'][ent_num]
                 f2err_num   = f1err_num / numerator_dat['Fratio_temp'][ent_num]
-                FR12, FR12err = uves.set_ratios('goodmatch','goodmatch',f1_num,f1err_num,f2_num,f2err_num)
+                FR12, FR12err = lce.set_ratios('goodmatch','goodmatch',f1_num,f1err_num,f2_num,f2err_num)
 
                 fluxratioarray[ii,colents['f_'+numerator_line+'1']]                         = f1_num
                 fluxratioarray[ii,colents['ferr_'+numerator_line+'1']]                      = f1err_num
@@ -6409,18 +6410,18 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
                     f_denom    = denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom]
                     ferr_denom = denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom]
 
-                    FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f_denom,ferr_denom)
+                    FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f_denom,ferr_denom)
                     fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line]]     = FR
                     fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line]]  = FRerr
                     fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line]]  = FR/FRerr
 
                     if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0):
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f_denom,ferr_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f_denom,ferr_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line]]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line]]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line]]  = FR/FRerr
 
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f_denom,ferr_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f_denom,ferr_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line]]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line]]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line]]  = FR/FRerr
@@ -6433,34 +6434,34 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, ver
                         f2_denom    = f1_denom    / denominator_dat['Fratio_temp'][ent_denom]
                         f2err_denom = f1err_denom / denominator_dat['Fratio_temp'][ent_denom]
 
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f1_denom,f1err_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f1_denom,f1err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'1']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'1']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'1']]  = FR/FRerr
 
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f2_denom,f2err_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f2_denom,f2err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'2']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'2']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'2']]  = FR/FRerr
 
                     if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
                         (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f1_denom,f1err_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f1_denom,f1err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'1']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'1']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'1']]  = FR/FRerr
 
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f2_denom,f2err_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f2_denom,f2err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'2']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'2']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'2']]  = FR/FRerr
 
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f1_denom,f1err_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f1_denom,f1err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'1']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'1']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'1']]  = FR/FRerr
 
-                        FR, FRerr = uves.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f2_denom,f2err_denom)
+                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f2_denom,f2err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'2']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'2']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'2']]  = FR/FRerr
@@ -7595,9 +7596,9 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
         fluxratiodic['S2N_nv1241']         = S2Nmax_nv1241
 
         if template_ciii1908 is 'None':
-            fluxratiodic['ciii1907ciii1909']    = -99
-            fluxratiodic['ciii1907ciii1909err'] = -99
-            fluxratiodic['sigma_ciii1908']      = -99
+            fluxratiodic['ciii1907ciii1909']    = np.nan
+            fluxratiodic['ciii1907ciii1909err'] = np.nan
+            fluxratiodic['sigma_ciii1908']      = np.nan
         else:
             fluxratiodic['ciii1907ciii1909']    = float(template_ciii1908.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
             fluxratiodic['ciii1907ciii1909err'] = ferr_ciii1908
@@ -7605,9 +7606,9 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
             fluxratiodic['sigma_ciii1908']      = 299792.458 * 2.354 * temp_sigma_ciii1908 / 1908.0
 
         if template_civ1550 is 'None':
-            fluxratiodic['civ1549civ1551']     = -99
-            fluxratiodic['civ1549civ1551err']  = -99
-            fluxratiodic['sigma_civ1550']      = -99
+            fluxratiodic['civ1549civ1551']     = np.nan
+            fluxratiodic['civ1549civ1551err']  = np.nan
+            fluxratiodic['sigma_civ1550']      = np.nan
         else:
             fluxratiodic['civ1549civ1551']     = float(template_civ1550.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
             fluxratiodic['civ1549civ1551err']  = ferr_civ1550
@@ -7615,9 +7616,9 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
             fluxratiodic['sigma_civ1550']      = 299792.458 * 2.354 * temp_sigma_civ1550 / 1550.0
 
         if template_oiii1663 is 'None':
-            fluxratiodic['oiii1661oiii1666']    = -99
-            fluxratiodic['oiii1661oiii1666err'] = -99
-            fluxratiodic['sigma_oiii1663']      = -99
+            fluxratiodic['oiii1661oiii1666']    = np.nan
+            fluxratiodic['oiii1661oiii1666err'] = np.nan
+            fluxratiodic['sigma_oiii1663']      = np.nan
         else:
             fluxratiodic['oiii1661oiii1666']    = float(template_oiii1663.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
             fluxratiodic['oiii1661oiii1666err'] = ferr_oiii1663
@@ -7625,9 +7626,9 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
             fluxratiodic['sigma_oiii1663']      = 299792.458 * 2.354 * temp_sigma_oiii1663 / 1550.0
 
         if template_nv1241 is 'None':
-            fluxratiodic['nv1239nv1243']     = -99
-            fluxratiodic['nv1239nv1243err']  = -99
-            fluxratiodic['sigma_nv1241']     = -99
+            fluxratiodic['nv1239nv1243']     = np.nan
+            fluxratiodic['nv1239nv1243err']  = np.nan
+            fluxratiodic['sigma_nv1241']     = np.nan
         else:
             fluxratiodic['nv1239nv1243']     = float(template_nv1241.split('fluxratio_')[-1].split('.')[0].replace('p','.'))
             fluxratiodic['nv1239nv1243err']  = ferr_nv1241
@@ -7635,28 +7636,28 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
             fluxratiodic['sigma_nv1241']     = 299792.458 * 2.354 * temp_sigma_nv1241 / 1550.0
 
         if template_heii1640 is 'None':
-            fluxratiodic['sigma_heii1640']       = -99
+            fluxratiodic['sigma_heii1640']       = np.nan
         else:
             temp_sigma_heii1640                  = float(template_heii1640.split('sig_')[-1].split('.fi')[0].replace('p','.'))
             fluxratiodic['sigma_heii1640']       = 299792.458 * 2.354 * temp_sigma_heii1640 / 1640.0
 
         fluxratiodic['civ1550ciii1908'], fluxratiodic['civ1550ciii1908err'] = \
-            uves.set_ratios(template_civ1550,template_ciii1908,f_civ1550,ferr_civ1550,f_ciii1908,ferr_ciii1908)
+            lce.set_ratios(template_civ1550,template_ciii1908,f_civ1550,ferr_civ1550,f_ciii1908,ferr_ciii1908)
 
         fluxratiodic['ciii1908heii1640'], fluxratiodic['ciii1908heii1640err'] = \
-            uves.set_ratios(template_ciii1908,template_heii1640,f_ciii1908,ferr_ciii1908,f_heii1640,ferr_heii1640)
+            lce.set_ratios(template_ciii1908,template_heii1640,f_ciii1908,ferr_ciii1908,f_heii1640,ferr_heii1640)
 
         fluxratiodic['civ1550heii1640'], fluxratiodic['civ1550heii1640err'] = \
-            uves.set_ratios(template_civ1550,template_heii1640,f_civ1550,ferr_civ1550,f_heii1640,ferr_heii1640)
+            lce.set_ratios(template_civ1550,template_heii1640,f_civ1550,ferr_civ1550,f_heii1640,ferr_heii1640)
 
         fluxratiodic['oiii1663heii1640'], fluxratiodic['oiii1663heii1640err'] = \
-            uves.set_ratios(template_oiii1663,template_heii1640,f_oiii1663,ferr_oiii1663,f_heii1640,ferr_heii1640)
+            lce.set_ratios(template_oiii1663,template_heii1640,f_oiii1663,ferr_oiii1663,f_heii1640,ferr_heii1640)
 
         fluxratiodic['nv1241heii1640'], fluxratiodic['nv1241heii1640err'] = \
-            uves.set_ratios(template_nv1241,template_heii1640,f_nv1241,ferr_nv1241,f_heii1640,ferr_heii1640)
+            lce.set_ratios(template_nv1241,template_heii1640,f_nv1241,ferr_nv1241,f_heii1640,ferr_heii1640)
 
         fluxratiodic['nv1241civ1550'], fluxratiodic['nv1241civ1550err'] = \
-            uves.set_ratios(template_nv1241,template_civ1550,f_nv1241,ferr_nv1241,f_civ1550,ferr_civ1550)
+            lce.set_ratios(template_nv1241,template_civ1550,f_nv1241,ferr_nv1241,f_civ1550,ferr_civ1550)
 
         outstr = ' '
         outstr = outstr+goodkey.split('-')[-1].split('.')[0][1:]+' '
@@ -7686,44 +7687,6 @@ def calculatelineratios(outputfile='./fluxratioresults.txt', S2Nmaxrange=[5.0,10
             felis.plot_picklefilecontent(goodkeys, picklefiles[gg], plotdir=plotdir, plotnames=plotnameinput,
                                          showspecerr=False, zspecISzLya=zspecISzLya)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def set_ratios(tempnum,tempdenom,numerator,numeratorerr,denominator,denominatorerr):
-    """
-
-    Function to set the flux ratios of emission lines.
-    Upper limits (denominator is 1sigma level) are returned with errors of +99
-    Lower limits (numerator is 1sigma level) are returned with errors of -99
-
-    --- INPUT ---
-    tempnum           String to indicate whether a reliable template match for the numerator existis,
-                      i.e. if tempnum='None' provide the Nsigma limit for the numerator.
-                      If any other string is provided is is assumed that the numerator contains reliable flux value.
-    tempdenom         Indicate whether a reliable template match for the denominator existis,
-                      i.e. if tempdenom='None' provide the Nsigma limit for the denominator
-                      If any other string is provided is is assumed that the denominator contains reliable flux value.
-    numerator         Flux value of the numerator in the flux ratio
-    numeratorerr      Uncertainty on the numerator
-    denominator       Flux value of the denominator in the flux ratio
-    denominatorerr    Uncertainty on the denominator
-
-    """
-    ratio      = -99
-    ratioerr   = -99
-
-    if (tempnum.lower() != 'none') & (tempdenom.lower() != 'none' ):
-        ratio      = numerator/denominator
-        ratioerr   = np.sqrt( (numeratorerr/numerator)**2+(denominatorerr/denominator)**2) * np.abs(ratio)
-    elif (tempnum.lower() == 'none') & (tempdenom.lower() != 'none' ):
-        ratio      = numerator/denominator
-        ratioerr   = +99
-    elif (tempnum.lower() != 'none') & (tempdenom.lower() == 'none' ):
-        ratio      = numerator/denominator
-        ratioerr   = -99
-    else:
-        print(' Something went wrong in uves.set_ratios() - setting trace to investigate')
-        pdb.set_trace()
-
-    return ratio, ratioerr
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def TDOSE_sourcecat_from_infofile(infofile,outputdir,minRaper=0.5,minCutwidth=4.5,goodmatchsep=0.25,overwrite=False,verbose=True):
     """

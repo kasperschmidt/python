@@ -107,9 +107,14 @@ def set_ratios(numstr,denomstr,numerator,numeratorerr,denominator,denominatorerr
     denominator       Flux value of the denominator in the flux ratio
     denominatorerr    Uncertainty on the denominator
 
+    --- EXAMPLE OF USE ---
+    import literaturecollection_emissionlinestrengths as lce
+    fluxratio, fluxratio_err = lce.set_ratios('None','good',22.,'dummy',150.,19.) # flux ratio upper limit
+    fluxratio, fluxratio_err = lce.set_ratios('good','good',22.,3.,150.,5.)
+
     """
-    ratio      = -99
-    ratioerr   = -99
+    ratio      = np.nan
+    ratioerr   = np.nan
 
     if (numstr.lower() != 'none') & (denomstr.lower() != 'none' ):
         ratio      = numerator/denominator
