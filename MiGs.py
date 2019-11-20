@@ -28,22 +28,21 @@
 """
 #-------------------------------------------------------------------------------------------------------------
 # IMPORTING MODULES
-from Tkinter import *
+# for python 2.7: from Tkinter import *
+from tkinter import *
+import pdb
 import os
 import sys
 import glob
 import datetime
 import time
 import numpy as np
-import pdb
 import subprocess
 import pyfits
 import scipy.ndimage
-import commands
 import MiGs
 import collections
 import matplotlib.pyplot as plt
-from PIL import ImageTk, Image
 #-------------------------------------------------------------------------------------------------------------
 def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID*.fits',
                  idlength=8,col_flux='FLUX',col_fluxerr='FLUXERR',col_wave='WAVE_AIR',
@@ -82,7 +81,7 @@ def load_MiGoutput(MiGoutputfile,migversion='MiG1D',verbose=True):
 
     """
     if migversion == 'MiG1D':
-        if verbose: print ' - Loading \n   '+MiGoutputfile
+        if verbose: print(' - Loading \n   '+MiGoutputfile)
         outputdata = np.genfromtxt(MiGoutputfile,comments='#',skip_header=2,names=True,dtype=None)
 
         comments = {}
@@ -129,23 +128,23 @@ def getPID(searchstring,verbose=False):
                               float(tsplit[1])*60. + float(tsplit[2])
 
             if timeval > 0: # ignore 0.00 s instances
-                if verbose: print 'Process:',line
+                if verbose: print('Process:'+str(line))
                 PIDlist.append(int(ls[0]))
                 time.append(timeval)
             else:
-                if verbose: print ' - Ignoring the following as it has a time stamp of 0s:'
-                if verbose: print '   ',line
+                if verbose: print(' - Ignoring the following as it has a time stamp of 0s:')
+                if verbose: print('   '+str(line))
     if len(PIDlist) == 0:
-        if verbose: print ' - No processes with given search string ('+searchstring+') in them. Returning None'
+        if verbose: print(' - No processes with given search string ('+searchstring+') in them. Returning None')
         return None
 
-    if verbose: print 'PIDlist:',PIDlist
-    if verbose: print 'time   :',time
+    if verbose: print('PIDlist:'+str(PIDlist))
+    if verbose: print('time   :'+str(time))
 
     PID = np.array(PIDlist)[time == np.min(time)]
     if len(PID) > 1:
-        print ' - Note multiple IDs with the same time stamp were found: ',PID
-        print '   Returning the first PID'
+        print(' - Note multiple IDs with the same time stamp were found: '+str(PID))
+        print('   Returning the first PID')
 
     return PID[0]
 #-------------------------------------------------------------------------------------------------------------
@@ -154,7 +153,7 @@ def check_idlist(idlist,dir,idsearchstr,verbose=True):
     Checking if pngs exist for objects in idlist.
     Returning list of ids with existing files
     """
-    if verbose: print ' - Checking ID list to make sure data for objects exists'
+    if verbose: print(' - Checking ID list to make sure data for objects exists')
     goodids = np.array([])
     for objid in idlist:
         idstr = str(objid)
@@ -163,7 +162,7 @@ def check_idlist(idlist,dir,idsearchstr,verbose=True):
             goodids = np.append(goodids,objid)
 
     if (len(goodids) == 0):
-        if verbose: print ' - WARNING None of the IDs have data in dir=\n   '+dir
+        if verbose: print(' - WARNING None of the IDs have data in dir=\n   '+dir)
 
     return goodids
 #-------------------------------------------------------------------------------------------------------------
@@ -439,16 +438,16 @@ class Application_1D(Frame):
             sys.exit(' No valid IDs found \n             Did you provide the right "idsearchstr"? ')
 
         self.currentobj = self.objlist[0]                    # set the first id to look at
-        if verbose: print " - Found "+str(len(self.objlist))+' objects to inspect'
+        if verbose: print(" - Found "+str(len(self.objlist))+' objects to inspect')
 
         # -------- OPEN/PREPARE OUTPUT FILE --------
         if os.path.isfile(outfile) & (clobber == True): # check if file is to be overwritten
             overwrite = raw_input(' - clobber==True Are you sure you want to overwrite '+outfile+'? (y/n): ')
             if (overwrite == 'y') or (overwrite == 'yes'):
-                print "   Okay, I'll remove the file and start a new one"
+                print("   Okay, I'll remove the file and start a new one")
                 os.remove(outfile)
             elif (overwrite == 'n') or (overwrite == 'no'):
-                print "   Okay, I'll append to the existing file, then"
+                print("   Okay, I'll append to the existing file, then")
             else:
                 sys.exit('   "'+overwrite+'" is not a valid answer --> Aborting')
 
@@ -468,7 +467,7 @@ class Application_1D(Frame):
             lastID = lastline.split()[0]                     # get the last ID in file
             if lastID != '#':
                 objent = np.where(self.objlist == float(lastID))[0]
-                if self.vb: print ' - The file '+outfile+' already exists (Resuming after last objects in output)'
+                if self.vb: print(' - The file '+outfile+' already exists (Resuming after last objects in output)')
                 try:
                     self.currentobj = self.objlist[objent+1][0]  # change first id to look at
                 except:
@@ -476,15 +475,15 @@ class Application_1D(Frame):
                 Nremaining = len(self.objlist[objent+1:])
                 Ninspected = len(np.unique(np.sort(IDinspected)))
                 if self.vb:
-                    print ' - Info from existing output: '
-                    print '   '+str(Nremaining)+' of '+str(len(self.objlist))+' IDs still need to be expected'
-                    print '   Found '+str(Ninspected)+' IDs already inspected in file'
+                    print(' - Info from existing output: ')
+                    print('   '+str(Nremaining)+' of '+str(len(self.objlist))+' IDs still need to be expected')
+                    print('   Found '+str(Ninspected)+' IDs already inspected in file')
 
             else:
-                if self.vb: print ' - The file '+outfile+' already exists (append as last row does not contain ID)'
+                if self.vb: print(' - The file '+outfile+' already exists (append as last row does not contain ID)')
             self.fout     = open(outfile,'a')
         else:
-            if self.vb: print ' - The file '+outfile+' was created (did not exist)'
+            if self.vb: print(' - The file '+outfile+' was created (did not exist)')
             self.fout     = open(outfile,'w')
             self.fout.write('# Results from Visual Inspection of zfits initiated on '+self.now+' \n')
             self.fout.write('# Inspector: '+iname+' \n')
@@ -656,7 +655,7 @@ class Application_1D(Frame):
             import collections
             self.keys = collections.OrderedDict(sorted(self.keys.items()))
         else:
-            print 'WARNING Python version not 2.7 so not sorting dictionary of keywords(1)'
+            print('WARNING Python version not 2.7 so not sorting dictionary of keywords(1)')
 
         Nkey = 0
         self.cbdic     = {}
@@ -870,7 +869,7 @@ class Application_1D(Frame):
         """
         plotname = self.dir+str("%.5d" % self.currentobj)+'_MiG1D_specplot.pdf'
         self.dataPlot_fig.savefig(plotname)
-        print ' - Saved plot window to \n   '+plotname
+        print(' - Saved plot window to \n   '+plotname)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def dataPlot_loaddata(self,verbose=False):
         """
@@ -921,15 +920,15 @@ class Application_1D(Frame):
             self.dataPlot_ax     = self.dataPlot_fig.add_subplot(111)
         #----------------- Grab info from sliders -----------------
         smoothlevel  = float(self.varslidersmooth.get())
-        if verbose: print ' - Grabbed the Gauss smooth level ',smoothlevel,' from the slider'
+        if verbose: print(' - Grabbed the Gauss smooth level ',smoothlevel,' from the slider')
         redshift     = float(self.varsliderz.get())
-        if verbose: print ' - Grabbed the redshift '+str("%.3f" % redshift)+' from the slider'
+        if verbose: print(' - Grabbed the redshift '+str("%.3f" % redshift)+' from the slider')
 
         try:
             zbyhand      = float(self.byhandz.get())
             if type(zbyhand) == float:
                 redshift = zbyhand
-                if verbose: print '   But the redshift',zbyhand,'was found in "by-hand" field so using that instead '
+                if verbose: print('   But the redshift',zbyhand,'was found in "by-hand" field so using that instead ')
             self.varsliderz.set(zbyhand)
         except:
             pass
@@ -1054,7 +1053,7 @@ class Application_1D(Frame):
                 elif self.lineuncertainty > 1.0: # treat input as Delta v uncertainty
                     zoffset = self.lineuncertainty*(redshift+1.0) / 299792.458
                 else:
-                    if self.vb: print ' WARNING: Invalid value of "lineuncertainty" using dz=0.1'
+                    if self.vb: print(' WARNING: Invalid value of "lineuncertainty" using dz=0.1')
                     zoffset  = 0.1
 
                 linexmin = ( (redshift-zoffset) +1) * linelist[ii]/self.DPxscale
@@ -1127,8 +1126,8 @@ class Application_1D(Frame):
                     glob.glob(self.dir+'/*'+idstr+'*.png')+glob.glob(self.dir+'/*'+idstr+'*.pdf')
 
         if len(self.pngs) == 0:
-            if self.vb: print ' - Did not find any png or pdf files to open. Looked for '+\
-                              self.dir+'/*'+idstr+'*.pdf/pdf'
+            if self.vb: print(' - Did not find any png or pdf files to open. Looked for '+\
+                              self.dir+'/*'+idstr+'*.pdf/pdf')
         else:
             self.file = self.pngs[0].split('/')[-1]
 
@@ -1185,17 +1184,22 @@ class Application_1D(Frame):
             self.ds9windowopen = True
             time.sleep(1.0)
             for ii in np.arange(1,17):
-                out = commands.getoutput('xpaset -p ds9 frame new')
-            out = commands.getoutput('xpaset -p ds9 tile')
+                out = subprocess.Popen('xpaset -p ds9 frame new',shell=True,executable=os.environ["SHELL"])
+                # for python 2.7 out = commands.getoutput('xpaset -p ds9 frame new')
+            out = subprocess.Popen('xpaset -p ds9 tile',shell=True,executable=os.environ["SHELL"])
+            # for python 2.7 out = commands.getoutput('xpaset -p ds9 tile')
 
         Fstart = 1
         for ff, filename in enumerate(self.fitsallfound):
             imgname    = filename.split('/')[-1].replace('.fits','')
-            out        = commands.getoutput('xpaset -p ds9 frame '+str(Fstart))
+            out = subprocess.Popen('xpaset -p ds9 frame '+str(Fstart),shell=True,executable=os.environ["SHELL"])
+            # for python 2.7 out        = commands.getoutput('xpaset -p ds9 frame '+str(Fstart))
             regionfile = self.regiontemp.replace('.reg',imgname+'file'+str(ff)+'.reg')
             self.ds9textregion(imgname,filename=regionfile)
-            out = commands.getoutput('xpaset -p ds9 file '+filename+self.openfitsext)
-            out = commands.getoutput('xpaset -p ds9 regions '+regionfile)
+            out = subprocess.Popen('xpaset -p ds9 file '+filename+self.openfitsext,shell=True,executable=os.environ["SHELL"])
+            out = subprocess.Popen('xpaset -p ds9 regions '+regionfile,shell=True,executable=os.environ["SHELL"])
+            # for python 2.7 out = commands.getoutput('xpaset -p ds9 file '+filename+self.openfitsext)
+            # for python 2.7 out = commands.getoutput('xpaset -p ds9 regions '+regionfile)
             Fstart += 1
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1224,7 +1228,7 @@ class Application_1D(Frame):
         # if int(self.ds9version[1].split('.')[0]) >= 7: # only lock if ds9 version is 7 or later
         #     lockstr = ' -lock frame physical '
         # else:
-        #     print ' - WARNING DS9 version older than 7.*; Not locking frames.'
+        #     print(' - WARNING DS9 version older than 7.*; Not locking frames.')
         #     lockstr = ' '
 
         lockstr = ' -lock frame physical '
@@ -1255,8 +1259,8 @@ class Application_1D(Frame):
         except:
             zbyhand      = '-99 '
             if (str(self.byhandz.get()) != ''):
-                print ' - WARNING: by-hand redshift field ('+str(self.byhandz.get())+\
-                      ') could not be converted to float. Using -99.'
+                print(' - WARNING: by-hand redshift field ('+str(self.byhandz.get())+
+                      ') could not be converted to float. Using -99.')
         zbyhand = zbyhand+str(int(self.varsliderzqual.get()))
 
         resultstr  = ' '+str("%.5d" % self.currentobj)+' '
@@ -1331,7 +1335,7 @@ class Application_1D(Frame):
             if line[0:10] != stringstart:
                 file.write(line)
             else:
-                if self.vb: print ' - Found dublicate entry for ID '+idstr+' -> deleting it!'
+                if self.vb: print(' - Found dublicate entry for ID '+idstr+' -> deleting it!')
                 Ndup = Ndup+1
 
         file.close()
@@ -1346,15 +1350,16 @@ class Application_1D(Frame):
         try:
             os.kill(self.pngPID,killsignal)                  # close PNG window for currentobj
         except:
-            print '   WARNING error occurred while trying to close PNG window(s)'
+            print('   WARNING error occurred while trying to close PNG window(s)')
 
         if np.logical_or(((self.ds9open == True) & (self.xpa == False)),
                          ((self.xpa == True) & (self.quitting == True) & (self.ds9windowopen == True))):
             try:
                 os.kill(self.ds9PID,killsignal)                  # close DS9 window for currentobj
             except:
-                if self.vb: print ' - WARNING: Could not kill DS9 process id ',self.ds9PID
-            rmout = commands.getoutput('rm '+self.regiontemp.replace('.reg','*.reg')) # removing ds9 region file
+                if self.vb: print(' - WARNING: Could not kill DS9 process id '+str(self.ds9PID))
+            rmout = subprocess.Popen('rm '+self.regiontemp.replace('.reg','*.reg'),shell=True,executable=os.environ["SHELL"])
+            # for python 2.7 rmout = commands.getoutput('rm '+self.regiontemp.replace('.reg','*.reg')) # removing ds9 region file
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def skip_but(self,position):
@@ -1370,7 +1375,7 @@ class Application_1D(Frame):
         self.reset(skip=True)
 
         if self.currentobj == self.objlist[-1]:
-            if self.vb: print ' - Object',self.currentobj,' was the last in the list.\n   Quitting GUI.'
+            if self.vb: print(' - Object',self.currentobj,' was the last in the list.\n   Quitting GUI.')
             self.quitting = True
             self.quit_but_cmd()
         else:
@@ -1404,7 +1409,7 @@ class Application_1D(Frame):
         self.reset()
 
         if self.currentobj == self.objlist[-1]:
-            if self.vb: print ' - Object',self.currentobj,' was the last in the list.\n   Quitting GUI.'
+            if self.vb: print(' - Object',self.currentobj,' was the last in the list.\n   Quitting GUI.')
             self.quitting = True
             self.quit_but_cmd()
         else:
@@ -1438,7 +1443,7 @@ class Application_1D(Frame):
         self.reset()
 
         if self.currentobj == self.objlist[0]:
-            if self.vb: print ' - At first object of list...'
+            if self.vb: print(' - At first object of list...')
         else:
             newent = np.where(self.objlist == self.currentobj)[0]-1
             self.currentobj = self.objlist[newent][0]
@@ -1477,7 +1482,7 @@ class Application_1D(Frame):
         self.dataPlotManager.destroy()
         if self.outcheck: self.checkoutput()
         self.quit()
-        if self.vb: print ' - Quit MiG1D successfully'
+        if self.vb: print(' - Quit MiG1D successfully')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def checkoutput(self):
         """
@@ -1486,8 +1491,8 @@ class Application_1D(Frame):
         data      = np.genfromtxt(self.outfile,comments='#',skip_header=2,names=True)
         Nobjout   = len(np.unique(data['ID']))
 
-        if self.vb: print ' - OUTPUTCHECK: Found '+str(Nobjout)+' objects in output. '+\
-                          'Input objlist contained '+str(len(self.objlist))+' objects'
+        if self.vb: print(' - OUTPUTCHECK: Found '+str(Nobjout)+' objects in output. '+\
+                          'Input objlist contained '+str(len(self.objlist))+' objects')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def keyboard_cmd(self,event):
         """
@@ -1499,7 +1504,7 @@ class Application_1D(Frame):
         if  (focuson == self.comments) or (focuson == self.byhandz):
             pass
         else:
-            #if self.vb: print '   Keyboard shortcut: ',cmd
+            #if self.vb: print('   Keyboard shortcut: ',cmd)
             keycmd    = []
             keynames  = []
             keynumber = []
@@ -1573,7 +1578,7 @@ class Application_1D(Frame):
                 self.next_but_cmd()
 
             else:
-                #if self.vb: print ' - Invalid keyboard shortcut :',cmd # prints shift+tab key as well
+                #if self.vb: print(' - Invalid keyboard shortcut :',cmd # prints shift+tab key as well)
                 pass
 
 #-------------------------------------------------------------------------------------------------------------
