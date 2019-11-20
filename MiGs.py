@@ -28,11 +28,9 @@
 """
 #-------------------------------------------------------------------------------------------------------------
 # IMPORTING MODULES
-# for python 2.7: from Tkinter import *
-from tkinter import *
+import sys
 import pdb
 import os
-import sys
 import glob
 import datetime
 import time
@@ -43,6 +41,12 @@ import scipy.ndimage
 import MiGs
 import collections
 import matplotlib.pyplot as plt
+
+pversion = sys.version_info[0]
+if pversion == 2:
+    from Tkinter import *
+elif pversion == 3:
+    from tkinter import *
 #-------------------------------------------------------------------------------------------------------------
 def launch_MiG1D(directory='./',outputfile='DEFAULT',idsearchstr='spectrum_OBJID*.fits',
                  idlength=8,col_flux='FLUX',col_fluxerr='FLUXERR',col_wave='WAVE_AIR',
