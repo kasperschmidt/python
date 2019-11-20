@@ -5,6 +5,7 @@ import pdb
 import sys
 import os
 import astropy.io.fits as afits
+from fits2ascii import ascii2fits
 import MiGs
 import numpy as np
 import collections
@@ -183,7 +184,7 @@ def collect_data(outputfile,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Collecting literature data arrays')
 
-    appenddatadic = {}
+    appenddatadic = collections.OrderedDict()
     #------------------------------------------------
     dataref, appenddata     = lce.data_sen17(fluxscale=1e5)
     appenddatadic[dataref]  = appenddata
@@ -216,6 +217,11 @@ def collect_data(outputfile,verbose=True):
     fout.close()
     fmt = '20a,20a,'+','.join((Ncols-2)*['d'])
     dataarray = np.genfromtxt(outputfile,skip_header=5,dtype=fmt,comments='#',names=True)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Creating fits version of output: '+outputfile.replace('.txt','.fits'))
+    fitsformat = ['D','20A'] + ['D']*(Ncols-2)
+    fitsoutput = ascii2fits(outputfile,asciinames=True,skip_header=5,fitsformat=fitsformat,verbose=False)
 
     return dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
