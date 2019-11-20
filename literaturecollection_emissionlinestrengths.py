@@ -46,7 +46,7 @@ def get_reference(idlist,verbose=True):
     for id in idlist:
         idstr  = str(id)
 
-        if (len(idstr) != 10) or idstr.startswith('0'):
+        if (len(idstr) != 11) or idstr.startswith('0'):
             if verbose: print(' - The id '+idstr+' is not on the right format. It should be 11 digits long and not start with 0')
         else:
             baseid = int(idstr[0:3].ljust(11,'0'))
@@ -54,11 +54,11 @@ def get_reference(idlist,verbose=True):
             foundref = False
             for key in refdic.keys():
                 if int(refdic[key][0]) == baseid:
-                    returnrefs.append([idstr,key,refdic[key][0],refdic[key][1]])
+                    returnrefs.append([idstr,key,refdic[key][0],refdic[key][1],refdic[key][2]])
                     foundref = True
 
             if not foundref:
-                returnrefs.append([idstr,'NoRef',baseid,'NoRef'])
+                returnrefs.append([idstr,'NoRef',baseid,'NoRef','$??$'])
 
 
     if len(idlist) != len(returnrefs):
@@ -73,9 +73,10 @@ def referencedictionary():
 
     """
     refdic = collections.OrderedDict()
-    #                  baseid   reference
-    refdic['sen17'] = [1e10,    'Senchyna et al. 2017']
-    refdic['nan19'] = [2e10,    'Nanaykkara et al. 2019']
+    #                  baseid   reference                     plotsymbol
+    refdic['sen17'] = [1e10,    'Senchyna et al. 2017',       '+']
+    refdic['nan19'] = [2e10,    'Nanaykkara et al. 2019',     's']
+    refdic['eor']   = [3e10,    'EoR objects',                'v']
 
     return refdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -151,7 +152,7 @@ def restUVline_literaturecollection(outputfile,verbose=True):
     fout = open(outputfile,'w')
     fout.write('# Flux, EW and line ratios collected from the literature:\n')
     fout.write('# \n')
-    fout.write('# Upper and lower limits are given as negative values with uncertainty of +99 or -99, respectively. \n')
+    fout.write('# Upper and lower limits are given as values with uncertainty of +99 or -99, respectively. \n')
     fout.write('# \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Determine columns to fill in output')
@@ -237,13 +238,13 @@ def restUVline_literaturecollection(outputfile,verbose=True):
 
     appenddatadic = {}
     #------------------------------------------------
-    dataref, appenddata     = uves.restUVline_literaturecollection_Senchyna17(baseid=1e10)
+    dataref, appenddata     = lce.restUVline_literaturecollection_Senchyna17(baseid=1e10)
     appenddatadic[dataref]  = appenddata
 
-    dataref, appenddata     = uves.restUVline_literaturecollection_Nanaykkara19(baseid=2e10)
+    dataref, appenddata     = lce.restUVline_literaturecollection_Nanaykkara19(baseid=2e10)
     appenddatadic[dataref]  = appenddata
 
-    dataref, appenddata     = restUVline_literaturecollection_EoR(baseid=3e10)
+    dataref, appenddata     = lce.restUVline_literaturecollection_EoR(baseid=3e10)
     appenddatadic[dataref]  = appenddata
     #------------------------------------------------
 
