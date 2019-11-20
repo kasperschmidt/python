@@ -4725,15 +4725,15 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         plt.ioff()
 
         if colorcode:
-            cmap    = plt.cm.get_cmap('viridis_r')
+            cmap    = plt.cm.get_cmap('autumn_r') # 'viridis_r'
 
             if cdatvec is None:
                 cdatvec = summarydat[colortype]
 
             if colortype.lower() == 'redshift':
                 clabel  = '$z$'
-                cmin    = 1.4
-                cmax    = 6.2
+                cmin    = 0.0 # 1.4
+                cmax    = 10.2 # 6.2
                 cextend = 'neither'
             elif colortype.lower() == 's2nfelis':
                 clabel  = 'S/N(FELIS)'
@@ -4822,10 +4822,10 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
 
         #--------- X and Y limits ---------
-        y_uplimarr = (np.asarray(yerr) == +99)
-        y_lolimarr = (np.asarray(yerr) == -99)
-        x_uplimarr = (np.asarray(xerr) == +99)
-        x_lolimarr = (np.asarray(xerr) == -99)
+        y_uplimarr = (np.asarray(yerr).astype(int) == +99)
+        y_lolimarr = (np.asarray(yerr).astype(int) == -99)
+        x_uplimarr = (np.asarray(xerr).astype(int) == +99)
+        x_lolimarr = (np.asarray(xerr).astype(int) == -99)
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
             # checking for upper/lower limits
             markersym   = 'o'
@@ -4860,43 +4860,43 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             drawLaTeXarrows = False
             if drawLaTeXarrows:
                 markerscale = 3.0
-                if (xerr[ii] == -99) & (yerr[ii] == -99):
+                if (int(xerr[ii]) == -99) & (int(yerr[ii]) == -99):
                     markersym ='$\\nearrow$'
                     ms        = marksize * markerscale
                     xerr[ii]  = None
                     yerr[ii]  = None
-                elif (xerr[ii] == +99) & (yerr[ii] == +99):
+                elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == +99):
                     markersym ='$\swarrow$'
                     ms        = marksize * markerscale
                     xerr[ii]  = None
                     yerr[ii]  = None
-                elif (xerr[ii] == -99) & (yerr[ii] == +99):
+                elif (int(xerr[ii]) == -99) & (int(yerr[ii]) == +99):
                     markersym ='$\\nwarrow$'
                     ms        = marksize * markerscale
                     xerr[ii]  = None
                     yerr[ii]  = None
-                elif (xerr[ii] == +99) & (yerr[ii] == -99):
+                elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == -99):
                     markersym ='$\searrow$'
                     ms        = marksize * markerscale
                     xerr[ii]  = None
                     yerr[ii]  = None
-                elif (xerr[ii] == -99) & (yerr[ii] not in [-99,0,+99]):
+                elif (int(xerr[ii]) == -99) & (int(yerr[ii]) not in [-99,0,+99]):
                     markersym ='$\rightarrow$'
                     ms        = marksize * markerscale
                     xerr[ii]  = None
-                elif (xerr[ii] == +99) & (yerr[ii] not in [-99,0,+99]):
+                elif (int(xerr[ii]) == +99) & (int(yerr[ii]) not in [-99,0,+99]):
                     markersym ='$\leftarrow$'
                     ms        = marksize * markerscale
                     xerr[ii]  = None
-                elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == -99):
+                elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == -99):
                     markersym ='$\uparrow$'
                     ms        = marksize * markerscale
                     yerr[ii]  = None
-                elif (xerr[ii] not in [-99,0,+99]) & (yerr[ii] == +99):
+                elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == +99):
                     markersym ='$\downarrow$'
                     ms        = marksize * markerscale
                     yerr[ii]  = None
-                elif (xerr[ii] == 0) or (yerr[ii] == 0):
+                elif (int(xerr[ii]) == 0) or (int(yerr[ii]) == 0):
                     xvalues[ii] = None
                     yvalues[ii] = None
 
@@ -5112,13 +5112,21 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     edgecol  = 'None'
 
-    cmap    = plt.cm.get_cmap('copper_r') #'plasma', 'Reds_r'
+    cmap    = plt.cm.get_cmap('Reds') #'plasma', 'Greys' 'copper_r'
     cmin    = np.min(np.append(varydatSF,varydatAGN))
     cmax    = np.max(np.append(varydatSF,varydatAGN))
     colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
     cmaparr = np.linspace(cmin, cmax, 30) #cmax-cmin)
     mm      = plt.cm.ScalarMappable(cmap=cmap)
     mm.set_array(cmaparr)
+
+    cmapAGN    = plt.cm.get_cmap('Blues') # 'copper_r' 'plasma', 'Reds_r' 'spring'
+    cminAGN    = np.min(np.append(varydatSF,varydatAGN))
+    cmaxAGN    = np.max(np.append(varydatSF,varydatAGN))
+    colnormAGN = matplotlib.colors.Normalize(vmin=cminAGN,vmax=cmaxAGN)
+    cmaparrAGN = np.linspace(cminAGN, cmaxAGN, 30) #cmax-cmin)
+    mmAGN      = plt.cm.ScalarMappable(cmap=cmapAGN)
+    mmAGN.set_array(cmaparrAGN)
 
     if varyparam == 'Zgas':
         # colortickvals   = [1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 0.003048, 4e-3, 6e-3, 8e-3, 0.01, 0.01524, 0.02, 0.03, 0.04, 0.07] # 0.014, 0.017,
@@ -5163,7 +5171,7 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
                     marker=SFmarker,lw=0.2, facecolor='None',edgecolor=SFcol, zorder=5)
 
     for vdAGN in np.unique(varydatAGN):
-        AGNcol    = 'gray' # cmap(colnorm(vdAGN))
+        AGNcol    = cmapAGN(colnorm(vdAGN)) # 'gray'
         AGNcolent = np.where(varydatAGN == vdAGN)
 
         plt.scatter(ratioAGN_x[AGNcolent],ratioAGN_y[AGNcolent],s=markersize,
@@ -6518,6 +6526,27 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     else:
         cdattype = None
 
+    #------------------------------- Append literature measurements -------------------------------
+    addliteraturevalues = False
+    if addliteraturevalues:
+        litcat  = '/Users/kschmidt/Desktop/photplots/literature_UVlinemeasurements.txt'
+        litdat  = np.genfromtxt(litcat,names=True,skip_header=5,comments='#',dtype=None)
+        Nlitobj = len(litdat)
+        litarr  = np.array(np.zeros(Nlitobj)*np.nan,fluxratiodat.dtype)
+        for lo, litobject in enumerate(litdat):
+            for litcol in litdat.dtype.names:
+                if litcol in fluxratiodat.dtype.names:
+                    litarr[litcol][lo] = litdat[litcol][lo]
+
+        fluxratiodat = np.hstack((fluxratiodat,litarr))
+
+        if colorvar_obj.lower() == 'redshift':
+            cdatvec  = np.hstack((cdatvec,litdat['redshift']))
+    # pdb.set_trace() #  litdat['FR_CIVOIII'][-3:], litdat['FR_CIVHeII'][-3:],  litdat['FRerr_CIVHeII'][-3:],  litdat['FRerr_CIVOIII'][-3:]
+    # fluxratiodat['FR_CIVOIII'][-3:], fluxratiodat['FR_CIVHeII'][-3:],  fluxratiodat['FRerr_CIVHeII'][-3:],  fluxratiodat['FRerr_CIVOIII'][-3:]
+
+    #----------------------------------------------------------------------------------------------
+
     if point_text is not None:
         point_text = fluxratiodat['id'].astype(str)
 
@@ -6574,10 +6603,13 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
     linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
     linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
-    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
 
+    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+    linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
     linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
-    linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+
+    # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
     Nhistbins = 30
     histaxes  = False
@@ -6615,20 +6647,27 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names):
             goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) &
                                 (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
-                                (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) )[0]
+                                (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
+                                (fluxratiodat['id'].astype(float) < 1e10))[0]
         else:
             goodent  = []
 
+        xlabel   = line1+' [1e-20erg/s/cm$^2$]'
+        ylabel   = line2+' [1e-20erg/s/cm$^2$]'
+
         if len(goodent) == 0:
-            if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
-            return
+            if verbose: print('\n - OLD WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
+            # goodent  = np.asarray([0,1])
+            # xvalues  = [1e10]*2
+            # xerr     = [1.0]*2
+            # yvalues  = [1e10]*2
+            # yerr     = [1.0]*2
+            # cdatvec  = np.asarray([0.0]*2)
         else:
             xvalues  = fluxratiodat['f_'+line1][goodent]
             xerr     = fluxratiodat['ferr_'+line1][goodent]*Nsigma
-            xlabel   = line1+' [1e-20erg/s/cm$^2$]'
             yvalues  = fluxratiodat['f_'+line2][goodent]
             yerr     = fluxratiodat['ferr_'+line2][goodent]*Nsigma
-            ylabel   = line2+' [1e-20erg/s/cm$^2$]'
 
             xlimits_ent  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
             if len(xlimits_ent) > 0:
@@ -6650,27 +6689,34 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                 (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
                                 (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
                                 (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
-                                (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) )[0]
+                                (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
+                                (fluxratiodat['id'].astype(float) < 1e10))[0]
 
         else:
             goodent  = []
 
+        xlabel   = line1+'/'+line2
+        ylabel   = line3+'/'+line4
+
         if len(goodent) == 0:
-            if verbose: print('\n - WARNING No good values found for the plot \n           '+plotname.split('/')[-1]+'\n')
-            return
+            if verbose: print('\n - OLD WARNING No good values found for the plot \n           '+plotname.split('/')[-1]+'\n')
+            # goodent  = np.asarray([0,1])
+            # xvalues  = [1e10]*2
+            # xerr     = [1.0]*2
+            # yvalues  = [1e10]*2
+            # yerr     = [1.0]*2
+            # cdatvec  = np.asarray([0.0]*2)
         else:
             xvalues  = fluxratiodat['FR_'+line1+line2][goodent]
             xerr     = fluxratiodat['FRerr_'+line1+line2][goodent]*Nsigma
-            xlabel   = line1+'/'+line2
             yvalues  = fluxratiodat['FR_'+line3+line4][goodent]
             yerr     = fluxratiodat['FRerr_'+line3+line4][goodent]*Nsigma
-            ylabel   = line3+'/'+line4
 
             xlimits_ent_num  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
             xlimits_ent_den  = np.where(fluxratiodat['s2n_'+line2][goodent] < Nsigma)[0]
             for xent, xval in enumerate(xvalues):
                 if (xent in xlimits_ent_num) & (xent in xlimits_ent_den):
-                    xvalues[xent]     = -99
+                    xvalues[xent]     = np.nan
                     xerr[xent] = 0      # no constraint
                 elif (xent in xlimits_ent_num) & (xent not in xlimits_ent_den):
                     xvalues[xent] = xerr[xent] * Nsigma
@@ -6682,7 +6728,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             ylimits_ent_den  = np.where(fluxratiodat['s2n_'+line4][goodent] < Nsigma)[0]
             for yent, yval in enumerate(yvalues):
                 if (yent in ylimits_ent_num) & (yent in ylimits_ent_den):
-                    yvalues[yent]   = -99
+                    yvalues[yent]   = np.nan
                     yerr[yent]      = 0      # no constraint
                 elif (yent in ylimits_ent_num) & (yent not in ylimits_ent_den):
                     yvalues[yent] = yerr[yent] * Nsigma
@@ -6703,10 +6749,48 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
     if point_text is not None:
         point_text = point_text[goodent]
 
+    cdatvecALL = cdatvec[goodent]
+
+    if len(cdatvecALL) == 0: # no objects found in FELIS output
+        xvalues = np.array([])
+        xerr    = np.array([])
+        yvalues = np.array([])
+        yerr    = np.array([])
+
+    # - - - - - - - - - Literature - - - - - - - - -
+    if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
+        litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                           (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
+                           (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
+                           (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
+                           (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
+                           (fluxratiodat['id'].astype(float) > 1e10))[0]
+
+        if len(litent) > 0:
+            xvalues  = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
+            xerr     = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
+            yvalues  = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
+            yerr     = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
+            cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
+
+
+    ##### NEED TO ADD LITERATURE SETUP FOR FLUX PLOTS 191111 #####
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - -
+
+    if len(cdatvecALL) == 0:
+        if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
+        xvalues    = [1e10]*2
+        xerr       = [1.0]*2
+        yvalues    = [1e10]*2
+        yerr       = [1.0]*2
+        cdatvecALL = np.asarray([0.0]*2)
+
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
-                                                   colortype=cdattype,colorcode=True,cdatvec=cdatvec[goodent],
+                                                   colortype=cdattype,colorcode=True,cdatvec=cdatvecALL,
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
@@ -7199,7 +7283,14 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
 
     if len(goodent) == 0:
         if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
-        return
+        goodent  = np.asarray([0,1])
+        xvalues  = [1e10]*2
+        xerr     = [1.0]*2
+        xlabel   = line1+'/'+line2
+        yvalues  = [1e10]*2
+        yerr     = [1.0]*2
+        ylabel   = line3+'/'+line4
+        cdatvec  = np.asarray([0.0]*2)
     else:
         if 'lya' in str1.lower():
             xlabel   = lineEW1[1]
@@ -7619,15 +7710,15 @@ def set_ratios(tempnum,tempdenom,numerator,numeratorerr,denominator,denominatore
     ratio      = -99
     ratioerr   = -99
 
-    if (tempnum.lower() is not 'none') & (tempdenom.lower() is not 'none' ):
+    if (tempnum.lower() != 'none') & (tempdenom.lower() != 'none' ):
         ratio      = numerator/denominator
         ratioerr   = np.sqrt( (numeratorerr/numerator)**2+(denominatorerr/denominator)**2) * np.abs(ratio)
-    elif (tempnum.lower() is 'none') & (tempdenom.lower() is not 'none' ):
-        ratio      = numerator/denominator
-        ratioerr   = -99
-    elif (tempnum.lower() is not 'none') & (tempdenom.lower() is 'none' ):
+    elif (tempnum.lower() == 'none') & (tempdenom.lower() != 'none' ):
         ratio      = numerator/denominator
         ratioerr   = +99
+    elif (tempnum.lower() != 'none') & (tempdenom.lower() == 'none' ):
+        ratio      = numerator/denominator
+        ratioerr   = -99
     else:
         print(' Something went wrong in uves.set_ratios() - setting trace to investigate')
         pdb.set_trace()
