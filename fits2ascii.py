@@ -33,7 +33,7 @@ def fits2ascii(fitsfile,outpath=None,columns=['all'],verbose=True):
         if verbose: print('   all ("all" was found in list of columns)')
     else:
         keys = columns
-        if verbose: print('   '+','.join(keys)
+        if verbose: print('   '+','.join(keys))
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print(' - Initializing and fillling dictionary with data')
     asciidata = {}
