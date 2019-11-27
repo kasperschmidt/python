@@ -439,7 +439,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
             leadline.append(datU10main['LINE_ID'][objent][0])
             leadlineSN.append(datU10main['S2N'][objent][0])
         else:
-            print('Weird... ID not found in E24, E36, E40, UDF10, UDF-shallow or UDF-mosaic id-list... #1')
+            print('\nWeird... ID= '+str(id)+' not found in E24, E36, E40, UDF10, UDF-shallow or UDF-mosaic id-list... #1\n')
             pdb.set_trace()
         # - - - - - - - - - - GET MODEL COORDINATES - - - - - - - - - -
         modelfile = glob.glob(galfitmodeldir+'imgblock_'+str("%.9d" % id)+'.fits')
@@ -837,6 +837,101 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=True,clobber
         if verbose: print(' - Generating DS9 region file')
         regionname = fitsname.replace('.fits','.reg')
         kbs.create_DS9region(regionname,ras,decs,color='magenta',circlesize=0.5,textlist=objids.astype(str),clobber=clobber)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def append_JKthesisCat2maininfofile(objinfofile='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits', objrmatch=0.2, overwrite=False, verbose=True):
+    """
+    Script appending the LAE parameter information from Joesie Kerutt's thesis to the objecet infofile generated with
+    uves.build_LAEfitstable()
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.append_JKthesisCat2maininfofile()
+
+    """
+    out_file = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    if os.path.isfile(out_file) and (overwrite == False):
+        sys.exit('The output file '+out_file+' already exists and overwrite=False ')
+
+    if verbose: print(' - Loading data ')
+    cat_jk     = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters190926_EWs_0_clumps_ratio_line_props.fits'
+    hdu_jk     = afits.open(cat_jk)
+    dat_jk     = hdu_jk[1].data
+    col_jk     = hdu_jk[1].columns
+    Ncol_jk    = len(dat_jk.dtype.names)
+
+    hdu_info   = afits.open(objinfofile)
+    dat_info   = hdu_info[1].data
+    col_info   = hdu_info[1].columns
+    Ncol_info  = len(dat_info.dtype.names)
+
+    for cc, colname in enumerate(hdu_jk[1].columns.names):
+        if colname.lower() in [cn.lower() for cn in hdu_info[1].columns.names]:
+            hdu_jk[1].columns[cc].name = colname.lower()+'_jk'
+
+    xtracol     = afits.ColDefs([afits.Column(name='sep_infoVSjk', format='D',array=np.zeros(len(dat_info))*np.nan)])
+
+    col_out     = col_info + col_jk + xtracol
+    hdu_out     = afits.BinTableHDU.from_columns(col_out)
+
+    if verbose: print(' - Fill the columns in the new table looping though info file objects')
+    for ii, id in enumerate(dat_info['id']):
+        objra      = hdu_info[1].data['ra'][ii]
+        objdec     = hdu_info[1].data['dec'][ii]
+        rsep       = np.sqrt( (np.cos(np.deg2rad(objdec))*(hdu_jk[1].data['ra_jk']-objra))**2.0 +
+                              (hdu_jk[1].data['dec_jk']-objdec)**2.0 )
+        # minsep_ent = np.where(rsep == np.min(rsep))[0]
+        minsep_ent = np.where(rsep*3600 < objrmatch)[0]
+        objselids  = hdu_jk[1].data['id_jk'][minsep_ent]
+
+        if verbose:
+            infostr = '   Matching data for id='+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(dat_info['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+        jk_ent = np.where(dat_jk['id_jk'].astype(int) == int(id))[0]
+        if len(jk_ent) == 1:
+            for colname in col_info.names:
+                hdu_out.data[colname][ii] = hdu_info[1].data[colname][ii]
+            for colname in col_jk.names:
+                if colname ==  'z_vac_red': pdb.set_trace()
+                hdu_out.data[colname][ii] = hdu_jk[1].data[colname][jk_ent[0]]
+
+            if (len(minsep_ent) > 1):
+                useent   = minsep_ent[np.where(objselids == hdu_jk[1].data['id_jk'][jk_ent[0]])[0]]
+                hdu_out.data['sep_infoVSjk'][ii] = rsep[useent]*3600
+            else:
+                hdu_out.data['sep_infoVSjk'][ii] = rsep[minsep_ent]*3600
+        else:
+            if (len(minsep_ent) > 1):
+                print('\n   > WARNING: There were multiple best matches below the threshold ('+str(objrmatch)+'arcsec) for id='+
+                      str(id)+', namely id_jk='+str(hdu_jk[1].data['id_jk'][minsep_ent])+' at '+str(rsep[minsep_ent]*3600)+' arcsec')
+                bestent   = minsep_ent[np.where(objselids == np.min(objselids))[0]]
+                print('   > Selected to match with id_jk='+str(hdu_jk[1].data['id_jk'][bestent[0]])+' (lowest id indicating UDF)\n')
+                minsep_ent = bestent
+
+            if (len(minsep_ent) == 1):
+                for colname in col_info.names:
+                    hdu_out.data[colname][ii] = hdu_info[1].data[colname][ii]
+                for colname in col_jk.names:
+                    hdu_out.data[colname][ii] = hdu_jk[1].data[colname][minsep_ent[0]]
+                hdu_out.data['sep_infoVSjk'][ii] = rsep[minsep_ent]*3600
+            elif (len(minsep_ent) == 0):
+                for colname in col_jk.names:
+                    if hdu_out.data[colname].dtype == int:
+                        hdu_out.data[colname][ii] =  - 99
+                    elif 'string' in hdu_out.data[colname].dtype.name:
+                        hdu_out.data[colname][ii] = 'None'
+                    else:
+                        hdu_out.data[colname][ii] = np.nan
+            else:
+                print('Something went wrong in selecting one of the IDs below the threshold ')
+                pdb.set_trace()
+
+
+    hdu_out.writeto(out_file, overwrite=overwrite)
+    if verbose: print(' - Output written to:\n   '+out_file)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_LAEidLists(sourcecatalog,skipids=True,includecomponentinfo=True,verbose=True):
     """
