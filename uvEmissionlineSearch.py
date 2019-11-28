@@ -6710,7 +6710,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist  = []
     linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
     linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
-    # linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
+    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
     # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
     # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
     # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
@@ -6858,11 +6858,11 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             if (xerr == 0).all():
                 if verbose: print('\n - WARNING all values for '+line1+' and '+line2+' were below '+str(Nsigma)+
                                   'sigma for the plot \n           '+plotname.split('/')[-1]+'\n')
-                return
+                #return
             if (yerr == 0).all():
                 if verbose: print('\n - WARNING all values for '+line3+' and '+line4+' were below '+str(Nsigma)+
                                   'sigma for the plot \n           '+plotname.split('/')[-1]+'\n')
-                return
+                #return
 
     if point_text is not None:
         point_textALL = point_text[goodent]
