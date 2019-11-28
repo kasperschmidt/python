@@ -9197,6 +9197,8 @@ def summarize_felisvetting(vetoutput,verbose=True):
     """
     Function summarizing the content of an output file from uves.vet_felisdetection()
 
+    It also looks for close neighbors which can be used to clean out dublicate entries of objects in overlap regions.
+
     --- INPUT ---
 
     --- EXAMPLE OF USE ---
@@ -9210,7 +9212,7 @@ def summarize_felisvetting(vetoutput,verbose=True):
 
     lines = [nn.replace('trust','') for nn in vetdat.dtype.names[2:]]
     if verbose: print(' - Summarizing content of '+str(len(vetdat))+' entries in \n   '+vetoutput)
-    if verbose: print('   (entires for '+str(len(np.unique(vetdat['id'])))+' unique ids)\n')
+    if verbose: print('   (entries for '+str(len(np.unique(vetdat['id'])))+' unique ids)\n')
     for cc, col in enumerate(vetdat.dtype.names[2:]):
         N_cov   = float(len(np.where(vetdat[col] >= 0)[0]))
         N_yes   = float(len(np.where(vetdat[col] == 1)[0]))
@@ -9274,7 +9276,6 @@ def summarize_felisvetting(vetoutput,verbose=True):
     regionfile = vetoutput.replace('.txt','.reg')
     if regionfile != vetoutput:
         if verbose: print('\n - Storing region file to\n'+regionfile)
-
         colors = ['red']*len(ralist)
         for oo, objid in enumerate(vetdat['id'].astype(int)):
             if objid in id_sys_wCIVaMgII:
@@ -9286,10 +9287,9 @@ def summarize_felisvetting(vetoutput,verbose=True):
 
         kbs.create_DS9region(regionfile,ralist,declist,color=colors,textlist=vetdat['id'].astype(str),clobber=True)
 
-        if verbose: print('\n - Storing LAEs to region file \n'+regionfile)
-
         ent_wLya = np.where(np.asarray(zlist) > 2.9)[0]
         regionfileLya = regionfile.replace('.reg','_zLT2p9.reg')
+        if verbose: print('\n - Storing LAEs to region file \n'+regionfileLya)
         kbs.create_DS9region(regionfileLya,np.asarray(ralist)[ent_wLya],np.asarray(declist)[ent_wLya],
                              color=np.asarray(colors)[ent_wLya],textlist=vetdat['id'].astype(str)[ent_wLya]
                              ,circlesize=0.3,clobber=True)
