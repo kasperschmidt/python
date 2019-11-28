@@ -6600,14 +6600,24 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     if verbose: print(' - Loading flux ratio data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
 
-    if obj2show is not 'all':
+    if obj2show is 'all':
+        showent = np.arange(len(fluxratiodatALL))
+    else:
+        sample = 'udf10'
+        if obj2show is 'goodspec_only':
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            idlist2show = ids_goodTDOSEspec
+        elif obj2show is 'badspec_only':
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            idlist2show = ids_badTDOSEspec
+        else:
+            idlist2show = obj2show
+
         showent = np.array([])
-        for objid in obj2show:
+        for objid in idlist2show:
             objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
             if len(objent) > 0:
                 showent = np.append(showent,objent)
-    else:
-        showent = np.arange(len(fluxratiodatALL))
 
     Nselspec    = len(showent)
     if Nselspec > 0:
@@ -6662,7 +6672,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     fluxes_range       = [10,1e4]
     linesetlist_fluxes = []
     linesetlist_fluxes.append(['CIII','CIV'   ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
@@ -6674,7 +6684,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
     #
-    # linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
@@ -6686,7 +6696,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
-    # linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
 
     Nhistbins = 30
     histaxes  = True
@@ -9080,6 +9090,49 @@ def return_objent(id,dataarray,idcol='id',verbose=True):
         objents = -99
 
     return objents
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def summarize_tdosevetting(sample='udf10',verbose=True):
+    """
+    Summarizing the content of the vetting of the TDOSE spectra
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    ids_badspec, ids_goodspec = uves.summarize_tdosevetting()
+    """
+    vetdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/vet_tdose_extractions_outputs/'
+
+    vc_udf10 = vetdir+'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_191127all.txt'
+
+    if sample == 'udf10':
+        vetcats = [vc_udf10]
+    else:
+        sys.exit('Sample='+sample+' not enabled in uves.summarize_tdosevetting()')
+
+    Ncats   = len(vetcats)
+
+    ids_goodspec = []
+    ids_badspec  = []
+
+    for vc in vetcats:
+        vetdat = np.genfromtxt(vc,names=True,comments='#',dtype=None,skip_header=26)
+
+        ones = np.where(vetdat['vetresult'] == 1)[0]
+        twos  = np.where(vetdat['vetresult'] == 2)[0]
+        threes = np.where(vetdat['vetresult'] == 3)[0]
+        fours = np.where(vetdat['vetresult'] == 4)[0]
+
+        ids_goodspec = ids_goodspec + list(vetdat['id'][ones])
+        ids_goodspec = ids_goodspec + list(vetdat['id'][twos])
+
+        ids_badspec  = ids_badspec  + list(vetdat['id'][threes])
+        ids_badspec  = ids_badspec  + list(vetdat['id'][fours])
+
+    fracbad = float(len(ids_badspec))/float(len(vetdat['id']))
+    if verbose: print(' The fraction of bad spectra is '+str("%.4f" % fracbad)+
+                      ' (vetresult = 3 or 4) for the vetting results in the '+
+                      str(Ncats)+' TDOSE vetting output \n '+str(vetcats))
+
+    return ids_badspec, ids_goodspec
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def summarize_felisvetting(vetoutput,verbose=True):
     """
