@@ -7202,7 +7202,8 @@ def band_waveeff(bandname):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0', point_text=None, showlimits=True,
-                      ErrNsigma=1.0, vshiftmax=1e5, obj2show='all', xlog=True, ylog=True, overwrite=False, verbose=True):
+                      addliteraturevalues=True, ErrNsigma=1.0, vshiftmax=1e5, obj2show='all', xlog=True, ylog=True,
+                      overwrite=False, verbose=True):
     """
     Function to plot the output containing EW0 estimates generated with uves.estimate_EW0()
 
@@ -7218,14 +7219,24 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     EW0file         = lineratiofile.replace('.txt','_EW0estimates_191028run.txt')
     EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
 
-    if obj2show is not 'all':
+    if obj2show is 'all':
+        showent = np.arange(len(fluxratiodatALL))
+    else:
+        sample = 'udf10'
+        if obj2show is 'goodspec_only':
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            idlist2show = ids_goodTDOSEspec
+        elif obj2show is 'badspec_only':
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            idlist2show = ids_badTDOSEspec
+        else:
+            idlist2show = obj2show
+
         showent = np.array([])
-        for objid in obj2show:
+        for objid in idlist2show:
             objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
             if len(objent) > 0:
                 showent = np.append(showent,objent)
-    else:
-        showent = np.arange(len(fluxratiodatALL))
 
     Nselspec    = len(showent)
     if Nselspec > 0:
@@ -7303,40 +7314,43 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
 
     linesetlist_EWs = []
 
-    for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII']: #, 'NV'
-        linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
-                                yline   ,LyaEW_range, EW0_range_y,   None])
-        linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
-                                yline   ,LyaEW_range, EW0_range_y,   None])
-        linesetlist_EWs.append([['LyaPeaksep','Ly$\\alpha$ Peak Seperation [km/s]',LyaPeaksep,LyaPeakseperr],
-                                yline   ,LyaPS_range, EW0_range_y,   None])
+
+    # USE other infofile
+
+    # for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII']: #, 'NV'
+    #     linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
+    #                             yline   ,LyaEW_range, EW0_range_y,   None])
+    #     linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
+    #                             yline   ,LyaEW_range, EW0_range_y,   None])
+    #     linesetlist_EWs.append([['LyaPeaksep','Ly$\\alpha$ Peak Seperation [km/s]',LyaPeaksep,LyaPeakseperr],
+    #                             yline   ,LyaPS_range, EW0_range_y,   None])
 
     linesetlist_EWs.append(['CIII','CIV'   ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIII','OIII'  ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIII','NV'    ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIII','OIII'  ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
 
-    linesetlist_EWs.append(['CIV','OIII'   ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIV','HeII'   ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIV','MgII'   ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIV','NV'     ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['CIV','SiIII'  ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIV','OIII'   ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIV','HeII'   ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIV','MgII'   ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIV','NV'     ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['CIV','SiIII'  ,EW0_range_x, EW0_range_y,   None])
 
     linesetlist_EWs.append(['OIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['OIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['OIII','NV'    ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['OIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['OIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['OIII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['OIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
 
-    linesetlist_EWs.append(['HeII','MgII'  ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['HeII','NV'    ,EW0_range_x, EW0_range_y,   None])
-    linesetlist_EWs.append(['HeII','SiIII' ,EW0_range_x, EW0_range_y,   None])
-
-    linesetlist_EWs.append(['MgII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['HeII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['HeII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['HeII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+    #
+    # linesetlist_EWs.append(['MgII','NV'    ,EW0_range_x, EW0_range_y,   None])
     linesetlist_EWs.append(['MgII','SiIII' ,EW0_range_x, EW0_range_y,   None])
 
-    linesetlist_EWs.append(['NV','SiIII'   ,EW0_range_x, EW0_range_y,   None])
+    # linesetlist_EWs.append(['NV','SiIII'   ,EW0_range_x, EW0_range_y,   None])
 
     Nhistbins = 30
     histaxes  = True
@@ -7416,13 +7430,14 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
     if len(goodent) == 0:
         if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
         goodent  = np.asarray([0,1])
-        xvalues  = [1e10]*2
-        xerr     = [1.0]*2
-        xlabel   = line1+'/'+line2
-        yvalues  = [1e10]*2
-        yerr     = [1.0]*2
-        ylabel   = line3+'/'+line4
+        xvalues  = np.asarray([1e10]*2)
+        xerr     = np.asarray([1.0]*2)
+        xlabel   = 'EW$_0$('+str1+') [\AA]'
+        yvalues  = np.asarray([1e10]*2)
+        yerr     = np.asarray([1.0]*2)
+        ylabel   = 'EW$_0$('+str2+') [\AA]'
         cdatvec  = np.asarray([0.0]*2)
+        IDsALL   = np.asarray([0.0]*2)
     else:
         if 'lya' in str1.lower():
             xlabel   = lineEW1[1]
@@ -7442,6 +7457,8 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
             yvalues  = EWdat['EW0_'+str2][goodent]
             yerr     = EWdat['EW0err_'+str2][goodent]
 
+        IDsALL = EWdat['id'][goodent]
+
     xerr[np.abs(xerr) != 99] = xerr[np.abs(xerr) != 99]*ErrNsigma
     yerr[np.abs(yerr) != 99] = yerr[np.abs(yerr) != 99]*ErrNsigma
 
@@ -7449,13 +7466,12 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
         point_text = point_text[goodent]
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
-                                                   'dummydat',linetype='onetoone',title=title,
+                                                   'dummydat',linetype='onetoone',title=title,ids=IDsALL,
                                                    ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
                                                    colortype=cdattype,colorcode=True,cdatvec=cdatvec[goodent],
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linenameUVES2NEOGAL(uvesname):
     """
