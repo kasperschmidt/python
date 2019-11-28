@@ -6602,6 +6602,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     if obj2show is 'all':
         showent = np.arange(len(fluxratiodatALL))
+    elif obj2show.lower() == 'none':
+        showent = np.array([0])
     else:
         sample = 'udf10'
         if obj2show is 'goodspec_only':
@@ -6648,7 +6650,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     if addliteraturevalues:
         litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
                   'literaturecollection_emissionlinestrengths.txt'
-        litdat  = np.genfromtxt(litcat,names=True,skip_header=5,comments='#',dtype=None)
+        litdat  = afits.open(litcat)[1].data
+        # litdat  = np.genfromtxt(litcat,names=True,skip_header=5,comments='#',dtype=None)
         Nlitobj = len(litdat)
         litarr  = np.array(np.zeros(Nlitobj)*np.nan,fluxratiodat.dtype)
         for lo, litobject in enumerate(litdat):
@@ -7221,6 +7224,8 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
 
     if obj2show is 'all':
         showent = np.arange(len(fluxratiodatALL))
+    elif obj2show.lower() == 'none':
+        showent = np.array([0])
     else:
         sample = 'udf10'
         if obj2show is 'goodspec_only':
@@ -7246,7 +7251,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
                           ' spectra in flux ratio summary (and EW0 file) satisfies the cuts\n')
     else:
         if verbose: print(' WARNING No flux ratio matches found in summary file satisfying cuts; returning...')
-        return
+        #return
 
     # Getting info from infofile
     infofiledat  = afits.open(infofile)[1].data
@@ -7260,15 +7265,14 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     LyaPeaksep    = np.zeros(len(fluxratiodat['id']))*np.nan
     LyaPeakseperr = np.zeros(len(fluxratiodat['id']))*np.nan
 
-
     for ii, id in enumerate(fluxratiodat['id']):
         infoent            = np.where(infofiledat['id'] == int(id))
-        LyaEW[ii]          = infofiledat['EW_0'][infoent]
-        LyaEWerr[ii]       = infofiledat['EW_0_err'][infoent]
-        LyaFWHM[ii]        = infofiledat['fwhm_kms'][infoent]
-        LyaFWHMerr[ii]     = infofiledat['fwhm_kms_std'][infoent]
-        LyaPeaksep[ii]     = infofiledat['peak_sep_kms'][infoent]
-        LyaPeakseperr[ii]  = infofiledat['peak_sep_kms_std'][infoent]
+        LyaEW[ii]          = infofiledat['EW_0_beta_own_median'][infoent]
+        LyaEWerr[ii]       = infofiledat['EW_0_beta_own_median_error'][infoent]
+        LyaFWHM[ii]        = infofiledat['fwhm_kms_jk'][infoent]
+        LyaFWHMerr[ii]     = infofiledat['fwhm_kms_std_jk'][infoent]
+        LyaPeaksep[ii]     = infofiledat['peak_sep_rest_kms'][infoent]
+        LyaPeakseperr[ii]  = infofiledat['peak_sep_rest_kms_std'][infoent]
 
     if colorvar_obj in fluxratiodat.dtype.names:
         cdatvec   = fluxratiodat[colorvar_obj]
@@ -7289,6 +7293,48 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
 
     if point_text is not None:
         point_text = fluxratiodat['id'].astype(str)
+
+    #------------------------------- Append literature measurements -------------------------------
+    if addliteraturevalues:
+        litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
+                  'literaturecollection_emissionlinestrengths.fits'
+        litdat  = afits.open(litcat)[1].data
+        # litdat  = np.genfromtxt(litcat,names=True,skip_header=5,comments='#',dtype=None)
+        Nlitobj = len(litdat)
+
+        litarr  = np.array(np.zeros(Nlitobj)*np.nan,fluxratiodat.dtype)
+        for lo, litobject in enumerate(litdat):
+            for litcol in litdat.dtype.names:
+                if litcol in fluxratiodat.dtype.names:
+                    litarr[litcol][lo] = litdat[litcol][lo]
+        fluxratiodat = np.hstack((fluxratiodat,litarr))
+
+        litarr  = np.array(np.zeros(Nlitobj)*np.nan,EW0dat.dtype)
+        for lo, litobject in enumerate(litdat):
+            for litcol in litdat.dtype.names:
+                if litcol in EW0dat.dtype.names:
+                    litarr[litcol][lo] = litdat[litcol][lo]
+        EW0dat = np.hstack((EW0dat,litarr))
+
+        LyaEW         = np.hstack((LyaEW,        litdat['EW0_Lya']))
+        LyaEWerr      = np.hstack((LyaEWerr,     litdat['EW0err_Lya']))
+
+        LyaFWHM       = np.hstack((LyaFWHM,      litdat['sigma_Lya']*2.355))
+        LyaFWHMerr    = np.hstack((LyaFWHMerr,   litdat['sigmaerr_Lya']*2.355))
+
+        LyaPeaksep    = np.hstack((LyaPeaksep,   litdat['sigma_Lya']*0.0))
+        LyaPeakseperr = np.hstack((LyaPeakseperr,litdat['sigma_Lya']*0.0))
+
+        if colorvar_obj.lower() == 's2n_ciii':
+            cdatvec = np.hstack((cdatvec,litdat['s2n_CIII']))
+        elif colorvar_obj.lower() == 'redshift':
+            cdatvec = np.hstack((cdatvec,litdat['redshift']))
+        elif colorvar_obj.lower() == 'ew_0':
+            cdatvec = np.hstack((cdatvec,litdat['EW0_Lya']))
+        else:
+            sys.exit(' Selected color vector not enabled for literature values ')
+
+    #----------------------------------------------------------------------------------------------s
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if ylog:
@@ -7314,43 +7360,40 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
 
     linesetlist_EWs = []
 
-
-    # USE other infofile
-
-    # for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII']: #, 'NV'
-    #     linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
-    #                             yline   ,LyaEW_range, EW0_range_y,   None])
-    #     linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
-    #                             yline   ,LyaEW_range, EW0_range_y,   None])
-    #     linesetlist_EWs.append([['LyaPeaksep','Ly$\\alpha$ Peak Seperation [km/s]',LyaPeaksep,LyaPeakseperr],
-    #                             yline   ,LyaPS_range, EW0_range_y,   None])
+    for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII']: #, 'NV'
+        linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
+                                yline   ,LyaEW_range, EW0_range_y,   None])
+        linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
+                                yline   ,LyaEW_range, EW0_range_y,   None])
+        linesetlist_EWs.append([['LyaPeaksep','Ly$\\alpha$ Peak Seperation [km/s]',LyaPeaksep,LyaPeakseperr],
+                                yline   ,LyaPS_range, EW0_range_y,   None])
 
     linesetlist_EWs.append(['CIII','CIV'   ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIII','OIII'  ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIII','NV'    ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','OIII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
 
-    # linesetlist_EWs.append(['CIV','OIII'   ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIV','HeII'   ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIV','MgII'   ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIV','NV'     ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['CIV','SiIII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','OIII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','HeII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','MgII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','NV'     ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['CIV','SiIII'  ,EW0_range_x, EW0_range_y,   None])
 
     linesetlist_EWs.append(['OIII','HeII'  ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['OIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['OIII','NV'    ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['OIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['OIII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['OIII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['OIII','SiIII' ,EW0_range_x, EW0_range_y,   None])
 
-    # linesetlist_EWs.append(['HeII','MgII'  ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['HeII','NV'    ,EW0_range_x, EW0_range_y,   None])
-    # linesetlist_EWs.append(['HeII','SiIII' ,EW0_range_x, EW0_range_y,   None])
-    #
-    # linesetlist_EWs.append(['MgII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['HeII','MgII'  ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['HeII','NV'    ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['HeII','SiIII' ,EW0_range_x, EW0_range_y,   None])
+
+    linesetlist_EWs.append(['MgII','NV'    ,EW0_range_x, EW0_range_y,   None])
     linesetlist_EWs.append(['MgII','SiIII' ,EW0_range_x, EW0_range_y,   None])
 
-    # linesetlist_EWs.append(['NV','SiIII'   ,EW0_range_x, EW0_range_y,   None])
+    linesetlist_EWs.append(['NV','SiIII'   ,EW0_range_x, EW0_range_y,   None])
 
     Nhistbins = 30
     histaxes  = True
