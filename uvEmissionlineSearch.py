@@ -6332,7 +6332,7 @@ def check_neighbors(ids=[214063213],
         print(' ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, verbose=True):
+def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vetfelis_output=None, verbose=True):
     """
     Function to calculate the flux and line ratios for a set of summary files
     containing the results from FELIS template matches to TDOSE spectra.
@@ -6930,8 +6930,8 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_EW0(lineratiofile,infofile,outputfile='default',fixbeta=False,overwrite=False,s2nlimit=3.0,
-                 fcontverbose=False,verbose=True):
+def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=None, fixbeta=False, overwrite=False, s2nlimit=3.0,
+                 fcontverbose=False, verbose=True):
     """
     Estimate the EWs for the fluxes in a lineratio summary file
 
@@ -9293,4 +9293,182 @@ def summarize_felisvetting(vetoutput,verbose=True):
         kbs.create_DS9region(regionfileLya,np.asarray(ralist)[ent_wLya],np.asarray(declist)[ent_wLya],
                              color=np.asarray(colors)[ent_wLya],textlist=vetdat['id'].astype(str)[ent_wLya]
                              ,circlesize=0.3,clobber=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True):
+    """
+    Function assembling a master output catalog from the flux ratio measurements and EW estimates taking
+    the results of the FELIS and TDOSE vetting into account.
+
+    Ideally, this should be the catalog plotted, analyzed and released with any publication.
+
+    This can also form the base of generating LaTeX tables
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    outputfits = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/results_master_catalog_version191202.fits'
+    uves.build_mastercat(outputfits)
+
+    """
+    if os.path.isfile(outputfits) and (overwrite == False):
+        sys.exit('The output file '+outputfits+' already exists and overwrite=False ')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' --- Building the master catalog for the UVES study --- ')
+    dir_main         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+
+    file_info        = dir_main+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    file_fluxratio   = dir_main+'FELIStemplatematch2uvesobjects/all_gauss190926/fluxratios/' \
+                                'fluxratios_FELISmatch2uves190926_gauss_wpointings.txt'
+    file_EWestimates = file_fluxratio.replace('.txt','_EW0estimates_191028run.txt')
+
+    file_vettdose    = dir_main+'tdose_extraction_MWuves_100fields_maxdepth190808/vet_tdose_extractions_outputs/' \
+                                'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_191127all.txt'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Load infofile data ')
+    dat_info         = afits.open(file_info)[1].data
+
+    if verbose: print(' - Load fluxratio data ')
+    dat_fluxratio    = np.genfromtxt(file_fluxratio,    dtype=None,comments='#',names=True,skip_header=7)
+
+    if verbose: print(' - Load EW estiamtes ')
+    dat_EWestimates  = np.genfromtxt(file_EWestimates,  dtype=None,comments='#',names=True,skip_header=8)
+
+    if verbose: print(' - Load TDOSE vetting results ')
+    dat_vettdose     = np.genfromtxt(file_vettdose,     dtype=None,comments='#',names=True,skip_header=26)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Setting up output structure. \n   Definiing columns: ')
+    outcolnames = dat_fluxratio.dtype.names + dat_EWestimates.dtype.names[2:]
+    Nrows       = len(dat_info)
+    Ncols       = len(outcolnames)
+    Nskip       = 0
+    for cc, colname in enumerate(outcolnames):
+        if verbose:
+            infostr = '   '+str("%20s" % colname)+'   ( '+str("%.5d" % (cc+1))+' / '+str("%.5d" % Ncols)+' ) '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+        try:
+            npstr   = dat_fluxratio.dtype[colname].str
+        except:
+            npstr   = dat_EWestimates.dtype[colname].str
+
+        if '|S' in npstr:
+            fmt = npstr.split('S')[1]+'A'
+            if colname == 'pointing': fmt = '30A'
+            dat = np.asarray(['None'*Nrows])
+        elif npstr == '<i8':
+            fmt     = 'K'
+            dat     = (np.zeros(Nrows)-99).astype(int)
+        elif npstr == '<f8':
+            fmt     = 'D'
+            dat     = np.zeros(Nrows)*np.nan
+        else:
+            sys.exit(' No setup for the numpy array format "'+npstr+'"')
+
+        if 'NV' in colname: # igrnoring columns incl. NV as this is not going to be sensible due the Lya either way;
+                            # helps stay below Ncol = 999 which is a fundamental limitation of the fits format.
+            Nskip = Nskip + 1
+            continue
+        else:
+            col_def  = afits.ColDefs([afits.Column(name=colname, format=fmt, array=dat)])
+            try:
+                col_out = col_out + col_def
+            except:
+                col_out = col_def
+
+    Ncols = Ncols - Nskip
+    if verbose: print('\n   (Skipped the '+str(Nskip)+' rows containing NV so Nrows='+str(Ncols))
+
+    if verbose: print('   Creating fits file HDU with column definitions ')
+    hdu_out     = afits.BinTableHDU.from_columns(col_out)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Filling output with data adjusting for vetting results ')
+    ids_badspec, ids_goodspec = uves.summarize_tdosevetting()
+    pointing_selector_dic     = uves.pointing_selector()
+
+    for ii, id in enumerate(dat_info['id'][:]):
+        if (len(str(id)) == 9) & (str(id).startswith('5')): # skipping UDF MWmock depth objects
+            hdu_out.data['id'][ii]       = id
+            hdu_out.data['pointing'][ii] = 'SkippingUDFMWmock'
+
+            continue
+        if verbose:
+            infostr = '   Checking data for id='+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(dat_info['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        if id in ids_badspec:
+            hdu_out.data['id'][ii]       = id
+            hdu_out.data['pointing'][ii] = 'TDOSEvetBadSpec'
+            continue
+
+        objent_flux      = np.where(dat_fluxratio['id']   == id)[0]
+        objent_ew        = np.where(dat_EWestimates['id'] == id)[0]
+        # ------------- check what pointing to use if more than 1 appearance of ID -------------
+        if (len(objent_flux) > 1) or (len(objent_ew) > 1):
+            if verbose & printwarning: print('\n   WARNING Multiple pointings for object id='+str(id))
+            if str(id) in pointing_selector_dic.keys():
+                objent_flux      = np.where((dat_fluxratio['id'] == id) &
+                                            (dat_fluxratio['pointing'] == pointing_selector_dic[str(id)]) )[0]
+                objent_ew        = np.where((dat_EWestimates['id'] == id) &
+                                            (dat_EWestimates['pointing'] == pointing_selector_dic[str(id)]) )[0]
+                objent_vet_felis = np.where((dat_vetfelis['id'] == id) &
+                                            (dat_vetfelis['pointing'] == pointing_selector_dic[str(id)]) )[0]
+            else:
+                if verbose & printwarning:
+                    print('   ID not found in dictionary from uves.pointing_selector().')
+                    if len(objent_flux) > 1:
+                        print('   Check the entries in flux ratio file to make a decision (id appears '+
+                              str(len(objent_flux))+' times there)')
+                    if len(objent_ew) > 1:
+                        print('   Check the entries in flux ratio file to make a decision (id appears '+
+                              str(len(objent_ew))+' times there)')
+                    print('   Skipping object until add to uves.pointing_selector() dictionary ')
+
+                hdu_out.data['id'][ii]       = id
+                hdu_out.data['pointing'][ii] = 'MultiPointingNoDecision'
+                continue
+
+        # ------------- Pulling out data from catalogs and writing it to master cat -------------
+        if len(objent_flux) == 1:
+            for colname in dat_fluxratio.dtype.names:
+                if 'NV' in colname:
+                    continue
+                else:
+                    hdu_out.data[colname][ii] = dat_fluxratio[colname][objent_flux][0]
+
+        if len(objent_ew) == 1:
+            for colname in dat_EWestimates.dtype.names[2:]:
+                if 'NV' in colname:
+                    continue
+                else:
+                    hdu_out.data[colname][ii] = dat_EWestimates[colname][objent_ew][0]
+
+        if hdu_out.data['id'][ii] == -99: # checking that data for object was inserted
+            hdu_out.data['id'][ii]       = id
+            hdu_out.data['pointing'][ii] = 'NoDataToInsert'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Storing final catalog to '+outputfits)
+    hdu_primary = afits.PrimaryHDU()
+    hdulist     = afits.HDUList([hdu_primary, hdu_out])
+    hdulist.writeto(outputfits, overwrite=overwrite)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def pointing_selector():
+    """
+    Function returning a dictionary with the pointing name to use for analysis for all the objects (IDs) appearing
+    in multiple pointings.
+
+    Note: As of 191129 this does not account for overlaps between MUSE-Wide, UDF and UDF-10 as the IDs are
+    different in these cases
+
+
+    """
+    pointing_selector_dic = {}
+    #                    ['_____id_____'] = pointing                # bad pointings
+    pointing_selector_dic['_____id_____'] = 'udf-01'                # bad pointings
+
+    return pointing_selector_dic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
