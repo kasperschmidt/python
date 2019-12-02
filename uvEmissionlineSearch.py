@@ -9322,9 +9322,6 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
     file_fluxratio   = dir_main+'FELIStemplatematch2uvesobjects/all_gauss190926/fluxratios/' \
                                 'fluxratios_FELISmatch2uves190926_gauss_wpointings.txt'
     file_EWestimates = file_fluxratio.replace('.txt','_EW0estimates_191028run.txt')
-
-    file_vettdose    = dir_main+'tdose_extraction_MWuves_100fields_maxdepth190808/vet_tdose_extractions_outputs/' \
-                                'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_191127all.txt'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Load infofile data ')
     dat_info         = afits.open(file_info)[1].data
@@ -9334,10 +9331,6 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
 
     if verbose: print(' - Load EW estiamtes ')
     dat_EWestimates  = np.genfromtxt(file_EWestimates,  dtype=None,comments='#',names=True,skip_header=8)
-
-    if verbose: print(' - Load TDOSE vetting results ')
-    dat_vettdose     = np.genfromtxt(file_vettdose,     dtype=None,comments='#',names=True,skip_header=26)
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setting up output structure. \n   Definiing columns: ')
     outcolnames = dat_fluxratio.dtype.names + dat_EWestimates.dtype.names[2:]
@@ -9386,7 +9379,7 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Filling output with data adjusting for vetting results ')
-    ids_badspec, ids_goodspec = uves.summarize_tdosevetting()
+    ids_badspec, ids_goodspec = uves.summarize_tdosevetting(sample='all')
     pointing_selector_dic     = uves.pointing_selector()
 
     for ii, id in enumerate(dat_info['id'][:]):
