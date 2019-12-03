@@ -6387,12 +6387,13 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
     if vetfelis_output is None:
         fout.write('# \n')
         fout.write('# No limits are stored in file - s2n values are provided instead to determine limits in post-processing. \n')
+        fout.write('# See for instance uves.plot_lineratios_fromsummaryfiles_wrapper() \n')
     else:
         fout.write('# Using FELIS vetting info from '+vetfelis_output+'\n')
         fout.write('# Limits are provided according to FELIS vetting, i.e., "untrustworthy" lines and non-detections '
                    'are quoted as '+str(Nsigmalimits)+'sigma upper limits. '
-                   'The s2n values above this threshold are also provided for post-processing. \n')
-    fout.write('# See for instance uves.plot_lineratios_fromsummaryfiles_wrapper() \n')
+                   'Note that all other error bars are also '+str(Nsigmalimits)+'sigma errors. \n')
+        fout.write('# The s2n values above this threshold are also provided for post-processing. See for instance uves.plot_lineratios_fromsummaryfiles_wrapper() \n')
     fout.write('# \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Determine columns to fill in output')
@@ -6520,6 +6521,8 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
             trust_numerator = 'yes'
 
             if vetfelis_output is not None:
+                ferr_num = ferr_num * Nsigmalimits
+
                 if (obj_vetfelis['trust'+numerator_line] == 0) or \
                         (obj_vetfelis['trust'+numerator_line] == 99) or \
                         (obj_vetfelis['trust'+numerator_line] == 9999) or \
@@ -6531,7 +6534,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
                                           str(Nsigmalimits)+'; make sure to include it in the vetting resykts as it will be set to '+
                                               str(Nsigmalimits)+'sigma limits here ...\033[0m')
 
-                    fluxratioarray[ii,colents['f_'+numerator_line]]      = ferr_num * Nsigmalimits
+                    fluxratioarray[ii,colents['f_'+numerator_line]]      = ferr_num
                     fluxratioarray[ii,colents['ferr_'+numerator_line]]   = 99
                     if ferr_num != 0.0:
                         fluxratioarray[ii,colents['s2n_'+numerator_line]] = Nsigmalimits
@@ -6580,10 +6583,12 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
                     ferr_denom = denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom]
 
                     if vetfelis_output is not None:
+                        ferr_denom = ferr_denom * Nsigmalimits
+                        
                         if (obj_vetfelis['trust'+denominator_line] == 0) or \
                                 (obj_vetfelis['trust'+denominator_line] == 99) or \
                                 (f_denom/ferr_denom < Nsigmalimits):
-                            f_denom           = ferr_num * Nsigmalimits
+                            f_denom           = ferr_denom
                             ferr_denom        = 99
                             trust_denominator = 'None'
 
@@ -6860,9 +6865,9 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             # cdatvec  = np.asarray([0.0]*2)
         else:
             xvalues  = fluxratiodat['f_'+line1][goodent]
-            xerr     = fluxratiodat['ferr_'+line1][goodent]*Nsigma
+            xerr     = fluxratiodat['ferr_'+line1][goodent]
             yvalues  = fluxratiodat['f_'+line2][goodent]
-            yerr     = fluxratiodat['ferr_'+line2][goodent]*Nsigma
+            yerr     = fluxratiodat['ferr_'+line2][goodent]
 
             xlimits_ent  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
             if len(xlimits_ent) > 0:
@@ -6903,12 +6908,15 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             # cdatvec  = np.asarray([0.0]*2)
         else:
             xvalues  = fluxratiodat['FR_'+line1+line2][goodent]
-            xerr     = fluxratiodat['FRerr_'+line1+line2][goodent]*Nsigma
+            xerr     = fluxratiodat['FRerr_'+line1+line2][goodent]
             yvalues  = fluxratiodat['FR_'+line3+line4][goodent]
-            yerr     = fluxratiodat['FRerr_'+line3+line4][goodent]*Nsigma
+            yerr     = fluxratiodat['FRerr_'+line3+line4][goodent]
 
-            xlimits_ent_num  = np.where(fluxratiodat['s2n_'+line1][goodent] < Nsigma)[0]
-            xlimits_ent_den  = np.where(fluxratiodat['s2n_'+line2][goodent] < Nsigma)[0]
+            xlimits_ent_num  = np.where((fluxratiodat['s2n_'+line1][goodent] < Nsigma) &
+                                        (fluxratiodat['s2n_'+line1][goodent] > 0.0))[0]
+            xlimits_ent_den  = np.where((fluxratiodat['s2n_'+line2][goodent] < Nsigma) &
+                                        (fluxratiodat['s2n_'+line2][goodent] > 0.0))[0]
+
             for xent, xval in enumerate(xvalues):
                 if (xent in xlimits_ent_num) & (xent in xlimits_ent_den):
                     xvalues[xent]     = np.nan
@@ -6919,8 +6927,11 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                 elif (xent not in xlimits_ent_num) & (xent in xlimits_ent_den):
                     xvalues[xent] = xerr[xent] * Nsigma
                     xerr[xent]    = -99 # lower limit
-            ylimits_ent_num  = np.where(fluxratiodat['s2n_'+line3][goodent] < Nsigma)[0]
-            ylimits_ent_den  = np.where(fluxratiodat['s2n_'+line4][goodent] < Nsigma)[0]
+
+            ylimits_ent_num  = np.where((fluxratiodat['s2n_'+line3][goodent] < Nsigma) &
+                                        (fluxratiodat['s2n_'+line3][goodent] > 0.0))[0]
+            ylimits_ent_den  = np.where((fluxratiodat['s2n_'+line4][goodent] < Nsigma) &
+                                        (fluxratiodat['s2n_'+line4][goodent] > 0.0))[0]
             for yent, yval in enumerate(yvalues):
                 if (yent in ylimits_ent_num) & (yent in ylimits_ent_den):
                     yvalues[yent]   = np.nan
