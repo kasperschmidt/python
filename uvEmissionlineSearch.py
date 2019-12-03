@@ -6723,7 +6723,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     #------------------------------- Append literature measurements -------------------------------
     if addliteraturevalues:
         litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
-                  'literaturecollection_emissionlinestrengths.txt'
+                  'literaturecollection_emissionlinestrengths.fits'
         litdat  = afits.open(litcat)[1].data
         # litdat  = np.genfromtxt(litcat,names=True,skip_header=5,comments='#',dtype=None)
         Nlitobj = len(litdat)
