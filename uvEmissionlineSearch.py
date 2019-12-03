@@ -6332,7 +6332,7 @@ def check_neighbors(ids=[214063213],
         print(' ')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vetfelis_output=None, verbose=True):
+def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsigmalimits=3, vetfelis_output=None, verbose=True):
     """
     Function to calculate the flux and line ratios for a set of summary files
     containing the results from FELIS template matches to TDOSE spectra.
@@ -6384,8 +6384,14 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vet
     fout = open(outputfile,'w')
     fout.write('# Flux and line ratios estimated based on FELIS template match results summarized in:\n')
     fout.write('# '+str(summaryfiles)+'\n')
-    fout.write('# \n')
-    fout.write('# No limits are stored in file - s2n values are provided instead to determine limits in post-processing. \n')
+    if vetfelis_output is None:
+        fout.write('# \n')
+        fout.write('# No limits are stored in file - s2n values are provided instead to determine limits in post-processing. \n')
+    else:
+        fout.write('# Using FELIS vetting info from '+vetfelis_output+'\n')
+        fout.write('# Limits are provided according to FELIS vetting, i.e., "untrustworthy" lines and non-detections '
+                   'are quoted as '+str(Nsigmalimits)+'sigma upper limits. '
+                   'The s2n values above this threshold are also provided for post-processing. \n')
     fout.write('# See for instance uves.plot_lineratios_fromsummaryfiles_wrapper() \n')
     fout.write('# \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -6458,18 +6464,48 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vet
     if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
     fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
     fout.write('# '+' '.join(fluxratiodic.keys())+'  \n')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if vetfelis_output is not None:
+        if verbose: print(' - FELIS vetting results provided so loading these - only vetted objects stored in output.')
+        dat_vetfelis  = np.genfromtxt(vetfelis_output,  dtype=None,comments='#',names=True,skip_header=12)
+        Nobj_fvet     = len(np.unique(dat_vetfelis['id']))
+        if verbose: print('   Found '+str(Nobj_fvet)+' objects in the FELIS vetting output to be stored to line ratios output ')
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Filling the columns with data ')
     fluxratioarray = np.zeros([len(ids),Ncols])*np.nan
     for ii, id in enumerate(ids):
-        if verbose: print('   Filling output for object '+str(id)+'   (id '+str(ii+1)+'/'+str(len(ids))+')')
+        if verbose:
+            infostr = '   Filling output for object '+str(id)+'   (id '+str(ii+1)+'/'+str(len(ids))+')'
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
         fluxratioarray[ii,0] = float(id)
+
+        if vetfelis_output is not None:
+            ent_vet_felis = np.where((dat_vetfelis['id'] == id) & (dat_vetfelis['pointing'] == pointings[ii]))[0]
+
+            if len(ent_vet_felis) > 1:
+                sys.exit('\n WARNING: object '+str(id)+' in '+pointings[ii]+
+                         ' exisits multiple times in FELIS vetting output; sort this out befor calculating lineratios...')
+            elif len(ent_vet_felis) == 0:
+                if verbose: print('\n           Object '+str(id)+' in '+pointings[ii]+' not found in FELIS vetting output')
+                # continue
+                obj_vetfelis = dat_vetfelis[0]#*0.0 (101009024, 'cdfs-01', 99, 99, 99, 99, 99, 99, -99)
+                obj_vetfelis['id']       = id
+                obj_vetfelis['pointing'] = pointings[ii]
+                for col in obj_vetfelis.dtype.names[2:]:
+                    if obj_vetfelis[col] != -99:
+                        obj_vetfelis[col] = 9999 # no inspection exists; obj_vetfelis made by hand
+            else:
+                obj_vetfelis = dat_vetfelis[ent_vet_felis]
 
         for ll, numerator_line in enumerate(lineindicators):
             numerator_dat = dic_summarydat[numerator_line]
             ent_num       = np.where((numerator_dat['id'].astype(int) == id) & (numerator_dat['spectrum'] == spectra[ii]))[0]
             if len(ent_num) == 0:
-                if verbose: print('       object '+str(id)+' in '+pointings[ii]+' not found in '+numerator_line+' summary (numerator)')
+                # if verbose: print('       object '+str(id)+' in '+pointings[ii]+' not found in '+
+                #                   numerator_line+' summary (numerator)')
                 continue
 
             f_num    = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]
@@ -6481,13 +6517,38 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vet
             fluxratioarray[ii,colents['sigma_'+numerator_line]]  = numerator_dat['sigma_temp_ang_rf'][ent_num]
             fluxratioarray[ii,colents['vshift_'+numerator_line]] = numerator_dat['vshift_CCmatch'][ent_num]
 
-            if dic_summarydat[numerator_line]['Fratio_temp'][0] != 0:
+            trust_numerator = 'yes'
+
+            if vetfelis_output is not None:
+                if (obj_vetfelis['trust'+numerator_line] == 0) or \
+                        (obj_vetfelis['trust'+numerator_line] == 99) or \
+                        (obj_vetfelis['trust'+numerator_line] == 9999) or \
+                        (fluxratioarray[ii,colents['s2n_'+numerator_line]] < Nsigmalimits):
+
+                    if (obj_vetfelis['trust'+numerator_line] == 9999) & \
+                            (fluxratioarray[ii,colents['s2n_'+numerator_line]] > Nsigmalimits):
+                        if verbose: print('\033[91m        ... and '+numerator_line+' has S/N > '+
+                                          str(Nsigmalimits)+'; make sure to include it in the vetting resykts as it will be set to '+
+                                              str(Nsigmalimits)+'sigma limits here ...\033[0m')
+
+                    fluxratioarray[ii,colents['f_'+numerator_line]]      = ferr_num * Nsigmalimits
+                    fluxratioarray[ii,colents['ferr_'+numerator_line]]   = 99
+                    fluxratioarray[ii,colents['s2n_'+numerator_line]]    = Nsigmalimits
+                    fluxratioarray[ii,colents['sigma_'+numerator_line]]  = 99
+                    fluxratioarray[ii,colents['vshift_'+numerator_line]] = 99
+
+                    trust_numerator = 'None'
+
+            # if (id == 102014087) & (pointings[ii] == 'cdfs-08') & (numerator_line == 'CIV'):
+            #     pdb.set_trace()
+
+            if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & (trust_numerator != 'None'):
                 # error on q=|B|x where |B| is known exact is just dq=|B|dx
                 f1_num      = numerator_dat['Ftot_FELIS_S2Nmax'][ent_num]     / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
                 f1err_num   = numerator_dat['Ftot_FELIS_S2Nmax_err'][ent_num] / (1 + 1/numerator_dat['Fratio_temp'][ent_num])
                 f2_num      = f1_num    / numerator_dat['Fratio_temp'][ent_num]
                 f2err_num   = f1err_num / numerator_dat['Fratio_temp'][ent_num]
-                FR12, FR12err = lce.set_ratios('goodmatch','goodmatch',f1_num,f1err_num,f2_num,f2err_num)
+                FR12, FR12err = lce.set_ratios('gooddoublet','gooddoublet',f1_num,f1err_num,f2_num,f2err_num)
 
                 fluxratioarray[ii,colents['f_'+numerator_line+'1']]                         = f1_num
                 fluxratioarray[ii,colents['ferr_'+numerator_line+'1']]                      = f1err_num
@@ -6502,37 +6563,49 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vet
 
                 ent_denom       = np.where((denominator_dat['id'].astype(int) == id) & (denominator_dat['spectrum'] == spectra[ii]))[0]
                 if len(ent_denom) > 1:
-                    sys.exit(' id pointing compbination '+str(id)+' '+pointings[ii]+' appears '+str(len(ent_denom))+
-                             ' times in '+numerator_line+' summary -> that should not ahppen!')
+                    sys.exit(' id pointing combination '+str(id)+' '+pointings[ii]+' appears '+str(len(ent_denom))+
+                             ' times in '+numerator_line+' summary -> that should not happen!')
 
                 if len(ent_denom) == 0:
-                    if verbose: print('       object '+str(id)+' in '+pointings[ii]+' not found in '+
-                                      denominator_line+' summary (numerator)')
+                    # if verbose: print('       object '+str(id)+' in '+pointings[ii]+' not found in '+
+                    #                   denominator_line+' summary (numerator)')
                     continue
 
                 if numerator_line == denominator_line:
                     continue
                 else:
+                    trust_denominator = 'yes'
                     f_denom    = denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom]
                     ferr_denom = denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom]
 
-                    FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f_denom,ferr_denom)
+                    if vetfelis_output is not None:
+                        if (obj_vetfelis['trust'+denominator_line] == 0) or \
+                                (obj_vetfelis['trust'+denominator_line] == 99) or \
+                                (f_denom/ferr_denom < Nsigmalimits):
+                            f_denom           = ferr_num * Nsigmalimits
+                            ferr_denom        = 99
+                            trust_denominator = 'None'
+
+                    if (trust_numerator == 'None') & (trust_denominator == 'None'):
+                        continue
+
+                    FR, FRerr = lce.set_ratios(trust_numerator,trust_denominator,f_num,ferr_num,f_denom,ferr_denom)
                     fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line]]     = FR
                     fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line]]  = FRerr
                     fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line]]  = FR/FRerr
 
-                    if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0):
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f_denom,ferr_denom)
+                    if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & (trust_numerator != 'None'):
+                        FR, FRerr = lce.set_ratios(trust_numerator,trust_denominator,f1_num,f1err_num,f_denom,ferr_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line]]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line]]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line]]  = FR/FRerr
 
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f_denom,ferr_denom)
+                        FR, FRerr = lce.set_ratios(trust_numerator,trust_denominator,f2_num,f2err_num,f_denom,ferr_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line]]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line]]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line]]  = FR/FRerr
 
-                    if (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
+                    if (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0)  & (trust_denominator != 'None'):
                         f1_denom    = denominator_dat['Ftot_FELIS_S2Nmax'][ent_denom]     / \
                                       (1 + 1/denominator_dat['Fratio_temp'][ent_denom])
                         f1err_denom = denominator_dat['Ftot_FELIS_S2Nmax_err'][ent_denom] / \
@@ -6540,38 +6613,38 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, vet
                         f2_denom    = f1_denom    / denominator_dat['Fratio_temp'][ent_denom]
                         f2err_denom = f1err_denom / denominator_dat['Fratio_temp'][ent_denom]
 
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f1_denom,f1err_denom)
+                        FR, FRerr = lce.set_ratios(trust_numerator,'gooddoublet',f_num,ferr_num,f1_denom,f1err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'1']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'1']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'1']]  = FR/FRerr
 
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f_num,ferr_num,f2_denom,f2err_denom)
+                        FR, FRerr = lce.set_ratios(trust_numerator,'gooddoublet',f_num,ferr_num,f2_denom,f2err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+denominator_line+'2']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+denominator_line+'2']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+denominator_line+'2']]  = FR/FRerr
 
                     if (dic_summarydat[numerator_line]['Fratio_temp'][0] != 0) & \
-                        (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0):
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f1_denom,f1err_denom)
+                        (dic_summarydat[denominator_line]['Fratio_temp'][0] != 0) & \
+                            (trust_numerator != 'None') & (trust_denominator != 'None'):
+                        FR, FRerr = lce.set_ratios('gooddoublet','gooddoublet',f1_num,f1err_num,f1_denom,f1err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'1']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'1']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'1']]  = FR/FRerr
 
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f1_num,f1err_num,f2_denom,f2err_denom)
+                        FR, FRerr = lce.set_ratios('gooddoublet','gooddoublet',f1_num,f1err_num,f2_denom,f2err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'1'+denominator_line+'2']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'1'+denominator_line+'2']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'1'+denominator_line+'2']]  = FR/FRerr
 
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f1_denom,f1err_denom)
+                        FR, FRerr = lce.set_ratios('gooddoublet','gooddoublet',f2_num,f2err_num,f1_denom,f1err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'1']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'1']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'1']]  = FR/FRerr
 
-                        FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',f2_num,f2err_num,f2_denom,f2err_denom)
+                        FR, FRerr = lce.set_ratios('gooddoublet','gooddoublet',f2_num,f2err_num,f2_denom,f2err_denom)
                         fluxratioarray[ii,colents['FR_'+numerator_line+'2'+denominator_line+'2']]     = FR
                         fluxratioarray[ii,colents['FRerr_'+numerator_line+'2'+denominator_line+'2']]  = FRerr
                         fluxratioarray[ii,colents['FRs2n_'+numerator_line+'2'+denominator_line+'2']]  = FR/FRerr
-
 
     for ll in np.arange(len(ids)):
         outstr = str(int(fluxratioarray[ll,0]))+'  '+pointings[ll]+' '+' '.join([str("%10.4f" % ff) for ff in fluxratioarray[ll,2:]])
