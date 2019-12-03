@@ -6533,7 +6533,8 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
 
                     fluxratioarray[ii,colents['f_'+numerator_line]]      = ferr_num * Nsigmalimits
                     fluxratioarray[ii,colents['ferr_'+numerator_line]]   = 99
-                    fluxratioarray[ii,colents['s2n_'+numerator_line]]    = Nsigmalimits
+                    if ferr_num != 0.0:
+                        fluxratioarray[ii,colents['s2n_'+numerator_line]] = Nsigmalimits
                     fluxratioarray[ii,colents['sigma_'+numerator_line]]  = 99
                     fluxratioarray[ii,colents['vshift_'+numerator_line]] = 99
 
