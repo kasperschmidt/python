@@ -9,6 +9,7 @@ from fits2ascii import ascii2fits
 import MiGs
 import numpy as np
 import collections
+import matplotlib.pyplot as plt
 import literaturecollection_emissionlinestrengths as lce
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -75,9 +76,38 @@ def referencedictionary():
     """
     refdic = collections.OrderedDict()
     #                  baseid   reference                     plotsymbol
-    refdic['sen17'] = [1e10,    'Senchyna et al. 2017',       '+']
-    refdic['nan19'] = [2e10,    'Nanaykkara et al. 2019',     's']
-    refdic['eor']   = [3e10,    'EoR objects',                'v']
+    refdic['sen17'] = [1e10,    'Senchyna et al. 2017',       'v']
+    refdic['nan19'] = [2e10,    'Nanaykkara et al. 2019',     '^']
+    refdic['eor']   = [3e10,    'EoR objects',                '<']
+    refdic['dummy'] = [99e10,   'dummy',                      '>']
+    refdic['dummy'] = [99e10,   'dummy',                      '8']
+    refdic['dummy'] = [99e10,   'dummy',                      's']
+    refdic['dummy'] = [99e10,   'dummy',                      'p']
+    refdic['dummy'] = [99e10,   'dummy',                      'P']
+    refdic['dummy'] = [99e10,   'dummy',                      '*']
+    refdic['dummy'] = [99e10,   'dummy',                      'h']
+    refdic['dummy'] = [99e10,   'dummy',                      'H']
+    refdic['dummy'] = [99e10,   'dummy',                      '+']
+    refdic['dummy'] = [99e10,   'dummy',                      'x']
+    refdic['dummy'] = [99e10,   'dummy',                      'D']
+    refdic['dummy'] = [99e10,   'dummy',                      'd']
+    refdic['dummy'] = [99e10,   'dummy',                      '1']
+    refdic['dummy'] = [99e10,   'dummy',                      '2']
+    refdic['dummy'] = [99e10,   'dummy',                      '3']
+    refdic['dummy'] = [99e10,   'dummy',                      '4']
+    refdic['dummy'] = [99e10,   'dummy',                      '$\\alpha$']
+    refdic['dummy'] = [99e10,   'dummy',                      (5, 0, 180)] # pentagon rotated 180 degrees
+
+    # --- MUSE-Wide def: ---
+    # CDFS and COSMOS:  'o'
+    # UDF:              'D'
+    # UDF10:            'X'
+
+    # --- potentially outer symbols def: ---
+    #  D    GLASS
+    #  s    stack/composite
+    #  *    AGN
+    #  o    MUSE data
 
     return refdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -141,13 +171,14 @@ def set_ratios(numstr,denomstr,numerator,numeratorerr,denominator,denominatorerr
         ratio      = numerator/denominator
         ratioerr   = -99
     else:
-        print(' Something went wrong in lce.set_ratios() - setting trace to investigate')
-        pdb.set_trace()
+        raise Exception(' Something went wrong in lce.set_ratios(); '
+                        'inputs were: (numstr,denomstr,numerator,numeratorerr,denominator,denominatorerr)='+
+                        str([numstr,denomstr,numerator,numeratorerr,denominator,denominatorerr]))
 
     return ratio, ratioerr
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def collect_data(outputfile,verbose=True):
+def generate_literature_fitscatalog(verbose=True):
     """
     Collecting literature values and storing them in a single file
 
@@ -155,12 +186,11 @@ def collect_data(outputfile,verbose=True):
 
     --- EXAMPLE OF USE ---
     import literaturecollection_emissionlinestrengths as lce
-
-    outdir     = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
-    outputfile = outdir+'literaturecollection_emissionlinestrengths.txt'
-    dataarray  = lce.collect_data(outputfile)
+    dataarray  = lce.generate_literature_fitscatalog()
 
     """
+    outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+    outputfile  = outdir+'literaturecollection_emissionlinestrengths.fits'
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Initializing the output file: \n   '+outputfile)
@@ -183,7 +213,7 @@ def collect_data(outputfile,verbose=True):
     fout.write('# '+' '.join(fluxratiodic.keys())+'  \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Collecting literature data arrays')
-
+    refdic        = lce.referencedictionary()
     appenddatadic = collections.OrderedDict()
     #------------------------------------------------
     dataref, appenddata     = lce.data_sen17(fluxscale=1e5)
@@ -196,9 +226,10 @@ def collect_data(outputfile,verbose=True):
     appenddatadic[dataref]  = appenddata
     #------------------------------------------------
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Filling the columns of the output file with data ')
+    if verbose: print('\n - Filling the columns of the output file with data. Adding data for: ')
     for appendkey in appenddatadic.keys():
         appenddata = appenddatadic[appendkey]
+        if verbose: print('      '+appendkey+'      ('+refdic[appendkey][1])+')'
         Nobjappend     = len(appenddata)
         fluxratioarray = np.zeros([Nobjappend,Ncols])*np.nan
         for objent, objappend in enumerate(appenddata):
@@ -219,7 +250,7 @@ def collect_data(outputfile,verbose=True):
     dataarray = np.genfromtxt(outputfile,skip_header=5,dtype=fmt,comments='#',names=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Creating fits version of output: '+outputfile.replace('.txt','.fits'))
+    if verbose: print('\n - Creating fits version of output: \n   '+outputfile.replace('.txt','.fits'))
     fitsformat = ['D','20A'] + ['D']*(Ncols-2)
     fitsoutput = ascii2fits(outputfile,asciinames=True,skip_header=5,fitsformat=fitsformat,verbose=False)
 
@@ -319,8 +350,10 @@ def build_master_datadictionary():
         datadictionary['s2n_'+numerator_line]     = np.array([])
         datadictionary['EW0_'+numerator_line]      = np.array([])
         datadictionary['EW0err_'+numerator_line]   = np.array([])
-        datadictionary['sigma_'+numerator_line]   = np.array([])
+        datadictionary['sigma_'+numerator_line]   = np.array([])     # FWHM     / 2.355
+        datadictionary['sigmaerr_'+numerator_line]   = np.array([])  # FWHM_err / 2.355
         datadictionary['vshift_'+numerator_line]  = np.array([])
+        datadictionary['vshifterr_'+numerator_line]  = np.array([])
 
         if  linetypedic[numerator_line] == 'doublet':
             datadictionary['f_'+numerator_line+'1']      = np.array([])
@@ -530,4 +563,17 @@ def data_sen17(fluxscale=1e5,verbose=True):
     dataarray = lce.build_dataarray(catreference, linetypedic, datadic)
 
     return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def load_literaturecatalog(verbose=True):
+    """
+    Loading the literature catalog.
+
+    """
+    outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+    fitscatalog = outdir+'literaturecollection_emissionlinestrengths.fits'
+    if verbose: print('\n - lce.load_literaturecatalog() Loading data from:\n   '+fitscatalog)
+    literaturedata = afits.open(fitscatalog)[1].data
+
+    return fitscatalog, literaturedata
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
