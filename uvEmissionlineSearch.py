@@ -6584,7 +6584,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
 
                     if vetfelis_output is not None:
                         ferr_denom = ferr_denom * Nsigmalimits
-                        
+
                         if (obj_vetfelis['trust'+denominator_line] == 0) or \
                                 (obj_vetfelis['trust'+denominator_line] == 99) or \
                                 (f_denom/ferr_denom < Nsigmalimits):
@@ -6663,7 +6663,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII', point_text=None,
-                                     Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5, obj2show='all',
+                                     Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5, obj2show='all', showlimits=True,
                                      addliteraturevalues = False,
                                      overwrite=False, verbose=True):
     """
@@ -7015,7 +7015,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=None, fixbeta=False, overwrite=False, s2nlimit=3.0,
+def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=None, fixbeta=False, overwrite=False, s2nlimit=3.0,
                  fcontverbose=False, verbose=True):
     """
     Estimate the EWs for the fluxes in a lineratio summary file
@@ -7037,7 +7037,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
 
     if verbose: print(' - Loading flux ratio data and infofile ')
     infofiledat     = afits.open(infofile)[1].data
-    frdatBadFMT     = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
+    frdatBadFMT     = np.genfromtxt(lineratiofile,skip_header=7,dtype=None,comments='#',names=True)
     fmt             = 'd,12a,'+','.join((len(frdatBadFMT.dtype.names)-2)*['d'])
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype=fmt,comments='#',names=True)
     ids             = fluxratiodatALL['id']
@@ -7047,7 +7047,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
     if outputfile == 'default':
         outputfile = lineratiofile.replace('.txt','_EW0estimates.txt')
         if outputfile == lineratiofile:
-            sys.exit(' The default output name is the same as the lineratiofile (missing .txt?) whihc is \n '+lineratiofile)
+            sys.exit(' The default output name is the same as the lineratiofile (missing .txt?) which is \n '+lineratiofile)
     if os.path.isfile(outputfile) & (overwrite == False):
         pdb.set_trace()
         sys.exit(' Overwrite=False and the expected output '+outputfile+' already exists so exiting')
@@ -7070,6 +7070,14 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
                     'F105W':105,'F125W':125,'F160W':160}
         fout.write('# The reference continuum band (before extrapolation to line location using beta) is based on the band indicated in the cont_band columns and use the keys: \n# '+str(bandskey)+'\n# \n')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Loading photometric catalogs for continuum estimates')
+    catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    datSkeltonGS  = afits.open(catSkeltonGS)[1].data
+    catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+    datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
+    catRafelski   = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
+    datRafelski   = afits.open(catRafelski)[1].data
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxcols = []
     for colname in fluxratiodatALL.dtype.names:
@@ -7096,16 +7104,24 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
             line_flux    = fluxratiodatALL[fluxcol][ii]
             line_fluxerr = fluxratiodatALL[fluxcol.replace('f_','ferr_')][ii]
 
-            if np.isfinite(line_flux):
+            if vetfelis_included: # FELIS vetting accounted for meaning fluxes are Nsigma limits already
+                if line_fluxerr == 99:
+                    line_fluxerr = line_flux / s2nlimit
+                else:
+                    line_fluxerr = line_fluxerr / s2nlimit
+
+            if np.isfinite(line_flux) & (line_flux > 0):
                 if fixbeta:
                     beta    = fixbeta
                 else:
-                    if infofiledat['beta'][obj_infoent] != 0.0:
-                        beta  = infofiledat['beta'][obj_infoent]
+                    if infofiledat['beta_linear_many'][obj_infoent] != 0.0:
+                        beta  = infofiledat['beta_linear_many'][obj_infoent]
                     else:
-                        beta  = -2.0
+                        beta  = -1.92 # beta_own_median from Josie's Cat
 
-                f_conts      = uves.estimate_fcont(infofiledat,obj_infoent,line_wave,fixbeta=beta, verbose=fcontverbose)
+                f_conts      = uves.estimate_fcont(infofiledat,obj_infoent,line_wave,fixbeta=beta,
+                                                   datSkeltonGS=datSkeltonGS, datSkeltonCOS=datSkeltonCOS, datRafelski=datRafelski,
+                                                   verbose=fcontverbose)
                 betavals[ii] = beta
                 # selecting continuum band to extrapolate from as:
                 # The band with effective wavelength closest to the line that does not contain Lya or
@@ -7128,10 +7144,10 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
                         EW0array[ii,ff*3]   = line_flux / f_cont_restframe
                         EW0array[ii,ff*3+1] = np.sqrt((line_fluxerr/line_flux)**2 +
                                                       (f_cont_err_restframe/f_cont_restframe)**2) * EW0array[ii,ff*3]
-                    elif (line_flux/line_fluxerr < s2nlimit) & (f_cont/f_cont_err > s2nlimit): # upper limit
+                    elif (line_flux/line_fluxerr <= s2nlimit) & (f_cont/f_cont_err > s2nlimit): # upper limit
                         EW0array[ii,ff*3]   = s2nlimit * line_fluxerr / f_cont_restframe
                         EW0array[ii,ff*3+1] = +99 # indicate that EW0 value is "s2nlimit sigma upper limit"
-                    elif (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err < s2nlimit): # upper limit
+                    elif (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err <= s2nlimit): # upper limit
                         EW0array[ii,ff*3]   = line_flux / (s2nlimit * f_cont_err_restframe)
                         EW0array[ii,ff*3+1] = -99 # indicate that EW0 value is "s2nlimit sigma lower limit"
                     else:
@@ -7139,7 +7155,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
                         EW0array[ii,ff*3+1] = 0.0
 
                     EW0array[ii,ff*3+2] = bandskey[cont_band.upper()]
-                # pdb.set_trace()
+
         outstr = str(int(id))+' '+pointings[ii]+' '+str("%10.2f" % betavals[ii])+' '+\
                  ' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])
         fout.write(outstr.replace('.0000','     ')+' \n')
@@ -7151,10 +7167,11 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_output=No
     return EW0dat
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim=0.5,verbose=True):
+def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim=0.5,
+                   datSkeltonGS=None, datSkeltonCOS=None, datRafelski=None, verbose=True):
     """
     Estimate the rest-frame continuum flux at a given wavelength for an object in the infofile using the
-    observed broad band magnitudes and the estimate beta estimates.
+    observed broad band magnitudes and the beta estimate.
 
     """
     objid         = infofiledat['id'][obj_infoent][0]
@@ -7164,14 +7181,17 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
     else:
         beta      = infofiledat['beta'][obj_infoent][0]
 
-    catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
-    datSkeltonGS  = afits.open(catSkeltonGS)[1].data
+    if datSkeltonGS is None:
+        catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+        datSkeltonGS  = afits.open(catSkeltonGS)[1].data
 
-    catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
-    datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
+    if datSkeltonCOS is None:
+        catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+        datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
 
-    catRafelski   = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
-    datRafelski   = afits.open(catRafelski)[1].data
+    if datRafelski is None:
+        catRafelski   = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
+        datRafelski   = afits.open(catRafelski)[1].data
 
     bands         = ['F275W','F336W','F435W','F606W','F775W','F814W','F880LP','F105W','F125W','F160W']
 
@@ -7289,9 +7309,9 @@ def band_waveeff(bandname):
     return bands_wavecen[bandname.upper()]
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0', point_text=None, showlimits=True,
+def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_obj='EW_0', point_text=None, showlimits=True,
                       addliteraturevalues=True, ErrNsigma=1.0, vshiftmax=1e5, obj2show='all', xlog=True, ylog=True,
-                      overwrite=False, verbose=True):
+                      lyaEWtype='EW_0_beta_beta2', overwrite=False, verbose=True):
     """
     Function to plot the output containing EW0 estimates generated with uves.estimate_EW0()
 
@@ -7304,7 +7324,6 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
     """
     if verbose: print(' - Loading EW data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
-    EW0file         = lineratiofile.replace('.txt','_EW0estimates_191028run.txt')
     EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
 
     if obj2show is 'all':
@@ -7352,8 +7371,8 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, colorvar_obj='EW_0'
 
     for ii, id in enumerate(fluxratiodat['id']):
         infoent            = np.where(infofiledat['id'] == int(id))
-        LyaEW[ii]          = infofiledat['EW_0_beta_own_median'][infoent]
-        LyaEWerr[ii]       = infofiledat['EW_0_beta_own_median_error'][infoent]
+        LyaEW[ii]          = infofiledat[lyaEWtype+''][infoent]
+        LyaEWerr[ii]       = infofiledat[lyaEWtype+'_error'][infoent]
         LyaFWHM[ii]        = infofiledat['fwhm_kms_jk'][infoent]
         LyaFWHMerr[ii]     = infofiledat['fwhm_kms_std_jk'][infoent]
         LyaPeaksep[ii]     = infofiledat['peak_sep_rest_kms'][infoent]
