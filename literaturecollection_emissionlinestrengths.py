@@ -335,7 +335,7 @@ def build_dataarray(catreference, linetypedic, datadic, verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_master_datadictionary():
     """
-
+    Defining the master dictionary to fill with data from the literature
     """
     datadictionary = collections.OrderedDict()
     datadictionary['id']        = np.array([])
@@ -402,12 +402,22 @@ def build_master_datadictionary():
                     datadictionary['FRs2n_'+numerator_line+'2'+denominator_line+'2']  = np.array([])
     return datadictionary
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def calc_doubletValuesFromSingleComponents(f1,f1err,f2,f2err,verbose=True):
+    """
+    Function to calculate the combined doublet flux from single measurements.
+    """
+    f_doublet    = f1+f2
+    ferr_doublet = np.sqrt( f1err**2 + f2err*2 )
+    fratio       = f1/f2
+    fratio_err   = np.sqrt( (f1err/f1)**2 + (f2err/f2)*2 ) * fratio
+
+    return f_doublet, ferr_doublet, fratio, fratio_err
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_nan19(fluxscale=1.0,verbose=True):
     """
     Data collected from Nanaykkara et al. 19
 
     --- INPUT ---
-    baseid    Number to add to ids to keep them distinct from other literature data sets
     fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
     verbose     Toggle verbosity
 
@@ -461,6 +471,8 @@ def data_nan19(fluxscale=1.0,verbose=True):
     dataarray = lce.build_dataarray(catreference, linetypedic, datadic)
 
     return catreference, dataarray
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_eor(fluxscale=1.0,verbose=True):
     """
