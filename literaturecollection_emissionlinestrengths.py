@@ -314,10 +314,6 @@ def generate_literature_fitscatalog(verbose=True):
     if verbose: print('\n - Determine columns to fill in output')
     fluxratiodic = lce.build_master_datadictionary(verbose=False)
     Ncols        = len(fluxratiodic.keys())
-    # # a simple dictionary containing the column locations in the output array (indexes)
-    # colents    = {}
-    # for oo, colname in enumerate(fluxratiodic.keys()):
-    #     colents[colname] = oo
     if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
     fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
     fout.write('# id      reference '+' '.join([str("%20s" % colname) for colname in fluxratiodic.keys()[2:]])+'  \n')
@@ -329,41 +325,6 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = dataarray
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
-    dataref, dataarray     = lce.data_nan19(fluxscale=1.0,verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
-
-    #
-    # appenddatadic = collections.OrderedDict()
-    # #------------------------------------------------
-    # dataref, appenddata     = lce.data_sen17(fluxscale=1e5,verbose=True)
-    # appenddatadic[dataref]  = appenddata
-    #
-    # dataref, appenddata     = lce.data_nan19(fluxscale=1.0,verbose=True)
-    # appenddatadic[dataref]  = appenddata
-    #
-    # dataref, appenddata     = lce.data_eor(fluxscale=1.0,verbose=True)
-    # appenddatadic[dataref]  = appenddata
-    # #------------------------------------------------
-    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # if verbose: print('\n - Filling the columns of the output file with data. Adding data for: ')
-    # for appendkey in appenddatadic.keys():
-    #     appenddata = appenddatadic[appendkey]
-    #     if verbose: print('      '+appendkey+'      ('+refdic[appendkey][1])+')'
-    #     Nobjappend     = len(appenddata)
-    #     fluxratioarray = np.zeros([Nobjappend,Ncols])*np.nan
-    #     for objent, objappend in enumerate(appenddata):
-    #         for acol in appenddata.dtype.names:
-    #             if (acol in fluxratiodic.keys()) & (acol != 'reference'):
-    #                 fluxratioarray[objent,colents[acol]] = appenddata[acol][objent]
-    #             else:
-    #                 if (acol != 'reference'):
-    #                     if verbose: print(' WARNING: The column "'+str(acol)+'" has no match in output file')
-    #
-    #     for ll in np.arange(Nobjappend):
-    #         outstr = str(int(fluxratioarray[ll,0]))+'  '+appendkey+' '+' '.join([str("%10.4f" % ff) for ff in fluxratioarray[ll,2:]])
-    #         fout.write(outstr+' \n')
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
     for oo, id in enumerate(outputdataarray['id']):
@@ -371,10 +332,6 @@ def generate_literature_fitscatalog(verbose=True):
                  ' '.join([str("%20.4f" % ff) for ff in outputdataarray[oo].tolist()[2:]])
         fout.write(outstr+' \n')
     fout.close()
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # fmt = '20a,20a,'+','.join((Ncols-2)*['d'])
-    # dataarray = np.genfromtxt(outputfile,skip_header=5,dtype=fmt,comments='#',names=True)
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Creating fits version of output: \n   '+outputfile.replace('.txt','.fits'))
     fitsformat = ['K','20A'] + ['D']*(Ncols-2)
@@ -423,9 +380,6 @@ def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
                 dataarray['s2n_'+numerator_line][ii]     = fnum / ferrnum
 
             for kk, denominator_line in enumerate(componentlist):
-
-                # if (numerator_line == 'CIII1') & (denominator_line == 'HeII'): pdb.set_trace()
-
                 fdenom    = dataarray['f_'+denominator_line][ii]
                 ferrdenom = dataarray['ferr_'+denominator_line][ii]
 
@@ -460,7 +414,6 @@ def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
                         else:
                             dataarray['FRs2n_'+numerator_line+denominator_line][ii]  = FR/FRerr
 
-
     return dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_master_datadictionary(verbose=True):
@@ -485,17 +438,6 @@ def build_master_datadictionary(verbose=True):
         datadictionary['vshift_'+numerator_line]  = np.array([])
         datadictionary['vshifterr_'+numerator_line]  = np.array([])
 
-        # if  linetypedic[numerator_line] == 'doublet':
-        #     datadictionary['f_'+numerator_line+'1']      = np.array([])
-        #     datadictionary['ferr_'+numerator_line+'1']   = np.array([])
-        #     datadictionary['s2n_'+numerator_line+'1']   = np.array([])
-        #     datadictionary['f_'+numerator_line+'2']      = np.array([])
-        #     datadictionary['ferr_'+numerator_line+'2']   = np.array([])
-        #     datadictionary['s2n_'+numerator_line+'2']      = np.array([])
-        #     datadictionary['FR_'+numerator_line+'1'+numerator_line+'2']     = np.array([])
-        #     datadictionary['FRerr_'+numerator_line+'1'+numerator_line+'2']  = np.array([])
-        #     datadictionary['FRs2n_'+numerator_line+'1'+numerator_line+'2']  = np.array([])
-
         for kk, denominator_line in enumerate(componentlist):
             if numerator_line == denominator_line:
                 continue
@@ -508,49 +450,8 @@ def build_master_datadictionary(verbose=True):
                 datadictionary['FRerr_'+numerator_line+denominator_line]  = np.array([])
                 datadictionary['FRs2n_'+numerator_line+denominator_line]  = np.array([])
 
-                # if (linetypedic[denominator_line] == 'single'):
-                #     datadictionary['FR_'+numerator_line+'1'+denominator_line]     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+'1'+denominator_line]  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+'1'+denominator_line]  = np.array([])
-                #     datadictionary['FR_'+numerator_line+'2'+denominator_line]     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+'2'+denominator_line]  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+'2'+denominator_line]  = np.array([])
-                # if (linetypedic[denominator_line] == 'doublet'):
-                #     datadictionary['FR_'+numerator_line+denominator_line+'1']     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+denominator_line+'1']  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+denominator_line+'1']  = np.array([])
-                #     datadictionary['FR_'+numerator_line+denominator_line+'2']     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+denominator_line+'2']  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+denominator_line+'2']  = np.array([])
-                # if (linetypedic[numerator_line] == 'doublet') & \
-                #         (linetypedic[denominator_line] == 'doublet'):
-                #     datadictionary['FR_'+numerator_line+'1'+denominator_line+'1']     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+'1'+denominator_line+'1']  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+'1'+denominator_line+'1']  = np.array([])
-                #     datadictionary['FR_'+numerator_line+'1'+denominator_line+'2']     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+'1'+denominator_line+'2']  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+'1'+denominator_line+'2']  = np.array([])
-                #     datadictionary['FR_'+numerator_line+'2'+denominator_line+'1']     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+'2'+denominator_line+'1']  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+'2'+denominator_line+'1']  = np.array([])
-                #     datadictionary['FR_'+numerator_line+'2'+denominator_line+'2']     = np.array([])
-                #     datadictionary['FRerr_'+numerator_line+'2'+denominator_line+'2']  = np.array([])
-                #     datadictionary['FRs2n_'+numerator_line+'2'+denominator_line+'2']  = np.array([])
     if verbose: print(' - Assembled and build a master dictionary with '+str(len(datadictionary.keys()))+' keys')
     return datadictionary
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def load_literaturecatalog(verbose=True):
-    """
-    Loading the literature catalog.
-
-    """
-    outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
-    fitscatalog = outdir+'literaturecollection_emissionlinestrengths.fits'
-    if verbose: print('\n - lce.load_literaturecatalog() Loading data from:\n   '+fitscatalog)
-    literaturedata = afits.open(fitscatalog)[1].data
-
-    return fitscatalog, literaturedata
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_nan19(fluxscale=1.0,verbose=True):
     """
@@ -679,20 +580,6 @@ def data_nan19(fluxscale=1.0,verbose=True):
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
 
-    # id   z_TN       HeII_ew   HeII_ew_nmad     CIIIa_ew CIIIa_ew_nmad    CIIIb_ew  CIIIb_ew_nmad     OIIIa_ew OIIIa_ew_nmad    OIIIb_ew  OIIIb_ew_nmad   SiIIIa_ew   SiIIIa_ew_nmad   SiIIIb_ew   SiIIIb_ew_nmad
-    # 1024.0   2.9           3.1   0.6              6.0   ,    0.9   ,           4.0   ,   0.5   ,            1.3 , 0.6  ,                2.8 , 0.6  ,              3.6   ,  0.7   ,                  3.2   ,  1.1,
-    # 1036.0   2.7           3.0   1.1              12.4  ,    0.8   ,           8.5   ,   1.0   ,            2.1 , 0.7  ,                4.8 , 0.7  ,              4.6   ,  0.6   ,                  2.5   ,  0.8,
-    # 1045.0   2.6           3.6   0.9              11.5  ,    1.2   ,           6.3   ,   1.1   ,            3.2 , 0.8  ,                4.6 , 0.8  ,              4.1   ,  0.7   ,                  3.8   ,  0.8,
-    # 1079.0   2.7           9.1   2.6              0.7   ,    0.6   ,           1.5   ,   0.7   ,            0.2 , 0.7  ,                0.2 , 0.4  ,              0.0   ,  0.4   ,                  0.4   ,  0.6,
-    # 1273.0   2.2           8.2   2.0              21.3  ,    1.8   ,           14.4  ,   1.5   ,            3.6 , 1.1  ,                7.2 , 1.4  ,              7.3   ,  1.9   ,                  3.0   ,  1.4,
-    # 3621.0   3.1           10.3  -99.0            7.2   ,    -99.0 ,           12.4  ,   -99.0 ,            10.2, -99.0,                10.1, -99.0,              14.5  ,  -99.0 ,                    7.0 ,  -99.0,
-    # 87.0     2.7           4.8   0.8              7.1   ,    0.8   ,           3.0   ,   0.8   ,            2.1 , 0.5  ,                3.8 , 0.5  ,              2.9   ,  0.5   ,                  4.1   ,  0.7,
-    # 109.0    2.2           3.2   0.4              5.7   ,    0.5   ,           5.0   ,   0.5   ,            1.5 , 0.5  ,                4.3 , 0.5  ,              4.5   ,  0.7   ,                  2.2   ,  0.7,
-    # 144.0    4.0           10.7  2.2              np.nan,    np.nan,           np.nan,   np.nan,            9.7 , 1.8  ,                37.2, 4.3  ,              np.nan,  np.nan,                  np.nan,  np.nan,
-    # 97.0     2.1           17.9  2.4              28.9  ,    3.1   ,           20.2  ,   3.8   ,            8.8 , 1.4  ,                16.9, 1.9  ,              7.7   ,  1.9   ,                  3.0   ,  1.8,
-    # 39.0     4.0           24.7  -99.0            np.nan,    np.nan,           np.nan,   np.nan,            5.1 , -99.0,                1.3 , -99.0,              np.nan,  np.nan,                  np.nan,  np.nan,
-    # 84.0     3.1           26.9  3.5              18.6  ,    -99.0 ,           12.0  ,   -99.0 ,            8.5 , 2.4  ,                6.3 , 2.0  ,              39.4  ,  -99.0 ,                  23.3  ,  -99.0,
-    # 161.0    3.1           50.3  -99.0            10.4  ,    -99.0 ,           0.3   ,   -99.0 ,            1.7 , -99.0,                6.9 , -99.0,              6.6   ,  -99.0 ,                  12.0  ,  -99.0,
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
