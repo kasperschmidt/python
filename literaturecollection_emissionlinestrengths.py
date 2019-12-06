@@ -172,6 +172,36 @@ def referencedictionary():
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # R14       Rigby   et al. (2014)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # R15MagE   Rigby   et al. (2015)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Erb10     Erb     et al. (2010)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Stark14   Stark   et al. (2014)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Stark15a  Stark   et al. (2015a)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Stark15b  Stark   et al. (2015b)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Stark16   Stark   et al. (2016)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Shap03    Shapley et al. (2003)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Bay14     Bayliss et al. (2014)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Schmidt et al. (2016)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Huang et al. (2016b)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Malkan et al. (1996)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Smit et al. (2017)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Vanzella et al. (2016) - X-shooter + MUSE
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Vanzella et al. (2017) - X-shooter + MUSE
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # SILVERRUSH - Shibuya+2017b collection of CIV, NV, HeII limits - no CIII limits. Table 6 in appendix
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Senchyna, Stark+2017 local reference sample has UV EL detected
@@ -448,15 +478,20 @@ def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
                         FR, FRerr = lce.set_ratios('numerator_exists','denominator_exists',
                                                     fnum,  ferrnum, fdenom, ferrdenom)
 
-                    # only attempt to fill empty columns to avoid overwriting values from input
-                    if np.isnan(dataarray['FR_'+numerator_line+denominator_line][ii]) & \
-                            np.isnan(dataarray['FRerr_'+numerator_line+denominator_line][ii]):
-                        dataarray['FR_'+numerator_line+denominator_line][ii]     = FR
-                        dataarray['FRerr_'+numerator_line+denominator_line][ii]  = FRerr
-                        if np.abs(FRerr) == 99:
-                            dataarray['FRs2n_'+numerator_line+denominator_line][ii]  = S2Nlim
-                        else:
-                            dataarray['FRs2n_'+numerator_line+denominator_line][ii]  = FR/FRerr
+                    rationame         = numerator_line+denominator_line
+                    rationame_inverse = denominator_line+numerator_line
+                    if 'FR_'+rationame_inverse not in dataarray.dtype.names: # and ratios withput inverse versions
+
+                        # only attempt to fill empty columns to avoid overwriting values from input
+                        if np.isnan(dataarray['FR_'+numerator_line+denominator_line][ii]) & \
+                                np.isnan(dataarray['FRerr_'+numerator_line+denominator_line][ii]):
+
+                            dataarray['FR_'+rationame][ii]     = FR
+                            dataarray['FRerr_'+rationame][ii]  = FRerr
+                            if np.abs(FRerr) == 99:
+                                dataarray['FRs2n_'+rationame][ii]  = S2Nlim
+                            else:
+                                dataarray['FRs2n_'+rationame][ii]  = FR/FRerr
 
     return dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -492,9 +527,13 @@ def build_master_datadictionary(verbose=True):
             elif denominator_line in numerator_line:
                 continue
             else:
-                datadictionary['FR_'+numerator_line+denominator_line]     = np.array([])
-                datadictionary['FRerr_'+numerator_line+denominator_line]  = np.array([])
-                datadictionary['FRs2n_'+numerator_line+denominator_line]  = np.array([])
+                rationame         = numerator_line+denominator_line
+                rationame_inverse = denominator_line+numerator_line
+
+                if 'FR_'+rationame_inverse not in datadictionary.keys():
+                    datadictionary['FR_'+rationame]     = np.array([])
+                    datadictionary['FRerr_'+rationame]  = np.array([])
+                    datadictionary['FRs2n_'+rationame]  = np.array([])
 
     if verbose: print(' - Assembled and build a master dictionary with '+str(len(datadictionary.keys()))+' keys')
     return datadictionary
