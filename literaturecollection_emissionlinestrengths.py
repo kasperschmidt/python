@@ -1,5 +1,6 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # Collection of literature emission line measurements combined into single table
+# Main catalog is generated with: literaturecollection_emissionlinestrengths.generate_literature_fitscatalog()
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import pdb
 import sys
