@@ -5,11 +5,12 @@
 import pdb
 import sys
 import os
-import astropy.io.fits as afits
 from fits2ascii import ascii2fits
 import MiGs
 from astropy import units as u
-from astropy.coordinates import Angle
+import astropy.io.fits as afits
+import astropy.coordinates as acoord
+import astropy.cosmology as acosmo
 import numpy as np
 import collections
 import matplotlib.pyplot as plt
@@ -362,6 +363,10 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_sen17(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
     for oo, id in enumerate(outputdataarray['id']):
@@ -525,7 +530,7 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
 
     datadic['f_Lya']       = np.array([])
     datadic['ferr_Lya']    = np.array([])
-    datadic['sigma_Lya']   = np.array([])
+    datadic['sigma_Lya']   = np.array(['FWHM']) / 2.355
     datadic['EW0_Lya']     = np.array([])
     datadic['EW0err_Lya']  = np.array([])
 
@@ -566,9 +571,104 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sen17(fluxscale=1e5,verbose=True):
+    """
+    Data collected from Senchyna+2017
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sen17'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    fluxratiodic        = collections.OrderedDict()
+    fluxratiodic['id']  = np.array([])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['id']        = np.array([2, 36, 80, 82, 110, 111, 179, 182, 191, 198]) + baseid
+
+    rasex                = np.array(['9:44:01.87','10:24:29.25 ','9:42:56.74 ','11:55:28.34','9:42:52.78',
+                                     '12:30:48.60','11:29:14.15 ','11:48:27.34 ','12:15:18.60 ','12:22:25.79'])
+    decsex               = np.array(['-0:38:32.2','5:24:51.0','9:28:16.2','57:39:52.0','35:47:26.0',
+                                     '12:02:42.8','20:34:52.0','25:46:11.8','20:38:26.7','4:34:04.8'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+
+    distances            = np.array([19. ,141. ,46. ,76. ,63. ,16. ,25. ,191. ,10. ,16.])
+    datadic['redshift']  = np.array([acoord.Distance(objdist, u.Mpc).compute_z(cosmology=acosmo.Planck15) for objdist in distances])
+
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['f_CIV1']       = np.array([0.20,3.3,1.6,1.92,0.20,0.79,2.0,1.54,1.0,3.1])
+    datadic['ferr_CIV1']    = np.array([0.02,99,99,0.05,0.05,0.04,99,0.04,99,99])
+    datadic['EW0_CIV1']     = np.array([0.25,0.4,0.5,0.67,0.08,0.41,0.5,0.96,0.5,0.7])
+    datadic['EW0err_CIV1']  = np.array([0.02,99,99,0.02,0.02,0.02,99,0.03,99,99])
+
+    datadic['f_CIV2']       = np.array([0.19,3.3,1.6,1.32,1.14,0.49,2.0,0.94,1.0,3.1])
+    datadic['ferr_CIV2']    = np.array([0.01,99,99,0.05,0.09,0.03,99,0.05,99,99])
+    datadic['EW0_CIV2']     = np.array([0.22,0.4,0.4,0.41,0.37,0.24,0.4,0.55,0.4,0.6])
+    datadic['EW0err_CIV2']  = np.array([0.02,99,99,0.02,0.03,0.01,99,0.03,99,99])
+
+    linename = 'CIV'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    datadic['f_HeII']    = np.array([1.45, 1.1, 0.8, 1.22, 1.2,2.37, 0.8, 1.42, 1.0, 0.8])
+    datadic['ferr_HeII'] = np.array([0.06, +99.0, +99.0, 0.05, +99.0, 0.05, +99.0, 0.05, +99.0, +99.0])
+    datadic['EW0_HeII']    = np.array([1.7, 0.4, 0.7, 0.44, 0.4, 1.42, 0.6, 0.94, 0.5, 0.5])
+    datadic['EW0err_HeII'] = np.array([0.06, +99.0, +99.0, 0.02, +99.0, 0.03, +99.0, 0.04, +99.0, +99.0])
+
+    datadic['f_OIII1']       = np.array([1.40,0.70,0.60,2.33,0.9,0.56,1.1,0.99,1.19,1.1])
+    datadic['ferr_OIII1']    = np.array([0.04,0.06,0.04,0.05,99,0.06,99,0.04,0.07,00])
+    datadic['EW0_OIII1']     = np.array([1.94,0.26,0.55,0.85,0.3,0.35,0.9,0.7,0.64,0.8])
+    datadic['EW0err_OIII1']  = np.array([0.06,0.02,0.04,0.02,99,0.04,99,0.03,0.04,99])
+
+    datadic['f_OIII2']       = np.array([3.35,2.16,1.69,5.05,1.28,2.68,1.36,2.27,np.nan,1.1])
+    datadic['ferr_OIII2']    = np.array([0.04,0.08,0.07,0.05,0.05,0.07,0.06,0.05,np.nan,99])
+    datadic['EW0_OIII2']     = np.array([5.05,0.84,1.68,1.89,0.48,1.73,1.17,1.73,np.nan,0.9])
+    datadic['EW0err_OIII2']  = np.array([0.1,0.03,0.08,0.02,0.02,0.05,0.06,0.04,np.nan,99])
+
+    linename = 'OIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    datadic['f_CIII']       = np.array([11.06,7.60,4.1,22.08,5.2,3.9,6.8,12.30,15.91,3.79])
+    datadic['ferr_CIII']    = np.array([0.63,0.88,99,0.40,99,99,0.23,0.33,0.39,0.30])
+    datadic['EW0_CIII']     = np.array([14.68,4.98,4.0,12.09,2.8,3.3,8.71,13.35,11.33,3.38])
+    datadic['EW0err_CIII']  = np.array([1.07,0.59,99,0.30,99,99,0.42,0.52,0.34,0.31])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_nan19(fluxscale=1.0,verbose=True):
     """
     Data collected from Nanaykkara et al. (2019)
+
+    EW values are obtained via privat communication as the published table 3 is faulty.
 
     Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
 
@@ -592,8 +692,8 @@ def data_nan19(fluxscale=1.0,verbose=True):
     decsex               = np.array(['-27:47:25.12','-27:47:10.54','-27:48:14.35','-27:47:56.75','-27:46:16.91',
                                      '-27:48:53.53','-60:33:42.12','-60:34:11.74','-60:34:00.07','+02:03:57.99',
                                      '-38:37:03.59','-38:37:20.79','-38:37:19.68'])
-    datadic['ra']        = Angle(rasex, u.hour).degree
-    datadic['dec']       = Angle(decsex, u.degree).degree
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([2.87, 2.69, 2.61, 2.68, 2.17, 3.07, 2.67, 2.2, 4.02, 2.11, 3.96, 3.1, 3.1])
     datadic['reference'] = [catreference]*len(datadic['id'])
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
@@ -788,12 +888,6 @@ def data_sch17(fluxscale=1e3,verbose=True):
         if key.startswith('f'):
             datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
 
-    if verbose: print('   Making sure EWs are rest-frame EWs, i.e., EW0')
-    for key in datadic.keys():
-        if key.startswith('EW0'):
-            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
-                                                       (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
-
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
 
     if verbose: print('   Returning catalog reference and data array')
@@ -816,61 +910,4 @@ def data_sch17(fluxscale=1e3,verbose=True):
     # datadic['f_CIV']     = np.array([1140, 790,    270])
     # datadic['ferr_CIV']  = np.array([90,   90,     +99])
 
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def data_sen17(fluxscale=1e5,verbose=True):
-    """
-    Data collected from Senchyna et al. 17
-
-    --- INPUT ---
-    baseid      Number to add to ids to keep them distinct from other literature data sets
-    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
-    verbose     Toggle verbosity
-
-    --- EXAMPLE OF USE ---
-    import literaturecollection_emissionlinestrengths as lce
-    catreference, dataarray = lce.data_sen17()
-
-    """
-    catreference        = 'sen17'
-    refdic              = lce.referencedictionary()
-    if verbose: print(' - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
-    baseid              = refdic[catreference][0]
-
-    linetypedic = collections.OrderedDict()
-    linetypedic['CIII']  = 'single'
-    linetypedic['OIII']  = 'single'
-    linetypedic['HeII']  = 'single'
-
-    datadic = {}
-    datadic['id']          = np.array([2, 36, 80, 82, 110, 111, 179, 182, 191, 198]) + baseid
-    datadic['redshift']    = np.array([0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003]) # nearby dwarfs
-    datadic['reference']   = [catreference]*len(datadic['id'])
-
-    #XXX CIV exists...
-
-    # EW - from Anna
-    datadic['EW0_HeII']    = np.array([1.7, 0.4, 0.7, 0.44, 0.4, 1.42, 0.6, 0.94, 0.5, 0.5])
-    datadic['EW0err_HeII'] = np.array([0.06, +99.0, +99.0, 0.02, +99.0, 0.03, +99.0, 0.04, +99.0, +99.0])
-    datadic['EW0_OIII']    = np.array([5.05, 0.84, 1.68, 1.89, 0.48, 1.73, 1.17, 1.73, np.nan, 0.9])
-    datadic['EW0err_OIII'] = np.array([0.1, 0.03, 0.08, 0.02, 0.02, 0.05, 0.06, 0.04, np.nan, +99.0])
-    datadic['EW0_CIII']    = np.array([14.86, 4.98, 4.0, 12.09, 2.8, 3.3, 8.71, 13.35, 11.33, 3.38])
-    datadic['EW0err_CIII'] = np.array([1.07, 0.59, +99.0, 0.3, +99.0, +99.0, 0.42, 0.52, 0.34, 0.31])
-
-    # line intensities - from Anna
-    datadic['f_HeII']    = np.array([1.45, 1.1, 0.8, 1.22, 1.2,2.37, 0.8, 1.42, 1.0, 0.8])
-    datadic['ferr_HeII'] = np.array([0.06, +99.0, +99.0, 0.05, +99.0, 0.05, +99.0, 0.05, +99.0, +99.0])
-    datadic['f_OIII']    = np.array([3.35, 2.16, 1.69, 5.05, 1.28, 2.68, 1.36, 2.27, np.nan, 1.1])
-    datadic['ferr_OIII'] = np.array([0.04, 0.08, 0.07, 0.05, 0.05, 0.07, 0.06, 0.05, np.nan, +99.0])
-    datadic['f_CIII']    = np.array([11.06, 7.60, 4.1, 22.5, 5.2, 3.9, 6.80, 12.3, 15.9, 3.79])
-    datadic['ferr_CIII'] = np.array([0.63, 0.88, +99.0, 0.40, +99.0, +99.0, 0.23, 0.33, 0.38, 0.30])
-
-    for key in datadic.keys():
-        if key.startswith('f'):
-            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
-
-    dataarray = lce.build_dataarray(catreference, linetypedic, datadic)
-
-    return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
