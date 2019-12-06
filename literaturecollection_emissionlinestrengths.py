@@ -17,6 +17,64 @@ import matplotlib.pyplot as plt
 import literaturecollection_emissionlinestrengths as lce
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def generate_literature_fitscatalog(verbose=True):
+    """
+    Collecting literature values and storing them in a single file
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import literaturecollection_emissionlinestrengths as lce
+    lce.generate_literature_fitscatalog()
+
+    """
+    outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+    outputfile  = outdir+'literaturecollection_emissionlinestrengths.txt'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Initializing the output file: \n   '+outputfile)
+    fout = open(outputfile,'w')
+    fout.write('# Flux, EW and line ratios collected from the literature:\n')
+    fout.write('# References in the column "reference" can be expanded with lce.referencedictionary()["reference"][1] \n')
+    fout.write('# Upper and lower limits are given as values with uncertainty of +99 or -99, respectively. \n')
+    fout.write('# \n')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Determine columns to fill in output')
+    fluxratiodic = lce.build_master_datadictionary(verbose=False)
+    Ncols        = len(fluxratiodic.keys())
+    if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
+    fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
+    fout.write('# id      reference'+' '.join([str("%20s" % colname) for colname in fluxratiodic.keys()[2:]])+'  \n')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Collecting literature data arrays and appending them')
+    refdic                 = lce.referencedictionary()
+
+    dataref, dataarray     = lce.data_nan19(verbose=True)
+    outputdataarray        = dataarray
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+    dataref, dataarray     = lce.data_sch17(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+    dataref, dataarray     = lce.data_sen17(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
+    for oo, id in enumerate(outputdataarray['id']):
+        outstr = str(int(id))+' '+outputdataarray['reference'][oo]+' '+\
+                 str("%20.10f" % outputdataarray['ra'][oo])+' '+str("%20.10f" % outputdataarray['dec'][oo])+\
+                 ' '.join([str("%20.4f" % ff) for ff in outputdataarray[oo].tolist()[4:]])
+        fout.write(outstr+' \n')
+    fout.close()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Creating fits version of output: \n   '+outputfile.replace('.txt','.fits'))
+    fitsformat = ['K','20A'] + ['D']*(Ncols-2)
+    fitsoutput = ascii2fits(outputfile,asciinames=True,skip_header=5,fitsformat=fitsformat,verbose=False)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def emissionlinelist(verbose=True):
     """
 
@@ -322,64 +380,6 @@ def calc_doubletValuesFromSingleComponents(f1,f1err,f2,f2err,
         return f_doublet, ferr_doublet, fratio, fratio_err, EW, EWerr
     else:
         return f_doublet, ferr_doublet, fratio, fratio_err
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def generate_literature_fitscatalog(verbose=True):
-    """
-    Collecting literature values and storing them in a single file
-
-    --- INPUT ---
-
-    --- EXAMPLE OF USE ---
-    import literaturecollection_emissionlinestrengths as lce
-    lce.generate_literature_fitscatalog()
-
-    """
-    outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
-    outputfile  = outdir+'literaturecollection_emissionlinestrengths.txt'
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Initializing the output file: \n   '+outputfile)
-    fout = open(outputfile,'w')
-    fout.write('# Flux, EW and line ratios collected from the literature:\n')
-    fout.write('# References in the column "reference" can be expanded with lce.referencedictionary()["reference"][1] \n')
-    fout.write('# Upper and lower limits are given as values with uncertainty of +99 or -99, respectively. \n')
-    fout.write('# \n')
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Determine columns to fill in output')
-    fluxratiodic = lce.build_master_datadictionary(verbose=False)
-    Ncols        = len(fluxratiodic.keys())
-    if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
-    fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
-    fout.write('# id      reference'+' '.join([str("%20s" % colname) for colname in fluxratiodic.keys()[2:]])+'  \n')
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Collecting literature data arrays and appending them')
-    refdic                 = lce.referencedictionary()
-
-    dataref, dataarray     = lce.data_nan19(verbose=True)
-    outputdataarray        = dataarray
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
-
-    dataref, dataarray     = lce.data_sch17(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
-
-    dataref, dataarray     = lce.data_sen17(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
-    for oo, id in enumerate(outputdataarray['id']):
-        outstr = str(int(id))+' '+outputdataarray['reference'][oo]+' '+\
-                 str("%20.10f" % outputdataarray['ra'][oo])+' '+str("%20.10f" % outputdataarray['dec'][oo])+\
-                 ' '.join([str("%20.4f" % ff) for ff in outputdataarray[oo].tolist()[4:]])
-        fout.write(outstr+' \n')
-    fout.close()
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Creating fits version of output: \n   '+outputfile.replace('.txt','.fits'))
-    fitsformat = ['K','20A'] + ['D']*(Ncols-2)
-    fitsoutput = ascii2fits(outputfile,asciinames=True,skip_header=5,fitsformat=fitsformat,verbose=False)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
     """
