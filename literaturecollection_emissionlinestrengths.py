@@ -61,6 +61,14 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_rig14(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+    dataref, dataarray     = lce.data_rig15(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
     for oo, id in enumerate(outputdataarray['id']):
@@ -138,27 +146,27 @@ def referencedictionary():
     """
     refdic = collections.OrderedDict()
     #                  baseid   reference                                                    plotsymbol
-    refdic['sen17'] = [1e10,    'Senchyna et al. (2017)',                                       'v']
-    refdic['nan19'] = [2e10,    'Nanaykkara et al. (2019)',                                     '^']
-    refdic['sch17'] = [3e10,    'Schmidt et al. (2017) & Mainali et al. (2017)',                '<']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '>']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '8']
-    refdic['dummy'] = [99e10,   'dummy',                                                        's']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'p']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'P']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '*']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'h']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'H']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '+']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'x']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'D']
-    refdic['dummy'] = [99e10,   'dummy',                                                        'd']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '1']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '2']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '3']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '4']
-    refdic['dummy'] = [99e10,   'dummy',                                                        '$\\alpha$']
-    refdic['dummy'] = [99e10,   'dummy',                                                        (5, 0, 180)] # pentagon rotated 180deg
+    refdic['nan19'] = [1e10,    'Nanaykkara et al. (2019)',                                     '^']
+    refdic['sch17'] = [2e10,    'Schmidt et al. (2017) & Mainali et al. (2017)',                '<']
+    refdic['sen17'] = [3e10,    'Senchyna et al. (2017)',                                       'v']
+    refdic['rig14'] = [4e10,    'Rigby et al. (2014)',                                          '>']
+    refdic['rig15'] = [5e10,    'Rigby et al. (2015)',                                          '8']
+    refdic['dummy'] = [9e10,    'dummy',                                                        's']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'p']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'P']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '*']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'h']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'H']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '+']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'x']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'D']
+    refdic['dummy'] = [9e10,    'dummy',                                                        'd']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '1']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '2']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '3']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '4']
+    refdic['dummy'] = [9e10,    'dummy',                                                        '$\\alpha$']
+    refdic['dummy'] = [9e10,    'dummy',                                                        (5, 0, 180)] # pentagon rotated 180deg
 
     # --- MUSE-Wide def: ---
     # CDFS and COSMOS:  'o'
@@ -171,10 +179,6 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # R14       Rigby   et al. (2014)
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # R15MagE   Rigby   et al. (2015)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Erb10     Erb     et al. (2010)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -560,8 +564,10 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
     datadic['id']        = np.array([9999]) + baseid
-    datadic['ra']        = np.array([1.23456])
-    datadic['dec']       = np.array([-9.87654])
+    rasex                = np.array(['04:22:00.81'])
+    decsex               = np.array(['-38:37:03.59'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([5.55])
     datadic['reference'] = [catreference]*len(datadic['id'])
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
@@ -932,6 +938,113 @@ def data_sch17(fluxscale=1e3,verbose=True):
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_rig14(fluxscale=1.0,verbose=True):
+    """
+    Data collected from Rigby+2014
+
+    Only EW provided
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'rig14'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    fluxratiodic        = collections.OrderedDict()
+    fluxratiodic['id']  = np.array([])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['id']        = np.array([4,108,3270001,3270002,3270003,3270004,957,1441]) + baseid
+    rasex                = np.array(['00:04:51.7','01:08:42.2','03:27:27','03:27:27','03:27:27',
+                                     '03:27:27','09:57:38.7','14:41:33.2'])
+    decsex               = np.array(['-01:03:21','+06:24:44','-13:26:09','-13:26:09','-13:26:09',
+                                     '-13:26:09','+05:09:29','-00:54:01'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([1.6811,1.91921,1.7034,1.7034,1.7034,1.7034,1.82042,1.666])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['EW0_Lya']     = np.array([3.3,8.9,1.8,3.75,5.7,1.65,8.1,5.1])
+    datadic['EW0err_Lya']  = np.array([0.4,0.6,99,99,99,99,1.2,99])
+
+    datadic['EW0_CIII1']     = np.array([0.2,1.2,0.8,1.6,1.65,1.5,2.0,0.93])
+    datadic['EW0err_CIII1']  = np.array([0.1,0.1,0.1,0.4,99,0.1,0.3,99])
+
+    datadic['EW0_CIII2']     = np.array([0.25,0.7,1.2,1.4,1.575,0.9,1.2,0.93])
+    datadic['EW0err_CIII2']  = np.array([0.1,0.1,0.1,0.35,99,0.1,0.3,99])
+
+    datadic['EW0_CIII']      = datadic['EW0_CIII1'] + datadic['EW0_CIII2']
+    datadic['EW0err_CIII']   = np.sqrt(datadic['EW0err_CIII1']**2 + datadic['EW0err_CIII2']**2)
+    datadic['EW0err_CIII'][4]= 99
+    datadic['EW0err_CIII'][7]= 99
+
+    datadic['EW0_MgII1']     = np.array([0.45,0.9,1.3,1.1,1.6,2.8,2.8,0.95])
+    datadic['EW0err_MgII1']  = np.array([0.1,0.6,0.16,0.5,0.6,0.3,0.9,0.4])
+
+    datadic['EW0_MgII2']     = np.array([0.81,0.87,1.00,0.8,1.4,2.35,1.81,1.2])
+    datadic['EW0err_MgII2']  = np.array([0.17,0.25,0.19,0.3,0.6,0.2,0.77,99])
+
+    datadic['EW0_MgII']      = datadic['EW0_MgII1'] + datadic['EW0_MgII2']
+    datadic['EW0err_MgII']   = np.sqrt(datadic['EW0err_MgII1']**2 + datadic['EW0err_MgII2']**2)
+    datadic['EW0err_MgII'][7]= 99
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_rig15(fluxscale=1.0,verbose=True):
+    """
+    Data collected from Rigby+2015
+
+    Only EW provided. Coordinates "converted" from names (kept in names list) in Rigby table; not precise.
+    A few updated via NED and literature.
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'rig15'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    fluxratiodic        = collections.OrderedDict()
+    fluxratiodic['id']  = np.array([])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    names                = ['RCSGA 032727-13260 Knot E','RCSGA 032727-13260 Knot U','RCSGA 032727-13260 Knot B','RCSGA 032727-13260 Knot G','SGAS J000451.7-010321','SGAS J010842.2+062444','SGAS J095738.7+050929','SGAS J090003.3+223408','SGAS J105039.6+001730','SGAS J122651.3+215220','SGAS J142954.9+120239','SGAS J152745.1+065219','SGAS J211118.9-011431','Cosmic Eye','Haro 15','IC 0214','Mrk 26','Mrk 347','Mrk 496','Mrk 499','Mrk 66','Pox 120','Pox 124','Tol 1924-416','Tol 41','NGC 1741','NGC 1741','Mrk 960','SBS 0218+003','Mrk 1087','Mrk 5','Mrk 1199','IRAS 08208+2816','IRAS 08339+6517','SBS 0926+606A','Arp 252','SBS 0948+532','Tol 9','SBS 1054+365','Pox 4','SBS 1319+579','SBS 1415+437','Tol 1457-262','III Zw 107','IZw18','IZw18-NW HIIR','IZw18-SE HIIR','NGC 1569','Mrk 71','NGC 2403-vs38','NGC 2403-vs44','NGC 2403-vs9','NGC 3690','NGC 4214','NGC 4569','NGC 4670','NGC 4861','NGC 5055','NGC 5253-HIIR-1','NGC 5253-HIIR-2','NGC 5253-UV1','NGC 5253-UV2','NGC 5253-UV3','NGC 5457-NGC 5455','NGC 5457-NGC 5471','NGC 5457-Searle5','NGC 7552','SBS 1415+437','Tol 1214-277','Tol 1345-420','UM 469']
+    datadic['id']        = np.array([3270001,3270004,3270002,3270003,452,10842,95738,90003,105040,122651,142955,152745,211119,999,15,214,26,347,496,499,66,120,124,1924,41,17410001,17410002,960,218,1087,5,1199,8208,8339,926,252,948,9,1054,4,1319,1415,1457,107,180001,180002,180003,1569,71,240338,240344,240309,3690,4214,4569,4670,4861,5055,52530001,52530002,52530003,52530004,52530005,54575455,54575471,54575,7552,14150437,1214,1345,469])[4:] + baseid
+    rasex                = ['03:27:27','03:27:27','03:27:27','03:27:27','00:04:51.7','01:08:42.2','09:57:38.7','09:00:03.3','10:50:39.6','12:26:51.3','14:29:54.9','15:27:45.1','21:11:18.9',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'19:24:00',np.nan,np.nan,np.nan,np.nan,'02:18:00',np.nan,np.nan,np.nan,'08:20:08','08:38:23','09:30:06.5',np.nan,'09:48:00',np.nan,'10:54:00',np.nan,'13:21:10.0','14:17:01.7','14:57:00',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'14:17:01.7','12:17:17.093','13:45:00',np.nan]
+    decsex               = ['-13:26:0','-13:26:0','-13:26:0','-13:26:0','-01:03:21','+06:24:44','+05:09:29','+22:34:08','+00:17:30','+21:52:20','+12:02:39','+06:52:19','-01:14:31',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'-41:60:00',np.nan,np.nan,np.nan,np.nan,'+00:30:00',np.nan,np.nan,np.nan,'+28:16:00','+65:07:15','+60:26:52',np.nan,'+53:20:00',np.nan,'+36:50:00',np.nan,'+57:39:41','+43:30:13','-26:20:00',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'+43:30:13','-28:02:32.67','-42:00:00',np.nan]
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree[4:]
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree[4:]
+    datadic['redshift']  = np.array([1.703745,1.703884,1.70360 ,1.70385 ,1.6811  ,1.91021 ,1.82042 ,2.0315  ,2.38115 ,2.9227  ,2.8219  ,2.7604  ,2.8577  ,3.07331 ,0.021371,0.030224,0.030428,0.019417,0.029304,0.025978,0.020972,0.020748,0.024217,0.009453,0.023083,0.013473,0.013473,0.021371,0.058420,0.027809,0.002642,0.013540,0.046776,0.019113,0.013642,0.032989,0.046240,0.010641,0.002010,0.011970,0.006870,0.002031,0.016812,0.019127,0.002505,0.002505,0.002505,0.000347,0.000233,0.000445,0.000445,0.000445,0.010411,0.000970,0.000784,0.003566,0.002785,0.001614,0.001358,0.001358,0.001358,0.001358,0.001358,0.000804,0.000804,0.000804,0.005365,0.002031,0.026001,0.008000,0.058146])[4:]
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['EW0_Lya']     = np.array([-1.2,-1.1,-2.5,-3.8,-3.3,-8.9,-8.1,-7.0,-19.5,-8.3,-30.0,-13.0,-1.5,np.nan,-0.69,5.97,5.46,6.19,-3.95,8.19,-4.70,-70.2,2.64,-22.3,-38.2,-0.45,1.94,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-4.45,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-82.6,np.nan,np.nan])[4:]
+    datadic['EW0err_Lya']  = np.array([-99.,-99.,-99.,-99.,0.4,0.6,1.2,0.5,2.0,0.5,3.0,1.0,0.15,np.nan,0.50,5.70,4.83,2.88,1.13,2.88,0.79,4.11,29.2,5.10,10.38,0.13,0.53,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,0.5,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,99.,np.nan,np.nan])[4:]
+
+    datadic['EW0_CIII']     = np.array([-2.0,-2.4,-3.0,-2.2,-0.45,-1.9,-3.2,-0.45,-2.2,-0.2,-0.1,-0.7,-2.0,-0.3,-0.11,-1.9,-3.1,0.04,-0.54,-0.31,-1.1,-14.,-3.2,-4.0,-1.7,-3.5,-3.5,-1.9,-2.6,-1.3,-2.5,-0.3,-0.4,-0.7,-3.1,-5.2,-1.2,-1.0,-0.5,-1.5,-8.3,-0.2,-1.8,-8.0,-4.2,-1.3,-4.4,-0.46,-18.7,-0.87,-1.40,-0.875,0.13,-0.23,-0.11,-0.68,-8.1,0.71,-7.5,-8.5,-2.3,0.10,0.17,-1.4,-6.4,-0.033,-0.069,-2.9,-27.,-6.2,-1.5])[4:]
+    datadic['EW0err_CIII']  = np.array([0.14,0.14,0.53,-99.,0.14,0.14,0.42,0.1,0.3,0.2,0.2,0.1,-99.,-99.,0.3,1.5,1.8,0.3,0.4,0.3,0.3,1.8,6.0,0.7,2.85,0.2,0.2,0.1,0.1,0.4,0.1,0.1,0.1,0.1,0.2,0.3,0.1,0.1,0.1,0.3,0.5,0.1,0.1,0.5,0.5,0.1,0.5,0.06,1.6,0.08,0.07,0.06,0.03,0.02,0.015,0.07,1.0,0.14,0.8,0.9,0.2,0.013,0.03,0.1,1.2,0.011,0.009,0.3,13.,0.9,0.1])[4:]
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
+
+
 
     #
     # datadic = {}
