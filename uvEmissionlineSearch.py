@@ -3,7 +3,6 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import pdb
 import os
-import commands
 import sys
 import glob
 import astropy
@@ -1210,7 +1209,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
     """
     Nmodels = len(GALFITmodels)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Renaming files of '+str(Nmodels)+' models profived to GALFITmodels keyword'
+    if verbose: print(' - Renaming files of '+str(Nmodels)+' models profived to GALFITmodels keyword')
     models_renamed = []
     model_ids      = []
     for modelname in GALFITmodels:
@@ -1219,7 +1218,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
         newname  = outputdir+'/'+refnamebase.replace('IIII',str(objid)).replace('PPPP',pointing)
         cpcmd    = ' cp '+modelname+' '+newname
         if os.path.isfile(newname) & (clobber == False):
-            if verbose: print ' clobber = False and '+newname+' already exists, so moving on to next file.'
+            if verbose: print(' clobber = False and '+newname+' already exists, so moving on to next file.')
         else:
             cpout = commands.getoutput(cpcmd)
         models_renamed.append(newname)
@@ -1227,7 +1226,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if pointsourcefile is not None:
-        if verbose: print ' - Assembling list of models for objects to use point source extractions for '
+        if verbose: print(' - Assembling list of models for objects to use point source extractions for ')
         pointsources      = np.genfromtxt(pointsourcefile,dtype=None,comments='#')
         try:
             pointsourcescales = [pointsourcescale]*len(pointsources)
@@ -1244,7 +1243,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
     if PSFmodels is None:
         PSFlist = None
     else:
-        if verbose: print ' - Loading PSF models '
+        if verbose: print(' - Loading PSF models ')
         if type(PSFmodels) is list:
             PSFlist = []
             if type(PSFmodelext) is not list:
@@ -1260,15 +1259,15 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
         compinfofile = None
     else:
         if os.path.isfile(sourcecat_compinfo):
-            if verbose: print ' - Will use existing point source component file provided:\n   '+sourcecat_compinfo
+            if verbose: print(' - Will use existing point source component file provided:\n   '+sourcecat_compinfo)
             compinfofile     = sourcecat_compinfo
             gen_compinfofile = False
-            if verbose: print '   (no new file/template will be generated)'
+            if verbose: print('   (no new file/template will be generated)')
         else:
             compinfofile = None
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Building cubes from renamed GALFIT models'
+    if verbose: print(' - Building cubes from renamed GALFIT models')
     # newlist = []
     # for mod in models_renamed:
     #     if 'id12400' in mod: newlist.append(mod)
@@ -1281,16 +1280,16 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if gen_compinfofile:
-        if verbose: print ' - Generating component info file template for source catalog updates'
+        if verbose: print(' - Generating component info file template for source catalog updates')
         skip = False
         if sourcecat_compinfo is None:
             compinfofile = './component_info_template_RENAME_.txt'
             if os.path.isfile(compinfofile) & (clobber == False):
-                if verbose: print '   ... but '+compinfofile+' exists and clobber=False, so skipping.'
+                if verbose: print('   ... but '+compinfofile+' exists and clobber=False, so skipping.')
                 skip = True
         else:
             if os.path.isfile(compinfofile) & (clobber == False):
-                if verbose: print '   ... but '+compinfofile+' exists and clobber=False, so skipping.'
+                if verbose: print('   ... but '+compinfofile+' exists and clobber=False, so skipping.')
                 skip = True
             else:
                 compinfofile = sourcecat_compinfo
@@ -1345,7 +1344,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
                 jknotes.close()
                 fout.write(outstring+' \n')
             fout.close()
-            if verbose: print ' - Wrote component info to: '+compinfofile
+            if verbose: print(' - Wrote component info to: '+compinfofile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/',
                          imgdir='/Volumes/DATABCKUP2/MUSE-Wide/hst_cutouts/',modelstart=1,showPhotRegions=True,
@@ -1367,6 +1366,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
     uves.inspect_GALFITmodels(modelstart=3)
 
     """
+    import commands # only works on Python2.7; has to convert to subprocess.Popen() for Python3
     LAEinfo = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
 
     if objids is None:
@@ -1376,18 +1376,17 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
         for objid in objids:
             GALFITmodels = GALFITmodels + [mod for mod in glob.glob(modeldir+'model*'+str(objid)+'*arcsec.fits')]
     GALFITmodels      = np.asarray(GALFITmodels)
-    if verbose: print ' - Found '+str(len(GALFITmodels))+' GALFIT models'
+    if verbose: print(' - Found '+str(len(GALFITmodels))+' GALFIT models')
 
     loopmodels        = GALFITmodels[modelstart-1:]
 
     MWregion_cosmos   = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_objects_cosmos.reg' #candels_cosmos_pointings-all.reg'
     MWregion_cdfs     = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_objects_cdfs.reg' #candels_cdfs_pointings-all.reg'
 
-    if verbose: print ' - Will look through '+str(len(loopmodels))+' of the models starting with model number '+str(modelstart)
+    if verbose: print(' - Will look through '+str(len(loopmodels))+' of the models starting with model number '+str(modelstart))
 
     ds9cmd       = "ds9 -view layout vertical -lock frame wcs -height 650 -width 650 -tile grid layout 4 4 "
     pds9         = subprocess.Popen(ds9cmd,shell=True,executable=os.environ["SHELL"])
-    #cmdout       = commands.getoutput(ds9cmd)
     time.sleep(1.1)# sleep to make sure ds9 appear in PIDlist
     for ii in np.arange(1,13):
         out = commands.getoutput('xpaset -p ds9 frame new')
@@ -1400,7 +1399,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
     for mm, GFmodel in enumerate(loopmodels):
         if verbose:
             infostr = '   Displaying files for model '+str("%.5d" % (mm+1))+' / '+str("%.5d" % len(loopmodels))+' in DS9.'
-            print infostr,
+            print(infostr)
 
         modelid      = GFmodel.split('_id')[-1][:9]
         compregion   = GFmodel.replace('.fits','_ds9region.reg')
@@ -1465,22 +1464,22 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
         # Printing info of object
         if verbose:
             objent =  np.where(LAEinfo['ID'] == int(modelid))
-            print '   ID        =  '+modelid
-            print '   [ra,dec]  = ['+str(LAEinfo['RA'][objent][0])+','+str(LAEinfo['DEC'][objent][0])+']'
-            print '   zMUSE     = '+str(LAEinfo['redshift'][objent][0])
+            print('   ID        =  '+modelid)
+            print('   [ra,dec]  = ['+str(LAEinfo['RA'][objent][0])+','+str(LAEinfo['DEC'][objent][0])+']')
+            print('   zMUSE     = '+str(LAEinfo['redshift'][objent][0]))
             lamLya    = (LAEinfo['redshift'][objent][0]+1.0) * 1216.0
-            print '   lamdaLya  = '+str("%.2f" % lamLya)
+            print('   lamdaLya  = '+str("%.2f" % lamLya))
             bandsLya  = uves.wavelength_in_bands(lamLya)
-            print '   bandsLya  = ',bandsLya
+            print('   bandsLya  = '+str(bandsLya))
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print '\n Move on to the next model (y/n)? ',
+        if verbose: print('\n Move on to the next model (y/n)? ')
         input = raw_input()
         if (input.lower() == 'y') or (input.lower() == 'yes'):
             continue
         else:
-            if verbose: print '\n - Okay; then shutting down '
+            if verbose: print('\n - Okay; then shutting down ')
             return
-    if verbose: print '\n - Done; no more objects in loop'
+    if verbose: print('\n - Done; no more objects in loop')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def wavelength_in_bands(wavelength):
     """
@@ -1550,14 +1549,14 @@ def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
     """
     modelfiles = glob.glob(modeldir+'/imgblock*.fits')
     sourcetab  = afits.open(sourcecatalog)[1].data
-    if verbose: print ' - Found '+str(len(modelfiles))+' in modeldir to rename '
+    if verbose: print(' - Found '+str(len(modelfiles))+' in modeldir to rename ')
 
     for oldname in modelfiles:
         id     = oldname.split('/')[-1].split('_')[-1].split('.fit')[0]
         objent = np.where(sourcetab['id'] == int(id))[0]
 
         if len(objent) != 1:
-            print ' - No match in sourcecatalog to object '+id
+            print(' - No match in sourcecatalog to object '+id)
         else:
             pointing = sourcetab['pointing'][objent][0]
 
@@ -1573,9 +1572,9 @@ def rename_models(outputdir,sourcecatalog,cutoutsize=[2.0,2.0],clobber=False,
                 newname = outputdir+'model_acs_814w_'+pointing+'_cut_v1.0'+cutoutstr+'.fits'
 
             if os.path.isfile(newname) & (clobber == False):
-                print ' - Clobber = False and '+newname+' already exists so no new copy made. Moving on'
+                print(' - Clobber = False and '+newname+' already exists so no new copy made. Moving on')
             else:
-                if verbose: print ' - Copying '+oldname+' to '+newname
+                if verbose: print(' - Copying '+oldname+' to '+newname)
                 shutil.copy(oldname,newname)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True,verbose=True):
@@ -1597,9 +1596,9 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
     """
     modelfiles = glob.glob(modeldir+'*.fits')
     Nfiles     = len(modelfiles)
-    if verbose: print ' - Found '+str(Nfiles)+' models to extract coordinates from '
+    if verbose: print(' - Found '+str(Nfiles)+' models to extract coordinates from ')
 
-    if verbose: print ' - Looping over models and extracting coordinates from: '
+    if verbose: print(' - Looping over models and extracting coordinates from: ')
     coordarray = np.zeros(Nfiles, dtype={'names':['modelfile','xpix','ypix','ra','dec'],
                                          'formats':['a250', 'f8', 'f8', 'f8', 'f8']})
     for mm, modelfile in enumerate(modelfiles[0:5]):
@@ -1614,13 +1613,13 @@ def get_ModelReferencePixelCoordinates(modeldir,pixpos='center',printcoords=True
             xpix      = pixpos[1]
             ypix      = pixpos[0]
 
-        print imgwcs
+        print(imgwcs)
         skycoord  = wcs.utils.pixel_to_skycoord(xpix,ypix,imgwcs, origin=0)
         ra        = skycoord.ra.value
         dec       = skycoord.dec.value
 
         if printcoords & verbose:
-            print '   '+modelfile.split('/')[-1]+':  (ra,dec) = ('+str(ra)+','+str(dec)+')'
+            print('   '+modelfile.split('/')[-1]+':  (ra,dec) = ('+str(ra)+','+str(dec)+')')
 
         coordarray['modelfile'][mm] = modelfile
         coordarray['xpix'][mm]      = xpix
@@ -1658,17 +1657,17 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
         datacube = glob.glob(datacubestring.replace('PPPP',pointing))
 
         if len(datacube) == 0:
-            if verbose: print ' -----> WARNING No data cube found globbing for '
-            if verbose: print '        '+datacubestring.replace('PPPP',pointing)
+            if verbose: print(' -----> WARNING No data cube found globbing for ')
+            if verbose: print('        '+datacubestring.replace('PPPP',pointing))
         elif len(datacube) > 1:
-            if verbose: print ' -----> WARNING More than 1 data cube found globbing for '
-            if verbose: print '        '+datacubestring.replace('PPPP',pointing)
-            if verbose: print '        Using the first found in the list, i.e., '
+            if verbose: print(' -----> WARNING More than 1 data cube found globbing for ')
+            if verbose: print('        '+datacubestring.replace('PPPP',pointing))
+            if verbose: print('        Using the first found in the list, i.e., ')
             datacube = datacube[0]
-            if verbose: print '        Extracting from: '+datacube
+            if verbose: print('        Extracting from: '+datacube)
         else:
             datacube = datacube[0]
-            if verbose: print '\n - Extracting from: '+datacube
+            if verbose: print('\n - Extracting from: '+datacube)
 
         ras       = LAEinfo['ra'][pointing_objs]
         decs      = LAEinfo['dec'][pointing_objs]
@@ -1686,7 +1685,7 @@ def gen_narrowbandimages(LAEinfofile,datacubestring,outputdir,linewaves=[1216,15
             wcen = []
             dwav = []
             if len(fwhms) != 0:
-                if verbose: print ' - Estimating systemic redshift using Verhamme+17 z_sys vs Lya_FWHM relation '
+                if verbose: print(' - Estimating systemic redshift using Verhamme+17 z_sys vs Lya_FWHM relation ')
                 zsys = None
             else:
                 zsys = redshift
@@ -2241,7 +2240,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         plt.close('all')
 
         # # - - - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - - - -
-        # if verbose: print ' - Setting up and generating plot'
+        # if verbose: print(' - Setting up and generating plot'
         # plotname = namebase+'_'+key+'_LyaEWVSflux.pdf'
         # fig = plt.figure(figsize=(7, 5))
         # fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.9)
@@ -2353,7 +2352,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         # leg.get_frame().set_alpha(0.7)
         # #--------------------------
         #
-        # if verbose: print '   Saving plot to',plotname
+        # if verbose: print('   Saving plot to',plotname
         # plt.savefig(plotname)
         # plt.clf()
         # plt.close('all')
@@ -2442,7 +2441,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
 
     """
     Nobj     = len(MUSEidlist)
-    if verbose: print ' - Plotting spectra of '+str(Nobj)+' objects in "MUSEidlist"'
+    if verbose: print(' - Plotting spectra of '+str(Nobj)+' objects in "MUSEidlist"')
     LAEinfo        = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
     spectraplottet = collections.OrderedDict()
 
@@ -2608,7 +2607,7 @@ def plot_1DspecOverview_forsample(MUSEidlist,outputdir='./',yrangefullflux=[-400
                                             outputfigure=outputfigure, yrangefull=yrangefull, plotSN=plotSN,
                                             verbose=verbose)
 
-    if verbose: print ' - Done...'
+    if verbose: print(' - Done...')
     return spectraplottet
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_3DHSTspecname(ids,spec1D=False,field='goodss',verbose=True):
@@ -2726,7 +2725,7 @@ def copy_singleobjsourcecats(outputdir='/Users/kschmidt/work/MUSE/uvEmissionline
     for scat in sourcecats:
         cpout = commands.getoutput('cp '+modeldir+scat+' '+outputdir)
         if cpout != '':
-            print cpout
+            print(str(cpout))
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_overviewdocument(outdir,outfile,clobber=False,
@@ -2757,10 +2756,10 @@ def gen_overviewdocument(outdir,outfile,clobber=False,
     fmain = open(outdir+outfile,'w')
     fmain.write("""
 \documentclass[a4paper,10pt]{article}
-\usepackage[latin1]{inputenc}
-\usepackage{float}
-\usepackage[pdftex]{graphicx}
-\usepackage[left=1cm,right=1cm,top=1cm,bottom=2cm]{geometry}
+\\usepackage[latin1]{inputenc}
+\\usepackage{float}
+\\usepackage[pdftex]{graphicx}
+\\usepackage[left=1cm,right=1cm,top=1cm,bottom=2cm]{geometry}
 %===========================================================================
 \\begin{document}
 %===========================================================================
@@ -5205,7 +5204,7 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
             elif linestr == 'CIII1908':
                 linedataAGN.append(modeldataAGN['CIII1907']+modeldataAGN['CIII1910'])
             elif linestr == 'SiIII1892':
-                linedataAGN.append(modeldataSF['SiIII1888']-modeldataAGN['SiIII1883'])
+                linedataAGN.append(modeldataAGN['SiIII1888']-modeldataAGN['SiIII1883'])
             else:
                 linedataAGN.append(modeldataAGN[linestr])
 
