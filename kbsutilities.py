@@ -37,7 +37,6 @@ import types
 import pdb
 import MiGs
 import fits2ascii as f2a
-import commands
 import time
 import pyfits
 import os
@@ -46,7 +45,6 @@ import glob
 #from wand.color import Color as wColor
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import collections
-from reproject import reproject_interp
 
 ### MATPLOTLIB ###
 import matplotlib.pyplot as plt
@@ -59,11 +57,12 @@ from scipy import odr
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter
 
-### ASTROPYSICS ###
-import astropysics
-#import astropysics.obstools     #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
-#from astropysics import coords  #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
-from astropysics.constants import choose_cosmology
+if sys.version_info[0] == 2:
+    ### ASTROPYSICS ###
+    import astropysics
+    #import astropysics.obstools     #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
+    #from astropysics import coords  #KBS170728 produce : TypeError: 'float' object cannot be interpreted as an index
+    from astropysics.constants import choose_cosmology
 
 ### ASTROPY ###
 from astropy.coordinates import SkyCoord
@@ -73,9 +72,10 @@ from astropy.cosmology import FlatLambdaCDM, z_at_value
 import astropy.io.fits as afits
 from astropy import wcs
 
-### IMAGE REGISTRATION ###
-from image_registration import chi2_shift
-from image_registration.fft_tools import shift
+if sys.version_info[0] == 2:
+    ### IMAGE REGISTRATION ###
+    from image_registration import chi2_shift
+    from image_registration.fft_tools import shift
 
 
 #-------------------------------------------------------------------------------------------------------------
@@ -276,27 +276,27 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
     EBVvals = []
     for coord in coords_arr:
         cc = SkyCoord(ra=coord[0]*u.degree, dec=coord[1]*u.degree, frame='fk5')
-        if verbose: print '   Getting A and E(B-V) at (ra, dec) = (',str("%.8f" % cc.ra.deg),',',\
-            str("%.8f" % cc.dec.deg),')  ',
+        if verbose: print('   Getting A and E(B-V) at (ra, dec) = ('+str("%.8f" % cc.ra.deg)+','+\
+            str("%.8f" % cc.dec.deg)+')  ')
         Avval, EBVval = kbs.getAv(cc.ra.deg,cc.dec.deg,filter)
         Avvals.append(Avval)
         EBVvals.append(EBVval)
-        if verbose: print '  A, E(B-V) = ',str("%.2f" % Avval),str("%.2f" % EBVval)
+        if verbose: print('  A, E(B-V) = '+str("%.2f" % Avval)+' '+str("%.2f" % EBVval))
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if valreturn == 'median':
-        if verbose: print ' - Returning median value on calculated grid points'
+        if verbose: print(' - Returning median value on calculated grid points')
         Av_final   = np.median(np.asarray(Avvals))
         EBV_final  = np.median(np.asarray(EBVvals))
         gridreturn = Ngridpoints
     elif valreturn == 'mean':
-        if verbose: print ' - Returning mean value on calculated grid points'
+        if verbose: print(' - Returning mean value on calculated grid points')
         Av_final   = np.mean(np.asarray(Avvals))
         EBV_final  = np.mean(np.asarray(EBVvals))
         gridreturn = Ngridpoints
     else:
-        if verbose: print ' - Returning all values calculated'
+        if verbose: print(' - Returning all values calculated')
         Av_final   = np.asarray(Avvals)
         EBV_final  = np.asarray(EBVvals)
         gridreturn = coords_arr
@@ -501,6 +501,7 @@ def sex2deg(rasex,decsex):
     converting ra and dec strings with sexagesimal values to float of degrees using skycoor
 
     """
+    import commands # only for python 2.7
     skycoorout = commands.getoutput('skycoor -d '+rasex+' '+decsex)    
     outsplit   = skycoorout.split()
     radeg      = float(outsplit[0])
@@ -524,7 +525,7 @@ def correctmag4extinction(mag,ebv,band,Rvval=3.1,verbose=1):
     Nmag    = len(mag)
     wave    = np.zeros(Nmag)
 
-    if verbose == 1: print 'Correcting the '+str(Nmag)+' magnitudes using Cardelli ext. law with Rv=',Rvval
+    if verbose == 1: print('Correcting the '+str(Nmag)+' magnitudes using Cardelli ext. law with Rv='+str(Rvval))
     
     for ii in xrange(Nmag):
         bandobj = band[ii]
@@ -543,7 +544,7 @@ def correctmag4extinction(mag,ebv,band,Rvval=3.1,verbose=1):
     magcorr = extlaw.correctPhotometry(mag,wave)    
     if verbose == 1: 
         for jj in xrange(Nmag):
-            print '   Corrected '+str(mag[jj])+' in '+band[jj]+' to    '+str(magcorr[jj])
+            print('   Corrected '+str(mag[jj])+' in '+band[jj]+' to    '+str(magcorr[jj]))
     return magcorr
 #-------------------------------------------------------------------------------------------------------------
 def drawnbinom(n,p,size=1):
@@ -575,7 +576,6 @@ def drawnbinom(n,p,size=1):
             u = np.random.uniform(low=0.0, high=1.0, size=n)
             m[ii] = int(np.sum(np.log10(u)/np.log10(1-p)))    
     else:       # so in that case slit up in sub samples instead
-        #print 'n > nlim = ',nlim
         nusub = np.floor(n/nlim) # sub arrays of size Nlim to draw
         nrest = n - nlim*nusub   # size of final subarray
 
@@ -602,7 +602,6 @@ def drawnbinom(n,p,size=1):
 #            m[ii] = int(sumval)
         
     N = m + n
-    #print 'Took ',time.time()-t0,' sec.'
     return N
 #-------------------------------------------------------------------------------------------------------------
 def appendfitstable(tab1,tab2,newtab='kbs_appendfitstable_results.fits',clobber=False):
@@ -700,14 +699,14 @@ def createLaTeXtab(fitstable,verbose=False):
 
     """
     if os.path.exists(fitstable):
-        if verbose: print ' - Loading fitstable in ',fitstable
+        if verbose: print(' - Loading fitstable in '+fitstable)
         dat   = pyfits.open(fitstable)
         datTB = dat[1].data
         cols  = datTB.columns.names
         Ncol  = len(cols)
         Nobj  = len(datTB[cols[0]])
-        if verbose: print ' - Found ',Nobj,' objects to create table rows for'
-        if verbose: print '   and ',Ncol,' columns of data'
+        if verbose: print(' - Found '+str(Nobj)+' objects to create table rows for')
+        if verbose: print('   and '+str(Ncol)+' columns of data')
     else:
         sys.exit('The provided catalog does not exist --> ABORTING')
 
@@ -753,19 +752,19 @@ def createLaTeXtab_CLASH(fitsCLASHcat,IDs,verbose=False,calcstuff=False):
 
     """
     if os.path.exists(fitsCLASHcat):
-        if verbose: print ' - Loading CLASH catalog in ',fitsCLASHcat
+        if verbose: print(' - Loading CLASH catalog in '+fitsCLASHcat)
         dat   = pyfits.open(fitsCLASHcat)
         datTB = dat[1].data
 
         Nobj    = len(IDs)
         entries = np.zeros(Nobj).astype(dtype=int)-99
-        if verbose: print ' - Grabbing data for requested objects'
+        if verbose: print(' - Grabbing data for requested objects')
         for ii in xrange(Nobj):
             objent = np.where(datTB['id'] == IDs[ii])[0]
             if len(objent) == 0:
-                if verbose: print '   No match to ID ',IDs[ii]
+                if verbose: print('   No match to ID '+str(IDs[ii]))
             elif len(objent) > 1:
-                if verbose: print '   More than one match to ID ',IDs[ii],' --> skipping'
+                if verbose: print('   More than one match to ID '+str(IDs[ii])+' --> skipping')
             else:
                 entries[ii] = int(objent)
 
@@ -776,11 +775,11 @@ def createLaTeXtab_CLASH(fitsCLASHcat,IDs,verbose=False,calcstuff=False):
         cols  = datTB.columns.names
         Ncol  = len(cols)
         Nobj  = len(datTB[cols[0]])
-        if verbose: print ' - Extracted ',Ncol,' colukmns for the requested ',Nobj,' objects.'
+        if verbose: print(' - Extracted '+str(Ncol)+' colukmns for the requested '+str(Nobj)+' objects.')
     else:
         sys.exit('The provided catalog does not exist --> ABORTING')
 
-    if verbose: print ' - Putting data rows together.'
+    if verbose: print(' - Putting data rows together.')
     headlist = ['ID','$\\alpha_\\textrm{J2000}$','$\\delta_\\textrm{J2000}$','F225W mag', 'F275W mag', 'F336W mag', 'F390W mag', 'F435W mag', 'F475W mag', 'F555W mag', 'F606W mag', 'F625W mag', 'F775W mag', 'F814W mag', 'F850lp mag', 'F105W mag', 'F110W mag', 'F125W mag', 'F140W mag', 'F160W mag', '$z_\\textrm{phot}$']
 
     Ncolfinal = len(headlist)
@@ -833,17 +832,13 @@ def createLaTeXtab_CLASH(fitsCLASHcat,IDs,verbose=False,calcstuff=False):
 
     # ===== Calculate stuff for objects =====
     if calcstuff==True:
-        if verbose: print ' - Calculating stuff for objects:'
+        if verbose: print(' - Calculating stuff for objects:')
         for oo in xrange(Nobj):
             mags  = np.array([datTB['f125w_mag'][oo],datTB['f140w_mag'][oo],datTB['f160w_mag'][oo]])
             errs  = np.array([datTB['f125w_magerr'][oo],datTB['f140w_magerr'][oo],datTB['f160w_magerr'][oo]])
 
             magav = np.average(mags[mags != -99],weights=1/errs[mags != -99]**2) # wighted average of magnitudes
-            #if verbose: print '   obj,magav,zphot,mags[mags!=-99] = ',IDs[oo],magav,datTB['zb'][oo],mags[mags != -99]
-
-            #if verbose: print IDs[oo],datTB['ra'][oo],datTB['dec'][oo]
-            #if verbose: print IDs[oo],'   ',str(fmt % datTB['f105w_mag'][oo]),',',str(fmt % datTB['f105w_magerr'][oo])
-            if verbose: print IDs[oo],'   ',str(fmt % datTB['f140w_mag'][oo]),',',str(fmt % datTB['f140w_magerr'][oo])
+            if verbose: print(str(IDs[oo])+'   '+str(fmt % datTB['f140w_mag'][oo])+','+str(fmt % datTB['f140w_magerr'][oo]))
 
 
     return tablestr
@@ -862,7 +857,7 @@ def createSCImCONTAM(spec2Dfits,verbose=False,clobber=False):
 
     """
     if os.path.isfile(spec2Dfits):
-        if verbose: print ' - Loading fits file'
+        if verbose: print(' - Loading fits file')
         twod       = pyfits.open(spec2Dfits)
         SCI        = twod['SCI'].data
         CONTAM     = twod['CONTAM'].data
@@ -910,9 +905,9 @@ def crossmatch(ralist,declist,
         sys.exit('The provided "ralist" and "declist" have different lengths --> ABORTING')
     else:
         Nobj = len(ralist)
-        if verbose: print ' - Will return best match to the '+str(Nobj)+' coordinate sets provide '
+        if verbose: print(' - Will return best match to the '+str(Nobj)+' coordinate sets provide ')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loading catalog to get IDs'
+    if verbose: print(' - Loading catalog to get IDs')
     if catalog == 'skelton_goodss':
         catpath   = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/'
         catmatch  = catpath+'goodss_3dhst.v4.1.cat.FITS'
@@ -921,7 +916,7 @@ def crossmatch(ralist,declist,
 
     catdat = pyfits.open(catmatch)[catext].data
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Finding IDs for provided objects '
+    if verbose: print(' - Finding IDs for provided objects ')
     objids        = np.zeros(Nobj)-99.0
     ra_objids     = np.zeros(Nobj)-99.0
     dec_objids    = np.zeros(Nobj)-99.0
@@ -942,9 +937,9 @@ def crossmatch(ralist,declist,
         dec_objids[rr]     = catdat[deccol][objent]
         rmatch_objids[rr]  = rmatch[objent]*3600. # rmatch in arcsec
 
-    if verbose: print '\n   ... done '
+    if verbose: print('\n   ... done ')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Returning ID, RA, Dec, r_match[arcsec] '
+    if verbose: print(' - Returning ID, RA, Dec, r_match[arcsec] ')
     return objids, ra_objids, dec_objids, rmatch_objids
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_candels-cdfs_v0.2.fits',
@@ -994,9 +989,9 @@ def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catal
         asciifile = writetofile+'.txt'
 
         if os.path.isfile(asciifile) and (clobber == False):
-            if verbose: print ' - WARNING: '+asciifile+' exists and clobber=False so no file generated'
+            if verbose: print(' - WARNING: '+asciifile+' exists and clobber=False so no file generated')
         else:
-            if verbose: print ' - Generating '+asciifile
+            if verbose: print(' - Generating '+asciifile)
             fout = open(asciifile,'w')
             fout.write('# crossmatch using kbsutilities.crossmatch2cat() and '
                        'kbsutilities.crossmatch() on '+kbs.DandTstr2()+' \n')
@@ -1022,9 +1017,9 @@ def crossmatch2cat(radeccat='/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catal
 
         fitsfile  = writetofile+'.fits'
         if os.path.isfile(fitsfile) and (clobber == False):
-            if verbose: print ' - WARNING: '+fitsfile+' exists and clobber=False so no file generated'
+            if verbose: print(' - WARNING: '+fitsfile+' exists and clobber=False so no file generated')
         else:
-            if verbose: print ' - Generating '+fitsfile
+            if verbose: print(' - Generating '+fitsfile)
             fitspath   = kbs.pathAname(asciifile)[0]
 
             if IDstrings:
@@ -1057,17 +1052,17 @@ def generate_mergedPDF(searchstring='./*.pdf',outputdocument='./allpdfs.pdf',ver
     pdf_files = glob.glob(searchstring)
 
     if len(pdf_files) > 1:
-        if verbose: print ' - Found '+str(len(pdf_files))+' to merge ',
+        if verbose: print(' - Found '+str(len(pdf_files))+' to merge ')
         merger    = PdfFileMerger()
 
-        if verbose: print ' ... merging ',
+        if verbose: print(' ... merging ')
         for fname in pdf_files:
             merger.append(PdfFileReader(fname, "rb"))
 
         merger.write(outputdocument)
-        if verbose: print '   Worte output to '+outputdocument
+        if verbose: print('   Worte output to '+outputdocument)
     else:
-        if verbose: print ' - Found less than 2 pdf files globbing for '+searchstring+' --> No output generated'
+        if verbose: print(' - Found less than 2 pdf files globbing for '+searchstring+' --> No output generated')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def convert_pdf2png(pdffile,res=300,clobber=False,quality='75',resize='100%',verbose=True):
     """
@@ -1077,15 +1072,16 @@ def convert_pdf2png(pdffile,res=300,clobber=False,quality='75',resize='100%',ver
 
     kbs.convert_pdf2png('./spectraplots160325/10210079_3dhstSpecAndInfo.pdf')
     """
+    import commands # only for python 2.7
     output = pdffile.replace('.pdf','.png')
     if os.path.isfile(output) and (clobber == False):
-        print ' WARNING: '+output+' exists and clobber=False so skipping '
+        print(' WARNING: '+output+' exists and clobber=False so skipping ')
     else:
         convertcmd = 'convert '+pdffile+' -quality '+quality+' '+output
         cmdout = commands.getoutput(convertcmd)
         if verbose and cmdout != '':
-            print '--> convert output:'
-            print cmdout
+            print('--> convert output:')
+            print(cmdout)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def convert_wavelength(lambdainput,version='air2vac',verbose=True):
     """
@@ -1140,11 +1136,11 @@ def velocityoffset2dwave(redshift,voffset,lam_rest,verbose=True):
     dlam       = lam_obs - lam_offset
 
     if verbose:
-        print ' - For a line at '+str(lam_rest)+'A from a redshift '+str(redshift)+' object '
-        print '   the predicted observed wavelength of the line would be             : ',lam_obs,' A '
-        print ' - Accounting for a velcoity offset of '+str(voffset)+'km/s '
-        print '   the predicted observed wavelength of the line becomes              : ',lam_offset,' A '
-        print '   which corresponds to an expected wavelength shift of the line of   : ',dlam,' A '
+        print(' - For a line at '+str(lam_rest)+'A from a redshift '+str(redshift)+' object ')
+        print('   the predicted observed wavelength of the line would be             : ',lam_obs,' A ')
+        print(' - Accounting for a velcoity offset of '+str(voffset)+'km/s ')
+        print('   the predicted observed wavelength of the line becomes              : ',lam_offset,' A ')
+        print('   which corresponds to an expected wavelength shift of the line of   : ',dlam,' A ')
 
     return lam_obs, lam_offset, dlam
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1332,7 +1328,7 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     filterinfo = kbs.get_filterinfo()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loading line list dictionary from MiGs.linelistdic'
+    if verbose: print(' - Loading line list dictionary from MiGs.linelistdic')
     linedic      = MiGs.linelistdic(listversion='full') # loading line list for plots
 
     import matplotlib
@@ -1342,7 +1338,7 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     filtercolors = [ cmap(norm(filternumber)) for filternumber in np.arange(len(filters))]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Plotting figure '
+    if verbose: print(' - Plotting figure ')
     figuresize_y = len(lines) #6
     fig, ax      = plt.subplots(figsize=(figuresize_x,figuresize_y))
     plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
@@ -1443,7 +1439,7 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     plt.savefig(outname)
     plt.clf()
     plt.close('all')
-    if verbose: print ' - Saved figure to ',outname
+    if verbose: print(' - Saved figure to '+outname)
 
 
 #-------------------------------------------------------------------------------------------------------------
@@ -1712,6 +1708,7 @@ def reproject_fitsimage(fitsimage,fitsoutput,fitsimageext=0,radec=None,naxis=Non
     kbs.reproject_fitsimage(fitsimage,fitsoutput,radec=radec,naxis=naxis,overwrite=False)
 
     """
+    from reproject import reproject_interp # only for Python 2.7
     if verbose:
         print(' - Will reproject (rotate) fits image:')
         print('   '+fitsimage+' (extension = '+str(fitsimageext)+')')
