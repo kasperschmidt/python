@@ -7,7 +7,6 @@ import glob
 import pyfits
 import sys
 import pdb
-import crossmatch as cm
 from astropy.cosmology import FlatLambdaCDM
 import matplotlib.pyplot as plt
 import matplotlib
@@ -41,9 +40,9 @@ def load_model(Zgas,filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_
         filename   = filepath+'nlr_nebular_Z'+Zgasstring+'.txt'
     else:
         filename   = filepath+'nebular_emission_Z'+Zgasstring+'.txt'
-    if verbose: print ' - Attempting to load data from:\n   '+filename
+    if verbose: print(' - Attempting to load data from:\n   '+filename)
     modeldata  = np.genfromtxt(filename,names=True,dtype=None)
-    if verbose: print '   ... successful'
+    if verbose: print('   ... successful')
     return modeldata
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linenames():
@@ -98,10 +97,10 @@ def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRO
 
 
     """
-    if verbose: print ' - Loading redshift catalog: \n   '+redshiftcat
+    if verbose: print(' - Loading redshift catalog: \n   '+redshiftcat)
     z_data       = pyfits.open(redshiftcat)[1].data
     linenamesdic = nm.linenames()
-    if verbose: print ' - Grabbing files with flux measurements in data directory: \n   '+datadir
+    if verbose: print(' - Grabbing files with flux measurements in data directory: \n   '+datadir)
     fluxfiles = glob.glob(datadir+'*_linelist_fluxes.fits')
     Nfiles    = len(fluxfiles)
     if Nfiles == 0:
@@ -114,7 +113,7 @@ def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRO
         objid    = ffile.split('/')[-1][:8]
         objent   = np.where(z_data['UNIQUE_ID'] == objid)[0]
         if len(objent) != 1:
-            if verbose: print ' - WARNING Found '+str(len(objent))+' matches to '+str(objid)+' in redshift catalog'
+            if verbose: print(' - WARNING Found '+str(len(objent))+' matches to '+str(objid)+' in redshift catalog')
             continue
 
         line1name = linenamesdic[line1][0]
@@ -122,7 +121,7 @@ def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRO
         line1ent = np.where(f_data['LINENAME'] == line1name)[0]
         line2ent = np.where(f_data['LINENAME'] == line2name)[0]
         if (len(line1ent) != 1) or (len(line2ent) != 1):
-            if verbose: print ' - WARNING No match in flux table for '+line1+' and '+line2+' for '+str(objid)
+            if verbose: print(' - WARNING No match in flux table for '+line1+' and '+line2+' for '+str(objid))
             continue
 
         redshift     = z_data['REDSHIFT'][objent]
@@ -299,7 +298,7 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     Ngoodent  = len(goodent[0])
 
     if Ngoodent > 1:
-        if verbose: print ' - Getting data for '+str(Ngoodent)+' data points satisfying model selection '
+        if verbose: print(' - Getting data for '+str(Ngoodent)+' data points satisfying model selection ')
         param1 = modeldata[freeparam[0]][goodent]
         if logp1:
             param1 = np.log10(param1)
@@ -311,11 +310,11 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
         lum1   = modeldata[line1][goodent]
         lum2   = modeldata[line2][goodent]
     else:
-        if verbose: print ' WARNING: Less than 2 model grid points to plot; no output generated'
+        if verbose: print(' WARNING: Less than 2 model grid points to plot; no output generated')
         return
 
     # - - - - - - - - - - - PLOTTING - - - - - - - - - - -
-    if verbose: print ' - Setting up and generating plot'
+    if verbose: print(' - Setting up and generating plot')
     plotname = plotname
     fig = plt.figure(figsize=(9, 5))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.99, bottom=0.10, top=0.95)
@@ -438,7 +437,7 @@ def plot_LvsL(modeldata,line1='CIV1548',line2='CIII1908',plotname='./TESTPLOT.pd
     # leg.get_frame().set_alpha(0.7)
     #--------------------------
 
-    if verbose: print '   Saving plot to',plotname
+    if verbose: print('   Saving plot to'+plotname)
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
@@ -456,7 +455,7 @@ def plot_LvsL_multiple(line1='CIV1548',line2='CIII1908',line1range=[1e3,1e8],lin
     """
     modeldata = nm.load_model('combined',verbose=verbose)
 
-    if verbose: print ' - Putting together permutations of chosen setups for plotting'
+    if verbose: print(' - Putting together permutations of chosen setups for plotting')
     infodic          = {}
     infodic['Zgas']  = [False,0.0001,0.006,0.040], True
     infodic['logUs'] = [False,-1.0,-2.5,-4.0]    , False
@@ -472,9 +471,9 @@ def plot_LvsL_multiple(line1='CIV1548',line2='CIII1908',line1range=[1e3,1e8],lin
     permutations_with2false = [sublist for sublist in permutations if sublist.count(False) == 2.]
     Nplots                  = len(permutations_with2false)
 
-    if verbose: print ' - With the restriction Nfalse=2 the setup will results in '+str(Nplots)+\
-                      ' plots (if model data allows)'
-    if verbose: print ' - These will be saved to the output directory: '+outputdir
+    if verbose: print(' - With the restriction Nfalse=2 the setup will results in '+str(Nplots)+\
+                      ' plots (if model data allows)')
+    if verbose: print(' - These will be saved to the output directory: '+outputdir)
     for pp, perm in enumerate(permutations_with2false):
         Zval     = perm[0]
         Uval     = perm[1]
@@ -507,7 +506,7 @@ def plot_LvsL_multiple(line1='CIV1548',line2='CIII1908',line1range=[1e3,1e8],lin
                      Zgas=Zval,logU=Uval,xid=Xival,nh=Nhval,COratio=COval,Mcutoff=Mval,
                      fixxrange=line1range,fixyrange=line2range,plotname=plotname)
 
-    print '\n   ... done'
+    print('\n   ... done')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908',line3='CIV1551',line4='HeII1640',
                     plotname='./TESTPLOT.pdf',Zgas=False,logU=False,xid=0.3,nh=100,COratio=0.38,Mcutoff=100,
@@ -680,7 +679,7 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
     Ngoodent  = len(goodent[0])
 
     if Ngoodent > 1:
-        if verbose: print ' - Getting data for '+str(Ngoodent)+' data points satisfying (SFR)model selection '
+        if verbose: print(' - Getting data for '+str(Ngoodent)+' data points satisfying (SFR)model selection ')
         param1_1 = modeldata[freeparam[0]][goodent]
         if logp1:
             param1_1 = np.log10(param1_1)
@@ -692,7 +691,7 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
         ratio1_1   = modeldata[line1][goodent]/modeldata[line2][goodent]
         ratio1_2   = modeldata[line3][goodent]/modeldata[line4][goodent]
     else:
-        if verbose: print ' WARNING: Less than 2 (SFR)model grid points to plot; no output generated'
+        if verbose: print(' WARNING: Less than 2 (SFR)model grid points to plot; no output generated')
         return
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
@@ -705,7 +704,7 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
         Ngoodent2  = len(goodent2[0])
 
         if Ngoodent > 1:
-            if verbose: print ' - Getting data for '+str(Ngoodent2)+' data points satisfying (AGN)model selection '
+            if verbose: print(' - Getting data for '+str(Ngoodent2)+' data points satisfying (AGN)model selection ')
             param2_1 = modeldata2[freeparam[0]][goodent2]
             if logp1:
                 param2_1 = np.log10(param2_1)
@@ -726,11 +725,11 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
             ratio2_1   = modeldata2[l2s[0]][goodent2]/modeldata2[l2s[1]][goodent2]
             ratio2_2   = modeldata2[l2s[2]][goodent2]/modeldata2[l2s[3]][goodent2]
         else:
-            if verbose: print ' WARNING: Less than 2 (AGN)model grid points to plot; no output generated'
+            if verbose: print(' WARNING: Less than 2 (AGN)model grid points to plot; no output generated')
             return
 
     # - - - - - - - - - - - PLOTTING - - - - - - - - - - -
-    if verbose: print ' - Setting up and generating plot'
+    if verbose: print(' - Setting up and generating plot')
     plotname = plotname
     fig = plt.figure(figsize=(9, 5))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.99, bottom=0.10, top=0.95)
@@ -873,7 +872,7 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
     # leg.get_frame().set_alpha(0.7)
     #--------------------------
 
-    if verbose: print '   Saving plot to',plotname
+    if verbose: print('   Saving plot to'+plotname)
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
@@ -903,7 +902,7 @@ def combine_modeloutputs(outputname='xxRENAMExx_Zcombined.txt',
         sys.exit('Inavlid value of data="'+data+'"')
 
     output     = filepath+outputname
-    if verbose: print ' - Setting up output for:\n   '+output
+    if verbose: print(' - Setting up output for:\n   '+output)
     modelfiles = glob.glob(modelfilestr)
     header     = open(modelfiles[0]).readline().rstrip()
     if data == 'sfr':
@@ -914,9 +913,9 @@ def combine_modeloutputs(outputname='xxRENAMExx_Zcombined.txt',
 
     fout = open(output, 'w')
     fout.write(header)
-    if verbose: print ' - Writing the following files to ouput:'
+    if verbose: print(' - Writing the following files to ouput:')
     for mf in modelfiles:
-        if verbose: print '   '+mf
+        if verbose: print('   '+mf)
         Zgasstring   = mf.split('/')[-1].split(splitstr)[-1].split('.txt')[0]
 
         with open(mf, 'r') as f:
@@ -942,7 +941,7 @@ def convert_Fline2Lbol(lineflux,linefluxerr,redshift,verbose=True):
 
     """
     cosmo       = FlatLambdaCDM(H0=70, Om0=0.3)
-    if verbose: print ' - Estimating bolometric luminoisity for flat standard cosmology (H0=70, Om0=0.3, OL0=0.7)'
+    if verbose: print(' - Estimating bolometric luminoisity for flat standard cosmology (H0=70, Om0=0.3, OL0=0.7)')
     DL          = cosmo.luminosity_distance(redshift).value
     # DLplus    = cosmo.luminosity_distance(redshift+redshifterr).value
     # DLminus   = cosmo.luminosity_distance(redshift-redshifterr).value
@@ -952,8 +951,8 @@ def convert_Fline2Lbol(lineflux,linefluxerr,redshift,verbose=True):
     Lbolerr     = linefluxerr*Asphere            # 10**28 erg/s ; assuming line fluxes are in 10**-20 erg/s/cm2
     LbolLsun    = Lbol/3.826*10**-5              # in units of Lbol_sun = 3.826*10**33 erg/s
     LbolLsunerr = Lbolerr/3.826*10**-5           # in units of Lbol_sun = 3.826*10**33 erg/s
-    if verbose: print ' - Retunring luminoisity in units of Lbol_sun = 3.826e33 erg/s'
-    if verbose: print ' - Result is: '+str(LbolLsun)+' +/- '+str(LbolLsunerr)+' [3.826e33 erg/s]'
+    if verbose: print(' - Retunring luminoisity in units of Lbol_sun = 3.826e33 erg/s')
+    if verbose: print(' - Result is: '+str(LbolLsun)+' +/- '+str(LbolLsunerr)+' [3.826e33 erg/s]')
     return LbolLsun, LbolLsunerr
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def convert_Lbol2Fline(Lbol,redshift,verbose=True):
