@@ -13,7 +13,9 @@ import astropy.coordinates as acoord
 import astropy.cosmology as acosmo
 import numpy as np
 import collections
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.ticker import NullFormatter
 import literaturecollection_emissionlinestrengths as lce
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -91,7 +93,7 @@ def emissionlinelist(verbose=True):
     if verbose: print(' - Loaded the line dictionary from MiGs containing:\n   '+linelistdic.keys())
     return linelistdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_reference(idlist,verbose=True):
+def get_reference_fromID(idlist,verbose=True):
     """
     Function to return the reference(s) given a list of literature IDs
 
@@ -103,10 +105,8 @@ def get_reference(idlist,verbose=True):
     --- EXAMPLE OF USE ---
     import literaturecollection_emissionlinestrengths as lce
 
-    idlist     = [1000000022,1004567890,2000000888,3000000888]
-    references = lce.get_reference(idlist)
-
-
+    idlist     = [10000001024,10000001036,20022480005]
+    references = lce.get_reference_fromID(idlist)
     """
     refdic     = lce.referencedictionary()
     returnrefs = []
@@ -142,6 +142,11 @@ def get_reference(idlist,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def referencedictionary():
     """
+
+    --- EXAMPLE OF USE ---
+    import literaturecollection_emissionlinestrengths as lce
+    refval = 'sch17'
+    lce.referencedictionary()[refval][1]
 
     """
     refdic = collections.OrderedDict()
@@ -233,6 +238,8 @@ def referencedictionary():
     # Yang+19 Two z~7 LAGER confirmations with UV line upper limits
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Saxena+19 VANDELS HeII emitters
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # R. Marques-Chaves+19 UV of LAEs from the BELLS survey
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
     return refdic
@@ -541,6 +548,794 @@ def build_master_datadictionary(verbose=True):
 
     if verbose: print(' - Assembled and build a master dictionary with '+str(len(datadictionary.keys()))+' keys')
     return datadictionary
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_literature_fitscatalog(secondarydat_fits=None,showphotoionizationmodels=True,overwrite=True,verbose=True):
+    """
+    Wrapper for the plot_literature_fitscatalog_cmd() defining the samples
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import literaturecollection_emissionlinestrengths as lce
+    lce.plot_literature_fitscatalog()
+    lce.plot_literature_fitscatalog(showphotoionizationmodels)
+
+    """
+    maindir = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+    litdat  = afits.open(maindir+'/literaturecollection_emissionlinestrengths.fits')[1].data
+
+    if secondarydat_fits is not None:
+        dat_2nd = afits.open(secondarydat_fits)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # generate vector of plotting symbols
+    refdic = lce.referencedictionary()
+    psyms  = []
+    for objref in litdat['reference']:
+        psyms.append(refdic[objref][2])
+    psyms = np.asarray(psyms)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fluxes_range  = [1,1e8]
+    ratios_range = [1e-4,1e3]
+
+    input_lists = []
+    input_lists.append(['f_CIII','f_CIV','f(CIII)', 'f(CIV)',
+                        fluxes_range, fluxes_range, 'redshift',  'Test Title'])
+    # linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    # linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
+
+
+    input_lists.append(['FR_CIVCIII','FR_CIVHeII','CIV/CIII','CIV/HeII',
+                        ratios_range,ratios_range  , 'redshift', 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
+    # linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
+    # linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
+    # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
+    # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
+    # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
+    # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
+    # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
+    # linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
+    # linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
+    # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
+    # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
+    # linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    #
+    # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+    # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
+    # linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+
+    # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+
+    Nhistbins   = 30
+    histaxes    = False
+    for il in input_lists:
+        xval   = litdat[il[0]]
+        yval   = litdat[il[1]]
+        xerr   = litdat[il[0].replace('_','err_')]
+        yerr   = litdat[il[1].replace('_','err_')]
+        colval = litdat[il[6]]
+
+        plotname = maindir+'plots/literaturecollection_emissionlinestrengths_plot_'+il[0]+'_VS_'+il[1]+'.pdf'
+
+        if secondarydat_fits is None:
+            xval_2nd   = None
+            yval_2nd   = None
+            xerr_2nd   = None
+            yerr_2nd   = None
+            colval_2nd = None
+        else:
+            xval_2nd   = litdat[il[0]]
+            yval_2nd   = litdat[il[1]]
+            xerr_2nd   = litdat[il[0].replace('_','err_')]
+            yerr_2nd   = litdat[il[1].replace('_','err_')]
+            colval_2nd = litdat[il[6]]
+
+
+        if showphotoionizationmodels:
+
+            if ('FR_' in il[0]) & ('FR_' in il[1]):
+                #x2plot, y2plot, varyparam, cutSFmodels, markersize, SFmarker, AGNmarker = piplotparam
+                photoionizationplotparam = lce.colname2NEOGAL(il[0]),lce.colname2NEOGAL(il[1]),\
+                                           'Zgas', False, 1.5, 's', 'D'
+            else:
+                photoionizationplotparam = None
+                if verbose: print(' - WARNING Not plotting photoionization models as flux units of these not well-defined. '
+                                  'Focus on ratios.')
+        else:
+            photoionizationplotparam = None
+
+
+        lce.plot_literature_fitscatalog_cmd(plotname,
+                                            # - - - - - - - Literature Data Setup - - - - - - -
+                                            xval=xval,yval=yval,xerr=xerr,yerr=yerr,
+                                            colval=colval,psym=psyms,fixcolor='gray',
+                                            # - - - - - - - Secondary Data Setup - - - - - - -
+                                            xval_2nd=xval_2nd,yval_2nd=yval_2nd,xerr_2nd=xerr_2nd,yerr_2nd=yerr_2nd,
+                                            colval_2nd=colval_2nd,psym_2nd='o',fixcolor_2nd='red',
+                                            # - - - - - - - Coloring Setup - - - - - - -
+                                            colortype='redshift',colmap='summer_r', #'viridis_r', # 'Greens',#'autumn_r'
+                                            # - - - - - - - Plot Setup - - - - - - -
+                                            drawcurves=['onetoone'],histaxes=histaxes,Nbins=Nhistbins,
+                                            photoionizationplotparam=photoionizationplotparam,point_text=None,ids=None,
+                                            xlabel=il[2],ylabel=il[3],yrange=il[4],xrange=il[5],ylog=True,xlog=True,
+                                            title=il[7],overwrite=overwrite,verbose=verbose)
+
+    lce.plot_literature_fitscatalog_cmd(maindir+'plots/test.pdf',overwrite=overwrite) #empty
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_literature_fitscatalog_cmd(plotname,
+                                    # - - - - - - - Literature Data Setup - - - - - - -
+                                    xval=None,yval=None,xerr=None,yerr=None,
+                                    colval=None,psym='s',fixcolor='gray',
+                                    # - - - - - - - Secondary Data Setup - - - - - - -
+                                    xval_2nd=None,yval_2nd=None,xerr_2nd=None,yerr_2nd=None,
+                                    colval_2nd=None,psym_2nd='o',fixcolor_2nd='red',
+                                    # - - - - - - - Coloring Setup - - - - - - -
+                                    colortype=None,colmap='viridis_r', # 'autumn_r'
+                                    # - - - - - - - Plot Setup - - - - - - -
+                                    drawcurves=['onetoone'],histaxes=False,Nbins=50,
+                                    photoionizationplotparam=None,point_text=None,ids=None,
+                                    xlabel='x-axis',ylabel='y-axis',yrange=None,xrange=None,ylog=False,xlog=False,
+                                    title=None,overwrite=False,verbose=True):
+    """
+    Collecting literature values and storing them in a single file
+    (initially based on uvEmissionlineSearch.plot_mocspecFELISresults_summary_plotcmds() )
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import literaturecollection_emissionlinestrengths as lce
+    lce.plot_literature_fitscatalog_cmd()
+
+    """
+    if verbose: print(' - Setting up and generating plot ')
+    if xval is None:
+        xval   = np.array([0,0])
+        yval   = np.array([0,0])
+        xerr   = np.array([np.nan,np.nan])
+        yerr   = np.array([np.nan,np.nan])
+
+    if (type(psym) == str):
+        psym = np.asarray([psym]*len(xval))
+
+    if (type(psym_2nd) == str) & (xval_2nd is not None):
+        psym_2nd = np.asarray([psym]*len(xval_2nd))
+
+    if ylog & xlog:
+        goodent = np.where(np.isfinite(xval) & np.isfinite(yval) & (yval > 0) & (xval > 0))[0]
+    elif xlog & (not xlog):
+        goodent = np.where(np.isfinite(xval) & np.isfinite(yval) & (xval > 0))[0]
+    elif (not xlog) & ylog:
+        goodent = np.where(np.isfinite(xval) & np.isfinite(yval))[0]
+    else:
+        goodent = np.where(np.isfinite(xval) & np.isfinite(yval))[0]
+
+    if len(goodent) == 0:
+        if verbose: print('WARNING: Did not find any good entries, i.e. where both xval and yval are finite and values are >0 for if log axes chosen')
+        psym = ['.','.']
+        xval = np.array([0,0])
+        yval = np.array([0,0])
+        xerr = np.array([np.nan,np.nan])
+        yerr = np.array([np.nan,np.nan])
+    else:
+        psym   = psym[goodent]
+        xval   = xval[goodent]
+        yval   = yval[goodent]
+        xerr   = xerr[goodent]
+        yerr   = yerr[goodent]
+        if colval is not None:
+            colval = colval[goodent]
+
+    if os.path.isfile(plotname) & (not overwrite):
+        if verbose: print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
+    else:
+        if histaxes:
+            fig = plt.figure(1, figsize=(6, 6))
+            left, width = 0.15, 0.60
+            bottom, height = 0.15, 0.60
+            bottom_h = left_h = left + width + 0.01
+
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=left+width, bottom=bottom, top=bottom+height)
+            rect_histx = [left, bottom_h, width, 0.2]
+            rect_histy = [left_h, bottom, 0.2, height]
+        else:
+            fig = plt.figure(2, figsize=(6, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
+
+        Fsize         = 14.0
+        lthick        = 2.0
+        marksize      = 6.0
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+
+        #---------  setting up colors for litearture data ---------
+        if (colval is not None) or (colval_2nd is not None):
+            cmap    = plt.cm.get_cmap(colmap) # 'autumn_r','viridis_r'
+
+            if (colval is not None) & (colval_2nd is None):
+                cdatvec = colval
+            elif (colval is None) & (colval_2nd is not None):
+                cdatvec = colval_2nd
+            else:
+                cdatvec = np.append(colval,colval_2nd)
+
+            if colortype.lower() == 'redshift':
+                clabel  = '$z$'
+                cmin    = 0.5 # 0.0, 1.4
+                cmax    = 7.5 # 10.2, 6.2
+                cextend = 'neither'
+            elif colortype.lower() == 's2n':
+                clabel  = 'S/N'
+                cmin    = 3.0
+                cmax    = 10.0
+                cextend = 'both'
+            elif colortype.lower() == 'vshift':
+                clabel  = 'Velocity shift (spec vs. template match) [km/s]'
+                cmin    = 0.0
+                cmax    = 300.0
+                cextend = 'both'
+            elif colortype.lower() == 'ew0lya':
+                clabel  = 'EW$_0$(Ly$\\alpha$) [\AA]'
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
+            elif colortype.lower() == 'sigma':
+                clabel  = '$\sigma$ [\AA]'
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
+            else:
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
+
+            colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+            cmaparr = np.linspace(cmin, cmax, num=50)
+            m       = plt.cm.ScalarMappable(cmap=cmap)
+            m.set_array(cmaparr)
+
+            if not histaxes:
+                colshrink = 1.0
+                colaspect = 30
+                if photoionizationplotparam is None:
+                    colanchor = (0.0,0.5)
+                else:
+                    colbarscale = 2.1
+                    colanchor   = (-1.1,0.0)
+                    colshrink   = colshrink/colbarscale
+                    colaspect   = colaspect/colbarscale
+
+                cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+                                       pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+                cb.set_label(clabel)
+
+            if (colval is not None):
+                colvec   = []
+                for ii,xv in enumerate(xval):
+                    colvec.append(cmap(colnorm(colval[ii])))
+                facecol  = colvec
+            if (colval_2nd is not None):
+                colvec_2nd  = []
+                for ii,xv in enumerate(xval_2nd):
+                    colvec_2nd.append(cmap(colnorm(colval_2nd[ii])))
+                facecol_2nd  = colvec_2nd
+
+        else:
+            facecol  = [fixcolor]*len(xval)
+
+        #--------- RANGES ---------
+        if not xrange:
+            if xlog:
+                xmin   = np.min(xval[np.isfinite(xval) & (xval > 0)])
+                xmax   = np.max(xval[np.isfinite(xval) & (xval > 0)])
+                xrange = [float(str("%.e" % xmin)),float(str("%.e" % xmax))*10.]
+            else:
+                xmin   = np.min(xval[np.isfinite(xval)])
+                xmax   = np.max(xval[np.isfinite(xval)])
+                dx     = xmax-xmin
+                xrange = [xmin-dx*0.05,xmax+dx*0.05]
+
+        plt.xlim(xrange)
+        xminsys, xmaxsys = plt.xlim() # use to get automatically expanded axes if xmin = xmax
+
+        if not yrange:
+            if ylog:
+                ymin   = np.min(yval[np.isfinite(yval)])
+                ymax   = np.max(yval[np.isfinite(yval)])
+                yrange = [float(str("%.e" % ymin)),float(str("%.e" % ymax))*10.]
+            else:
+                ymin   = np.min(yval[np.isfinite(yval)])
+                ymax   = np.max(yval[np.isfinite(yval)])
+                dy     = ymax-ymin
+                yrange = [ymin-dy*0.05,ymax+dy*0.05]
+
+        plt.ylim(yrange)
+        yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
+
+        #--------- Plot Literature data with X and Y limits ---------
+        ms          = marksize
+        limsizefrac = 0.05
+        y_uplimarr  = (np.asarray(yerr).astype(int) == +99)
+        y_lolimarr  = (np.asarray(yerr).astype(int) == -99)
+        x_uplimarr  = (np.asarray(xerr).astype(int) == +99)
+        x_lolimarr  = (np.asarray(xerr).astype(int) == -99)
+        for ii,xv in enumerate(xval): # loop necessary for coloring and upper/lower limits markers
+
+            if y_uplimarr[ii]:
+                if ylog:
+                    dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                    yerr[ii] = np.abs(yval[ii] - 10.**(np.log10(yval[ii])-dlog))
+                else:
+                    yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+            if y_lolimarr[ii]:
+                if ylog:
+                    dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                    yerr[ii] = np.abs(yval[ii] - 10.**(np.log10(yval[ii])+dlog))
+                else:
+                    yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+            if x_uplimarr[ii]:
+                if xlog:
+                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                    xerr[ii] = np.abs(xval[ii] - 10.**(np.log10(xval[ii])-dlog))
+                else:
+                    xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+            if x_lolimarr[ii]:
+                if xlog:
+                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                    xerr[ii] = np.abs(xval[ii] - 10.**(np.log10(xval[ii])+dlog))
+                else:
+                    xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+
+            plt.errorbar(xval[ii],yval[ii],xerr=xerr[ii],yerr=yerr[ii],capthick=0.5,
+                         uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
+                         marker=psym[ii],lw=lthick/2., markersize=ms,alpha=1.0,
+                         markerfacecolor=facecol[ii],ecolor=facecol[ii],
+                         markeredgecolor=facecol[ii],zorder=10)
+
+        #--------- Plot secondary data with X and Y limits ---------
+        if xval_2nd is not None:
+            y_uplimarr  = (np.asarray(yerr_2nd).astype(int) == +99)
+            y_lolimarr  = (np.asarray(yerr_2nd).astype(int) == -99)
+            x_uplimarr  = (np.asarray(xerr_2nd).astype(int) == +99)
+            x_lolimarr  = (np.asarray(xerr_2nd).astype(int) == -99)
+            for ii,xv in enumerate(xval_2nd): # loop necessary for coloring and upper/lower limits markers
+
+                if y_uplimarr[ii]:
+                    if ylog:
+                        dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                        yerr_2nd[ii] = np.abs(yval_2nd[ii] - 10.**(np.log10(yval_2nd[ii])-dlog))
+                    else:
+                        yerr_2nd[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+                if y_lolimarr[ii]:
+                    if ylog:
+                        dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                        yerr_2nd[ii] = np.abs(yval_2nd[ii] - 10.**(np.log10(yval_2nd[ii])+dlog))
+                    else:
+                        yerr_2nd[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+                if x_uplimarr[ii]:
+                    if xlog:
+                        dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                        xerr_2nd[ii] = np.abs(xval_2nd[ii] - 10.**(np.log10(xval_2nd[ii])-dlog))
+                    else:
+                        xerr_2nd[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+                if x_lolimarr[ii]:
+                    if xlog:
+                        dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                        xerr_2nd[ii] = np.abs(xval_2nd[ii] - 10.**(np.log10(xval_2nd[ii])+dlog))
+                    else:
+                        xerr_2nd[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+
+                plt.errorbar(xval_2nd[ii],yval_2nd[ii],xerr_2nd=xerr_2nd[ii],yerr_2nd=yerr_2nd[ii],capthick=0.5,
+                             uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
+                             marker=psym_2nd[ii],lw=lthick/2., markersize=ms,alpha=1.0,
+                             markerfacecolor=facecol_2nd[ii],ecolor=facecol_2nd[ii],
+                             markeredgecolor=facecol_2nd[ii],zorder=20)
+
+        #--------- Draw reference curves on plot ---------
+        if drawcurves is not None:
+            for dc in drawcurves:
+                if dc == 'horizontal':
+                    plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
+                elif dc == 'onetoone':
+                    plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
+                elif dc == 'plus':
+                    plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
+                    plt.plot([0,0],[-1e5,1e5],'--',color='black',lw=lthick,zorder=10)
+                else:
+                    sys.exit(' No setup for the string "'+str(dc)+'" in the list "drawcurves" so nothing drawn')
+
+        #--------- Add Photoionization Grids ---------
+        if photoionizationplotparam is not None:
+            plotname      = plotname.replace('.pdf','_wPhotIoModels.pdf')
+            titleaddition = lce.add_photoionization_models_to_plot(photoionizationplotparam)
+        else:
+            titleaddition = ''
+
+        if (title is not None) & (histaxes == False):
+            plt.title(title+titleaddition,fontsize=Fsize-4)
+
+        #--------- Plot setup ---------
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+
+        if ylog:
+            plt.yscale('log')
+        if xlog:
+            plt.xscale('log')
+        #--------- Add hist axes ---------
+        if histaxes:
+            axHistx = plt.axes(rect_histx)
+            if (title is not None):
+                plt.title(title+titleaddition,fontsize=Fsize-4)
+
+            axHisty = plt.axes(rect_histy)
+
+            axHistx.xaxis.set_major_formatter(NullFormatter())
+            axHisty.yaxis.set_major_formatter(NullFormatter())
+
+            binwidth_x = np.diff([xminsys,xmaxsys])/Nbins
+            bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+            if xlog:
+                bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+                axHistx.set_xscale('log')
+
+            if xval is not None:
+                axHistx.hist(xval, bins=bindefs,histtype='step',color=fixcolor)
+            if xval_2nd is not None:
+                axHistx.hist(xval_2nd, bins=bindefs,histtype='step',color=fixcolor_2nd)
+
+            axHistx.set_xticks([])
+            axHistx.set_xlim([xminsys,xmaxsys])
+
+            binwidth_y = np.diff([yminsys,ymaxsys])/Nbins
+            bindefs    = np.arange(yminsys, ymaxsys+binwidth_y, binwidth_y)
+            if ylog:
+                bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+                axHisty.set_yscale('log')
+
+            if yval is not None:
+                axHisty.hist(yval, bins=bindefs,histtype='step',color=fixcolor, orientation='horizontal')
+            if yval_2nd is not None:
+                axHisty.hist(yval_2nd, bins=bindefs,histtype='step',color=fixcolor_2nd, orientation='horizontal')
+            axHisty.set_yticks([])
+            axHisty.set_ylim([yminsys,ymaxsys])
+
+            if colval is not None:
+                cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+                                       pad=0.01,aspect=10,shrink=0.35,anchor=(-15.0,1.58),use_gridspec=False)
+                cb.set_label(clabel)
+        else:
+            pass
+
+    if verbose: print('   Saving plot to \n   '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_literature_fitscatalog_legend(psym,legenedstring):
+    """
+    Generating the legend for a set of plotting symboles
+
+    """
+    sys.exit("still not written...")
+
+    #--------- LEGEND ---------
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+    #
+    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
+    #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def colname2NEOGAL(colname):
+    """
+    Translate between the column names of emission line table and the NEOGAL data column names
+
+    """
+    translatedic = {}
+
+    translatedic['f_NV']               = 'NV1240'
+    translatedic['f_CIV1']             = 'CIV1549'
+    translatedic['f_CIV']              = 'CIV1550'# Not a NEOGAL column but calculated in lce.add_photoionization_models_to_plot()
+    translatedic['f_CIV2']             = 'CIV1551'
+    translatedic['f_CIII']             = 'CIII1908'
+    translatedic['f_CIII1']            = 'CIII1907'
+    translatedic['f_CIII2']            = 'CIII1910'
+    translatedic['f_HeII']             = 'HeII1640'
+    translatedic['f_OIII1']            = 'OIII1661'
+    translatedic['f_OIII']             = 'OIII1663'
+    translatedic['f_OIII2']            = 'OIII1666'
+    translatedic['f_SiIII1']           = 'SiIII1883'
+    translatedic['f_SiIII']            = 'SiIII1888'
+    translatedic['f_SiIII2']           = 'SiIII1892'# Not a NEOGAL column but calculated in lce.add_photoionization_models_to_plot()
+
+
+    translatedic['FR_CIIICIV']         = 'CIII1908/CIV1550'
+    translatedic['FR_CIVCIII']         = 'CIV1550/CIII1908'
+    translatedic['FR_CIVHeII']         = 'CIV1550/HeII1640'
+
+    if colname not in translatedic.keys():
+        sys.exit('No available translation between NEOGAL data and colname='+colname+
+                 ' in lce.colname2NEOGAL(); add one to proceed.')
+
+    return translatedic[colname]
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def add_photoionization_models_to_plot(piplotparam,verbose=True):
+    """
+    Wrapper to add NEOGAL photoionization model grids to flux ratio plots
+
+    --- INPUT ---
+    piplotparam            The photoionization plot parameters.
+
+    --- EXAMPLE OF RUN ---
+
+    """
+    import NEOGALmodels as nm
+    modeldataSF  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
+    modeldataAGN = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/AGN_NLR_nebular_feltre16/')
+
+    x2plot, y2plot, varyparam, cutSFmodels, markersize, SFmarker, AGNmarker = piplotparam
+    # varyparam options: 'Zgas','logUs','xid','nh','COratio','Mcutoff'
+    logcolors = ['Zgas']
+
+    CIIIdoubletratio = 1.5
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # defining columns to look for in model data; also determines whether to show ratios or not
+    xcol = []
+    if '/' in x2plot:
+        xcol.append(x2plot.split('/')[0])
+        xcol.append(x2plot.split('/')[1])
+    else:
+        xcol.append(x2plot)
+
+    ycol = []
+    if '/' in y2plot:
+        ycol.append(y2plot.split('/')[0])
+        ycol.append(y2plot.split('/')[1])
+    else:
+        ycol.append(y2plot)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    if cutSFmodels:
+        if verbose: print(' - Performing cut on model SF model grid')
+        xid     = 'dummy'
+        nh      = 'dummy'
+        COratio = 1.00
+        Mcutoff = 100
+    else:
+        if verbose: print(' - Showing all SF model grids, i.e., setting xid, nh, COratio and Mcutoff to dummy values')
+        xid     = 'dummy'
+        nh      = 'dummy'
+        COratio = 'dummy'
+        Mcutoff = 'dummy'
+
+    # - - - - - - - - - - - - - - - - - - - - - - - -
+    legenddic = {}
+    legenddic['Zgas']     = r'Z$_\textrm{gas}$'
+    legenddic['logUs']    = r'log U'
+    legenddic['xid']      = r'$\xi_\textrm{d}$'
+    legenddic['nh']       = r'n$_\textrm{H}$  [cm$^3$]'
+    legenddic['COCOsol']  = r'C/O / [C/O]$_\odot$'
+    legenddic['mup']      = r'M$_\textrm{cut IMF}$ / [M$_\odot]$'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if cutSFmodels:
+        goodentSF  = np.where( (modeldataSF['mup'] == Mcutoff) &
+                                #(modeldata['xid'] == xid) &
+                                #(modeldata['nh'] == nh) &
+                                (modeldataSF['COCOsol'] == COratio) )[0]
+        modeldataSF  = modeldataSF[goodentSF]
+        infostrSFcut = '(Mcutoff(SF)='+str(Mcutoff)+', COratio(SF)='+str(COratio)+') '#+\
+                       #' Showing Zgas=all, zid=all, nh=all, logU=all '
+    else:
+        infostrSFcut = ''
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # collect data to plot fot star formation models
+    NgoodentSF  = len(modeldataSF)
+
+    if NgoodentSF > 1:
+        if verbose: print(' - Getting data for '+str(NgoodentSF)+' data points satisfying (SFR)model selection ')
+        varydatSF  = modeldataSF[varyparam]
+        if varyparam in logcolors:
+            varydatSF  = np.log10(modeldataSF[varyparam])
+
+        xdat_SF = []
+        for ll, linestr in enumerate(xcol):
+            if linestr == 'CIV1550':
+                xdat_SF.append(modeldataSF['CIV1548']+modeldataSF['CIV1551'])
+            elif linestr == 'CIII1907':
+                xdat_SF.append(modeldataSF['CIII1908']/(1.+1./CIIIdoubletratio))
+            elif linestr == 'CIII1910':
+                ciii1907 = modeldataSF['CIII1908']/(1.+1./CIIIdoubletratio)
+                xdat_SF.append(ciii1907/CIIIdoubletratio)
+            elif linestr == 'OIII1663':
+                xdat_SF.append(modeldataSF['OIII1661']+modeldataSF['OIII1666'])
+            elif linestr == 'SiIII1892':
+                xdat_SF.append(modeldataSF['SiIII1888']-modeldataSF['SiIII1883'])
+            else:
+                xdat_SF.append(modeldataSF[linestr])
+        if '/' in x2plot:
+            xval_SF   = xdat_SF[0]/xdat_SF[1]
+        else:
+            xval_SF   = xdat_SF[0] # FLUX UNITS!!
+
+        ydat_SF = []
+        for ll, linestr in enumerate(ycol):
+            if linestr == 'CIV1550':
+                ydat_SF.append(modeldataSF['CIV1548']+modeldataSF['CIV1551'])
+            elif linestr == 'CIII1907':
+                ydat_SF.append(modeldataSF['CIII1908']/(1.+1./CIIIdoubletratio))
+            elif linestr == 'CIII1910':
+                ciii1907 = modeldataSF['CIII1908']/(1.+1./CIIIdoubletratio)
+                ydat_SF.append(ciii1907/CIIIdoubletratio)
+            elif linestr == 'OIII1663':
+                ydat_SF.append(modeldataSF['OIII1661']+modeldataSF['OIII1666'])
+            elif linestr == 'SiIII1892':
+                ydat_SF.append(modeldataSF['SiIII1888']-modeldataSF['SiIII1883'])
+            else:
+                ydat_SF.append(modeldataSF[linestr])
+
+        if '/' in y2plot:
+            yval_SF   = ydat_SF[0]/ydat_SF[1]
+        else:
+            yval_SF   = ydat_SF[0] # FLUX UNITS!!
+
+    else:
+        print(' WARNING: lce.add_photoionization_models_to_plot >>>'
+              ' Less than 2 (SFR)model grid points to plot; no data added to plot')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # collect data to plot fot AGN models
+    NgoodentAGN  = len(modeldataAGN)
+
+    if NgoodentAGN > 1:
+        if verbose: print(' - Getting data for '+str(NgoodentAGN)+' data points satisfying (AGN)model selection ')
+        varydatAGN  = modeldataAGN[varyparam]
+        if varyparam in logcolors:
+            varydatAGN = np.log10(modeldataAGN[varyparam])
+
+
+        xdat_AGN = []
+        for ll, linestr in enumerate(xcol):
+            if linestr == 'CIV1550':
+                xdat_AGN.append(modeldataAGN['CIV1548']+modeldataAGN['CIV1551'])
+            elif linestr == 'OIII1663':
+                xdat_AGN.append(modeldataAGN['OIII1661']+modeldataAGN['OIII1666'])
+            elif linestr == 'CIII1908':
+                xdat_AGN.append(modeldataAGN['CIII1907']+modeldataAGN['CIII1910'])
+            elif linestr == 'SiIII1892':
+                xdat_AGN.append(modeldataAGN['SiIII1888']-modeldataAGN['SiIII1883'])
+            else:
+                xdat_AGN.append(modeldataAGN[linestr])
+        if '/' in x2plot:
+            xval_AGN   = xdat_AGN[0]/xdat_AGN[1]
+        else:
+            xval_AGN   = xdat_AGN[0] # FLUX UNITS!!
+
+        ydat_AGN = []
+        for ll, linestr in enumerate(ycol):
+            if linestr == 'CIV1550':
+                ydat_AGN.append(modeldataAGN['CIV1548']+modeldataAGN['CIV1551'])
+            elif linestr == 'OIII1663':
+                ydat_AGN.append(modeldataAGN['OIII1661']+modeldataAGN['OIII1666'])
+            elif linestr == 'CIII1908':
+                ydat_AGN.append(modeldataAGN['CIII1907']+modeldataAGN['CIII1910'])
+            elif linestr == 'SiIII1892':
+                ydat_AGN.append(modeldataAGN['SiIII1888']-modeldataAGN['SiIII1883'])
+            else:
+                ydat_AGN.append(modeldataAGN[linestr])
+        if '/' in y2plot:
+            yval_AGN   = ydat_AGN[0]/ydat_AGN[1]
+        else:
+            yval_AGN   = ydat_AGN[0] # FLUX UNITS!!
+
+    else:
+        print(' WARNING: lce.add_photoionization_models_to_plot >>>'
+              ' Less than 2 (AGN)model grid points to plot; no data added to plot')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    cmap    = plt.cm.get_cmap('Reds') #'plasma', 'Greys' 'copper_r'
+    cmin    = np.min(np.append(varydatSF,varydatAGN))
+    cmax    = np.max(np.append(varydatSF,varydatAGN))
+    colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, 30) #cmax-cmin)
+    mm      = plt.cm.ScalarMappable(cmap=cmap)
+    mm.set_array(cmaparr)
+
+    cmapAGN    = plt.cm.get_cmap('Blues') # 'copper_r' 'plasma', 'Reds_r' 'spring'
+    cminAGN    = np.min(np.append(varydatSF,varydatAGN))
+    cmaxAGN    = np.max(np.append(varydatSF,varydatAGN))
+    colnormAGN = matplotlib.colors.Normalize(vmin=cminAGN,vmax=cmaxAGN)
+    cmaparrAGN = np.linspace(cminAGN, cmaxAGN, 30) #cmax-cmin)
+    mmAGN      = plt.cm.ScalarMappable(cmap=cmapAGN)
+    mmAGN.set_array(cmaparrAGN)
+
+    if varyparam == 'Zgas':
+        # colortickvals   = [1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 0.003048, 4e-3, 6e-3, 8e-3, 0.01, 0.01524, 0.02, 0.03, 0.04, 0.07] # 0.014, 0.017,
+        colortickvals   = [1e-4, 3e-4, 7e-4, 1e-4, 0.003048, 0.007, 0.01524, 0.03, 0.07]
+        colorlabels     = [ str(ct) for ct in colortickvals]
+        colorlabels[4]  =  '0.2Z$_\odot$' # = 0.003048
+        colorlabels[6] =  'Z$_\odot$'     # = 0.01524
+        colortickvals   = np.log10(np.asarray(colortickvals))
+        cbarlegend      = legenddic[varyparam]
+    elif varyparam == 'logUs':
+        colortickvals = [-5.0,-4.5,-4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0]
+        colorlabels   = [ str(ct) for ct in colortickvals]
+        cbarlegend    = legenddic[varyparam]
+    else:
+        ncolticks     = 10.
+        colortickvals = np.arange(cmin,cmax,np.abs(cmax-cmin)/ncolticks)
+        colorlabels   = [ str(ct) for ct in colortickvals]
+
+        if varyparam in logcolors:
+            cbarlegend = 'log10('+legenddic[varyparam]+')'
+        else:
+            cbarlegend = legenddic[varyparam]
+
+    colshrink   = 1.0
+    colaspect   = 30
+    colbarscale = 2.1
+    colanchor   = (0.0,1.0)
+    colshrink   = colshrink/colbarscale
+    colaspect   = colaspect/colbarscale
+    cextend     = 'neither'
+
+    cb1      = plt.colorbar(mm,extend=cextend,orientation='vertical',ticks=colortickvals,
+                            pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+    cb1.ax.set_yticklabels(colorlabels,rotation=0)
+    cb1.set_label(cbarlegend)     #Zgas is unitless as it is a mass ratio (see Gutkin et al. 2016 Eq. 10)
+
+    for vdSF in np.unique(varydatSF):
+        SFcol    = cmap(colnorm(vdSF))
+        SFcolent = np.where(varydatSF == vdSF)
+
+        plt.scatter(xval_SF[SFcolent],yval_SF[SFcolent],s=markersize,
+                    marker=SFmarker,lw=0.2, facecolor='None',edgecolor=SFcol, zorder=5)
+
+    for vdAGN in np.unique(varydatAGN):
+        AGNcol    = cmapAGN(colnorm(vdAGN)) # 'gray'
+        AGNcolent = np.where(varydatAGN == vdAGN)
+
+        plt.scatter(xval_AGN[AGNcolent],yval_AGN[AGNcolent],s=markersize,
+                    marker=AGNmarker,lw=0.2, facecolor='None',edgecolor=AGNcol, zorder=5)
+
+    titleaddition = infostrSFcut
+    return titleaddition
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_TEMPLATE(fluxscale=1.0,verbose=True):
     """
