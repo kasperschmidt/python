@@ -31,7 +31,7 @@ def generate_literature_fitscatalog(verbose=True):
     lce.generate_literature_fitscatalog()
 
     # updating plots
-    lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=False)
+    lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=False,shownames=False)
 
     """
     outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
@@ -50,7 +50,8 @@ def generate_literature_fitscatalog(verbose=True):
     Ncols        = len(fluxratiodic.keys())
     if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
     fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
-    fout.write('# id      reference'+' '.join([str("%20s" % colname) for colname in fluxratiodic.keys()[2:]])+'  \n')
+    fout.write('# id                                  name   reference'+
+               ' '.join([str("%20s" % colname) for colname in fluxratiodic.keys()[3:]])+'  \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Collecting literature data arrays and appending them')
     refdic                 = lce.referencedictionary()
@@ -82,15 +83,15 @@ def generate_literature_fitscatalog(verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
     for oo, id in enumerate(outputdataarray['id']):
-        outstr = str(int(id))+' '+outputdataarray['reference'][oo]+' '+\
+        outstr = str(int(id))+' '+str("%30s" % outputdataarray['name'][oo])+'   '+outputdataarray['reference'][oo]+' '+\
                  str("%20.10f" % outputdataarray['ra'][oo])+' '+str("%20.10f" % outputdataarray['dec'][oo])+\
-                 ' '.join([str("%20.4f" % ff) for ff in outputdataarray[oo].tolist()[4:]])
+                 ' '.join([str("%20.4f" % ff) for ff in outputdataarray[oo].tolist()[5:]])
         fout.write(outstr+' \n')
     fout.close()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Creating fits version of output: \n   '+outputfile.replace('.txt','.fits'))
-    fitsformat = ['K','20A'] + ['D']*(Ncols-2)
+    fitsformat = ['K','30A','20A'] + ['D']*(Ncols-3)
     fitsoutput = ascii2fits(outputfile,asciinames=True,skip_header=5,fitsformat=fitsformat,verbose=False)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def emissionlinelist(verbose=True):
@@ -454,7 +455,8 @@ def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
     columns       = masterdic.keys()
 
     dtypebuild    = [(colname, 'd') for colname in columns]
-    dtypebuild[1] = ('reference', '20a')
+    dtypebuild[1] = ('name', '30a')
+    dtypebuild[2] = ('reference', '20a')
     dataarray     = np.array(np.zeros(Ndataobj)*np.nan,dtype=dtypebuild)
 
     if verbose: print('   Inserting data from literature into master dictionary ')
@@ -521,6 +523,7 @@ def build_master_datadictionary(verbose=True):
     """
     datadictionary = collections.OrderedDict()
     datadictionary['id']        = np.array([])
+    datadictionary['name']      = np.array([])
     datadictionary['reference'] = np.array([])
     datadictionary['ra']        = np.array([])
     datadictionary['dec']       = np.array([])
@@ -558,7 +561,7 @@ def build_master_datadictionary(verbose=True):
     if verbose: print(' - Assembled and build a master dictionary with '+str(len(datadictionary.keys()))+' keys')
     return datadictionary
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True,
+def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=False,
                                 showphotoionizationmodels=True,overwrite=True,verbose=True):
     """
     Wrapper for the plot_literature_fitscatalog_cmd() defining the samples
@@ -705,19 +708,25 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True,
         else:
             cmapselected = 'summer_r'  # 'Greens',#'autumn_r'
 
+        if shownames:
+            point_text = litdat['name']
+        else:
+            point_text = None
 
         lce.plot_literature_fitscatalog_cmd(plotname,
                                             # - - - - - - - Literature Data Setup - - - - - - -
                                             xval=xval,yval=yval,xerr=xerr,yerr=yerr,
                                             colval=colval,psym=psyms,fixcolor='gray',
+                                            point_text=point_text,ids=None,
                                             # - - - - - - - Secondary Data Setup - - - - - - -
                                             xval_2nd=xval_2nd,yval_2nd=yval_2nd,xerr_2nd=xerr_2nd,yerr_2nd=yerr_2nd,
                                             colval_2nd=colval_2nd,psym_2nd='o',fixcolor_2nd='red',
+                                            point_text_2nd=None,ids_2nd=None,
                                             # - - - - - - - Coloring Setup - - - - - - -
                                             colortype='redshift',colmap=cmapselected,
                                             # - - - - - - - Plot Setup - - - - - - -
                                             drawcurves=['onetoone'],histaxes=histaxes,Nbins=Nhistbins,
-                                            photoionizationplotparam=photoionizationplotparam,point_text=None,ids=None,
+                                            photoionizationplotparam=photoionizationplotparam,
                                             xlabel=il[2],ylabel=il[3],yrange=il[4],xrange=il[5],ylog=logaxes,xlog=logaxes,
                                             title=il[7],overwrite=overwrite,verbose=verbose)
 
@@ -727,15 +736,15 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True,
 def plot_literature_fitscatalog_cmd(plotname,
                                     # - - - - - - - Literature Data Setup - - - - - - -
                                     xval=None,yval=None,xerr=None,yerr=None,
-                                    colval=None,psym='s',fixcolor='gray',
+                                    colval=None,psym='s',fixcolor='gray',point_text=None,ids=None,
                                     # - - - - - - - Secondary Data Setup - - - - - - -
                                     xval_2nd=None,yval_2nd=None,xerr_2nd=None,yerr_2nd=None,
-                                    colval_2nd=None,psym_2nd='o',fixcolor_2nd='red',
+                                    colval_2nd=None,psym_2nd='o',fixcolor_2nd='red',point_text_2nd=None,ids_2nd=None,
                                     # - - - - - - - Coloring Setup - - - - - - -
                                     colortype=None,colmap='viridis_r', # 'autumn_r'
                                     # - - - - - - - Plot Setup - - - - - - -
                                     drawcurves=['onetoone'],histaxes=False,Nbins=50,
-                                    photoionizationplotparam=None,point_text=None,ids=None,
+                                    photoionizationplotparam=None,
                                     xlabel='x-axis',ylabel='y-axis',yrange=None,xrange=None,ylog=False,xlog=False,
                                     title=None,overwrite=False,verbose=True):
     """
@@ -784,6 +793,8 @@ def plot_literature_fitscatalog_cmd(plotname,
         yerr   = yerr[goodent]
         if colval is not None:
             colval = colval[goodent]
+        if point_text is not None:
+            point_text = point_text[goodent]
     # - - - - - - SECONDARY DATA - - - - -
     if xval_2nd is not None:
         if (type(psym_2nd) == str) & (xval_2nd is not None):
@@ -814,6 +825,9 @@ def plot_literature_fitscatalog_cmd(plotname,
 
             if colval_2nd is not None:
                 colval_2nd = colval_2nd[goodent_2nd]
+
+            if point_text_2nd is not None:
+                point_text_2nd = point_text_2nd[goodent_2nd]
 
     # - - - - - - SETTING UP PLOT - - - - -
     if os.path.isfile(plotname) & (not overwrite):
@@ -986,6 +1000,11 @@ def plot_literature_fitscatalog_cmd(plotname,
                          markerfacecolor=facecol[ii],ecolor=facecol[ii],
                          markeredgecolor=facecol[ii],zorder=10)
 
+            if point_text is not None:
+                plt.text(xval[ii]*1.03,yval[ii]*1.03,
+                         point_text[ii].replace('_','\_'),color='white',fontsize=Fsize*0.5,zorder=30,
+                         bbox=dict(boxstyle="round",edgecolor='k',facecolor=facecol[ii],linewidth=lthick*0.2))
+
         #--------- Plot secondary data with X and Y limits ---------
         if xval_2nd is not None:
             y_uplimarr  = (np.asarray(yerr_2nd).astype(int) == +99)
@@ -1024,6 +1043,12 @@ def plot_literature_fitscatalog_cmd(plotname,
                              marker=psym_2nd[ii],lw=lthick/2., markersize=ms,alpha=1.0,
                              markerfacecolor=facecol_2nd[ii],ecolor=facecol_2nd[ii],
                              markeredgecolor=facecol_2nd[ii],zorder=20)
+
+                if point_text_2nd is not None:
+                    plt.text(xval_2nd[ii]*1.03,yval_2nd[ii]*1.03,
+                             point_text_2nd[ii].replace('_','\_'),color='white',fontsize=Fsize*0.5,zorder=30,
+                             bbox=dict(boxstyle="round",edgecolor='k',facecolor=facecol_2nd[ii],linewidth=lthick*0.2))
+
 
         #--------- Draw reference curves on plot ---------
         if drawcurves is not None:
@@ -1422,11 +1447,9 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
-    names                = np.array(['Q2343-BX418'])
+    datadic['name']      = np.array(['Q2343-BX418'])
     datadic['id']        = np.array([9999]) + baseid
     rasex                = np.array(['04:22:00.81'])
     decsex               = np.array(['-38:37:03.59'])
@@ -1498,11 +1521,10 @@ def data_sen17(fluxscale=1e5,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
     datadic['id']        = np.array([2, 36, 80, 82, 110, 111, 179, 182, 191, 198]) + baseid
+    datadic['name']      = (datadic['id']-baseid).astype(int).astype(str)
 
     rasex                = np.array(['9:44:01.87','10:24:29.25 ','9:42:56.74 ','11:55:28.34','9:42:52.78',
                                      '12:30:48.60','11:29:14.15 ','11:48:27.34 ','12:15:18.60 ','12:22:25.79'])
@@ -1593,11 +1615,10 @@ def data_nan19(fluxscale=1.0,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
     datadic['id']        = np.array([1024, 1036, 1045, 1079, 1273, 3621, 87,   109, 144,    97,   39,  84, 161]) + baseid
+    datadic['name']      = datadic['name']      = (datadic['id']-baseid).astype(int).astype(str)
     rasex                = np.array(['03:32:31.45','03:32:43.39','03:32:33.78','03:32:37.88','03:32:35.48',
                                      '03:32:39.52','22:32:54.86','22:32:56.16','22:32:58.93','10:00:34.01',
                                      '04:22:00.81','04:22:01.45','04:22:01.52'])
@@ -1728,14 +1749,13 @@ def data_sch17(fluxscale=1e3,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
     # datadic['id']        = np.array([224801, 224802, 224803, 224804, 224805]) + baseid
     # datadic['ra']        = np.array([342.18408,342.1890479,342.171296,342.18104,342.190889,342.18407])
     # datadic['dec']       = np.array([-44.5316378,-44.5300249,-44.519812,-44.53461,-44.537461,-44.53532])
     # datadic['redshift']  = np.array([6.11,6.11,6.11,6.11,6.11])
+    datadic['name']      = np.array(['RXJ2248_6.11_quintet'])
     datadic['id']        = np.array([22480005]) + baseid
     datadic['ra']        = np.array([342.18407])
     datadic['dec']       = np.array([-44.53532])
@@ -1822,10 +1842,9 @@ def data_rig14(fluxscale=1.0,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
+    datadic['name']      = np.array(['S0004','S0108','R0327_Knot_E','R0327_Knot_B','R0327_Knot_G','R0327_Knot_U','S0957','S1441'])
     datadic['id']        = np.array([4,108,3270001,3270002,3270003,3270004,957,1441]) + baseid
     rasex                = np.array(['00:04:51.7','01:08:42.2','03:27:27','03:27:27','03:27:27',
                                      '03:27:27','09:57:38.7','14:41:33.2'])
@@ -1884,11 +1903,9 @@ def data_rig15(fluxscale=1.0,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
-    names                = ['RCSGA 032727-13260 Knot E','RCSGA 032727-13260 Knot U','RCSGA 032727-13260 Knot B','RCSGA 032727-13260 Knot G','SGAS J000451.7-010321','SGAS J010842.2+062444','SGAS J095738.7+050929','SGAS J090003.3+223408','SGAS J105039.6+001730','SGAS J122651.3+215220','SGAS J142954.9+120239','SGAS J152745.1+065219','SGAS J211118.9-011431','Cosmic Eye','Haro 15','IC 0214','Mrk 26','Mrk 347','Mrk 496','Mrk 499','Mrk 66','Pox 120','Pox 124','Tol 1924-416','Tol 41','NGC 1741','NGC 1741','Mrk 960','SBS 0218+003','Mrk 1087','Mrk 5','Mrk 1199','IRAS 08208+2816','IRAS 08339+6517','SBS 0926+606A','Arp 252','SBS 0948+532','Tol 9','SBS 1054+365','Pox 4','SBS 1319+579','SBS 1415+437','Tol 1457-262','III Zw 107','IZw18','IZw18-NW HIIR','IZw18-SE HIIR','NGC 1569','Mrk 71','NGC 2403-vs38','NGC 2403-vs44','NGC 2403-vs9','NGC 3690','NGC 4214','NGC 4569','NGC 4670','NGC 4861','NGC 5055','NGC 5253-HIIR-1','NGC 5253-HIIR-2','NGC 5253-UV1','NGC 5253-UV2','NGC 5253-UV3','NGC 5457-NGC 5455','NGC 5457-NGC 5471','NGC 5457-Searle5','NGC 7552','SBS 1415+437','Tol 1214-277','Tol 1345-420','UM 469']
+    datadic['name']     = np.array(['RCSGA_032727-13260_Knot_E','RCSGA_032727-13260_Knot_U','RCSGA_032727-13260_Knot_B','RCSGA_032727-13260_Knot_G','SGAS_J000451.7-010321','SGAS_J010842.2+062444','SGAS_J095738.7+050929','SGAS_J090003.3+223408','SGAS_J105039.6+001730','SGAS_J122651.3+215220','SGAS_J142954.9+120239','SGAS_J152745.1+065219','SGAS_J211118.9-011431','Cosmic_Eye','Haro_15','IC_0214','Mrk_26','Mrk_347','Mrk_496','Mrk_499','Mrk_66','Pox_120','Pox_124','Tol_1924-416','Tol_41','NGC_1741','NGC_1741','Mrk_960','SBS_0218+003','Mrk_1087','Mrk_5','Mrk_1199','IRAS_08208+2816','IRAS_08339+6517','SBS_0926+606A','Arp_252','SBS_0948+532','Tol_9','SBS_1054+365','Pox_4','SBS_1319+579','SBS_1415+437','Tol_1457-262','III_Zw_107','IZw18','IZw18-NW_HIIR','IZw18-SE_HIIR','NGC_1569','Mrk_71','NGC_2403-vs38','NGC_2403-vs44','NGC_2403-vs9','NGC_3690','NGC_4214','NGC_4569','NGC_4670','NGC_4861','NGC_5055','NGC_5253-HIIR-1','NGC_5253-HIIR-2','NGC_5253-UV1','NGC_5253-UV2','NGC_5253-UV3','NGC_5457-NGC_5455','NGC_5457-NGC_5471','NGC_5457-Searle5','NGC_7552','SBS_1415+437','Tol_1214-277','Tol_1345-420','UM_469'])[4:]
     datadic['id']        = np.array([3270001,3270004,3270002,3270003,452,10842,95738,90003,105040,122651,142955,152745,211119,999,15,214,26,347,496,499,66,120,124,1924,41,17410001,17410002,960,218,1087,5,1199,8208,8339,926,252,948,9,1054,4,1319,1415,1457,107,180001,180002,180003,1569,71,240338,240344,240309,3690,4214,4569,4670,4861,5055,52530001,52530002,52530003,52530004,52530005,54575455,54575471,54575,7552,14150437,1214,1345,469])[4:] + baseid
     rasex                = ['03:27:27','03:27:27','03:27:27','03:27:27','00:04:51.7','01:08:42.2','09:57:38.7','09:00:03.3','10:50:39.6','12:26:51.3','14:29:54.9','15:27:45.1','21:11:18.9',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'19:24:00',np.nan,np.nan,np.nan,np.nan,'02:18:00',np.nan,np.nan,np.nan,'08:20:08','08:38:23','09:30:06.5',np.nan,'09:48:00',np.nan,'10:54:00',np.nan,'13:21:10.0','14:17:01.7','14:57:00',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'14:17:01.7','12:17:17.093','13:45:00',np.nan]
     decsex               = ['-13:26:0','-13:26:0','-13:26:0','-13:26:0','-01:03:21','+06:24:44','+05:09:29','+22:34:08','+00:17:30','+21:52:20','+12:02:39','+06:52:19','-01:14:31',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'-41:60:00',np.nan,np.nan,np.nan,np.nan,'+00:30:00',np.nan,np.nan,np.nan,'+28:16:00','+65:07:15','+60:26:52',np.nan,'+53:20:00',np.nan,'+36:50:00',np.nan,'+57:39:41','+43:30:13','-26:20:00',np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,'+43:30:13','-28:02:32.67','-42:00:00',np.nan]
@@ -1926,11 +1943,9 @@ def data_erb10(fluxscale=1e3,verbose=True):
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
-    fluxratiodic        = collections.OrderedDict()
-    fluxratiodic['id']  = np.array([])
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
-    names                = np.array(['Q2343-BX418'])
+    datadic['name']      = np.array(['Q2343-BX418'])
     datadic['id']        = np.array([23430418]) + baseid
     rasex                = np.array(['23:46:18.57'])
     decsex               = np.array(['12:47:47.38'])
@@ -2009,7 +2024,6 @@ def data_erb10(fluxscale=1e3,verbose=True):
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
+
     return catreference, dataarray
-
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
