@@ -557,16 +557,30 @@ def plot_literature_fitscatalog(secondarydat_fits=None,showphotoionizationmodels
 
     --- EXAMPLE OF USE ---
     import literaturecollection_emissionlinestrengths as lce
-    lce.plot_literature_fitscatalog()
-    lce.plot_literature_fitscatalog(showphotoionizationmodels)
+
+    secondarydat_fits = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/results_master_catalog_version191128.fits'
+
+    lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=secondarydat_fits)
+    lce.plot_literature_fitscatalog(showphotoionizationmodels=True)
 
     """
     maindir = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
     litdat  = afits.open(maindir+'/literaturecollection_emissionlinestrengths.fits')[1].data
 
     if secondarydat_fits is not None:
-        dat_2nd = afits.open(secondarydat_fits)
+        dat_2nd = afits.open(secondarydat_fits)[1].data
 
+        file_info = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+        dat_info  = afits.open(file_info)[1].data
+
+        z_2nd   = []
+        for id in dat_2nd['id']:
+            objent = np.where(dat_info['id'] == id)[0]
+            if len(objent) == 1:
+                z_2nd.append(dat_info['redshift'][objent[0]])
+            else:
+                z_2nd.append(0.0)
+        z_2nd = np.asarray(z_2nd)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # generate vector of plotting symbols
     refdic = lce.referencedictionary()
@@ -648,15 +662,13 @@ def plot_literature_fitscatalog(secondarydat_fits=None,showphotoionizationmodels
             yerr_2nd   = None
             colval_2nd = None
         else:
-            xval_2nd   = litdat[il[0]]
-            yval_2nd   = litdat[il[1]]
-            xerr_2nd   = litdat[il[0].replace('_','err_')]
-            yerr_2nd   = litdat[il[1].replace('_','err_')]
-            colval_2nd = litdat[il[6]]
-
+            xval_2nd   = dat_2nd[il[0]]
+            yval_2nd   = dat_2nd[il[1]]
+            xerr_2nd   = dat_2nd[il[0].replace('_','err_')]
+            yerr_2nd   = dat_2nd[il[1].replace('_','err_')]
+            colval_2nd = z_2nd
 
         if showphotoionizationmodels:
-
             if ('FR_' in il[0]) & ('FR_' in il[1]):
                 #x2plot, y2plot, varyparam, cutSFmodels, markersize, SFmarker, AGNmarker = piplotparam
                 photoionizationplotparam = lce.colname2NEOGAL(il[0]),lce.colname2NEOGAL(il[1]),\
@@ -719,23 +731,21 @@ def plot_literature_fitscatalog_cmd(plotname,
         xerr   = np.array([np.nan,np.nan])
         yerr   = np.array([np.nan,np.nan])
 
+    # - - - - - - LITERATURE DATA - - - - -
     if (type(psym) == str):
         psym = np.asarray([psym]*len(xval))
-
-    if (type(psym_2nd) == str) & (xval_2nd is not None):
-        psym_2nd = np.asarray([psym]*len(xval_2nd))
 
     if ylog & xlog:
         goodent = np.where(np.isfinite(xval) & np.isfinite(yval) & (yval > 0) & (xval > 0))[0]
     elif xlog & (not xlog):
         goodent = np.where(np.isfinite(xval) & np.isfinite(yval) & (xval > 0))[0]
     elif (not xlog) & ylog:
-        goodent = np.where(np.isfinite(xval) & np.isfinite(yval))[0]
+        goodent = np.where(np.isfinite(xval) & np.isfinite(yval) & (yval > 0))[0]
     else:
         goodent = np.where(np.isfinite(xval) & np.isfinite(yval))[0]
 
     if len(goodent) == 0:
-        if verbose: print('WARNING: Did not find any good entries, i.e. where both xval and yval are finite and values are >0 for if log axes chosen')
+        if verbose: print('WARNING: Did not find any good entries in main data, i.e. where values are finite and >0 if log axes chosen')
         psym = ['.','.']
         xval = np.array([0,0])
         yval = np.array([0,0])
@@ -749,7 +759,38 @@ def plot_literature_fitscatalog_cmd(plotname,
         yerr   = yerr[goodent]
         if colval is not None:
             colval = colval[goodent]
+    # - - - - - - SECONDARY DATA - - - - -
+    if xval_2nd is not None:
+        if (type(psym_2nd) == str) & (xval_2nd is not None):
+            psym_2nd = np.asarray([psym_2nd]*len(xval_2nd))
 
+        if ylog & xlog:
+            goodent_2nd = np.where(np.isfinite(xval_2nd) & np.isfinite(yval_2nd) & (yval_2nd > 0) & (xval_2nd > 0))[0]
+        elif xlog & (not xlog):
+            goodent_2nd = np.where(np.isfinite(xval_2nd) & np.isfinite(yval_2nd) & (xval_2nd > 0))[0]
+        elif (not xlog) & ylog:
+            goodent_2nd = np.where(np.isfinite(xval_2nd) & np.isfinite(yval_2nd) & (yval_2nd > 0))[0]
+        else:
+            goodent_2nd = np.where(np.isfinite(xval_2nd) & np.isfinite(yval_2nd))[0]
+
+        if len(goodent_2nd) == 0:
+            if verbose: print('WARNING: Did not find any good entries in secondary data, i.e. where values are finite and >0 if log axes chosen')
+            psym = ['.','.']
+            xval_2nd   = np.array([0,0])
+            yval_2nd   = np.array([0,0])
+            xerr_2nd   = np.array([np.nan,np.nan])
+            yerr_2nd   = np.array([np.nan,np.nan])
+        else:
+            psym_2nd   = psym_2nd[goodent_2nd]
+            xval_2nd   = xval_2nd[goodent_2nd]
+            yval_2nd   = yval_2nd[goodent_2nd]
+            xerr_2nd   = xerr_2nd[goodent_2nd]
+            yerr_2nd   = yerr_2nd[goodent_2nd]
+
+            if colval_2nd is not None:
+                colval_2nd = colval_2nd[goodent_2nd]
+
+    # - - - - - - SETTING UP PLOT - - - - -
     if os.path.isfile(plotname) & (not overwrite):
         if verbose: print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
     else:
@@ -953,7 +994,7 @@ def plot_literature_fitscatalog_cmd(plotname,
                     else:
                         xerr_2nd[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
-                plt.errorbar(xval_2nd[ii],yval_2nd[ii],xerr_2nd=xerr_2nd[ii],yerr_2nd=yerr_2nd[ii],capthick=0.5,
+                plt.errorbar(xval_2nd[ii],yval_2nd[ii],xerr=xerr_2nd[ii],yerr=yerr_2nd[ii],capthick=0.5,
                              uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
                              marker=psym_2nd[ii],lw=lthick/2., markersize=ms,alpha=1.0,
                              markerfacecolor=facecol_2nd[ii],ecolor=facecol_2nd[ii],
