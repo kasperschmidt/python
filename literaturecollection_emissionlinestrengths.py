@@ -683,6 +683,11 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
         else:
             point_text = None
 
+        if ('EW' in il[2]) & ('EW' in il[3]):
+            drawcurves = ['onetoone','onetothree','threetoone','onetoten','tentoone']
+        else:
+            drawcurves = ['onetoone']
+
         lce.plot_literature_fitscatalog_cmd(plotname,
                                             # - - - - - - - Literature Data Setup - - - - - - -
                                             xval=xval,yval=yval,xerr=xerr,yerr=yerr,
@@ -695,7 +700,7 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
                                             # - - - - - - - Coloring Setup - - - - - - -
                                             colortype='redshift',colmap=cmapselected,
                                             # - - - - - - - Plot Setup - - - - - - -
-                                            drawcurves=['onetoone'],histaxes=histaxes,Nbins=Nhistbins,
+                                            drawcurves=drawcurves,histaxes=histaxes,Nbins=Nhistbins,
                                             photoionizationplotparam=photoionizationplotparam,
                                             xlabel=il[2],ylabel=il[3],yrange=il[4],xrange=il[5],ylog=logaxes,xlog=logaxes,
                                             title=il[7],overwrite=overwrite,verbose=verbose)
@@ -1025,10 +1030,20 @@ def plot_literature_fitscatalog_cmd(plotname,
             tot_maxval = np.max([xmaxsys, ymaxsys])
             tot_minval = np.min([xminsys, yminsys])
             for dc in drawcurves:
-                if dc == 'horizontal':
+                if dc == 'zero_horizontal':
                     plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
+                elif dc == 'zero_vertical':
+                    plt.plot([0,0],[yminsys,ymaxsys],'--',color='black',lw=lthick,zorder=10)
                 elif dc == 'onetoone':
-                    plt.plot([tot_minval,tot_maxval],[tot_minval,tot_maxval],'--',color='black',lw=lthick,zorder=10)
+                    plt.plot([tot_minval,tot_maxval],[tot_minval,tot_maxval],'-',color='black',lw=lthick,zorder=10)
+                elif dc == 'tentoone':
+                    plt.plot([tot_minval,tot_maxval],[tot_minval/10.,tot_maxval/10.],':',color='black',lw=lthick,zorder=10)
+                elif dc == 'onetoten':
+                    plt.plot([tot_minval,tot_maxval],[tot_minval*10,tot_maxval*10],':',color='black',lw=lthick,zorder=10)
+                elif dc == 'threetoone':
+                    plt.plot([tot_minval,tot_maxval],[tot_minval/3.,tot_maxval/3.],'--',color='black',lw=lthick,zorder=10)
+                elif dc == 'onetothree':
+                    plt.plot([tot_minval,tot_maxval],[tot_minval*3,tot_maxval*3],'--',color='black',lw=lthick,zorder=10)
                 elif dc == 'plus':
                     plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
                     plt.plot([0,0],[yminsys,ymaxsys],'--',color='black',lw=lthick,zorder=10)
@@ -1103,7 +1118,7 @@ def plot_literature_fitscatalog_cmd(plotname,
     plt.clf()
     plt.close('all')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_literature_fitscatalog_legend(psym,legenedstring):
+def plot_literature_fitscatalog_legend(extra_textlist=[],extra_symlist=[]):
     """
     Generating the legend for a set of plotting symboles
 
