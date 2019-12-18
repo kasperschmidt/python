@@ -80,6 +80,11 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_sta14(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+    if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
     for oo, id in enumerate(outputdataarray['id']):
@@ -166,21 +171,21 @@ def referencedictionary():
     refdic['rig14'] = [4e10,    'Rigby et al. (2014)',                                    '>']
     refdic['rig15'] = [5e10,    'Rigby et al. (2015)',                                    '8']
     refdic['erb10'] = [6e10,    'Erb et al. (2010)',                                      's']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'p']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'P']
+    refdic['sta14'] = [7e10,    'Stark et al. (2014)',                                    'p']
+    refdic['sta15'] = [8e10,    'dummy',                                                  'P']
     refdic['dummy'] = [9e10,    'dummy',                                                  '*']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'h']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'H']
-    refdic['dummy'] = [9e10,    'dummy',                                                  '+']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'x']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'D']
-    refdic['dummy'] = [9e10,    'dummy',                                                  'd']
-    refdic['dummy'] = [9e10,    'dummy',                                                  '1']
-    refdic['dummy'] = [9e10,    'dummy',                                                  '2']
-    refdic['dummy'] = [9e10,    'dummy',                                                  '3']
-    refdic['dummy'] = [9e10,    'dummy',                                                  '4']
-    refdic['dummy'] = [9e10,    'dummy',                                                  '$\\alpha$']
-    refdic['dummy'] = [9e10,    'dummy',                                                  (5, 0, 180)] # pentagon rotated 180deg
+    refdic['dummy'] = [10e9,    'dummy',                                                  'h']
+    refdic['dummy'] = [11e9,    'dummy',                                                  'H']
+    refdic['dummy'] = [12e9,    'dummy',                                                  '+']
+    refdic['dummy'] = [13e9,    'dummy',                                                  'x']
+    refdic['dummy'] = [14e9,    'dummy',                                                  'D']
+    refdic['dummy'] = [15e9,    'dummy',                                                  'd']
+    refdic['dummy'] = [16e9,    'dummy',                                                  '1']
+    refdic['dummy'] = [17e9,    'dummy',                                                  '2']
+    refdic['dummy'] = [18e9,    'dummy',                                                  '3']
+    refdic['dummy'] = [19e9,    'dummy',                                                  '4']
+    refdic['dummy'] = [20e9,    'dummy',                                                  '$\\alpha$']
+    refdic['dummy'] = [21e9,    'dummy',                                                  (5, 0, 180)] # pentagon rotated 180deg
 
     # --- MUSE-Wide def: ---
     # CDFS and COSMOS:  'o'
@@ -193,9 +198,6 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
-
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Stark14   Stark   et al. (2014)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Stark15a  Stark   et al. (2015a)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2016,14 +2018,73 @@ def data_erb10(fluxscale=1e3,verbose=True):
         if key.startswith('f'):
             datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
 
-    if verbose: print('   Making sure EWs are rest-frame EWs, i.e., EW0')
-    for key in datadic.keys():
-        if key.startswith('EW0'):
-            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
-                                                       (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
-
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
 
+    return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sta14(fluxscale=1.0,verbose=True):
+    """
+    Data collected from Stark+2014
+
+    NOTE ON DATA
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sta14'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['1.1','6.2','4.1','3.1','C4','C20b','881_329','899_340','883_357','860_359','885_354','863_348','876_330','869_328','854_344','854_362','846_340'])
+    datadic['id']        = np.array([11,62,41,31,4,20,881329,899340,883357,860359,885354,863348,876330,869328,854344,854362,846340]) + baseid
+    rasex                = np.array(['04:51:53.399','04:51:53.592','04:51:54.488','04:51:55.438','00:37:07.657','00:37:05.405','13:11:31.543','13:11:35.705','13:11:31.882','13:11:26.426','13:11:32.405','13:11:27.350','13:11:30.320','13:11:28.690','13:11:24.982','13:11:24.982','13:11:23.141'])
+    decsex               = np.array(['+00:06:40.31','+00:06:24.96','+00:06:49.01','+00:06:41.16','+09:09:05.90','+09:09:59.14','-01:19:45.88','-01:20:25.22','-01:21:26.10','-01:21:31.22','-01:21:15.98','-01:20:54.82','-01:19:51.13','-01:19:42.69','-01:20:41.57','-01:21:43.53','-01:20:23.08'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([2.060,1.405,1.810,1.904,2.622,2.689,1.559,1.599,1.702,1.702,1.705,1.834,1.834,2.543,2.663,2.731,2.976])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    # Stark et al. (2014) table 2
+    datadic['EW0_Lya']        = np.array([np.nan,np.nan,np.nan,np.nan,36.6,19.9*3./2.,np.nan,np.nan,76.0,163.8,35.7,73.1,50.0*3./2.,4.3,45.3,129.6,86.4])
+    datadic['EW0err_Lya']     = np.array([np.nan,np.nan,np.nan,np.nan,5.7,-99,np.nan,np.nan,18.8,25.5,4.6,8.6,-99,0.4,2.7,21.8,24.8])
+
+    datadic['EW0_CIII']       = np.array([6.7,1.2*3./2.,10.0,2.0,6.7,10.4*3./2.,7.1,5.1,6.5,12.4,3.9,13.5,10.0,1.8,4.0*3./2.,12.0,10.3*3./2.])
+    datadic['EW0err_CIII']    = np.array([0.6,+99,2.4,0.7,2.1,-99,3.1,1.4,0.7,1.5,0.6,1.6,2.7,0.3,-99,3.2,-99])
+
+
+    # Stark et al. (2014) table 4
+    # flux ratios between CIII and NIV1487, NIII1750 also exists
+    datadic['FR_NVCIII']      = np.array([ np.nan   , np.nan, np.nan, np.nan, np.nan, np.nan,  2.9    , np.nan  , np.nan  ,    0.6  , np.nan  ,   0.2   ,   1.1   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_NVCIII']   = np.array([ np.nan   , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    +99  , np.nan  ,   +99   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_CIVCIII']     = np.array([ np.nan   , np.nan, np.nan, np.nan, np.nan, np.nan,  0.5    , np.nan  , np.nan  ,    0.4  , np.nan  ,   0.8   ,   0.6   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_CIVCIII']  = np.array([ np.nan   , np.nan, np.nan, np.nan, np.nan, np.nan,  0.3    , np.nan  , np.nan  ,    0.1  , np.nan  ,   0.1   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_HeIICIII']    = np.array([ 0.5      , np.nan, np.nan, np.nan, np.nan, np.nan,  0.5    , np.nan  , np.nan  ,    0.2  , np.nan  ,   0.1   ,   0.5   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_HeIICIII'] = np.array([ 0.1      , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    +99  , np.nan  ,   +99   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_OIII1CIII']   = np.array([ 0.2      , np.nan, np.nan, np.nan, np.nan, np.nan,  0.5    , np.nan  , np.nan  ,    0.2  , np.nan  ,   0.2   ,   0.4   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_OIII1CIII']= np.array([ 0.1      , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    +99  , np.nan  ,   0.1   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_OIII2CIII']   = np.array([ 0.3      , np.nan, np.nan, np.nan, np.nan, np.nan,  0.5    , np.nan  , np.nan  ,    0.3  , np.nan  ,   0.6   ,   0.5   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_OIII2CIII']= np.array([ 0.1      , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    0.1  , np.nan  ,   0.1   ,   0.2   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_SiIII1CIII']= np.array([ 0.2      , np.nan, np.nan, np.nan, np.nan, np.nan,  0.5    , np.nan  , np.nan  ,    0.1  , np.nan  ,   0.2   ,   0.3   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_SiIII1CIII']= np.array([ 0.1      , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    0.1  , np.nan  ,   0.1   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_SiIII2CIII']= np.array([ 0.2      , np.nan, np.nan, np.nan, np.nan, np.nan,  0.5    , np.nan  , np.nan  ,    0.1  , np.nan  ,   0.1   ,   0.3   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_SiIII2CIII']= np.array([ 0.1      , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    0.1  , np.nan  ,   +99   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+
+    # etimated manually from the entries in table 4
+    datadic['FR_OIIICIII']    = np.array([ 0.5      , np.nan, np.nan, np.nan, np.nan, np.nan,  1.0    , np.nan  , np.nan  ,    0.5  , np.nan  ,   0.8   ,   0.9   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_OIIICIII'] = np.array([ 0.14     , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    +99  , np.nan  ,   0.14  ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FR_SiIIICIII']    = np.array([ 0.4      , np.nan, np.nan, np.nan, np.nan, np.nan,  1.0    , np.nan  , np.nan  ,    0.2  , np.nan  ,   0.3   ,   0.6   , np.nan  , np.nan  , np.nan  , np.nan])
+    datadic['FRerr_SiIIICIII'] = np.array([ 0.14     , np.nan, np.nan, np.nan, np.nan, np.nan,  +99    , np.nan  , np.nan  ,    0.14 , np.nan  ,   +99   ,   +99   , np.nan  , np.nan  , np.nan  , np.nan])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
