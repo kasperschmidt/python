@@ -465,9 +465,11 @@ def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
     dataarray     = np.array(np.zeros(Ndataobj)*np.nan,dtype=dtypebuild)
 
     if verbose: print('   Inserting data from literature into master dictionary ')
-    for ll, mastercol in enumerate(masterdic.keys()):
-        if mastercol in datadic.keys():
-            dataarray[mastercol] = datadic[mastercol]
+    for ll, datacol in enumerate(datadic.keys()):
+        if datacol in masterdic.keys():
+            dataarray[datacol] = datadic[datacol]
+        else:
+            print('   WARNING: The data dictionary column "'+datacol+'" not found in master dic. so not stored in outut.')
 
     if verbose: print('   Estimating further entries based on data from literature')
     for ii, id in enumerate(dataarray['id']):
@@ -1510,7 +1512,7 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
 
     linename = 'CIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -1579,7 +1581,7 @@ def data_sen17(fluxscale=1e5,verbose=True):
 
     linename = 'CIV'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -1603,7 +1605,7 @@ def data_sen17(fluxscale=1e5,verbose=True):
 
     linename = 'OIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -1685,7 +1687,7 @@ def data_nan19(fluxscale=1.0,verbose=True):
 
     linename = 'CIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -1710,7 +1712,7 @@ def data_nan19(fluxscale=1.0,verbose=True):
 
     linename = 'OIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -1735,7 +1737,7 @@ def data_nan19(fluxscale=1.0,verbose=True):
 
     linename = 'SiIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -1829,7 +1831,7 @@ def data_sch17(fluxscale=1e3,verbose=True):
 
     linename = 'OIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -2030,7 +2032,7 @@ def data_erb10(fluxscale=1e3,verbose=True):
 
     linename = 'OIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -2146,10 +2148,10 @@ def data_sta15(fluxscale=1.0,verbose=True):
     # ---------------------------------------------------------------------------------
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    datadic['f_lya']          = np.array([11000    , 2500.0  , np.nan   , np.nan  , 2840.0  , 2500.0])
-    datadic['ferr_lya']       = np.array([0.0      , 0.0     , np.nan   , np.nan  , 530.0   , 0.0])
-    datadic['EW0_lya']        = np.array([138.0    , 33.0    , np.nan   , np.nan  , 65.0    , 10.3])
-    datadic['EW0err_lya']     = np.array([0.0      , 0.0     , np.nan   , np.nan  , 12.0    , 0.0])
+    datadic['f_Lya']          = np.array([11000    , 2500.0  , np.nan   , np.nan  , 2840.0  , 2500.0])
+    datadic['ferr_Lya']       = np.array([0.0      , 0.0     , np.nan   , np.nan  , 530.0   , 0.0])
+    datadic['EW0_Lya']        = np.array([138.0    , 33.0    , np.nan   , np.nan  , 65.0    , 10.3])
+    datadic['EW0err_Lya']     = np.array([0.0      , 0.0     , np.nan   , np.nan  , 12.0    , 0.0])
     datadic['sigma_Lya']      = np.array([np.nan   , 15.0    , np.nan   , np.nan  , np.nan  , np.nan])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     datadic['f_CIII1']        = np.array([518.0    , 130.0   , np.nan   , np.nan  , 330.0   , 210.0 ])
@@ -2179,7 +2181,7 @@ def data_sta15(fluxscale=1.0,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linename = 'CIV'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
@@ -2203,7 +2205,7 @@ def data_sta15(fluxscale=1.0,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linename = 'OIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
-    datadic['FR_'+linename], datadic['FRrerr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
     datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
