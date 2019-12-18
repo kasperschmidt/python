@@ -1118,25 +1118,64 @@ def plot_literature_fitscatalog_cmd(plotname,
     plt.clf()
     plt.close('all')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_literature_fitscatalog_legend(extra_textlist=[],extra_symlist=[]):
+def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist=[],extra_symlist=[],verbose=True):
     """
     Generating the legend for a set of plotting symboles
 
-    """
-    sys.exit("still not written...")
+    --- EXAMPLE OF USE ---
+    lce.plot_literature_fitscatalog_legend(legendshape=(14.0, 2.0),ncol=4,extra_textlist=['UVES restults'],extra_symlist=['o'])
 
-    #--------- LEGEND ---------
-    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
-    #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
-    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
-    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
-    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
-    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
-    #
-    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
-    #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
-    # leg.get_frame().set_alpha(0.7)
-    #--------------------------
+    """
+    refdic = lce.referencedictionary()
+
+    maindir = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+    plotname = maindir+'plots/literaturecollection_emissionlinestrengths_plot_legend.pdf'
+
+
+    fig = plt.figure(figsize=legendshape)
+    #fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
+    Fsize         = 14.0
+    lthick        = 2.0
+    marksize      = 6.0
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    ax  = fig.add_subplot(111)
+    ax.spines['bottom'].set_color('None')
+    ax.spines['top'].set_color('None')
+    ax.spines['right'].set_color('None')
+    ax.spines['left'].set_color('None')
+    ax.xaxis.label.set_color('None')
+    ax.yaxis.label.set_color('None')
+    ax.tick_params(axis='x', colors='White')
+    ax.tick_params(axis='y', colors='White')
+
+    for key in refdic.keys():
+        if key == 'dummy':
+            continue
+
+        label = key+': '+refdic[key][1].replace('&','\&').replace('_','\_')
+
+        ax.errorbar(-5000,-5000,xerr=None,yerr=1,marker=refdic[key][2],lw=0, markersize=marksize,alpha=1.0,
+                    markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label=label)
+
+    for ee, etl in enumerate(extra_textlist):
+        ax.errorbar(-5000,-5000,xerr=None,yerr=1,marker=extra_symlist[ee],lw=0, markersize=marksize,alpha=1.0,
+                    markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label=etl)
+
+    leg = ax.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=ncol,numpoints=1,
+                    bbox_to_anchor=(0.48, 1.1),)  # add the legend
+    leg.get_frame().set_alpha(1.0)
+
+
+    if verbose: print('   Saving plot to \n   '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def colname2NEOGAL(colname):
