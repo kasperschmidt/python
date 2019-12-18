@@ -1805,7 +1805,7 @@ def data_sch17(fluxscale=1e3,verbose=True):
     datadic['EW0err_NV']  = np.array([99])
 
     datadic['f_CIV']       = np.array([0.21])# Schmidt+17
-    datadic['ferr_CIV']    = np.array([0.8])# Schmidt+17
+    datadic['ferr_CIV']    = np.array([0.08])# Schmidt+17
     datadic['EW0_CIV']     = np.array([24.0])# Schmidt+17
     datadic['EW0err_CIV']  = np.array([4.0])# Schmidt+17
 
@@ -1820,12 +1820,12 @@ def data_sch17(fluxscale=1e3,verbose=True):
     # datadic['EW0err_OIII']  = np.array([99])# Schmidt+17
 
     datadic['f_OIII1']       = np.array([0.17])# Mainali+17
-    datadic['ferr_OIII1']    = np.array([0.6])# Mainali+17
+    datadic['ferr_OIII1']    = np.array([0.06])# Mainali+17
     datadic['EW0_OIII1']     = np.array([2.9])# Mainali+17
     datadic['EW0err_OIII1']  = np.array([1.4])# Mainali+17
 
     datadic['f_OIII2']       = np.array([0.27])# Mainali+17
-    datadic['ferr_OIII2']    = np.array([0.6])# Mainali+17
+    datadic['ferr_OIII2']    = np.array([0.06])# Mainali+17
     datadic['EW0_OIII2']     = np.array([4.6])# Mainali+17
     datadic['EW0err_OIII2']  = np.array([1.6])# Mainali+17
 
