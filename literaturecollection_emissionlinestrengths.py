@@ -605,9 +605,12 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
     psyms = np.asarray(psyms)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxes_range  = None #[1,1e8]
-    ratios_range = None #[1e-4,1e3]
+    EW0_range     = None
+    ratios_range  = None #[1e-4,1e3]
 
     input_lists = []
+
+    # ------------------------------------ Flux vs Flux plots ------------------------------------
     input_lists.append(['f_Lya','f_CIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIII) [1e-20 erg/s/cm$^2$/\AA]',
                         fluxes_range, fluxes_range, 'redshift',  ''])
     input_lists.append(['f_Lya','f_CIV', 'f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
@@ -617,58 +620,23 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
     input_lists.append(['f_OIII','f_HeII','f(OIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
                         fluxes_range, fluxes_range, 'redshift',  ''])
 
-    # linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-    #
-    # linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
-    #
-    # linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-    #
-    # linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-    #
-    # linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-    #
-    # linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # ------------------------------------ EW vs EW plots ------------------------------------
+    input_lists.append(['EW0_Lya','EW0_CIII','EW$_0$(Ly$\\alpha$) [\AA]', 'EW$_0$(CIII) [\AA]',
+                        EW0_range, EW0_range, 'redshift',  ''])
+    input_lists.append(['EW0_Lya','EW0_CIV', 'EW$_0$(Ly$\\alpha$) [\AA]', 'EW$_0$(CIV) [\AA]',
+                        EW0_range, EW0_range, 'redshift',  ''])
+    input_lists.append(['EW0_CIII','EW0_CIV','EW$_0$(CIII) [\AA]', 'EW$_0$(CIV) [\AA]',
+                        EW0_range, EW0_range, 'redshift',  ''])
+    input_lists.append(['EW0_OIII','EW0_HeII','EW$_0$(OIII) [\AA]', 'EW$_0$(HeII) [\AA]',
+                        EW0_range, EW0_range, 'redshift',  ''])
 
-
+    # ------------------------------------ Flux artio vs Flux ratio plots ------------------------------------
     input_lists.append(['FR_CIVCIII','FR_CIVHeII','CIV/CIII','CIV/HeII',
                         ratios_range,ratios_range  , 'redshift', 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
     input_lists.append(['FR_OIIICIII','FR_HeIICIII','OIII/CIII','CIII/HeII',
                         ratios_range,ratios_range  , 'redshift', ' No Title '])
 
-    # linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
-    # linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
-    # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
-    # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
-    # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
-    # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
-    # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
-    # linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
-    # linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
-    # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
-    # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
-    # linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
-    #
-    # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
-    # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
-
-    # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
-
+    # ------------------------------------ Handling data and plotting ------------------------------------
     Nhistbins   = 30
     histaxes    = False
     for il in input_lists:
