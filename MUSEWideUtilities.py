@@ -1575,3 +1575,147 @@ def TDOSE_sourcecat_from_Skelton(outputnamebase,refimage,minRaper=0.5,minCutwidt
         sourcecatfits = tu.ascii2fits(outtxt,asciinames=True,skip_header=2,fitsformat=fitsfmt,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def TDOSE_sourcecat_from_Laigle(outputnamebase,refimage,minRaper=0.5,minCutwidth=4.5,overwrite=False,verbose=True):
+    """
+    Generate a TDOSE source catatalog (and catalog with intitial guesses for Gaussian modeling) from
+    the Laigle+2016 COSMOS catalog.
+
+    --- INPUT ---
+    outputnamebase    The name base (prepended the path) of the source catalog to generate
+    refimage          Provide fits image with WCS information to use for the pixel positions in the source cata
+    overwrite         Overwrite output files if they exists?
+    verbose           Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+
+    imgpath        = '/Users/kschmidt/work/images_MAST/MUSEWidePointings/'
+    refimage       = imgpath+'acs_814w_candels-cosmos'
+    outputnamebase = refimage.replace('acs_814w','tdose_sourcecat_laigle_in_acs_775w').replace('.fits','')
+
+    mwu.TDOSE_sourcecat_from_Laigle(outputnamebase,refimage)
+
+    """
+    if verbose: print(' - Generating TDOSE source catalog from Laigle+2016 catalog\n'
+                      '   Restricting source to FoV of reference image '+refimage+'\n'
+                      '   Output will be saved to '+outputnamebase+'.txt/fits')
+
+
+    laiglecat        = '/Users/kschmidt/work/catalogs/laigle/COSMOS2015_Laigle_v1.1_candelsregion.fits'
+    laigledat        = afits.open(laiglecat)[1].data
+    refimgdata       = afits.open(refimage)[0].data
+    refimghdr        = afits.open(refimage)[0].header
+    arcsecPerPix_Lai = 0.15 # pixel scale from Table 9 of Laigle+16 (4.16666*10-5 * 3600 arcsec/deg)
+
+    ids_all     = laigledat['NUMBER']
+    ras_all     = laigledat['ALPHA_J2000']
+    decs_all    = laigledat['DELTA_J2000']
+    fluxf_all   = laigledat['FLUX_814W']
+    r_img_all   = laigledat['FLUX_RADIUS']   # radius enclosing 0.5 of the total flux (FLUX_AUTO) in pixels
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
+    if verbose: print('   (storing both files together with source catalog output) ')
+
+    outpath     = '/'.join(outputnamebase.split('/')[:-1])+'/'
+
+
+    cut_outtxt  = outpath+'../'+'cutoutsizes_Laigle_cosmos_4xFLUX_RADIUS.txt'
+    aper_outtxt = outpath+'../'+'apertureradii_Laigle_cosmos_1xFLUX_RADIUS.txt'
+
+    fout = open(cut_outtxt,'w')
+    fout.write('# Cutout sizes of 4*FLUX_RADIUS on each side taken from Laigle catalog with '
+               'MUSEWideUtilities.TDOSE_sourcecat_from_Laigle() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id xsize ysize \n')
+
+    cutoutwidth = 4.0 * r_img_all * arcsecPerPix_Lai
+    cutoutwidth[cutoutwidth < minCutwidth]  = minCutwidth
+    cutoutwidth[cutoutwidth > 10.0] = 10.0000
+
+    for ii, id in enumerate(ids_all):
+        fout.write(str(ids_all[ii])+' '+
+                   str(cutoutwidth[ii])+' '+
+                   str(cutoutwidth[ii])+'  \n')
+    fout.close()
+
+    fout = open(aper_outtxt,'w')
+    fout.write('# Aperturesizes of FLUX_RADIUS taken from Laigle catalog with '
+               'MUSEWideUtilities.TDOSE_sourcecat_from_Laigle() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id aperturesize \n')
+
+    Raper_arcsec = r_img_all * arcsecPerPix_Lai
+    Raper_arcsec[Raper_arcsec < minRaper]  = minRaper
+
+    for ii, id in enumerate(ids_all):
+        fout.write(str(ids_all[ii])+' '+str(Raper_arcsec[ii])+'  \n')
+    fout.close()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Finding objects within reference image field-of-view')
+    if verbose: print('   (Estimating pixel positions using wcs info from header)')
+    striphdr   = tu.strip_header(refimghdr,verbose=verbose,delkeys=['COMMENT','HISTORY','','A_ORDER','B_ORDER'])
+    wcs_in     = wcs.WCS(striphdr)
+    arcsecPerPix_refimg = wcs.utils.proj_plane_pixel_scales(wcs_in)*60*60
+
+    skycoord   = SkyCoord(ras_all, decs_all, frame='fk5', unit='deg')
+    pixcoord   = wcs.utils.skycoord_to_pixel(skycoord,wcs_in,origin=1)
+    xpos       = pixcoord[0]
+    ypos       = pixcoord[1]
+    goodent    = np.where((xpos < refimghdr['NAXIS1']) & (xpos > 0) &
+                          (ypos < refimghdr['NAXIS2']) & (ypos > 0) &
+                          (r_img_all > 0.0) )[0]
+
+    if verbose: print('   (Make sure no 0s exist in a 6x6 pixel region around position, i.e., ignoring 0-edges of ref images.)')
+    Ngoodinit  = len(goodent)
+    intxpos    = np.round(xpos).astype(int)
+    intypos    = np.round(ypos).astype(int)
+    for ent in goodent:
+        if (refimgdata[np.max([intypos[ent]-5,0]):np.min([intypos[ent]+5,refimghdr['NAXIS2']-1]),
+            np.max([intxpos[ent]-5,0]):np.min([intxpos[ent]+5,refimghdr['NAXIS1']-1])] == 0).any():
+            goodent[np.where(goodent == ent)[0]] = -99
+    Nedge     = len(np.where(goodent == -99)[0])
+    goodent   = goodent[np.where(goodent != -99)[0]]
+    if verbose: print('   (Ended up removing '+str(Nedge)+'/'+str(Ngoodinit)+
+                      ' objects that fall in the edge region but are within the image FoV)')
+
+    ids             = ids_all[goodent]
+    ras             = ras_all[goodent]
+    decs            = decs_all[goodent]
+    x_image         = xpos[goodent]
+    y_image         = ypos[goodent]
+    flux_f814w      = fluxf_all[goodent]
+    r_img_all       = r_img_all[goodent] * arcsecPerPix_Lai / np.mean(arcsecPerPix_refimg)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    outtxt          = outputnamebase+'.txt'
+    if (overwrite == False) & os.path.isfile(outtxt):
+        sys.exit('Output ('+outtxt+') already exists and clobber=False')
+    else:
+        if verbose: print(' - Will save source catalog to '+outtxt+' (overwriting any existing files)')
+        fout = open(outtxt,'w')
+        fout.write('# TDOSE Source catalog generated with (a_image = b_image = FLUX_RADIUS) '
+                   'MUSEWideUtilities.TDOSE_sourcecat_from_Laigle() on '+kbs.DandTstr2()+'\n')
+        fout.write('# \n')
+        fout.write('# parent_id id ra dec x_image y_image flux_f814w a_image b_image theta \n')
+        for ii, id in enumerate(ids):
+            fout.write(str(ids[ii])+' '+str(ids[ii])+' '+str(ras[ii])+' '+str(decs[ii])+' '+
+                       str(x_image[ii])+' '+str(y_image[ii])+' '+str(flux_f814w[ii])+' '+
+                       str(r_img_all[ii])+'  '+str(r_img_all[ii])+'  '+str(r_img_all[ii]*0.0)+' \n')
+
+        fout.close()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        regionfile = outtxt.replace('.txt','.reg')
+        if verbose: print(' - Storing DS9 region file to '+regionfile)
+        idsstr     = [str(id) for id in ids]
+        tu.create_simpleDS9region(regionfile,ras,decs,color='green',circlesize=r_img_all*np.mean(arcsecPerPix_Lai),
+                                  textlist=idsstr,clobber=overwrite)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        outnamefits = outtxt.replace('.txt','.fits')
+        if verbose: print(' - Saving fits version of source catalog to '+outnamefits)
+        fitsfmt       = ['D']*10
+        sourcecatfits = tu.ascii2fits(outtxt,asciinames=True,skip_header=2,fitsformat=fitsfmt,verbose=verbose)
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
