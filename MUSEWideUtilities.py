@@ -1461,8 +1461,6 @@ def TDOSE_sourcecat_from_Skelton(outputnamebase,refimage,minRaper=0.5,minCutwidt
     theta_all   = skeltondat['theta_j2000']
     a_image_all = skeltondat['a_image']
     b_image_all = skeltondat['b_image']
-    x_raf_all   = skeltondat['x']
-    y_raf_all   = skeltondat['y']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
@@ -1710,6 +1708,154 @@ def TDOSE_sourcecat_from_Laigle(outputnamebase,refimage,minRaper=0.5,minCutwidth
         if verbose: print(' - Storing DS9 region file to '+regionfile)
         idsstr     = [str(id) for id in ids]
         tu.create_simpleDS9region(regionfile,ras,decs,color='green',circlesize=r_img_all*np.mean(arcsecPerPix_Lai),
+                                  textlist=idsstr,clobber=overwrite)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        outnamefits = outtxt.replace('.txt','.fits')
+        if verbose: print(' - Saving fits version of source catalog to '+outnamefits)
+        fitsfmt       = ['D']*10
+        sourcecatfits = tu.ascii2fits(outtxt,asciinames=True,skip_header=2,fitsformat=fitsfmt,verbose=verbose)
+
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def TDOSE_sourcecat_from_Guo(outputnamebase,refimage,minRaper=0.5,minCutwidth=4.5,overwrite=False,verbose=True):
+    """
+    Generate a TDOSE source catatalog (and catalog with intitial guesses for Gaussian modeling) from
+    the Guo+2013 CDFS catalog.
+
+    --- INPUT ---
+    outputnamebase    The name base (prepended the path) of the source catalog to generate
+    refimage          Provide fits image with WCS information to use for the pixel positions in the source cata
+    overwrite         Overwrite output files if they exists?
+    verbose           Toggle verbosity
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+
+    imgpath        = '/Users/kschmidt/work/images_MAST/MUSEWidePointings/'
+    refimage       = imgpath+'acs_814w_candels-cdfs'
+    outputnamebase = refimage.replace('acs_814w','tdose_sourcecat_guo_in_acs_775w').replace('.fits','')
+
+    mwu.TDOSE_sourcecat_from_Guo(outputnamebase,refimage)
+
+    """
+    if verbose: print(' - Generating TDOSE source catalog from Guo+2013 catalog\n'
+                      '   Restricting source to FoV of reference image '+refimage+'\n'
+                      '   Output will be saved to '+outputnamebase+'.txt/fits')
+
+
+    guocat        = '/Users/kschmidt/work/catalogs/guo/hlsp_candels_hst_wfc3_goodss-tot-multiband_f160w_v1_cat.fits'
+    guodat        = afits.open(guocat)[1].data
+    refimgdata    = afits.open(refimage)[0].data
+    refimghdr     = afits.open(refimage)[0].header
+    arcsecPerPix_Guo = 0.06 # pixel scale from page 4 of Guo+13
+
+    ids_all     = guodat['ID']
+    ras_all     = guodat['RA']
+    decs_all    = guodat['DEC']
+    fluxf_all   = guodat['ACS_F814W_FLUX']
+    theta_all   = guodat['theta_image']
+    a_image_all = guodat['a_image']
+    b_image_all = guodat['b_image']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Creating cutoutsizes.txt and aperturesizes.txt for the TDOSE extractions along the way ')
+    if verbose: print('   (storing both files together with source catalog output) ')
+
+    outpath     = '/'.join(outputnamebase.split('/')[:-1])+'/'
+
+    cut_outtxt  = outpath+'../'+'cutoutsizes_Guo_goodss_4xA_IMAGE.txt'
+    aper_outtxt = outpath+'../'+'apertureradii_Guo_goodss_1xA_IMAGE.txt'
+
+    fout = open(cut_outtxt,'w')
+    fout.write('# Cutout sizes of 4*A_IMAGE on each side taken from Guo+13 catalog with '
+               'MUSEWideUtilities.TDOSE_sourcecat_from_Guo() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id xsize ysize \n')
+
+    cutoutwidth = 4.0 * a_image_all * arcsecPerPix_Guo
+    cutoutwidth[cutoutwidth < minCutwidth]  = minCutwidth
+    cutoutwidth[cutoutwidth > 10.0] = 10.0000
+
+    for ii, id in enumerate(ids_all):
+        fout.write(str(ids_all[ii])+' '+
+                   str(cutoutwidth[ii])+' '+
+                   str(cutoutwidth[ii])+'  \n')
+    fout.close()
+
+    fout = open(aper_outtxt,'w')
+    fout.write('# Aperturesizes of A_IMAGE taken from Guo+13 catalog with  '
+               'MUSEWideUtilities.TDOSE_sourcecat_from_Guo() on '+kbs.DandTstr2()+'\n')
+    fout.write('# \n')
+    fout.write('# id aperturesize \n')
+
+    Raper_arcsec = a_image_all * arcsecPerPix_Guo
+    Raper_arcsec[Raper_arcsec < minRaper]  = minRaper
+
+    for ii, id in enumerate(ids_all):
+        fout.write(str(ids_all[ii])+' '+str(Raper_arcsec[ii])+'  \n')
+    fout.close()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Finding objects within reference image field-of-view')
+    if verbose: print('   (Estimating pixel positions using wcs info from header)')
+    striphdr   = tu.strip_header(refimghdr,verbose=verbose,delkeys=['COMMENT','HISTORY','','A_ORDER','B_ORDER'])
+    wcs_in     = wcs.WCS(striphdr)
+    arcsecPerPix_refimg = wcs.utils.proj_plane_pixel_scales(wcs_in)*60*60
+
+    skycoord   = SkyCoord(ras_all, decs_all, frame='fk5', unit='deg')
+    pixcoord   = wcs.utils.skycoord_to_pixel(skycoord,wcs_in,origin=1)
+    xpos       = pixcoord[0]
+    ypos       = pixcoord[1]
+    goodent    = np.where((xpos < refimghdr['NAXIS1']) & (xpos > 0) &
+                          (ypos < refimghdr['NAXIS2']) & (ypos > 0) &
+                          (a_image_all > 0.0) )[0]
+
+    if verbose: print('   (Make sure no 0s exist in a 6x6 pixel region around position, i.e., ignoring 0-edges of ref images.)')
+    Ngoodinit  = len(goodent)
+    intxpos    = np.round(xpos).astype(int)
+    intypos    = np.round(ypos).astype(int)
+    for ent in goodent:
+        if (refimgdata[np.max([intypos[ent]-5,0]):np.min([intypos[ent]+5,refimghdr['NAXIS2']-1]),
+            np.max([intxpos[ent]-5,0]):np.min([intxpos[ent]+5,refimghdr['NAXIS1']-1])] == 0).any():
+            goodent[np.where(goodent == ent)[0]] = -99
+    Nedge     = len(np.where(goodent == -99)[0])
+    goodent   = goodent[np.where(goodent != -99)[0]]
+    if verbose: print('   (Ended up removing '+str(Nedge)+'/'+str(Ngoodinit)+
+                      ' objects that fall in the edge region but are within the image FoV)')
+
+    ids             = ids_all[goodent]
+    ras             = ras_all[goodent]
+    decs            = decs_all[goodent]
+    x_image         = xpos[goodent]
+    y_image         = ypos[goodent]
+    flux_f160w      = fluxf_all[goodent]
+    a_image         = a_image_all[goodent] * arcsecPerPix_Guo / np.mean(arcsecPerPix_refimg)
+    b_image         = b_image_all[goodent] * arcsecPerPix_Guo / np.mean(arcsecPerPix_refimg)
+    theta           = theta_all[goodent]
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    outtxt          = outputnamebase+'.txt'
+    if (overwrite == False) & os.path.isfile(outtxt):
+        sys.exit('Output ('+outtxt+') already exists and clobber=False')
+    else:
+        if verbose: print(' - Will save source catalog to '+outtxt+' (overwriting any existing files)')
+        fout = open(outtxt,'w')
+        fout.write('# TDOSE Source catalog generated with '
+                   'MUSEWideUtilities.TDOSE_sourcecat_from_Skelton() on '+kbs.DandTstr2()+'\n')
+        fout.write('# \n')
+        fout.write('# parent_id id ra dec x_image y_image flux_f160w a_image b_image theta \n')
+        for ii, id in enumerate(ids):
+            fout.write(str(ids[ii])+' '+str(ids[ii])+' '+str(ras[ii])+' '+str(decs[ii])+' '+
+                       str(x_image[ii])+' '+str(y_image[ii])+' '+str(flux_f160w[ii])+' '+
+                       str(a_image[ii])+' '+str(b_image[ii])+' '+str(theta[ii])+'  \n')
+
+        fout.close()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        regionfile = outtxt.replace('.txt','.reg')
+        if verbose: print(' - Storing DS9 region file to '+regionfile)
+        idsstr     = [str(id) for id in ids]
+        tu.create_simpleDS9region(regionfile,ras,decs,color='green',circlesize=a_image*arcsecPerPix_Guo,
                                   textlist=idsstr,clobber=overwrite)
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         outnamefits = outtxt.replace('.txt','.fits')
