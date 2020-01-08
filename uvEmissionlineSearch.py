@@ -8991,6 +8991,8 @@ def count_SpecOnArche(countfields):
     setupfiledir['uvesudf']     = list(np.sort(glob.glob('MWuves100full/MWuves-UDF-*/'+setupglobstr)))
     setupfiledir['uvesudf10']   = list(np.sort(glob.glob('MWuves100full/MWuves-UDF10*/'+setupglobstr)))
 
+    setupfiledir['laigle']      = list(np.sort(glob.glob('Laigle-*/'+setupglobstr)))
+
     if countfields == 'all':
         setupfiles = setupfiledir['rafelski']+setupfiledir['skelton']+setupfiledir['uves']
     else:
