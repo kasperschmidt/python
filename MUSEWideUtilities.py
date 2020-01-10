@@ -1829,7 +1829,7 @@ def TDOSE_sourcecat_from_Guo(outputnamebase,refimage,minRaper=0.5,minCutwidth=4.
     decs            = decs_all[goodent]
     x_image         = xpos[goodent]
     y_image         = ypos[goodent]
-    flux_f160w      = fluxf_all[goodent]
+    flux_f814w      = fluxf_all[goodent]
     a_image         = a_image_all[goodent] * arcsecPerPix_Guo / np.mean(arcsecPerPix_refimg)
     b_image         = b_image_all[goodent] * arcsecPerPix_Guo / np.mean(arcsecPerPix_refimg)
     theta           = theta_all[goodent]
@@ -1841,12 +1841,12 @@ def TDOSE_sourcecat_from_Guo(outputnamebase,refimage,minRaper=0.5,minCutwidth=4.
         if verbose: print(' - Will save source catalog to '+outtxt+' (overwriting any existing files)')
         fout = open(outtxt,'w')
         fout.write('# TDOSE Source catalog generated with '
-                   'MUSEWideUtilities.TDOSE_sourcecat_from_Skelton() on '+kbs.DandTstr2()+'\n')
+                   'MUSEWideUtilities.TDOSE_sourcecat_from_Guo() on '+kbs.DandTstr2()+'\n')
         fout.write('# \n')
-        fout.write('# parent_id id ra dec x_image y_image flux_f160w a_image b_image theta \n')
+        fout.write('# parent_id id ra dec x_image y_image flux_f814w a_image b_image theta \n')
         for ii, id in enumerate(ids):
             fout.write(str(ids[ii])+' '+str(ids[ii])+' '+str(ras[ii])+' '+str(decs[ii])+' '+
-                       str(x_image[ii])+' '+str(y_image[ii])+' '+str(flux_f160w[ii])+' '+
+                       str(x_image[ii])+' '+str(y_image[ii])+' '+str(flux_f814w[ii])+' '+
                        str(a_image[ii])+' '+str(b_image[ii])+' '+str(theta[ii])+'  \n')
 
         fout.close()
