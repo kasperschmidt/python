@@ -9254,49 +9254,67 @@ def return_objent(id,dataarray,idcol='id',verbose=True):
         objents = -99
 
     return objents
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def summarize_tdosevetting(sample='udf10',verbose=True):
+def summarize_tdosevetting(returnsample='udf10',verbose=True):
     """
     Summarizing the content of the vetting of the TDOSE spectra
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    ids_badspec, ids_goodspec = uves.summarize_tdosevetting()
+    idbad, idgood = uves.summarize_tdosevetting(returnsample='udf10')
     """
+
     vetdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/vet_tdose_extractions_outputs/'
+    vetcat = vetdir+'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
 
-    vc_udf10 = vetdir+'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_191127all.txt'
+    vetdat = np.genfromtxt(vetcat,names=True,comments='#',dtype=None,skip_header=27)
 
-    if sample == 'udf10':
-        vetcats = [vc_udf10]
-    else:
-        sys.exit('Sample='+sample+' not enabled in uves.summarize_tdosevetting()')
+    selcuts = collections.OrderedDict()
+    selcuts['all fields'] = [0.0,   1e12]
+    selcuts['cdfs']       = [0.9e8, 1.9e8 ]
+    selcuts['parallels']  = [2.9e8, 4.9e8  ]
+    selcuts['cosmos']     = [1.9e8, 2.9e8  ]
+    selcuts['udfmosaic']  = [5.9e8, 6.9e8  ]
+    selcuts['udf10']      = [6.9e8, 7.9e8  ]
 
-    Ncats   = len(vetcats)
+    # - - - -  count - - - -
+    print(' ---- vetting results in '+vetcat.split('/')[-1]+' ----')
+    for key in selcuts.keys():
+        idmin, idmax = selcuts[key]
+        Nobj  = len(np.where(( vetdat['id'].astype(float) > idmin) & ( vetdat['id'].astype(float) < idmax ) )[0] )
+        zeros = np.where((vetdat['vetresult'] == 0) &
+                         ( vetdat['id'].astype(float) > idmin) & ( vetdat['id'].astype(float) < idmax ) )[0]
+        ones = np.where((vetdat['vetresult'] == 1) &
+                        ( vetdat['id'].astype(float) > idmin) & ( vetdat['id'].astype(float) < idmax ) )[0]
+        twos  = np.where((vetdat['vetresult'] == 2) &
+                         ( vetdat['id'].astype(float) > idmin) & ( vetdat['id'].astype(float) < idmax ) )[0]
+        threes = np.where((vetdat['vetresult'] == 3) &
+                          ( vetdat['id'].astype(float) > idmin) & ( vetdat['id'].astype(float) < idmax ) )[0]
+        fours = np.where((vetdat['vetresult'] == 4) &
+                         ( vetdat['id'].astype(float) > idmin) & ( vetdat['id'].astype(float) < idmax ) )[0]
 
-    ids_goodspec = []
-    ids_badspec  = []
+        ids_goodspec = vetdat['id'][np.append(ones,twos)]
+        ids_badspec = vetdat['id'][np.append(threes,fours)]
 
-    for vc in vetcats:
-        vetdat = np.genfromtxt(vc,names=True,comments='#',dtype=None,skip_header=26)
+        if Nobj>0:
+            fracgood = float(len(ids_goodspec))/float(Nobj)
+        else:
+            fracgood = 0
 
-        ones = np.where(vetdat['vetresult'] == 1)[0]
-        twos  = np.where(vetdat['vetresult'] == 2)[0]
-        threes = np.where(vetdat['vetresult'] == 3)[0]
-        fours = np.where(vetdat['vetresult'] == 4)[0]
+        if verbose:
+            print(' - The fraction of good spectra (vetresult = 1 or 2) among the '+
+                  str("%5s" % Nobj)+' spectra from '+str("%10s" % key)+' is:        '+str(fracgood))
+            print('   This corresponds to '+str(len(ids_badspec))+'/'+str(len(ids_badspec)+len(ids_goodspec))+' bad spectra')
+            print('   The number of spectra marked for revisiting was: '+str(len(zeros)))
 
-        ids_goodspec = ids_goodspec + list(vetdat['id'][ones])
-        ids_goodspec = ids_goodspec + list(vetdat['id'][twos])
+        if key == returnsample:
+            ids_badspec_return, ids_goodspec_return = ids_badspec, ids_goodspec
+            print('   >>>>>>>>>>>> Note: The '+key+' IDs were returned <<<<<<<<<<<<\n')
+        else:
+            print('   ')
 
-        ids_badspec  = ids_badspec  + list(vetdat['id'][threes])
-        ids_badspec  = ids_badspec  + list(vetdat['id'][fours])
-
-    fracbad = float(len(ids_badspec))/float(len(vetdat['id']))
-    if verbose: print(' The fraction of bad spectra is '+str("%.4f" % fracbad)+
-                      ' (vetresult = 3 or 4) for the vetting results in the '+
-                      str(Ncats)+' TDOSE vetting output \n '+str(vetcats))
-
-    return ids_badspec, ids_goodspec
+    return ids_badspec_return, ids_goodspec_return
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def summarize_felisvetting(vetoutput,verbose=True):
     """
