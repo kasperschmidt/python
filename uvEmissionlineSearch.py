@@ -8993,6 +8993,12 @@ def count_SpecOnArche(countfields):
 
     setupfiledir['laigle']      = list(np.sort(glob.glob('Laigle-*/'+setupglobstr)))
 
+    setupfiledir['guo']            = list(np.sort(glob.glob('Guo-*/'+setupglobstr)))
+    setupfiledir['guocdfsfull']    = list(np.sort(glob.glob('Guo-CDFS-full-v1p0/'+setupglobstr)))
+    setupfiledir['guoudffull']     = list(np.sort(glob.glob('Guo-UDF-full-v1p0/'+setupglobstr)))
+    setupfiledir['guoudf10full']   = list(np.sort(glob.glob('Guo-UDF10-full-v1p0/'+setupglobstr)))
+    setupfiledir['guoudfmock']     = list(np.sort(glob.glob('Guo-UDF-MWmock-v1p0/'+setupglobstr)))
+
     if countfields == 'all':
         setupfiles = setupfiledir['rafelski']+setupfiledir['skelton']+setupfiledir['uves']
     else:
