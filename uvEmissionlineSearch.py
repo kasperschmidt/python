@@ -9274,7 +9274,7 @@ def summarize_tdosevetting(returnsample='udf10',verbose=True):
     vetdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/vet_tdose_extractions_outputs/'
     vetcat = vetdir+'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
 
-    vetdat = np.genfromtxt(vetcat,names=True,comments='#',dtype=None,skip_header=27)
+    vetdat = np.genfromtxt(vetcat,names=True,comments='#',dtype=None,skip_header=28)
 
     selcuts = collections.OrderedDict()
     selcuts['all fields'] = [0.0,   1e12]
@@ -9593,4 +9593,130 @@ def pointing_selector():
     pointing_selector_dic['_____id_____'] = 'udf-01'                # bad pointings
 
     return pointing_selector_dic
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def prepare_reextractionPostVetting(verbose=True):
+    """
+    Function prepare setupfiles (by editing exiting files) and collecting objects to perfor re-extractions for
+    based on the TDOSE vetting summary generated with tdose_utilities.vet_tdose_extractions() collected in
+    parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uves.prepare_reextractionPostVetting()
+
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Loading vetting results and grabbing list of original TDOSE setup file to modify.')
+    parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    outdir        = parentdir+'tdose_reextractionPostVetting/'
+    orig_setups   = glob.glob(parentdir+'tdose_setupfiles/*tdose_setupfile_MWuves*_gauss.txt')
+    vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
+    Nvets         = len(vetdat['id'])
+    ent_reext     = np.where(vetdat['vetresult'] > 2)[0]
+    Nreext        = len(ent_reext)
+    id_reext      = vetdat['id'][ent_reext]
+    point_reext   = [spec.split('tdose_spectrum_')[-1].split('-full')[0] for spec in vetdat['spectrum'][ent_reext]]
+    point_reext_u = np.unique(point_reext)
+    if verbose: print(' - Found '+str(Nvets)+' objects that had been vetted; '+str(Nreext)+
+                      ' of those should be re-extracted (vet results > 2)')
+    if verbose: print('   These are spread out over '+str(len(point_reext_u))+' individual MUSE pointings.')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Initializing setup files for re-extractions based on original TDOSE setup files.')
+    reext_setups  = []
+    for orig_setup in orig_setups:
+        point_setup = orig_setup.split('v1p0-')[-1].split('_gauss')[0].replace('candels-','')
+        if point_setup in point_reext_u:
+            reext_setup = outdir+'tdose_setupfiles/'+orig_setup.split('/')[-1].replace('.txt','_reext.txt')
+            shutil.copyfile(orig_setup, reext_setup)
+            reext_setups.append(reext_setup)
+        else:
+            continue
+    if len(point_reext_u) != len(reext_setups):
+        print(' ERROR: The number of unique pointings from the vetting results does not '
+              'match the number of re-extraction setups initialized')
+        pdb.set_trace()
+    if verbose: print('   '+str(len(reext_setups))+' re-extraction setups ready for modifications.')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Looping over setupfiles and editing content')
+    idlistcheck  = []
+    for rr, reext_setup in enumerate(reext_setups):
+        pointing = reext_setup.split('v1p0-')[-1].split('_gauss')[0].replace('candels-','')
+        fin      = open(reext_setup,'r')
+        tmpfile  = reext_setup.replace('.txt','_tmp.txt')
+        ftmp     = open(tmpfile,'w')
+
+        for line in fin.readlines():
+            if line.startswith('models_directory'):
+                line   = line.replace('tdose_models/','tdose_models_reext/')
+            if line.startswith('cutout_directory'):
+                line   = line.replace('tdose_cutouts/','tdose_cutouts_reext/')
+            if line.startswith('spec1D_directory'):
+                line   = line.replace('tdose_spectra/','tdose_spectra_reext/')
+
+            if line.startswith('sources_to_extract'):
+                sourceextfile = line.split()[1]
+                macloc     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/' \
+                             'tdose_extraction_MWuves_100fields_maxdepth190808/tdose_sourcecatalogs/'
+                origsource = np.genfromtxt(macloc+sourceextfile.split('/')[-1],names=True,dtype=None)
+                idlist = uves.get_idlist_for_reext_pointing(id_reext,pointing,idmaster=origsource['id'])
+                line   = line.replace(sourceextfile,str(idlist))
+                idlistcheck = idlistcheck + list(idlist)
+
+            if line.startswith('spec1D_name'):
+                line   = line.replace('MWuves','MWuves_reext')
+
+            ftmp.write(line)
+        ftmp.close()
+        fin.close()
+        shutil.move(tmpfile,reext_setup)   # replacing original file with temporary file with edits
+
+    if verbose: print(' - Chekcing that all IDs to re-extract were found in edited setups')
+    idsinsetups = np.unique(np.asarray(idlistcheck))
+    for id in id_reext:
+        if id not in idsinsetups:
+            print('   setups do not appear to contain the id ',id)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_idlist_for_reext_pointing(idsinput,pointing,idmaster=None):
+    """
+    Function returning the IDs in a given pointing provided a full list of IDs.
+
+    """
+    idsout = []
+    if 'cdfs-' in pointing:
+        pointno = pointing.split('cdfs-')[-1][:2]
+        for idcheck in idsinput:
+            if str(int(idcheck)).startswith('1'+pointno):
+                idsout.append(idcheck)
+    elif 'cosmos-' in pointing:
+        pointno = pointing.split('cosmos-')[-1][:2]
+        for idcheck in idsinput:
+            if str(int(idcheck)).startswith('2'+pointno):
+                idsout.append(idcheck)
+    elif 'hudf09-1-' in pointing:
+        pointno = pointing.split('hudf09-1-')[-1][:2]
+        for idcheck in idsinput:
+            if str(int(idcheck)).startswith('3'+pointno):
+                idsout.append(idcheck)
+    elif 'hudf09-2-' in pointing:
+        pointno = pointing.split('hudf09-2-')[-1][:2]
+        for idcheck in idsinput:
+            if str(int(idcheck)).startswith('4'+pointno):
+                idsout.append(idcheck)
+    elif 'udf-0' in pointing:
+        for idcheck in idsinput:
+            if str(int(idcheck)).startswith('6') & (int(idcheck) in idmaster.astype(int)):
+                idsout.append(idcheck)
+    elif 'udf-1' in pointing:
+        for idcheck in idsinput:
+            if str(int(idcheck)).startswith('7'):
+                idsout.append(idcheck)
+    else:
+        sys.exit(' Did not find a matching string in pointing '+pointing)
+
+    return idsout
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
