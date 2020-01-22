@@ -34,6 +34,7 @@ import rxj2248_BooneBalestraSource as bbs
 import felis_build_template as fbt
 import felis
 import literaturecollection_emissionlinestrengths as lce
+import stacking
 import pickle
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
@@ -9793,4 +9794,85 @@ def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/
         else:
             tarname = outputdir.split('/')[-1]
         print('   bash> tar -zcvf ./'+tarname+'.tar.gz '+outputdir+'tdose_spectrum_'+namestring+'*.fits')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
+    """
+    Function collecting spectra of individual objects with multiple good spectra and stacking them.
+    Basing selection on TDOSE vetting comments containing n6-xx-yy notes.
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uves.stack_IndividualObjectsWithMultiSpec(plotstackoverview=False)
+
+    """
+    parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    outdir        = parentdir+'individual_objects_1Dspec_stacks/'
+    specdir       = parentdir+'spectra_all/'
+    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
+    Nvets         = len(vetdat['id'])
+
+    if verbose: print(' - Looking through vetting results ('+vetresults.split('/')[-1]+') to find objects to stack')
+    vetinfo       = open(vetresults,'r')
+    stackids      = collections.OrderedDict()
+    ll            = 0
+    for line in vetinfo.readlines():
+        if line.startswith('#'):
+            continue
+        else:
+            if 'n6-' in line:
+                objid       = vetdat['id'][ll]
+                stackfields = line.split('n6-')[-1].split()[0].split('-')
+                objspec     = specdir+'*/tdose_spectra_cubestripped/'+vetdat['spectrum'][ll].split('/')[-1]
+                objspecid   = objspec.split('-full')[0][-2:]
+                if verbose: print('   Stack '+str(objid)+' spectra in fields: '+str(stackfields))
+                stackids[objid] = [glob.glob(objspec.replace(objspecid+'-full',sf+'-full'))[0] for sf in stackfields],stackfields
+            ll = ll+1
+
+    if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
+    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits'
+    infodat   = afits.open(infofile)[1].data
+
+    for oo, objid in enumerate(stackids.keys()):
+        spectra, fields = stackids[objid]
+        outfile         = outdir+'tdose_spectrum_stack_'+str(objid)+'_inclFields_'+'-'.join(fields)+'.fits'
+        wavelengths     = []
+        fluxes          = []
+        variances       = []
+
+        for spectrum in spectra:
+            data        = afits.open(spectrum)[1].data
+            wavelengths.append(data['wave'])
+            fluxes.append(data['flux'])
+            variances.append(data['fluxerror']**2.0)
+
+        if verbose: print('   Generating '+outfile.split('/')[-1]+'   (stack '+str(oo+1)+'/'+str(len(stackids.keys()))+')')
+        wave_out, flux_out, variance_out, Nspecstack = \
+            stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=np.zeros(len(spectra)),
+                              stacktype='mean', wavemin=4750, wavemax=9350,
+                              deltawave=1.25, outfile=outfile, verbose=False)
+
+        if plotstackoverview:
+            plotspecs    = spectra+[outfile]
+            labels       = ['Spec from field '+str(ff) for ff in fields]+['Stack of individual spec']
+            wavecols     = ['wave']*len(plotspecs)
+            fluxcols     = ['flux']*len(plotspecs)
+            fluxerrcols  = ['fluxerror']*len(plotspecs)
+
+            infoent      = np.where(infodat['id'] == objid)[0]
+            zLya         = infodat['redshift'][infoent]
+            voffset      = 250.0
+            skyspectra   = [None]*len(spectra)+['/Users/kschmidt/work/MUSE/spectra_sky/SKY_SPECTRUM_candels-cdfs-06_av.fits']
+            wavecols_sky = [None]*len(spectra)+['lambda']
+            fluxcols_sky = [None]*len(spectra)+['data']
+            yrangefull   = [-300,1000]
+            xrangefull   = [4700,9400]
+
+            for plotSN in [True,False]:
+                mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, zLya[0], voffset=voffset,
+                                        skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                        outputfigure=outfile.replace('.fits','_overview.pdf'),
+                                        yrangefull=yrangefull, xrangefull=xrangefull,
+                                        plotSN=plotSN,verbose=False)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
