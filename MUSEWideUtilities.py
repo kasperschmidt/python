@@ -1891,7 +1891,7 @@ def TDOSE_sourcecat_from_Whitaker(outputnamebase,refimage,minRaper=0.5,minCutwid
                       '   Restricting source to FoV of reference image '+refimage+'\n'
                       '   Output will be saved to '+outputnamebase+'.txt/fits')
 
-    whitcat          = '/Users/kschmidt/work/catalogs/whitaker/XXX.fits'
+    whitcat          = '/Users/kschmidt/work/catalogs/whitaker/hlsp_hlf_hst_60mas_goodss_v2.0_catalog.fits'
     whitdat          = afits.open(whitcat)[1].data
     refimgdata       = afits.open(refimage)[0].data
     refimghdr        = afits.open(refimage)[0].header
