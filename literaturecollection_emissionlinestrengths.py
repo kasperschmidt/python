@@ -262,6 +262,11 @@ def referencedictionary():
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Hutchison+19 CIII at redshift 7.5 (Finkelstein's pet object)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Herenz+20 Lya blob with Lya, HeII and CIV(limit) detections at three locations
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Guo+20 MUSE AGN with CIV, CIII and HeII but only Ly fluxes provided - they show L(CIV) so maybe ask... or check when published
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
 
     return refdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
