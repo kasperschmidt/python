@@ -1301,8 +1301,8 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
         waveent = (datadic[specname]['spec_wave'] > xrange[0]) & (datadic[specname]['spec_wave'] < xrange[1])
 
         if plotSN:
-            plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
+            plt.step(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N'], '-',
+                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100,where='mid')
 
             try:
                 fluxmin = np.min(np.asarray([0,  np.min(np.isfinite(datadic[specname]['spec_S2N'][waveent])) ]))
@@ -1312,11 +1312,11 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
                 yrange = [0,10]
 
         else:
-            plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_flux'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100)
+            plt.step(datadic[specname]['spec_wave'], datadic[specname]['spec_flux'], '-',
+                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100,where='mid')
 
             plt.fill_between(datadic[specname]['spec_wave'],datadic[specname]['spec_filllow'],datadic[specname]['spec_fillhigh'],
-                             alpha=0.20,color=colors[ss],zorder=100)
+                             alpha=0.20,color=colors[ss],zorder=100,step='mid')
 
             try:
                 fluxmin = np.min(np.asarray([0,  np.min(datadic[specname]['spec_flux'][waveent]) ]))
