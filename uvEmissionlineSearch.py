@@ -9806,7 +9806,7 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
 
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
-    outdir        = parentdir+'individual_objects_1Dspec_stacks/'
+    outdir        = parentdir+'stacks1D_individual_objects/'
     specdir       = parentdir+'spectra_all/'
     vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
     vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
@@ -9830,8 +9830,8 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
             ll = ll+1
 
     if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
-    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits'
-    infodat   = afits.open(infofile)[1].data
+    infofile      = 'Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
 
     for oo, objid in enumerate(stackids.keys()):
         spectra, fields = stackids[objid]
@@ -9874,5 +9874,166 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
                                         outputfigure=outfile.replace('.fits','_overview.pdf'),
                                         yrangefull=yrangefull, xrangefull=xrangefull,
                                         plotSN=plotSN,verbose=False)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_composites(plotstackoverview=True,verbose=True):
+    """
+    Function collecting spectra and stacking them based on various collection cuts defined in "stackdefs"
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uves.stack_composites(plotstackoverview=False)
+
+    """
+    parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    stackdefs     = parentdir+'stacks1D_sample_selection.txt'
+    outdir        = parentdir+'stacks1D_sample_selection/'
+    specdir       = parentdir+'spectra_renamed2001XX/'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
+    infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
+
+    stackinfo     = np.genfromtxt(stackdefs,names=True,skip_header=2,comments='#',dtype=None)
+    Nstacks       = len(stackinfo['id'])
+
+    if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
+    for ii, stackid in enumerate(stackinfo['id']):
+        outfile         = outdir+'composite_spectrum_'+str("%.10d" % stackid)+'_'+stackinfo['label'][ii]+'.fits'
+        wavelengths     = []
+        fluxes          = []
+        variances       = []
+        redshifts       = []
+
+        ent_sample      = uves.stack_composites_objselection(stackinfo[ii],infodat)
+        spectra         = []
+        for ent_s in ent_sample:
+            spectra.append(glob.glob(specdir+'*'+str(infodat['id'][ent_s])+'.fits')[0])
+        spectra         = np.asarray(spectra)
+        Nspec           = len(spectra)
+        if len(ent_sample) != Nspec:
+            sys.exit(' The number of indexes for object in the sample and the number of spectra found do not match')
+
+        if stackinfo[ii]['ztype'].lower() == 'zlya':
+            objredshift  = infodat['redshift'][ent_sample]
+        elif stackinfo[ii]['ztype'].lower() == 'zsys':
+            objredshift  = infodat['z_sys_V18'][ent_sample]
+        else:
+            sys.exit(' Invalid entry for ztype (='+stackinfo[ii]['ztype']+') in '+stackdefs)
+
+        # only passing on objects with determined redshifts to stacking (other-wise they cant be moved to rest-frame)
+        spectra     = spectra[objredshift > 0]
+        objredshift = objredshift[objredshift > 0]
+        Nspec       = len(spectra)
+
+        for spectrum in spectra:
+            data        = afits.open(spectrum)[1].data
+            wavelengths.append(data['wave'])
+            fluxes.append(data['flux'])
+            variances.append(data['fluxerror']**2.0)
+            redshifts.append(objredshift)
+
+        if verbose: print('   Generating '+outfile.split('/')[-1]+'   (stack '+str(ii+1)+'/'+str(Nstacks)+')')
+        wave_out, flux_out, variance_out, Nspecstack = \
+            stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=redshifts,
+                              stacktype='mean', wavemin=4750, wavemax=9350,
+                              deltawave=1.25, outfile=outfile, verbose=False)
+
+        if plotstackoverview:
+            plotspecs    = [outfile]
+            labels       = [stackinfo['label'][ii]+' (stack of '+str(Nspec)+' spectra)']
+            wavecols     = ['wave']*len(plotspecs)
+            fluxcols     = ['flux']*len(plotspecs)
+            fluxerrcols  = ['fluxerror']*len(plotspecs)
+
+            plotz        = 0.0
+            voffset      = None
+            skyspectra   = [None]*len(spectra)+['/Users/kschmidt/work/MUSE/spectra_sky/SKY_SPECTRUM_candels-cdfs-06_av.fits']
+            wavecols_sky = [None]*len(spectra)+['lambda']
+            fluxcols_sky = [None]*len(spectra)+['data']
+            yrangefull   = [-300,1000]
+            xrangefull   = [4700,9400]
+
+            for plotSN in [True,False]:
+                mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
+                                        skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                        outputfigure=outfile.replace('.fits','_overview.pdf'),
+                                        yrangefull=yrangefull, xrangefull=xrangefull,
+                                        plotSN=plotSN,verbose=False)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_composites_objselection(selectinfo,selectdata,verbose=True):
+    """
+    Function returning the entries of a given composite stack selection based on data infofiles
+
+    --- Example of use ---
+    see uves.stack_composites above
+
+    """
+    if selectinfo['ztype'].lower() == 'zlya':
+        zcol = 'redshift'
+    elif selectinfo['ztype'].lower() == 'zsys':
+        zcol = 'z_sys_V18'
+
+    coltranslationdic = {}
+    coltranslationdic['Llyamin']    = 'F_3KRON'
+    coltranslationdic['Llyamax']    = 'F_3KRON'
+    coltranslationdic['FWHMlyamin'] = 'fwhm_a_jk'
+    coltranslationdic['FWHMlyamax'] = 'fwhm_a_jk'
+    coltranslationdic['m814wmin']   = 'mag_acs_814w'
+    coltranslationdic['m814wmax']   = 'mag_acs_814w'
+    coltranslationdic['EW0lyamin']  = 'EW_0_beta_own_median'
+    coltranslationdic['EW0lyamax']  = 'EW_0_beta_own_median'
+    coltranslationdic['betamin']    = 'beta_own_median'
+    coltranslationdic['betamax']    = 'beta_own_median'
+
+    objent = np.where((selectdata[zcol] > selectinfo['zmin']) & (selectdata[zcol] < selectinfo['zmax']) &
+                      (selectdata[coltranslationdic['Llyamin'   ]] > selectinfo['Llyamin'    ]) &
+                      (selectdata[coltranslationdic['Llyamax'   ]] < selectinfo['Llyamax'    ]) &
+                      (selectdata[coltranslationdic['FWHMlyamin']] > selectinfo['FWHMlyamin' ]) &
+                      (selectdata[coltranslationdic['FWHMlyamax']] < selectinfo['FWHMlyamax' ]) &
+                      (selectdata[coltranslationdic['m814wmin'  ]] > selectinfo['m814wmin'   ]) &
+                      (selectdata[coltranslationdic['m814wmax'  ]] < selectinfo['m814wmax'   ]) &
+                      (selectdata[coltranslationdic['EW0lyamin' ]] > selectinfo['EW0lyamin'  ]) &
+                      (selectdata[coltranslationdic['EW0lyamax' ]] < selectinfo['EW0lyamax'  ]) &
+                      (selectdata[coltranslationdic['betamin'   ]] > selectinfo['betamin'    ]) &
+                      (selectdata[coltranslationdic['betamax'   ]] < selectinfo['betamax'    ])   )[0]
+
+    pdb.set_trace()
+
+    return objent
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_vector_intervals(vector,Nsamples,verbose=True):
+    """
+    Function to split vector in intervals for generating sub-samples.
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves, astropy.io.fits as afits
+
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
+    infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]]
+
+    dividers      = uves.get_vector_intervals(infodat['redshift'],4)
+
+    """
+    if verbose: print(' - Input vector has length '+str(len(vector))+' but will only consider finite values in binning, hence...')
+    vector      = np.asarray(vector)[np.isfinite(vector)]
+    vector_s    = np.sort(vector)
+
+    Nobj_perbin = int(np.floor(len(vector)/Nsamples))
+    if verbose: print(' - Divding vector of length '+str(len(vector))+' with min and max values ['+str(np.min(vector))+','+str(np.max(vector))+'] into subsamples:')
+
+    if verbose: print(' - The provided vector can be split into the following '+str(Nsamples)+' samples:')
+    for bb in np.arange(Nsamples):
+        if bb < Nsamples-1:
+            binlen = len(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
+            binmin = np.min(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
+            binmax = np.max(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
+        else:
+            binlen = len(vector_s[Nobj_perbin*bb:])
+            binmin = np.min(vector_s[Nobj_perbin*bb:])
+            binmax = np.max(vector_s[Nobj_perbin*bb:])
+
+        if verbose: print('   subsample '+str(bb+1)+'   ['+str("%8.4f" % binmin)+' , '+str("%8.4f" % binmax)+
+                          ']  of length '+str(binlen))
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
