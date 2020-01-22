@@ -9272,7 +9272,7 @@ def summarize_tdosevetting(returnsample='udf10',verbose=True):
     """
 
     vetdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/vet_tdose_extractions_outputs/'
-    vetcat = vetdir+'MWuves-UDF10-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    vetcat = vetdir+'MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
 
     vetdat = np.genfromtxt(vetcat,names=True,comments='#',dtype=None,skip_header=28)
 
@@ -9611,6 +9611,7 @@ def prepare_reextractionPostVetting(verbose=True):
     if verbose: print(' - Loading vetting results and grabbing list of original TDOSE setup file to modify.')
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    if verbose: print('   Vetting results from: '+vetresults)
     outdir        = parentdir+'tdose_reextractionPostVetting/'
     orig_setups   = glob.glob(parentdir+'tdose_setupfiles/*tdose_setupfile_MWuves*_gauss.txt')
     vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
@@ -9653,8 +9654,6 @@ def prepare_reextractionPostVetting(verbose=True):
         for line in fin.readlines():
             if line.startswith('models_directory'):
                 line   = line.replace('tdose_models/','tdose_models_reext/')
-            if line.startswith('cutout_directory'):
-                line   = line.replace('tdose_cutouts/','tdose_cutouts_reext/')
             if line.startswith('spec1D_directory'):
                 line   = line.replace('tdose_spectra/','tdose_spectra_reext/')
 
@@ -9664,7 +9663,7 @@ def prepare_reextractionPostVetting(verbose=True):
                              'tdose_extraction_MWuves_100fields_maxdepth190808/tdose_sourcecatalogs/'
                 origsource = np.genfromtxt(macloc+sourceextfile.split('/')[-1],names=True,dtype=None)
                 idlist = uves.get_idlist_for_reext_pointing(id_reext,pointing,idmaster=origsource['id'])
-                line   = line.replace(sourceextfile,str(idlist))
+                line   = line.replace(sourceextfile,str(idlist).replace(' ',''))
                 idlistcheck = idlistcheck + list(idlist)
 
             if line.startswith('spec1D_name'):
@@ -9679,7 +9678,7 @@ def prepare_reextractionPostVetting(verbose=True):
     idsinsetups = np.unique(np.asarray(idlistcheck))
     for id in id_reext:
         if id not in idsinsetups:
-            print('   setups do not appear to contain the id ',id)
+            print('   setups do not appear to contain the id '+str(id))
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_idlist_for_reext_pointing(idsinput,pointing,idmaster=None):
     """
@@ -9719,4 +9718,79 @@ def get_idlist_for_reext_pointing(idsinput,pointing,idmaster=None):
         sys.exit(' Did not find a matching string in pointing '+pointing)
 
     return idsout
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def print_specs():
+    """
+    Small function to print ID and spec list from TDOSE vetting results
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.print_specs()
+
+    """
+    parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    print(' - Printing IDs and Spec from vetting results: \n'+vetresults)
+    vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
+    for ii, id in enumerate(vetdat['id']):
+        print(str("%s" % id)+'    '+vetdat['spectrum'][ii])
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/MWuves-full-v1p0_speclist12XXXX.txt',
+                             outputdir='/store/data/musewide/TDOSE/MWuves100full/MWuvesSpecs20XXXX/',
+                             namestring='20XXXXselection',verbose=True):
+    """
+    As the name says, this function collects and renames the spectra to search for UV emission lines.
+    In other words it assembles the final sample including selecting pointings, including stacks,
+    assembling re-extractions, etc.
+
+    NB: This has to be run with copy-past on arche
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uves.collectAndRenamArcheSpec(namestring='200121selection',outputdir='/store/data/musewide/TDOSE/MWuves100full/test200121/')
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    import sys, numpy as np, shutil, os
+    if os.path.isdir(outputdir) != True:
+        sys.exit(' Did not find output directory '+outputdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    specdat  = np.genfromtxt(speclist,dtype=None,names=True,comments='#',skip_header=4)
+    Nobjects = len(np.unique(specdat['id']))
+    if Nobjects != 2197:
+        answer   = 'no answer'
+        print('WARNING There should be spectra associated with a total of 2197 objects (IDs). Only found '+str(Nobjects))
+        question = '        Are you sure you want to proceed (y/n)? '
+        pversion = sys.version_info[0]
+
+        while str(answer).lower() not in ['y','n']:
+            if pversion == 2:
+                answer = raw_input(question) # raw_input for python 2.X
+            elif pversion == 3:
+                answer =     input(question) # input for python 3.X
+            else:
+                sys.exit(' Unknown version of python: version = '+str(pversion))
+        if answer.lower() == 'n':
+            sys.exit(' okay - then exited as requested')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for ss, spec in enumerate(specdat['spectrum']):
+        newspec = outputdir+'tdose_spectrum_'+namestring+'_'+str("%.10d" % int(specdat['id'][ss]))+'.fits'
+        try:
+            shutil.copyfile(spec,newspec)
+        except:
+            print('\nWARNING Attempt to copy '+spec+' to '+newspec+' failed.')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose:
+        print(' - To tar up the directory and its content excecute: ')
+        print('   bash> cd '+outputdir+'..')
+        if outputdir.endswith('/'):
+            tarname = outputdir.split('/')[-2]
+        else:
+            tarname = outputdir.split('/')[-1]
+        print('   bash> tar -zcvf ./'+tarname+'.tar.gz '+outputdir+'tdose_spectrum_'+namestring+'*.fits')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
