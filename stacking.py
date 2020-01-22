@@ -10,6 +10,7 @@ import numpy as np
 import sys
 import MiGs
 import pdb
+import scipy
 from scipy.interpolate import interp1d
 import astropy.io.fits as afits
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ import collections
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wavemax=9500, deltawave=10.0,
-             z_systemic=0.0, outfile=None, verbose=True):
+             z_systemic=0.0, Nsigmaclip=None, outfile=None, verbose=True):
     """
     Stacking of 1D data arrays.
 
@@ -26,11 +27,14 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
     fluxes          List of fluxes of spectra to stack
     variances       List of variance spectra for the fluxes to stack
     stacktype       Type of stacing to perform. Choices are:
-                        'mean'     Simple mean stack of spectra
+                        'mean'      Simple mean stack of spectra. Uncertainty returned as var_pix = Sum(var_i)/N
+                                    where N are the number of pixels stacked
+                        'median'    Median valie of stacked pixels
     wavemin         Minimum wavelength of output grid to interpolate spectra to
     wavemax         Maximum wavelength of output grid to interpolate spectra to
     deltawave       Wavelength resolution of output grid to interpolate spectra to
     z_systemic      Systemic redshifts if spectra to stack are to be moved to rest-frame
+    Nsigmaclip      To clip the pixels to stack at N sigma provide the Nsigma value here. Default is no clipping.
     outfile         To save stack to a fits file (using the same format as TDOSE and FELIS)
                     provide path and name of output file
     verbose         Toggle verbosity
@@ -41,6 +45,8 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
     wave_out, flux_out, variance_out, Nspecstack = stacking.stack_1D()
 
     """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Defining output wavelength grid of stack')
     wave_out = np.arange(wavemin,wavemax+deltawave,deltawave)
 
     Nspec    = len(wavelengths)
@@ -53,25 +59,44 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
     vararr  = np.zeros([len(wave_out),Nspec])
     vararr[:]  = np.nan
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Filling data arrays with spectra interpolated to output wavelength grid')
     for ww, wave in enumerate(wavelengths):
         newx            = wave_out
         oldx            = wave / (1.0 + z_systemic[ww])
 
-        # interpolate fluxes:
-        oldy            = fluxes[ww] #* (1.0 + z_systemic[ww])
+        # interpolate fluxes (moving them to rest-frame if needed):
+        oldy            = fluxes[ww] * (1.0 + z_systemic[ww])
         newy            = interp1d(oldx, oldy, kind='linear', fill_value=np.nan, bounds_error=False)(newx)
         fluxarr[:,ww]   = newy
 
-        # interpolate variances:
-        oldy            = variances[ww] #* (1.0 + z_systemic[ww])
+        # interpolate variances (moving them to rest-frame if needed):
+        oldy            = variances[ww] * (1.0 + z_systemic[ww])
         newy            = interp1d(oldx, oldy, kind='linear', fill_value=np.nan, bounds_error=False)(newx)
         vararr[:,ww]    = newy
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if Nsigmaclip is not None:
+        if verbose:
+            print(' - Clipping spectra to stack at '+str(Nsigmaclip)+' sigma (std) at each wavelength around '+stacktype.lower())
+            print('   (setting flux values to NaN so they are handled by array masking)')
+        for ww, wave in enumerate(wavelengths):
+            colvals   = fluxarr[:,ww]
+            if stacktype.lower() == 'mean':
+                colcenter = np.mean(colvals[~np.isfinite(colvals)])
+            elif stacktype.lower() == 'median':
+                colcenter = np.median(colvals[~np.isfinite(colvals)])
+
+            colstd             = np.std([~np.isfinite(colvals)])
+            badent             = np.where( (colvals < colcenter-colstd*Nsigmaclip) &
+                                           (colvals > colcenter+colstd*Nsigmaclip))[0]
+            fluxarr[badent,ww] = np.nan
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Performing stacking using stacktype = "'+str(stacktype)+'"')
     if stacktype.lower() == 'mean':
         mask_NaN       = np.ma.masked_invalid(fluxarr).mask
-        mask_HighErr   = (np.sqrt(vararr) > 100.0) # cut on standard deviation of spectra
+        mask_HighErr   = (np.sqrt(vararr) < 0.0)
         combined_mask  = (mask_NaN | mask_HighErr)
 
         fluxarr_ma      = np.ma.masked_array(fluxarr,mask=combined_mask,fill_value = np.nan)
@@ -85,11 +110,9 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
 
         vararr_ma       = np.ma.masked_array(vararr,mask=combined_mask,fill_value = np.nan)
         variance_out_ma = np.sum(vararr_ma,axis=1)
-        # standard error on the mean, i.e., std scales as 1/sqrt(n)
-        variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack**2.0
-    elif stacktype.lower() == 'ivarwhtmean':
-        pdb.set_trace()
-
+        # standard error on the mean, i.e., std scales as 1/sqrt(N) so
+        # var_stack = Sum(var_i)/N    =>    std = sqrt(Sum(std_i)**2/N) = Sum(std_i) / sqrt(N)
+        variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack
     elif stacktype.lower() == 'median':
         fluxarr_ma      = np.ma.masked_array(fluxarr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
         flux_out_ma     = np.median(fluxarr_ma,axis=1)
@@ -108,13 +131,11 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
         # Or use the error from the median value itself.
 
     else:
-        # there is also ma.masked_outside(d, 0.1, 0.9).mean() whihc is "sigma-clipping" mean
-
         if verbose: print('WARNING - stack_1D() did not recognize stacktype = "'+str(stacktype)+'"; returning None')
         flux_out        = None
         variance_out    = None
         Nspecstack      = None
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if outfile is not None:
         if verbose: print(' - Saving stack to '+outfile)
         stacking.save_stack_1D(outfile,wave_out,flux_out,np.sqrt(variance_out),Nspecstack,
