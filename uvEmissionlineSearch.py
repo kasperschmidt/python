@@ -30,7 +30,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
 import NEOGALmodels as nm
-import rxj2248_BooneBalestraSource as bbs
+#import rxj2248_BooneBalestraSource as bbs
 import felis_build_template as fbt
 import felis
 import literaturecollection_emissionlinestrengths as lce
@@ -9887,7 +9887,8 @@ def stack_composites(plotstackoverview=True,verbose=True):
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     stackdefs     = parentdir+'stacks1D_sample_selection.txt'
     outdir        = parentdir+'stacks1D_sample_selection/'
-    specdir       = parentdir+'spectra_renamed2001XX/'
+    #specdir       = parentdir+'spectra_renamed2001XX/'
+    specdir       = parentdir+'spectra_all/*/*/'
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
@@ -9898,19 +9899,25 @@ def stack_composites(plotstackoverview=True,verbose=True):
     if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
     for ii, stackid in enumerate(stackinfo['id']):
         outfile         = outdir+'composite_spectrum_'+str("%.10d" % stackid)+'_'+stackinfo['label'][ii]+'.fits'
+        if verbose: print('   === Generating '+outfile.split('/')[-1]+'   (stack '+str(ii+1)+'/'+str(Nstacks)+') === ')
         wavelengths     = []
         fluxes          = []
         variances       = []
         redshifts       = []
 
+        if verbose: print('       > selecting indexes')
         ent_sample      = uves.stack_composites_objselection(stackinfo[ii],infodat)
         spectra         = []
         for ent_s in ent_sample:
-            spectra.append(glob.glob(specdir+'*'+str(infodat['id'][ent_s])+'.fits')[0])
-        spectra         = np.asarray(spectra)
-        Nspec           = len(spectra)
-        if len(ent_sample) != Nspec:
-            sys.exit(' The number of indexes for object in the sample and the number of spectra found do not match')
+            searchstr = specdir+'*gauss_0'+str(infodat['id'][ent_s])+'.fits'
+            objspecs  = glob.glob(searchstr)
+            if len(objspecs) != 1:
+                spectra.append(objspecs[0])
+                # sys.exit(' Found '+str(len(objspecs))+' spectra (expected 1) globbing for:\n   '+searchstr)
+            else:
+                spectra.append(objspecs[0])
+        spectra   = np.asarray(spectra)
+        Nspec     = len(spectra)
 
         if stackinfo[ii]['ztype'].lower() == 'zlya':
             objredshift  = infodat['redshift'][ent_sample]
@@ -9924,33 +9931,35 @@ def stack_composites(plotstackoverview=True,verbose=True):
         objredshift = objredshift[objredshift > 0]
         Nspec       = len(spectra)
 
+        if verbose: print('       > building input structures for stacking the selected '+str(Nspec)+' objects ')
         for spectrum in spectra:
             data        = afits.open(spectrum)[1].data
             wavelengths.append(data['wave'])
             fluxes.append(data['flux'])
             variances.append(data['fluxerror']**2.0)
-            redshifts.append(objredshift)
 
-        if verbose: print('   Generating '+outfile.split('/')[-1]+'   (stack '+str(ii+1)+'/'+str(Nstacks)+')')
+        if verbose: print('       > performing stacking of the selected '+str(Nspec)+' objects ')
+
         wave_out, flux_out, variance_out, Nspecstack = \
-            stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=redshifts,
-                              stacktype='mean', wavemin=4750, wavemax=9350,
-                              deltawave=1.25, outfile=outfile, verbose=False)
+            stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=objredshift, Nsigmaclip=1,
+                              stacktype='mean', wavemin=600, wavemax=3800,
+                              deltawave=0.1, outfile=outfile, verbose=False)
 
         if plotstackoverview:
-            plotspecs    = [outfile]
-            labels       = [stackinfo['label'][ii]+' (stack of '+str(Nspec)+' spectra)']
-            wavecols     = ['wave']*len(plotspecs)
-            fluxcols     = ['flux']*len(plotspecs)
-            fluxerrcols  = ['fluxerror']*len(plotspecs)
+            if verbose: print('       > plotting the result ')
+            plotspecs    = [outfile,outfile]
+            labels       = [stackinfo['label'][ii].replace('_','\_')+' (stack of '+str(Nspec)+' spectra)','Nspec per pixel']
+            wavecols     = ['wave','wave']
+            fluxcols     = ['flux','nspecstack']
+            fluxerrcols  = ['fluxerror','fluxerror']
 
             plotz        = 0.0
-            voffset      = None
-            skyspectra   = [None]*len(spectra)+['/Users/kschmidt/work/MUSE/spectra_sky/SKY_SPECTRUM_candels-cdfs-06_av.fits']
-            wavecols_sky = [None]*len(spectra)+['lambda']
-            fluxcols_sky = [None]*len(spectra)+['data']
-            yrangefull   = [-300,1000]
-            xrangefull   = [4700,9400]
+            voffset      = 0.0
+            skyspectra   = [None]*len(plotspecs)
+            wavecols_sky = [None]*len(plotspecs)
+            fluxcols_sky = [None]*len(plotspecs)
+            yrangefull   = [-30,100]
+            xrangefull   = [600,3800]
 
             for plotSN in [True,False]:
                 mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
@@ -9974,6 +9983,8 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
         zcol = 'z_sys_V18'
 
     coltranslationdic = {}
+    coltranslationdic['zmin']       = zcol
+    coltranslationdic['zmax']       = zcol
     coltranslationdic['Llyamin']    = 'F_3KRON'
     coltranslationdic['Llyamax']    = 'F_3KRON'
     coltranslationdic['FWHMlyamin'] = 'fwhm_a_jk'
@@ -9985,21 +9996,18 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     coltranslationdic['betamin']    = 'beta_linear_many'
     coltranslationdic['betamax']    = 'beta_linear_many'
 
-    objent = np.where((selectdata[zcol] > selectinfo['zmin']) & (selectdata[zcol] < selectinfo['zmax']) &
-                      (selectdata[coltranslationdic['Llyamin'   ]] > selectinfo['Llyamin'    ]) &
-                      (selectdata[coltranslationdic['Llyamax'   ]] < selectinfo['Llyamax'    ]) &
-                      (selectdata[coltranslationdic['FWHMlyamin']] > selectinfo['FWHMlyamin' ]) &
-                      (selectdata[coltranslationdic['FWHMlyamax']] < selectinfo['FWHMlyamax' ]) &
-                      (selectdata[coltranslationdic['m814wmin'  ]] > selectinfo['m814wmin'   ]) &
-                      (selectdata[coltranslationdic['m814wmax'  ]] < selectinfo['m814wmax'   ]) &
-                      (selectdata[coltranslationdic['EW0lyamin' ]] > selectinfo['EW0lyamin'  ]) &
-                      (selectdata[coltranslationdic['EW0lyamax' ]] < selectinfo['EW0lyamax'  ]) &
-                      (selectdata[coltranslationdic['betamin'   ]] > selectinfo['betamin'    ]) &
-                      (selectdata[coltranslationdic['betamax'   ]] < selectinfo['betamax'    ])   )[0]
+    indexlist = np.arange(len(selectdata)) # all entries returned by default
+    colsets   = np.unique(np.asarray([colname[:-3] for colname in selectinfo.dtype.names[3:]]))
 
-    pdb.set_trace()
+    for colset in colsets:
+        mincol = colset+'min'
+        maxcol = colset+'max'
+        if (selectinfo[mincol] != -1.0e12) | (selectinfo[maxcol] != 1.0e12):
+            indexsel   = np.where((selectdata[coltranslationdic[mincol]] > selectinfo[mincol]) &
+                                  (selectdata[coltranslationdic[maxcol]] < selectinfo[maxcol]))[0]
+            indexlist  = np.asarray([ii for ii in indexlist if ii in indexsel])
 
-    return objent
+    return indexlist
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,verbose=True):
     """
