@@ -9980,10 +9980,10 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     coltranslationdic['FWHMlyamax'] = 'fwhm_a_jk'
     coltranslationdic['m814wmin']   = 'mag_acs_814w'
     coltranslationdic['m814wmax']   = 'mag_acs_814w'
-    coltranslationdic['EW0lyamin']  = 'EW_0_beta_own_median'
-    coltranslationdic['EW0lyamax']  = 'EW_0_beta_own_median'
-    coltranslationdic['betamin']    = 'beta_own_median'
-    coltranslationdic['betamax']    = 'beta_own_median'
+    coltranslationdic['EW0lyamin']  = 'EW_0_beta_linear_many'
+    coltranslationdic['EW0lyamax']  = 'EW_0_beta_linear_many'
+    coltranslationdic['betamin']    = 'beta_linear_many'
+    coltranslationdic['betamax']    = 'beta_linear_many'
 
     objent = np.where((selectdata[zcol] > selectinfo['zmin']) & (selectdata[zcol] < selectinfo['zmax']) &
                       (selectdata[coltranslationdic['Llyamin'   ]] > selectinfo['Llyamin'    ]) &
@@ -10012,16 +10012,18 @@ def get_vector_intervals(vector,Nsamples,verbose=True):
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]]
 
-    dividers      = uves.get_vector_intervals(infodat['redshift'],4)
+    binranges     = uves.get_vector_intervals(infodat['redshift'],4)
 
     """
-    if verbose: print(' - Input vector has length '+str(len(vector))+' but will only consider finite values in binning, hence...')
-    vector      = np.asarray(vector)[np.isfinite(vector)]
+    if verbose: print(' - Input vector has length '+str(len(vector))+
+                      ' but will only consider finite and non-0 values in binning, hence...')
+    vector      = np.asarray(vector)[np.isfinite(vector) & (vector != 0)]
     vector_s    = np.sort(vector)
 
     Nobj_perbin = int(np.floor(len(vector)/Nsamples))
     if verbose: print(' - Divding vector of length '+str(len(vector))+' with min and max values ['+str(np.min(vector))+','+str(np.max(vector))+'] into subsamples:')
 
+    binranges = []
     if verbose: print(' - The provided vector can be split into the following '+str(Nsamples)+' samples:')
     for bb in np.arange(Nsamples):
         if bb < Nsamples-1:
@@ -10035,5 +10037,6 @@ def get_vector_intervals(vector,Nsamples,verbose=True):
 
         if verbose: print('   subsample '+str(bb+1)+'   ['+str("%8.4f" % binmin)+' , '+str("%8.4f" % binmax)+
                           ']  of length '+str(binlen))
-
+        binranges.append([binmin,binmax])
+    return binranges
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
