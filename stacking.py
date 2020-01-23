@@ -49,7 +49,7 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
     if verbose: print(' - Defining output wavelength grid of stack')
     wave_out = np.arange(wavemin,wavemax+deltawave,deltawave)
 
-    Nspec    = len(wavelengths)
+    Nspec    = len(fluxes)
     if (Nspec != len(fluxes)) or (Nspec != len(variances)):
         sys.exit('Mis-match in number of wavelength ('+str(Nspec)+'), flux ('+str(len(fluxes))+
                  ') and variance ('+str(len(variances))+') vectors provided')
@@ -80,17 +80,17 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
         if verbose:
             print(' - Clipping spectra to stack at '+str(Nsigmaclip)+' sigma (std) at each wavelength around '+stacktype.lower())
             print('   (setting flux values to NaN so they are handled by array masking)')
-        for ww, wave in enumerate(wavelengths):
-            colvals   = fluxarr[:,ww]
-            if stacktype.lower() == 'mean':
-                colcenter = np.mean(colvals[~np.isfinite(colvals)])
-            elif stacktype.lower() == 'median':
-                colcenter = np.median(colvals[~np.isfinite(colvals)])
-
-            colstd             = np.std([~np.isfinite(colvals)])
-            badent             = np.where( (colvals < colcenter-colstd*Nsigmaclip) &
-                                           (colvals > colcenter+colstd*Nsigmaclip))[0]
-            fluxarr[badent,ww] = np.nan
+        for ss, spec in enumerate(wave_out):
+            colvals_sort   = np.sort(fluxarr[ss,np.isfinite(fluxarr[ss,:])])
+            Nval           = len(colvals_sort)
+            if Nval > 0: # only clipping if there are values different from 0
+                percentile_half = scipy.stats.norm(0, 1).cdf(-1*Nsigmaclip)
+                Nclip           = int(Nval*percentile_half)
+                if Nclip > 0:
+                    value_low   = colvals_sort[Nclip-1]
+                    value_high  = colvals_sort[-Nclip]
+                    badent      = np.where( (fluxarr[ss,:] <= value_low) | (fluxarr[ss,:] >= value_high))[0]
+                    fluxarr[ss,badent] = np.nan
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Performing stacking using stacktype = "'+str(stacktype)+'"')
