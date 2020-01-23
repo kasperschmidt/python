@@ -10035,7 +10035,7 @@ def get_vector_intervals(vector,Nsamples,verbose=True):
             binmin = np.min(vector_s[Nobj_perbin*bb:])
             binmax = np.max(vector_s[Nobj_perbin*bb:])
 
-        if verbose: print('   subsample '+str(bb+1)+'   ['+str("%8.4f" % binmin)+' , '+str("%8.4f" % binmax)+
+        if verbose: print('   subsample '+str(bb+1)+'   ['+str("%12.4f" % binmin)+' '+str("%12.4f" % binmax)+
                           ']  of length '+str(binlen))
         binranges.append([binmin,binmax])
     return binranges
