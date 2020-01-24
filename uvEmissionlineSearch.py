@@ -9876,26 +9876,136 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
                                         outputfigure=outfile.replace('.fits','_overview.pdf'),
                                         yrangefull=yrangefull, xrangefull=xrangefull,
                                         plotSN=plotSN,verbose=False)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_composites(plotstackoverview=True,verbose=True):
+def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
+    """
+    Function automatically putting together a file containing the setups for generating composites
+    needed by
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    outputfile = './stacks1D_sample_selection.txt'
+    outarray   = uves.stack_composites_generate_setup(outputfile,overwrite=True)
+
+
+
+    """
+    if os.path.isfile(outputfile) & (overwrite == False):
+        sys.exit(' Overwrite was set to "False" and found existing copy of the file \n '+outputfile)
+
+    if verbose: print(' - Loading infofile to enable cutting composites ')
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
+    infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    columns       = ['zmin','zmax',
+                     'Llyamin','Llyamax',
+                     'FWHMlyamin','FWHMlyamax',
+                     'm814wmin','m814wmax',
+                     'EW0lyamin','EW0lyamax',
+                     'betamin','betamax']
+
+    outarray    = np.array([],dtype=[('id', 'i4'), ('label', 'U20'), ('nspec', 'i4'), ('ztype', 'U5')]+
+                                    [(cn,'<f8') for cn in columns])
+    emptyval    = 9999
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Generating z-binning setups')
+    specid   = 1
+    outrow   = np.asarray((specid,'all',99,'zcat')+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+    outarray = np.append(outarray,outrow)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Generating z-binning setups')
+    Nbins     = 4
+    for colbase in ['z']:
+        binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']>2.9],Nbins,verbose=False)
+        for bb, br in enumerate(binranges):
+            specid   = specid+1
+            label    = 'zGT2p9_bin'+str(bb+1)+'of'+str(Nbins)
+            outrow   = np.asarray((specid,label,99,'zcat')+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+            outrow[colbase+'min'] = br[0]
+            outrow[colbase+'max'] = br[1]
+            outarray = np.append(outarray,outrow)
+
+    Nbins     = 3
+    for colbase in ['z']:
+        binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']<2.9],Nbins,verbose=False)
+        for bb, br in enumerate(binranges):
+            specid   = specid+1
+            label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
+            outrow   = np.asarray((specid,label,99,'zcat')+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+            outrow[colbase+'min'] = br[0]
+            outrow[colbase+'max'] = br[1]
+            outarray = np.append(outarray,outrow)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Generating 4-bin selections (cut on just one parameter) ')
+    ztype     = 'zcat'
+    coltrans  = uves.stack_composite_col_translator(ztype)
+    Nbins     = 4
+    for colbase in ['Llya','FWHMlya','m814w','EW0lya','beta']:
+        binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False)
+        for bb, br in enumerate(binranges):
+            specid   = specid+1
+            label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
+            outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+            outrow[colbase+'min'] = br[0]
+            outrow[colbase+'max'] = br[1]
+            outarray = np.append(outarray,outrow)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #
+    # if verbose: print(' - Generating 3-bin selections (cut on multiple parameters) ')
+    # Nbins = 3
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Counting number of objects for each setup ')
+    Nrows        = outarray.shape[0]
+    for rr in np.arange(Nrows):
+        ent_sample = uves.stack_composites_objselection(outarray[rr],infodat)
+        outarray[rr][2] = len(ent_sample)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Writing output to \n   '+outputfile)
+    fout = open(outputfile, 'w')
+    fout.write('# Setup file for generating coposite spectra with uves.stack_composites() \n')
+    fout.write('# Created with uves.stack_composites_generate_setup() on '+kbs.DandTstr2()+' \n')
+    fout.write('#  id               label       nspec       ztype'+
+               ' '.join([str("%12s" % cc) for cc in columns])+'\n')
+    for rr in np.arange(Nrows):
+        outstr = str('%.5d' % outarray[rr][0])+\
+                 str('%20s' % outarray[rr][1])+\
+                 str('%12s' % outarray[rr][2])+\
+                 str('%12s' % outarray[rr][3])+\
+                 ' '.join([str('%12.4f' % val) for val in outarray[rr].tolist()[4:]])
+        fout.write(outstr+'\n')
+
+    fout.close()
+    return outarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_composites(compositesetup,
+                     plotstackoverview=True,verbose=True):
     """
     Function collecting spectra and stacking them based on various collection cuts defined in "stackdefs"
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
+
+    parentdir       = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    compositesetups = parentdir+'stacks1D_sample_selection_manual.txt'
     uves.stack_composites(plotstackoverview=False)
 
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
-    stackdefs     = parentdir+'stacks1D_sample_selection.txt'
-    outdir        = parentdir+'stacks1D_sample_selection/'
+    outdir        = parentdir+compositesetup.split('/')[-1].split('.tx')[0]
     #specdir       = parentdir+'spectra_renamed2001XX/'
     specdir       = parentdir+'spectra_all/*/*/'
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
 
-    stackinfo     = np.genfromtxt(stackdefs,names=True,skip_header=2,comments='#',dtype=None)
+    stackinfo     = np.genfromtxt(compositesetup,names=True,skip_header=2,comments='#',dtype=None)
     Nstacks       = len(stackinfo['id'])
 
     if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
@@ -9926,7 +10036,7 @@ def stack_composites(plotstackoverview=True,verbose=True):
         elif stackinfo[ii]['ztype'].lower() == 'zsys':
             objredshift  = infodat['z_sys_V18'][ent_sample]
         else:
-            sys.exit(' Invalid entry for ztype (='+stackinfo[ii]['ztype']+') in '+stackdefs)
+            sys.exit(' Invalid entry for ztype (='+stackinfo[ii]['ztype']+') in '+compositesetup)
 
         # only passing on objects with determined redshifts to stacking (other-wise they cant be moved to rest-frame)
         spectra     = spectra[objredshift > 0]
@@ -9980,10 +10090,33 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     see uves.stack_composites above
 
     """
-    if selectinfo['ztype'].lower() == 'zlya':
+    coltranslationdic = uves.stack_composite_col_translator(selectinfo['ztype'].lower())
+
+    indexlist = np.arange(len(selectdata)) # all entries returned by default
+    colsets   = np.unique(np.asarray([colname[:-3] for colname in selectinfo.dtype.names[4:]]))
+
+    for colset in colsets:
+        mincol = colset+'min'
+        maxcol = colset+'max'
+        if (selectinfo[mincol] != -9999) & (selectinfo[maxcol] != 9999):
+            indexsel   = np.where((selectdata[coltranslationdic[mincol]] > selectinfo[mincol]) &
+                                  (selectdata[coltranslationdic[maxcol]] < selectinfo[maxcol]))[0]
+            indexlist  = np.asarray([ii for ii in indexlist if ii in indexsel])
+
+    return indexlist
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_composite_col_translator(ztype,verbose=True):
+    """
+
+    """
+    if ztype.lower() == 'zcat':
         zcol = 'redshift'
-    elif selectinfo['ztype'].lower() == 'zsys':
+    elif ztype.lower() == 'zv18':
         zcol = 'z_sys_V18'
+    else:
+        print('\nWARNING: uves.stack_composite_col_translator() got unknown redshift type: '+ztype+'\n')
+        zcol = None
 
     coltranslationdic = {}
     coltranslationdic['zmin']       = zcol
@@ -9999,25 +10132,14 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     coltranslationdic['betamin']    = 'beta_linear_many'
     coltranslationdic['betamax']    = 'beta_linear_many'
 
-    indexlist = np.arange(len(selectdata)) # all entries returned by default
-    colsets   = np.unique(np.asarray([colname[:-3] for colname in selectinfo.dtype.names[3:]]))
-
-    for colset in colsets:
-        mincol = colset+'min'
-        maxcol = colset+'max'
-        if (selectinfo[mincol] != -1.0e12) | (selectinfo[maxcol] != 1.0e12):
-            indexsel   = np.where((selectdata[coltranslationdic[mincol]] > selectinfo[mincol]) &
-                                  (selectdata[coltranslationdic[maxcol]] < selectinfo[maxcol]))[0]
-            indexlist  = np.asarray([ii for ii in indexlist if ii in indexsel])
-
-    return indexlist
+    return coltranslationdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,verbose=True):
     """
     Function to split vector in intervals for generating sub-samples.
 
     --- Example of use ---
-    import uvEmissionlineSearch as uves, astropy.io.fits as afits
+    import uvEmissionlineSearch as uves, astropy.io.fits as afits, numpy as np
 
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infodat       = afits.open(infofile)[1].data
