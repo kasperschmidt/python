@@ -9847,9 +9847,11 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
             variances.append(data['fluxerror']**2.0)
 
         if verbose: print('   Generating '+outfile.split('/')[-1]+'   (stack '+str(oo+1)+'/'+str(len(stackids.keys()))+')')
+        stacktype ='mean'   # 'median'
+        errtype   ='varsum'
         wave_out, flux_out, variance_out, Nspecstack = \
             stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=np.zeros(len(spectra)),
-                              stacktype='mean', wavemin=4750, wavemax=9350,
+                              stacktype=stacktype, errtype=errtype, wavemin=4750, wavemax=9350,
                               deltawave=1.25, outfile=outfile, verbose=False)
 
         if plotstackoverview:
@@ -9940,9 +9942,11 @@ def stack_composites(plotstackoverview=True,verbose=True):
 
         if verbose: print('       > performing stacking of the selected '+str(Nspec)+' objects ')
 
+        stacktype ='mean'   # 'median'
+        errtype   ='fspread'
         wave_out, flux_out, variance_out, Nspecstack = \
             stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=objredshift, Nsigmaclip=1,
-                              stacktype='mean', wavemin=600, wavemax=3800,
+                              stacktype=stacktype, errtype=errtype, wavemin=600, wavemax=3800,
                               deltawave=0.1, outfile=outfile, verbose=False)
 
         if plotstackoverview:
@@ -9961,13 +9965,12 @@ def stack_composites(plotstackoverview=True,verbose=True):
             yrangefull   = [-30,100]
             xrangefull   = [600,3800]
 
-            for plotSN in [True,False]:
-                mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
-                                        skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
-                                        outputfigure=outfile.replace('.fits','_overview.pdf'),
-                                        yrangefull=yrangefull, xrangefull=xrangefull,
-                                        plotSN=plotSN,verbose=False)
-
+            mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
+                                    skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                    outputfigure=outfile.replace('.fits','_overview.pdf'),
+                                    yrangefull=yrangefull, xrangefull=xrangefull,
+                                    plotSN=False,verbose=False)
+            # No S/N spectra as they don't really make sense for composite stacks. Err is spread of input population
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     """
