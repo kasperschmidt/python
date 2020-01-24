@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 import collections
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wavemax=9500, deltawave=10.0,
-             z_systemic=0.0, Nsigmaclip=None, outfile=None, verbose=True):
+def stack_1D(wavelengths, fluxes, variances, stacktype='mean', errtype='varsum',
+             wavemin=4500, wavemax=9500, deltawave=10.0, z_systemic=0.0, Nsigmaclip=None, outfile=None, verbose=True):
     """
     Stacking of 1D data arrays.
 
@@ -26,10 +26,20 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
     wavelengths     List of wavelength grids for spectra to stack
     fluxes          List of fluxes of spectra to stack
     variances       List of variance spectra for the fluxes to stack
-    stacktype       Type of stacing to perform. Choices are:
-                        'mean'      Simple mean stack of spectra. Uncertainty returned as var_pix = Sum(var_i)/N
-                                    where N are the number of pixels stacked
-                        'median'    Median valie of stacked pixels
+    stacktype       Type of stacing to perform. Fluxes are masked for non-infinte values. Choices are:
+                        mean       : Mean flux of stacked pixels
+                        median     : Median flux of stacked pixels
+    errtype         Type of error estimate to return. Below "i" counts the spectra stacked at each output pixel
+                    stored in the Nspecstack column in the output spectrum. Choices are:
+                        varsum     : returned error is sum of variances:
+                                     err_pix = sqrt(Sum(var_i)/N)
+                        fspread    : returned error is spread of fluxes:
+                                     err_pix = (max(f_i)-min(f_i))/ 2.0
+                        std        : returned error is the standard deviation of fluxes:
+                                     err_pix = std(f_i)
+                        medianvar  : returned error is the median variance:
+                                     err_pix = median(var_i)
+
     wavemin         Minimum wavelength of output grid to interpolate spectra to
     wavemax         Maximum wavelength of output grid to interpolate spectra to
     deltawave       Wavelength resolution of output grid to interpolate spectra to
@@ -94,56 +104,51 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', wavemin=4500, wav
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Performing stacking using stacktype = "'+str(stacktype)+'"')
+    fluxarr_ma      = np.ma.masked_array(fluxarr            , mask=~np.isfinite(fluxarr),fill_value = np.nan)
+    vararr_ma       = np.ma.masked_array(vararr             , mask=~np.isfinite(fluxarr),fill_value = np.nan)
+    Nspecstack_ma   = np.ma.masked_array(fluxarr * 0.0 + 1.0, mask=~np.isfinite(fluxarr),fill_value = np.nan)
+    Nspecstack_ma   = np.sum(Nspecstack_ma,axis=1)
+    Nspecstack      = Nspecstack_ma.filled(fill_value = np.nan)
+
     if stacktype.lower() == 'mean':
-        mask_NaN       = np.ma.masked_invalid(fluxarr).mask
-        mask_HighErr   = (np.sqrt(vararr) < 0.0)
-        combined_mask  = (mask_NaN | mask_HighErr)
-
-        fluxarr_ma      = np.ma.masked_array(fluxarr,mask=combined_mask,fill_value = np.nan)
-        flux_out_ma     = np.mean(fluxarr_ma,axis=1)
-        flux_out        = flux_out_ma.filled(fill_value=np.nan)
-
-        fluxarr_ones    = fluxarr * 0.0 + 1.0
-        Nspecstack_ma   = np.ma.masked_array(fluxarr_ones,mask=combined_mask,fill_value = np.nan)
-        Nspecstack_ma   = np.sum(Nspecstack_ma,axis=1)
-        Nspecstack      = Nspecstack_ma.filled(fill_value=0.0)
-
-        vararr_ma       = np.ma.masked_array(vararr,mask=combined_mask,fill_value = np.nan)
-        variance_out_ma = np.sum(vararr_ma,axis=1)
-        # standard error on the mean, i.e., std scales as 1/sqrt(N) so
-        # var_stack = Sum(var_i)/N    =>    std = sqrt(Sum(std_i)**2/N) = Sum(std_i) / sqrt(N)
-        variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack
+        flux_out_ma  = np.mean(fluxarr_ma,axis=1)
+        flux_out     = flux_out_ma.filled(fill_value=np.nan)
     elif stacktype.lower() == 'median':
-        fluxarr_ma      = np.ma.masked_array(fluxarr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
-        flux_out_ma     = np.median(fluxarr_ma,axis=1)
-        flux_out        = flux_out_ma.filled(fill_value = np.nan)
-
-        fluxarr_ones    = fluxarr * 0.0 + 1.0
-        Nspecstack_ma   = np.ma.masked_array(fluxarr_ones,mask=~np.isfinite(fluxarr_ones),fill_value = np.nan)
-        Nspecstack_ma   = np.sum(Nspecstack_ma,axis=1)
-        Nspecstack      = Nspecstack_ma.filled(fill_value = np.nan)
-
-        vararr_ma       = np.ma.masked_array(vararr,mask=~np.isfinite(fluxarr),fill_value = np.nan)
-        variance_out_ma = np.median(vararr_ma,axis=1)
-        variance_out    = variance_out_ma.filled(fill_value = np.nan)
-
-        # alternatively, loop over columns and take confidence intervals, to indicate scatter of errors
-        # Or use the error from the median value itself.
-
+        flux_out_ma  = np.median(fluxarr_ma,axis=1)
+        flux_out     = flux_out_ma.filled(fill_value = np.nan)
     else:
         if verbose: print('WARNING - stack_1D() did not recognize stacktype = "'+str(stacktype)+'"; returning None')
-        flux_out        = None
+        flux_out     = None
+
+    if errtype.lower() == 'varsum':
+        # standard error on the mean, i.e., std scales as 1/sqrt(N) so
+        # var_stack = Sum(var_i)/N    =>    std = sqrt(Sum(std_i)**2/N) = Sum(std_i) / sqrt(N)
+        variance_out_ma = np.sum(vararr_ma,axis=1)
+        variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack
+        err_out         = np.sqrt(variance_out)
+    elif errtype.lower() == 'fspread':
+        err_out_ma      = np.abs(np.max(fluxarr_ma,axis=1) - np.min(fluxarr_ma,axis=1)  )/2.0
+        err_out         = err_out_ma.filled(fill_value = np.nan)
+    elif errtype.lower() == 'std':
+        err_out_ma      = np.std(fluxarr_ma,axis=1)
+        err_out         = err_out_ma.filled(fill_value = np.nan)
+    elif errtype.lower() == 'medianvar':
+        variance_out_ma = np.median(vararr_ma,axis=1)
+        variance_out    = variance_out_ma.filled(fill_value = np.nan)
+        err_out         = np.sqrt(variance_out)
+    else:
+        if verbose: print('WARNING - stack_1D() did not recognize errtype = "'+str(errtype)+'"; returning None')
         variance_out    = None
-        Nspecstack      = None
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if outfile is not None:
         if verbose: print(' - Saving stack to '+outfile)
-        stacking.save_stack_1D(outfile,wave_out,flux_out,np.sqrt(variance_out),Nspecstack,
+        stacking.save_stack_1D(outfile,wave_out,flux_out,err_out,Nspecstack,
                                headerinfo=None,overwrite=True,verbose=verbose)
 
     if verbose: print(' - Returning wavelengths, fluxes, variances of stack and '
                       'number of spectra contributing to each stacked pixel')
-    return wave_out, flux_out, variance_out, Nspecstack
+    return wave_out, flux_out, err_out*2.0, Nspecstack
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def stack_1D_wrapper(spectra, redshifts, outfile, verbose=True,
                      stacktype='median', wavemin=1100, wavemax=3000, deltawave=0.1):
