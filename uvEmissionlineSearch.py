@@ -9947,11 +9947,11 @@ def stack_composites(plotstackoverview=True,verbose=True):
 
         if plotstackoverview:
             if verbose: print('       > plotting the result ')
-            plotspecs    = [outfile,outfile]
-            labels       = [stackinfo['label'][ii].replace('_','\_')+' (stack of '+str(Nspec)+' spectra)','Nspec per pixel']
-            wavecols     = ['wave','wave']
-            fluxcols     = ['flux','nspecstack']
-            fluxerrcols  = ['fluxerror','fluxerror']
+            plotspecs    = [outfile]
+            labels       = [stackinfo['label'][ii].replace('_','\_')+' (stack of '+str(Nspec)+' spectra)']
+            wavecols     = ['wave']
+            fluxcols     = ['flux']
+            fluxerrcols  = ['fluxerror']
 
             plotz        = 0.0
             voffset      = 0.0
