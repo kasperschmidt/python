@@ -35,6 +35,7 @@ import felis_build_template as fbt
 import felis
 import literaturecollection_emissionlinestrengths as lce
 import stacking
+from itertools import combinations
 import pickle
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
@@ -9918,11 +9919,11 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
                      'EW0lyamin','EW0lyamax',
                      'betamin','betamax']
 
-    outarray    = np.array([],dtype=[('id', 'i4'), ('label', 'U20'), ('nspec', 'i4'), ('ztype', 'U5')]+
+    outarray    = np.array([],dtype=[('id', 'i4'), ('label', 'U50'), ('nspec', 'i4'), ('ztype', 'U5')]+
                                     [(cn,'<f8') for cn in columns])
     emptyval    = 9999
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Generating z-binning setups')
+    if verbose: print(' - Setup for composite contining all spectra')
     specid   = 1
     outrow   = np.asarray((specid,'all',99,'zcat')+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
     outarray = np.append(outarray,outrow)
@@ -9957,7 +9958,7 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     coltrans  = uves.stack_composite_col_translator(ztype)
     Nbins     = 4
     for colbase in ['m814w']:
-        datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.3946]
+        datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.39]
         binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False)
 
         for bb, br in enumerate(binranges):
@@ -9995,9 +9996,39 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
             outarray = np.append(outarray,outrow)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #
-    # if verbose: print(' - Generating 3-bin selections (cut on multiple parameters) ')
-    # Nbins = 3
+    if verbose: print(' - Generating 3-bin selections (cut on two parameters) ')
+    ztype     = 'zcat'
+    coltrans  = uves.stack_composite_col_translator(ztype)
+    Nbins     = 3
+
+
+    for colbase1,colbase2 in combinations( ['z','m814w','Llya','FWHMlya','EW0lya','beta'],2):
+        if colbase1 == 'z':
+            datvec1 = infodat['redshift'][infodat['redshift']>2.9]
+        elif colbase1 == 'm814w':
+            datvec1 = infodat[coltrans[colbase1+'min']][infodat[coltrans[colbase1+'min']]<29.39]
+        else:
+            datvec1 = infodat[coltrans[colbase1+'min']]
+        binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False)
+
+        if colbase2 == 'z':
+            datvec2 = infodat['redshift'][infodat['redshift']>2.9]
+        elif colbase2 == 'm814w':
+            datvec2 = infodat[coltrans[colbase2+'min']][infodat[coltrans[colbase2+'min']]<29.39]
+        else:
+            datvec2 = infodat[coltrans[colbase2+'min']]
+        binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False)
+
+        for bb1, br1 in enumerate(binranges1):
+            for bb2, br2 in enumerate(binranges2):
+                specid   = specid+1
+                label    = colbase1+'_bin'+str(bb1+1)+'of'+str(Nbins)+'_'+colbase2+'_bin'+str(bb2+1)+'of'+str(Nbins)
+                outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+                outrow[colbase1+'min'] = br1[0]
+                outrow[colbase1+'max'] = br1[1]
+                outrow[colbase2+'min'] = br2[0]
+                outrow[colbase2+'max'] = br2[1]
+                outarray = np.append(outarray,outrow)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Counting number of objects for each setup ')
@@ -10011,11 +10042,11 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     fout = open(outputfile, 'w')
     fout.write('# Setup file for generating coposite spectra with uves.stack_composites() \n')
     fout.write('# Created with uves.stack_composites_generate_setup() on '+kbs.DandTstr2()+' \n')
-    fout.write('#  id               label       nspec       ztype'+
+    fout.write('#  id                                             label       nspec       ztype'+
                ' '.join([str("%12s" % cc) for cc in columns])+'\n')
     for rr in np.arange(Nrows):
         outstr = str('%.5d' % outarray[rr][0])+\
-                 str('%20s' % outarray[rr][1])+\
+                 str('%50s' % outarray[rr][1])+\
                  str('%12s' % outarray[rr][2])+\
                  str('%12s' % outarray[rr][3])+\
                  ' '.join([str('%12.4f' % val) for val in outarray[rr].tolist()[4:]])
