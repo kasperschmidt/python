@@ -9940,11 +9940,39 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
             outarray = np.append(outarray,outrow)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Generating 4-bin selections (cut on just magnitude seperating non-detections out) ')
+    ztype     = 'zcat'
+    coltrans  = uves.stack_composite_col_translator(ztype)
+    Nbins     = 4
+    for colbase in ['m814w']:
+        datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.3946]
+        binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False)
+
+        for bb, br in enumerate(binranges):
+            specid   = specid+1
+            label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
+            outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+            outrow[colbase+'min'] = br[0]
+            outrow[colbase+'max'] = br[1]
+            outarray = np.append(outarray,outrow)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Selection of objects with m814w non-edetections (limiting mag) ')
+    datvec    = infodat[coltrans['m814wmin']][infodat[coltrans['m814wmin']]>29.39]
+    binranges = uves.get_vector_intervals(datvec,1,verbose=True)
+    specid    = specid+1
+    label     = colbase+'nondet_bin1of1'
+    outrow    = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+    outrow[colbase+'min'] = binranges[0][0]-0.0001 # manually expand range as all values are identical
+    outrow[colbase+'max'] = binranges[0][1]+0.0001 # manually expand range as all values are identical
+    outarray = np.append(outarray,outrow)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Generating 4-bin selections (cut on just one parameter) ')
     ztype     = 'zcat'
     coltrans  = uves.stack_composite_col_translator(ztype)
     Nbins     = 4
-    for colbase in ['Llya','FWHMlya','m814w','EW0lya','beta']:
+    for colbase in ['Llya','FWHMlya','EW0lya','beta']:
         binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False)
         for bb, br in enumerate(binranges):
             specid   = specid+1
@@ -10100,7 +10128,8 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
         maxcol = colset+'max'
         if (selectinfo[mincol] != -9999) & (selectinfo[maxcol] != 9999):
             indexsel   = np.where((selectdata[coltranslationdic[mincol]] > selectinfo[mincol]) &
-                                  (selectdata[coltranslationdic[maxcol]] < selectinfo[maxcol]))[0]
+                                  (selectdata[coltranslationdic[maxcol]] < selectinfo[maxcol]) &
+                                  (selectdata[coltranslationdic[mincol]] != 0.0))[0]
             indexlist  = np.asarray([ii for ii in indexlist if ii in indexsel])
 
     return indexlist
@@ -10152,7 +10181,6 @@ def get_vector_intervals(vector,Nsamples,verbose=True):
                       ' but will only consider finite and non-0 values in binning, hence...')
     vector      = np.asarray(vector)[np.isfinite(vector) & (vector != 0)]
     vector_s    = np.sort(vector)
-
     Nobj_perbin = int(np.floor(len(vector)/Nsamples))
     if verbose: print(' - Divding vector of length '+str(len(vector))+' with min and max values ['+str(np.min(vector))+','+str(np.max(vector))+'] into subsamples:')
 
