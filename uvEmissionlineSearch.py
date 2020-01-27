@@ -9920,7 +9920,7 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
                      'betamin','betamax']
 
     outarray    = np.array([],dtype=[('id', 'i4'), ('label', 'U50'), ('nspec', 'i4'), ('ztype', 'U5')]+
-                                    [(cn,'<f8') for cn in columns])
+                                    [(cn,'>f8') for cn in columns])
     emptyval    = 9999
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setup for composite contining all spectra')
@@ -10033,23 +10033,35 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Counting number of objects for each setup ')
     Nrows        = outarray.shape[0]
+    # ppp = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    # ccc = ppp + 'stacks1D_sample_selection.txt'
+    # sss = np.genfromtxt(ccc,names=True,skip_header=2,comments='#',dtype=None)
+    # print(' comparison: outarray VS fileload')
+    dat_outfile     = np.genfromtxt(outputfile,names=True,skip_header=2,comments='#',dtype=None)
+
     for rr in np.arange(Nrows):
-        ent_sample = uves.stack_composites_objselection(outarray[rr],infodat)
-        outarray[rr][2] = len(ent_sample)
+        if os.path.isfile(outputfile):
+            ent_sample_file = uves.stack_composites_objselection(dat_outfile[rr],infodat)
+            outarray[rr][2] = len(ent_sample_file)
+            # print('             '+str(len(ent_sample))+'     '+str(len(ent_sample_file)))
+            # if len(ent_sample) != len(ent_sample_file): pdb.set_trace()
+        else:
+            ent_sample = uves.stack_composites_objselection(outarray[rr],infodat)
+            outarray[rr][2] = len(ent_sample)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Writing output to \n   '+outputfile)
     fout = open(outputfile, 'w')
     fout.write('# Setup file for generating coposite spectra with uves.stack_composites() \n')
     fout.write('# Created with uves.stack_composites_generate_setup() on '+kbs.DandTstr2()+' \n')
-    fout.write('#  id                                             label       nspec       ztype'+
-               ' '.join([str("%12s" % cc) for cc in columns])+'\n')
+    fout.write('#  id                                             label                nspec              ztype'+
+               ' '.join([str("%14s" % cc) for cc in columns])+'\n')
     for rr in np.arange(Nrows):
         outstr = str('%.5d' % outarray[rr][0])+\
                  str('%50s' % outarray[rr][1])+\
-                 str('%12s' % outarray[rr][2])+\
-                 str('%12s' % outarray[rr][3])+\
-                 ' '.join([str('%12.4f' % val) for val in outarray[rr].tolist()[4:]])
+                 str('%20s' % outarray[rr][2])+\
+                 str('%20s' % outarray[rr][3])+\
+                 ' '.join([str('%14.4f' % val) for val in outarray[rr].tolist()[4:]])
         fout.write(outstr+'\n')
 
     fout.close()
@@ -10065,7 +10077,7 @@ def stack_composites(compositesetup,
 
     parentdir       = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     compositesetups = parentdir+'stacks1D_sample_selection_manual.txt'
-    uves.stack_composites(plotstackoverview=False)
+    uves.stack_composites(compositesetups,plotstackoverview=False)
 
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
@@ -10102,7 +10114,7 @@ def stack_composites(compositesetup,
         spectra   = np.asarray(spectra)
         Nspec     = len(spectra)
 
-        if stackinfo[ii]['ztype'].lower() == 'zlya':
+        if stackinfo[ii]['ztype'].lower() == 'zcat':
             objredshift  = infodat['redshift'][ent_sample]
         elif stackinfo[ii]['ztype'].lower() == 'zsys':
             objredshift  = infodat['z_sys_V18'][ent_sample]
@@ -10112,6 +10124,9 @@ def stack_composites(compositesetup,
         # only passing on objects with determined redshifts to stacking (other-wise they cant be moved to rest-frame)
         spectra     = spectra[objredshift > 0]
         objredshift = objredshift[objredshift > 0]
+        noz_ent     = np.where(objredshift <= 0)[0]
+        if len(noz_ent) > 0:
+            print('   Objects removed because they have no good redshift: \n   '+str(infodat['id'][noz_ent]))
         Nspec       = len(spectra)
 
         if verbose: print('       > building input structures for stacking the selected '+str(Nspec)+' objects ')
@@ -10170,8 +10185,8 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
         mincol = colset+'min'
         maxcol = colset+'max'
         if (selectinfo[mincol] != -9999) & (selectinfo[maxcol] != 9999):
-            indexsel   = np.where((selectdata[coltranslationdic[mincol]] > selectinfo[mincol]) &
-                                  (selectdata[coltranslationdic[maxcol]] < selectinfo[maxcol]) &
+            indexsel   = np.where((selectdata[coltranslationdic[mincol]] >= selectinfo[mincol]) &
+                                  (selectdata[coltranslationdic[maxcol]] <= selectinfo[maxcol]) &
                                   (selectdata[coltranslationdic[mincol]] != 0.0))[0]
             indexlist  = np.asarray([ii for ii in indexlist if ii in indexsel])
 
@@ -10205,6 +10220,7 @@ def stack_composite_col_translator(ztype,verbose=True):
     coltranslationdic['betamax']    = 'beta_linear_many'
 
     return coltranslationdic
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,verbose=True):
     """
