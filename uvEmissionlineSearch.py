@@ -8971,7 +8971,8 @@ def count_SpecOnArche(countfields):
 
     """
     import glob, sys
-    setupglobstr = 'tdose_setupfiles/tdose_setupfile_*_gauss.txt'
+    setupglobstr       = 'tdose_setupfiles/tdose_setupfile_*_gauss.txt'
+    setupglobstr_reext = 'tdose_setupfiles/tdose_setupfile_*_gauss_reext.txt'
     setupfiledir = {}
     setupfiledir['rafelski']   = list(np.sort(glob.glob('Rafelski-UDF-*/'+setupglobstr)))
     setupfiledir['rafudfmock'] = list(np.sort(glob.glob('Rafelski-UDF-MWmock-v1p0/'+setupglobstr)))
@@ -8991,6 +8992,7 @@ def count_SpecOnArche(countfields):
     setupfiledir['uvescdfspar'] = list(np.sort(glob.glob('MWuves100full/MWuves-CDFSpar*/'+setupglobstr)))
     setupfiledir['uvesudf']     = list(np.sort(glob.glob('MWuves100full/MWuves-UDF-*/'+setupglobstr)))
     setupfiledir['uvesudf10']   = list(np.sort(glob.glob('MWuves100full/MWuves-UDF10*/'+setupglobstr)))
+    setupfiledir['uvesreext']   = list(np.sort(glob.glob('MWuves100full/*/'+setupglobstr_reext)))
 
     setupfiledir['laigle']      = list(np.sort(glob.glob('Laigle-*/'+setupglobstr)))
 
@@ -9018,11 +9020,21 @@ def count_SpecOnArche(countfields):
         extdir     = sf.split('/tdose')[0]
         fieldname  = sf.split('_gauss')[0].split('v1p0-')[-1].split('v1p0_')[-1].split('andels-')[-1]
 
-
         specsearchstr = sf.split('/tdose_setupfiles/')[0]+'/tdose_spectra/tdose_spec*'+fieldname+'*gauss*.fits'
+        if '_reext' in sf:
+            specsearchstr = sf.split('/tdose_setupfiles/')[0]+'/tdose_spectra_reext/tdose_spec*'+fieldname+'*gauss*.fits'
 
         Ng = len(glob.glob('/store/data/musewide/TDOSE/'+specsearchstr))
         Na = len(glob.glob('/store/data/musewide/TDOSE/'+specsearchstr.replace('gauss*.fits','aperture*.fits')))
+        if '_reext' in sf:
+            import sys
+            sys.path.append('/store/data/musewide/TDOSE/TDOSE')
+            import tdose_utilities as tu
+            try:
+                sfdat = tu.load_setup(sf,verbose=False)
+                Na    = len(sfdat['sources_to_extract'])
+            except:
+                Na    = np.nan
 
         Ngmissing = Na-Ng
         outstr    = str("%50s" % extdir)+' '+str("%20s" % fieldname)+' '+\
