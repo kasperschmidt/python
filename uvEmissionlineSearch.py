@@ -9749,7 +9749,10 @@ def print_specs():
     print(' - Printing IDs and Spec from vetting results: \n'+vetresults)
     vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
     for ii, id in enumerate(vetdat['id']):
-        print(str("%s" % id)+'    '+vetdat['spectrum'][ii])
+        if vetdat['vetresult'][ii] > 2:
+            print(str("%s" % id)+'    '+vetdat['spectrum'][ii].replace('tdose_spectra/','tdose_spectra_reext/').replace('MWuves_gauss','MWuves_reext_gauss'))
+        else:
+            print(str("%s" % id)+'    '+vetdat['spectrum'][ii])
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/MWuves-full-v1p0_speclist12XXXX.txt',
