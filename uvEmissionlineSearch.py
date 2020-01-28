@@ -10224,32 +10224,49 @@ def stack_composite_col_translator(ztype,verbose=True):
 
     return coltranslationdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_composite_plot3x3specs(param1,param2,specdir,outname,verbose=True):
+def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,outname,verbose=True):
     """
     function plotting the spectra resulting from a 3x3 binning of the objects
 
     --- EXAMPLE OF USE ---
-    import uvEmissionlineSearch as uves
+    import uvEmissionlineSearch as uves, glob
     specdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection_manual/'
-    outname = specdir+'testoverviewWcols.pdf'
-    uves.stack_composite_plot3x3specs('z','m814w',specdir,outname)
-    """
+
+    param1  = 'z'
+    param2  = 'm814w'
     globstr = specdir+'*'+param1+'_bin*'+param2+'_bin*.fits'
     spectra = np.sort(glob.glob(globstr))
+
+    outname = specdir+'testoverviewWcols.pdf'
+    uves.stack_composite_plotNxNspecs(param1,param2,[2.9,6.7],[23.79,28.82],spectra,outname)
+    """
+    parentdir      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
+    compositesetup = parentdir+'stacks1D_sample_selection.txt'
+    setupinfo      = np.genfromtxt(compositesetup,names=True,skip_header=2,comments='#',dtype=None)
+
     Nspec   = len(spectra)
+    setuplabels    = [(param1+ss.split('.fit')[0].split('_'+param1)[-1]) for ss in spectra]
 
     # plot overview figure with 9 spectra in
-    if verbose: print(' - Plotting the '+str(Nspec)+' spectra found while globbing for \n   '+globstr)
+    if verbose: print(' - Plotting the '+str(Nspec)+' spectra provided \n   ')
     plotspecs        = spectra
-    # select Nspec colors from color map...
-    speccolors       = ['orange','blue','red']*3
-    labels           = [' ']*len(spectra)
+
+    red1, red2, red3      = (205/255.,0/255.,0/255.), (255/255.,76/255.,76/255.), (255/255.,153/255.,153/255.)
+    green1, green2, gree3 = (0/255.,205/255.,0/255.), (76/255.,255/255.,76/255.), (153/255.,255/255.,153/255.)
+    blue1, blue2, blue3   = (0/255.,0/255.,205/255.), (76/255.,76/255.,255/255.), (153/255.,153/255.,255/255.)
+    speccolors            = [blue1, blue2, blue3, green1, green2, gree3, red1, red2, red3]
+    # speccolors       = ['orange','blue','red','green','brown','cyan','pink','purple','yellow']
+    labels           = [' ']*len(spectra) #[ll.replace('_','\_') for ll in setuplabels]
     wavecols         = ['wave']*len(spectra)
     fluxcols         = ['flux']*len(spectra)
     fluxerrcols      = ['fluxerror']*len(spectra)
     col_matrix       = True
-    col_matrix_title ='The Color Matrix'
-    col_matrix_text  =['Text']*len(spectra)
+    col_matrix_title = '' #'The Color Matrix'
+    # col_matrix_text  =  [ss.split('.fit')[0].split(param1+'_')[-1].replace('bin','').replace('of','/').replace('_'+param2+'_','-')
+    #                      for ss in spectra]
+    col_matrix_text  = [str(setupinfo[np.where(setupinfo['label'] == ll)[0]]['nspec'][0]) for ll in setuplabels]
+    col_matrix_labels=[param1,param2]
+    col_matrix_ranges=[param1range,param2range]
 
     plotz        = 0.0
     voffset      = 0.0
@@ -10264,7 +10281,8 @@ def stack_composite_plot3x3specs(param1,param2,specdir,outname,verbose=True):
                             outputfigure=outname, speccols=speccolors, show_error=False,
                             yrangefull=yrangefull, xrangefull=xrangefull,
                             col_matrix=col_matrix, col_matrix_title=col_matrix_title, col_matrix_text=col_matrix_text,
-                            plotSN=False,verbose=False)
+                            col_matrix_labels=col_matrix_labels, col_matrix_ranges=col_matrix_ranges,
+                            plotSN=False,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,verbose=True):
