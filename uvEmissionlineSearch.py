@@ -10081,7 +10081,7 @@ def stack_composites(compositesetup,
 
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
-    outdir        = parentdir+compositesetup.split('/')[-1].split('.tx')[0]
+    outdir        = parentdir+compositesetup.split('/')[-1].split('.tx')[0]+'/'
     #specdir       = parentdir+'spectra_renamed2001XX/'
     specdir       = parentdir+'spectra_all/*/*/'
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
@@ -10220,6 +10220,48 @@ def stack_composite_col_translator(ztype,verbose=True):
     coltranslationdic['betamax']    = 'beta_linear_many'
 
     return coltranslationdic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def stack_composite_plot3x3specs(param1,param2,specdir,outname,verbose=True):
+    """
+    function plotting the spectra resulting from a 3x3 binning of the objects
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    specdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection_manual/'
+    outname = specdir+'testoverviewWcols.pdf'
+    uves.stack_composite_plot3x3specs('z','m814w',specdir,outname)
+    """
+    globstr = specdir+'*'+param1+'_bin*'+param2+'_bin*.fits'
+    spectra = np.sort(glob.glob(globstr))
+    Nspec   = len(spectra)
+
+    # plot overview figure with 9 spectra in
+    if verbose: print(' - Plotting the '+str(Nspec)+' spectra found while globbing for \n   '+globstr)
+    plotspecs        = spectra
+    # select Nspec colors from color map...
+    speccolors       = ['orange','blue','red']*3
+    labels           = [' ']*len(spectra)
+    wavecols         = ['wave']*len(spectra)
+    fluxcols         = ['flux']*len(spectra)
+    fluxerrcols      = ['fluxerror']*len(spectra)
+    col_matrix       = True
+    col_matrix_title ='The Color Matrix'
+    col_matrix_text  =['Text']*len(spectra)
+
+    plotz        = 0.0
+    voffset      = 0.0
+    skyspectra   = [None]*len(plotspecs)
+    wavecols_sky = [None]*len(plotspecs)
+    fluxcols_sky = [None]*len(plotspecs)
+    yrangefull   = [-30,100]
+    xrangefull   = [600,3800]
+
+    mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
+                            skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                            outputfigure=outname, speccols=speccolors, show_error=False,
+                            yrangefull=yrangefull, xrangefull=xrangefull,
+                            col_matrix=col_matrix, col_matrix_title=col_matrix_title, col_matrix_text=col_matrix_text,
+                            plotSN=False,verbose=False)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,verbose=True):
