@@ -975,9 +975,12 @@ def plot_comp_hist(ax,xlabel,hist1,hist2,colors,fontsize,lthick,bins):
     ax.plot(ax.get_xlim(),[0,0],'-',color='gray',lw=0.5)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshift, voffset=0,
+def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshift, voffset=0, show_error=True,
                         outputfigure='default', plotSN=False, skyspectra=None, wavecols_sky=None, fluxcols_sky=None,
-                        yrangefull=None, xrangefull=[4500,18000], speccols=None, linenames=None, verbose=True):
+                        yrangefull=None, xrangefull=[4500,18000], speccols=None, linenames=None,
+                        col_matrix=False, col_matrix_title='The Color Matrix', col_matrix_text='Text',
+                        col_matrix_labels=['xparam','yparam'], col_matrix_ranges=[[0,3],[0,3]],
+                        verbose=True):
     """
 
     Plotting overview with zoom-ins of 1D spectrum.
@@ -1146,15 +1149,17 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         xrangedic[linename], yrangedic[linename] = \
             mwp.plot_1DspecOverview_subplot(nrows,ncols,plotindex,linename,datadic,spectra,skyspectra,wavecols_sky,
                                             fluxcols_sky,speccols,plotSN,voffset,llistdic,Fsize,col_linemarker,LW,
-                                            xlabel,ylabel,linelatex,windowcenter,windowwidth,wavescale,redshift,
+                                            xlabel,ylabel,show_error,linelatex,windowcenter,windowwidth,wavescale,redshift,
                                             specinrange=speccoverage)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plt.subplot(4, 3, (10,12)) # Full specs
-    windowcenter = 7500.0
+    if col_matrix:
+        plt.subplot(4, 3, (10,11)) # Full specs
+    else:
+        plt.subplot(4, 3, (10,12)) # Full specs
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                               xrangefull,plotSN=plotSN,labels=labels)
+                                               xrangefull,show_error=show_error,plotSN=plotSN,labels=labels)
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     if not plotSN:
         if yrangefull is None:
@@ -1176,8 +1181,8 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     #--------- LEGEND ---------
     anchorpos = (0.5, 1.2)
-    if len(labels) > 6:
-        ncols = 6
+    if len(labels) > 4:
+        ncols = 4
     else:
         ncols = len(labels)
     leg = plt.legend(fancybox=True,numpoints=1, loc='upper center',prop={'size':Fsize},ncol=ncols)#,
@@ -1190,6 +1195,38 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     plt.ylim(yrangefull)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if col_matrix:
+        plt.subplot(4, 3, 12) # Color matrix
+        plt.title(col_matrix_title)
+
+        cmatrix      = np.zeros([3,3])
+        pixval     = 0
+        for xx in np.arange(np.sqrt(len(spectra))):
+            for yy in np.arange(np.sqrt(len(spectra)))[::-1]:
+                cmatrix[int(yy),int(xx)] = pixval
+                pixtext = col_matrix_text[pixval]
+                #pixtext = 'pix'+str(int(xx))+str(int(yy))+'\\\\(val='+str(pixval)+')'
+                plt.text(xx,yy,pixtext,zorder=30,color='gray',#speccols[int(pixval)],
+                         size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+                pixval    = pixval + 1
+
+        cmap         = plt.cm.gray
+        cmap_norm    = plt.Normalize(cmatrix.min(), cmatrix.max())
+        cmatrix_cmap = cmap(cmap_norm(cmatrix))
+
+        pixval = 0
+        for xx in np.arange(np.sqrt(len(spectra))):
+            for yy in np.arange(np.sqrt(len(spectra)))[::-1]:
+                cmatrix_cmap[int(yy),int(xx),:3] = speccols[pixval]
+                pixval = pixval + 1
+
+        plt.imshow(cmatrix_cmap,zorder=10)
+        plt.xticks([])
+        plt.yticks([])
+        plt.xlabel(str(col_matrix_ranges[0][0])+' $<$ '+col_matrix_labels[0]+' $<$ '+str(col_matrix_ranges[0][1]))
+        plt.ylabel(str(col_matrix_ranges[1][0])+' $<$ '+col_matrix_labels[1]+' $<$ '+str(col_matrix_ranges[1][1]))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.savefig(specfigure, dpi=300) # dpi = dot per inch for rasterized points
@@ -1246,7 +1283,7 @@ def plot_1DspecOverview_subplotinfo():
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_subplot(nrows,ncols,plotindex,
                                 line,datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,plotSN,voffset,
-                                llistdic,Fsize,col_linemarker,LW,xlabel,ylabel,
+                                llistdic,Fsize,col_linemarker,LW,xlabel,ylabel,show_error,
                                 linestring,windowcenter,windowwidth,wavescale,redshift,specinrange=True):
     """
     Function generating sub plots for plot_1DspecOverview()
@@ -1256,7 +1293,7 @@ def plot_1DspecOverview_subplot(nrows,ncols,plotindex,
         xrange       = np.asarray([windowcenter-windowwidth,windowcenter+windowwidth])*(redshift+1)/wavescale
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         yrange = mwp.plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,
-                                                   xrange,plotSN=plotSN,labels=None)
+                                                   xrange,show_error=show_error,plotSN=plotSN,labels=None)
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
@@ -1291,7 +1328,8 @@ def plot_1DspecOverview_genbox(boxstring,xrange,yrange,LW,boxzorder,Dyrangefull,
              color=col_linemarker,size=Fsize,horizontalalignment='center',verticalalignment='bottom',zorder=boxzorder)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,colors,xrange,plotSN=False,labels=None):
+def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,colors,xrange,
+                                  show_error=True,plotSN=False,labels=None):
     """
 
     """
@@ -1304,7 +1342,7 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
         if plotSN:
             plt.step(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100,where='mid')
+                     alpha=1.0,color=colors[ss],label=labels[ss],zorder=100,where='mid')
 
             try:
                 fluxmin = np.min(np.asarray([0,  np.min(np.isfinite(datadic[specname]['spec_S2N'][waveent])) ]))
@@ -1315,10 +1353,11 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
         else:
             plt.step(datadic[specname]['spec_wave'], datadic[specname]['spec_flux'], '-',
-                     alpha=0.8,color=colors[ss],label=labels[ss],zorder=100,where='mid')
+                     alpha=1.0,color=colors[ss],label=labels[ss],zorder=100,where='mid')
 
-            plt.fill_between(datadic[specname]['spec_wave'],datadic[specname]['spec_filllow'],datadic[specname]['spec_fillhigh'],
-                             alpha=0.20,color=colors[ss],zorder=100,step='mid')
+            if show_error:
+                plt.fill_between(datadic[specname]['spec_wave'],datadic[specname]['spec_filllow'],datadic[specname]['spec_fillhigh'],
+                                 alpha=0.20,color=colors[ss],zorder=100,step='mid')
 
             try:
                 fluxmin = np.min(np.asarray([0,  np.min(datadic[specname]['spec_flux'][waveent]) ]))
