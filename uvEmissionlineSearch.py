@@ -10228,12 +10228,14 @@ def stack_composite_col_translator(ztype,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,outname,verbose=True):
     """
-    function plotting the spectra resulting from a 3x3 binning of the objects
+    function plotting the composite spectra from the binning of the objects displaying the binning
+    in a seperate panel of the overview plot.
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves, glob
-    specdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection_manual/'
+    specdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/'
 
+    # --- two parameters binned ---
     param1  = 'z'
     param2  = 'm814w'
     globstr = specdir+'*'+param1+'_bin*'+param2+'_bin*.fits'
@@ -10241,6 +10243,15 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
 
     outname = specdir+'testoverviewWcols.pdf'
     uves.stack_composite_plotNxNspecs(param1,param2,[2.9,6.7],[23.79,28.82],spectra,outname)
+
+    # --- one parameter binned ---
+    param1  = 'z'
+    globstr = specdir+'*'+param1+'LT2p9_bin*of3.fits'
+    spectra = np.sort(glob.glob(globstr))
+
+    outname = specdir+'composite_overview_'+param1+'LT2p9.pdf'
+    uves.stack_composite_plotNxNspecs(param1,None,[1.5,2.9],None,spectra,outname)
+
     """
     parentdir      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     compositesetup = parentdir+'stacks1D_sample_selection.txt'
@@ -10253,11 +10264,17 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     if verbose: print(' - Plotting the '+str(Nspec)+' spectra provided \n   ')
     plotspecs        = spectra
 
-    red1, red2, red3      = (205/255.,0/255.,0/255.), (255/255.,76/255.,76/255.), (255/255.,153/255.,153/255.)
-    green1, green2, gree3 = (0/255.,205/255.,0/255.), (76/255.,255/255.,76/255.), (153/255.,255/255.,153/255.)
-    blue1, blue2, blue3   = (0/255.,0/255.,205/255.), (76/255.,76/255.,255/255.), (153/255.,153/255.,255/255.)
-    speccolors            = [blue1, blue2, blue3, green1, green2, gree3, red1, red2, red3]
-    # speccolors       = ['orange','blue','red','green','brown','cyan','pink','purple','yellow']
+    if len(spectra) == 9:
+        red1, red2, red3      = (205/255.,0/255.,0/255.), (255/255.,76/255.,76/255.), (255/255.,153/255.,153/255.)
+        green1, green2, gree3 = (0/255.,205/255.,0/255.), (76/255.,255/255.,76/255.), (153/255.,255/255.,153/255.)
+        blue1, blue2, blue3   = (0/255.,0/255.,205/255.), (76/255.,76/255.,255/255.), (153/255.,153/255.,255/255.)
+        speccolors            = [blue1, blue2, blue3, green1, green2, gree3, red1, red2, red3]
+        # speccolors       = ['orange','blue','red','green','brown','cyan','pink','purple','yellow']
+    elif len(spectra) == 3:
+        speccolors            = ['blue','green','red']
+    elif len(spectra) == 4:
+        speccolors            = ['blue','green','orange','red']
+
     labels           = [' ']*len(spectra) #[ll.replace('_','\_') for ll in setuplabels]
     wavecols         = ['wave']*len(spectra)
     fluxcols         = ['flux']*len(spectra)
@@ -10269,6 +10286,8 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     setupinfo_ents   = np.unique(np.asarray( [np.where(setupinfo['label'] == ll)[0] for ll in setuplabels] ))
     col_matrix_text  = [str(setupinfo[np.where(setupinfo['label'] == ll)[0]]['nspec'][0]) for ll in setuplabels]
     col_matrix_labels=[param1,param2]
+    if param2 is None:
+        col_matrix_labels=[param1,'']
     col_matrix_ranges=[param1range,param2range]
 
     transdic      = uves.stack_composite_col_translator('zcat')
@@ -10276,21 +10295,33 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
 
+    if param2 is not None:
+        datent        = np.where((infodat[transdic[param1+'min']] >= param1range[0]) &
+                                 (infodat[transdic[param1+'max']] <= param1range[1]) &
+                                 (infodat[transdic[param2+'min']] >= param2range[0]) &
+                                 (infodat[transdic[param2+'max']] <= param2range[1]))[0]
 
-    datent        = np.where((infodat[transdic[param1+'min']] >= param1range[0]) &
-                             (infodat[transdic[param1+'max']] <= param1range[1]) &
-                             (infodat[transdic[param2+'min']] >= param2range[0]) &
-                             (infodat[transdic[param2+'max']] <= param2range[1]))[0]
-    col_matrix_p1dat = infodat[transdic[param1+'min']][datent]
-    col_matrix_p2dat = infodat[transdic[param2+'min']][datent]
+        col_matrix_p1dat = infodat[transdic[param1+'min']][datent]
+        col_matrix_p2dat = infodat[transdic[param2+'min']][datent]
 
-    minvals1     = np.unique(setupinfo[setupinfo_ents][param1+'min'])
-    maxvals1     = np.unique(setupinfo[setupinfo_ents][param1+'max'])
-    param1ranges = [[minvals1[ii],maxvals1[ii]] for ii in [0,1,2]]
+        minvals1     = np.unique(setupinfo[setupinfo_ents][param1+'min'])
+        maxvals1     = np.unique(setupinfo[setupinfo_ents][param1+'max'])
+        param1ranges = [[minvals1[ii],maxvals1[ii]] for ii in [0,1,2]]
 
-    minvals2     = np.unique(setupinfo[setupinfo_ents][param2+'min'])
-    maxvals2     = np.unique(setupinfo[setupinfo_ents][param2+'max'])
-    param2ranges = [[minvals2[ii],maxvals2[ii]] for ii in [0,1,2]]
+        minvals2     = np.unique(setupinfo[setupinfo_ents][param2+'min'])
+        maxvals2     = np.unique(setupinfo[setupinfo_ents][param2+'max'])
+        param2ranges = [[minvals2[ii],maxvals2[ii]] for ii in [0,1,2]]
+    else:
+        datent        = np.where((infodat[transdic[param1+'min']] >= param1range[0]) &
+                                 (infodat[transdic[param1+'max']] <= param1range[1]))[0]
+
+        col_matrix_p1dat = infodat[transdic[param1+'min']][datent]
+        col_matrix_p2dat = None
+
+        minvals1     = np.unique(setupinfo[setupinfo_ents][param1+'min'])
+        maxvals1     = np.unique(setupinfo[setupinfo_ents][param1+'max'])
+        param1ranges = [[minvals1[ii],maxvals1[ii]] for ii in np.arange(len(spectra))]
+        param2ranges = [[0,np.max(setupinfo['nspec'][setupinfo_ents])]]*len(spectra)
 
     col_matrix_binranges = [param1ranges,param2ranges]
 
