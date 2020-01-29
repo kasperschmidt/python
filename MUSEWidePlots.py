@@ -1234,13 +1234,25 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
             xr_full       = [col_matrix_binranges[0][0][0],col_matrix_binranges[0][-1][1]]
             yr_full       = [col_matrix_binranges[1][0][0],col_matrix_binranges[1][-1][1]]
 
+            if (col_matrix_p1dat is not None) & (col_matrix_p2dat is not None):
+                Nloops = int(np.sqrt(len(spectra)))
+                plt.plot(col_matrix_p1dat,col_matrix_p2dat,'ok',zorder=20,markersize=1.5)
+            if (col_matrix_p1dat is not None) & (col_matrix_p2dat is None):
+                Nloops = int(len(spectra))
+                plt.hist(col_matrix_p1dat,color='black',bins=20,histtype="step",lw=LW,zorder=20,
+                         alpha=0.6,fill=True,fc='black')
+
             boxval = 0
-            for xx in np.arange(int(np.sqrt(len(spectra)))):
+            for xx in np.arange(Nloops):
                 xr = col_matrix_binranges[0][xx]
-                for yy in np.arange(int(np.sqrt(len(spectra)))):
+                for yy in np.arange(Nloops):
                     yr = col_matrix_binranges[1][yy]
-                    boxcol  = speccols[boxval]
-                    boxtext = col_matrix_text[boxval]
+                    if col_matrix_p2dat is not None:
+                        boxcol  = speccols[boxval]
+                        boxtext = col_matrix_text[boxval]
+                    else:
+                        boxcol  = speccols[xx]
+                        boxtext = col_matrix_text[xx]
 
                     plt.fill_between(xr,[yr[0],yr[0]],[yr[1],yr[1]],alpha=1.00,color=boxcol,zorder=10)
 
@@ -1251,8 +1263,6 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
                     boxval  = boxval + 1
 
-            if (col_matrix_p1dat is not None) & (col_matrix_p2dat is not None):
-                plt.plot(col_matrix_p1dat,col_matrix_p2dat,'ok',zorder=20,markersize=1.5)
 
             plt.xlim(xr_full)
             plt.ylim(yr_full)
