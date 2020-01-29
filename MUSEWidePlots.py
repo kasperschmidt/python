@@ -1256,7 +1256,11 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
                     plt.fill_between(xr,[yr[0],yr[0]],[yr[1],yr[1]],alpha=1.00,color=boxcol,zorder=10)
 
-                    plt.text(xr[0]+np.abs(np.diff(xr)/2.),yr[0]+np.abs(np.diff(yr)/2.),
+                    if col_matrix_p2dat is not None:
+                        text_yoffset = np.abs(np.diff(yr)/2.)
+                    else:
+                        text_yoffset = np.abs(np.diff(yr)*3./4.)
+                    plt.text(xr[0]+np.abs(np.diff(xr)/2.),yr[0]+text_yoffset,
                              boxtext,zorder=30,color='black',#backgroundcolor = 'gray',#speccols[int(pixval)],
                              size=Fsize*1.5,horizontalalignment='center',verticalalignment='center',
                              bbox=dict(boxstyle="round",edgecolor='none',facecolor='white',alpha=0.6))
