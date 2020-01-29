@@ -10277,6 +10277,10 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
         speccolors            = ['blue','green','red']
     elif len(spectra) == 4:
         speccolors            = ['blue','green','orange','red']
+    elif len(spectra) == 10:
+        cmap         = plt.cm.viridis
+        cmap_norm    = plt.Normalize(vmin=1.0, vmax=Nspec)
+        speccolors   = [cmap(cmap_norm(cc))[0:3] for cc in np.arange(Nspec)+1]
 
     labels           = [' ']*len(spectra) #[ll.replace('_','\_') for ll in setuplabels]
     wavecols         = ['wave']*len(spectra)
