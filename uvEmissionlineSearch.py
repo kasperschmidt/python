@@ -9894,7 +9894,7 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
                                         plotSN=plotSN,verbose=False)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
+def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=False,verbose=True):
     """
     Function automatically putting together a file containing the setups for generating composites
     needed by
@@ -9904,9 +9904,10 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     outputfile = './stacks1D_sample_selection.txt'
     outarray   = uves.stack_composites_generate_setup(outputfile,overwrite=True)
 
-
-
     """
+    if equalsizbins:
+        outputfile = outputfile.replace('.txt','_equalbins.txt')
+
     if os.path.isfile(outputfile) & (overwrite == False):
         sys.exit(' Overwrite was set to "False" and found existing copy of the file \n '+outputfile)
 
@@ -9935,7 +9936,8 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     if verbose: print(' - Generating z-binning setups')
     Nbins     = 4
     for colbase in ['z']:
-        binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']>2.9],Nbins,verbose=False)
+        binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']>2.9],Nbins,verbose=False,
+                                              equalsizbins=equalsizbins)
         for bb, br in enumerate(binranges):
             specid   = specid+1
             label    = 'zGT2p9_bin'+str(bb+1)+'of'+str(Nbins)
@@ -9946,7 +9948,8 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
 
     Nbins     = 3
     for colbase in ['z']:
-        binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']<2.9],Nbins,verbose=False)
+        binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']<2.9],Nbins,verbose=False,
+                                              equalsizbins=equalsizbins)
         for bb, br in enumerate(binranges):
             specid   = specid+1
             label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
@@ -9962,7 +9965,7 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     Nbins     = 4
     for colbase in ['m814w']:
         datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.39]
-        binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False)
+        binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False,equalsizbins=equalsizbins)
 
         for bb, br in enumerate(binranges):
             specid   = specid+1
@@ -9975,7 +9978,7 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Selection of objects with m814w non-edetections (limiting mag) ')
     datvec    = infodat[coltrans['m814wmin']][infodat[coltrans['m814wmin']]>29.39]
-    binranges = uves.get_vector_intervals(datvec,1,verbose=True)
+    binranges = uves.get_vector_intervals(datvec,1,verbose=True,equalsizbins=equalsizbins)
     specid    = specid+1
     label     = colbase+'nondet_bin1of1'
     outrow    = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
@@ -9989,7 +9992,8 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     coltrans  = uves.stack_composite_col_translator(ztype)
     Nbins     = 4
     for colbase in ['Llya','FWHMlya','EW0lya','beta']:
-        binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False)
+        binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False,
+                                              equalsizbins=equalsizbins)
         for bb, br in enumerate(binranges):
             specid   = specid+1
             label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
@@ -10012,7 +10016,7 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
             datvec1 = infodat[coltrans[colbase1+'min']][infodat[coltrans[colbase1+'min']]<29.39]
         else:
             datvec1 = infodat[coltrans[colbase1+'min']]
-        binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False)
+        binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False,equalsizbins=equalsizbins)
 
         if colbase2 == 'z':
             datvec2 = infodat['redshift'][infodat['redshift']>2.9]
@@ -10020,7 +10024,7 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
             datvec2 = infodat[coltrans[colbase2+'min']][infodat[coltrans[colbase2+'min']]<29.39]
         else:
             datvec2 = infodat[coltrans[colbase2+'min']]
-        binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False)
+        binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False,equalsizbins=equalsizbins)
 
         for bb1, br1 in enumerate(binranges1):
             for bb2, br2 in enumerate(binranges2):
@@ -10040,10 +10044,10 @@ def stack_composites_generate_setup(outputfile,overwrite=False,verbose=True):
     # ccc = ppp + 'stacks1D_sample_selection.txt'
     # sss = np.genfromtxt(ccc,names=True,skip_header=2,comments='#',dtype=None)
     # print(' comparison: outarray VS fileload')
-    dat_outfile     = np.genfromtxt(outputfile,names=True,skip_header=2,comments='#',dtype=None)
 
     for rr in np.arange(Nrows):
         if os.path.isfile(outputfile):
+            dat_outfile     = np.genfromtxt(outputfile,names=True,skip_header=2,comments='#',dtype=None)
             ent_sample_file = uves.stack_composites_objselection(dat_outfile[rr],infodat)
             outarray[rr][2] = len(ent_sample_file)
             # print('             '+str(len(ent_sample))+'     '+str(len(ent_sample_file)))
@@ -10297,8 +10301,10 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     if param2 is not None:
         datent        = np.where((infodat[transdic[param1+'min']] >= param1range[0]) &
                                  (infodat[transdic[param1+'max']] <= param1range[1]) &
+                                 (infodat[transdic[param1+'max']] != 0) &
                                  (infodat[transdic[param2+'min']] >= param2range[0]) &
-                                 (infodat[transdic[param2+'max']] <= param2range[1]))[0]
+                                 (infodat[transdic[param2+'max']] <= param2range[1]) &
+                                 (infodat[transdic[param1+'max']] != 0))[0]
 
         col_matrix_p1dat = infodat[transdic[param1+'min']][datent]
         col_matrix_p2dat = infodat[transdic[param2+'min']][datent]
@@ -10396,9 +10402,16 @@ def plot_compositespec_wrapper():
         uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_vector_intervals(vector,Nsamples,verbose=True):
+def get_vector_intervals(vector,Nsamples,equalsizbins=False,verbose=True):
     """
     Function to split vector in intervals for generating sub-samples.
+
+    --- INPUT ---
+    vector        The data vector to bin up
+    Nsamples      Number of samples to generate, i.e., the number of bins to return
+    equalsizbins  To return bins of equal size instead of the default with bins
+                  contianing equal number of objects set this keyword to True.
+    verbose       Toggle verbosity
 
     --- Example of use ---
     import uvEmissionlineSearch as uves, astropy.io.fits as afits, numpy as np
@@ -10414,23 +10427,39 @@ def get_vector_intervals(vector,Nsamples,verbose=True):
                       ' but will only consider finite and non-0 values in binning, hence...')
     vector      = np.asarray(vector)[np.isfinite(vector) & (vector != 0)]
     vector_s    = np.sort(vector)
-    Nobj_perbin = int(np.floor(len(vector)/Nsamples))
-    if verbose: print(' - Divding vector of length '+str(len(vector))+' with min and max values ['+str(np.min(vector))+','+str(np.max(vector))+'] into subsamples:')
 
     binranges = []
-    if verbose: print(' - The provided vector can be split into the following '+str(Nsamples)+' samples:')
-    for bb in np.arange(Nsamples):
-        if bb < Nsamples-1:
-            binlen = len(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
-            binmin = np.min(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
-            binmax = np.max(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
-        else:
-            binlen = len(vector_s[Nobj_perbin*bb:])
-            binmin = np.min(vector_s[Nobj_perbin*bb:])
-            binmax = np.max(vector_s[Nobj_perbin*bb:])
+    if not equalsizbins:
+        Nobj_perbin = int(np.floor(len(vector)/Nsamples))
+        if verbose:
+            print(' - Divding vector of length '+str(len(vector))+' with min and max values ['+str(np.min(vector))+','+str(np.max(vector))+'] into subsamples:')
 
-        if verbose: print('   subsample '+str(bb+1)+'   ['+str("%12.4f" % binmin)+' '+str("%12.4f" % binmax)+
-                          ']  of length '+str(binlen))
-        binranges.append([binmin,binmax])
+        if verbose: print(' - The provided vector can be split into the following '+str(Nsamples)+' samples:')
+        for bb in np.arange(Nsamples):
+            if bb < Nsamples-1:
+                binlen = len(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
+                binmin = np.min(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
+                binmax = np.max(vector_s[Nobj_perbin*bb:Nobj_perbin*(bb+1)])
+            else:
+                binlen = len(vector_s[Nobj_perbin*bb:])
+                binmin = np.min(vector_s[Nobj_perbin*bb:])
+                binmax = np.max(vector_s[Nobj_perbin*bb:])
+
+            if verbose: print('   subsample '+str(bb+1)+'   ['+str("%12.4f" % binmin)+' '+str("%12.4f" % binmax)+
+                              ']  of length '+str(binlen))
+            binranges.append([binmin,binmax])
+    else:
+        vectorrange = np.max(vector)-np.min(vector)
+        dbin = vectorrange/Nsamples
+
+        for bb in np.arange(Nsamples):
+            binmin = np.min(vector)+dbin*bb
+            binmax = np.min(vector)+dbin*(bb+1)
+            binlen = len(vector[(vector>=binmin) & (vector<=binmax)])
+
+            if verbose: print('   subsample '+str(bb+1)+'   ['+str("%12.4f" % binmin)+' '+str("%12.4f" % binmax)+
+                              ']  containing '+str(binlen)+' objects')
+            binranges.append([binmin,binmax])
+
     return binranges
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
