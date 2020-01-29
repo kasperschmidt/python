@@ -10248,7 +10248,6 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     param1  = 'z'
     globstr = specdir+'*'+param1+'LT2p9_bin*of3.fits'
     spectra = np.sort(glob.glob(globstr))
-
     outname = specdir+'composite_overview_'+param1+'LT2p9.pdf'
     uves.stack_composite_plotNxNspecs(param1,None,[1.5,2.9],None,spectra,outname)
 
@@ -10342,6 +10341,59 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
                             col_matrix_binranges=col_matrix_binranges,
                             col_matrix_p1dat=col_matrix_p1dat,col_matrix_p2dat=col_matrix_p2dat,
                             plotSN=False,verbose=True)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_compositespec_wrapper():
+    """
+
+    wrapper to stack_composite_plotNxNspecs() setting up and plotting the overveiws of the composite spectra
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.plot_compositespec_wrapper()
+
+    """
+    specdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/'
+
+    # --- two parameters binned ---
+    rangedic = {}
+    rangedic['z']        = [2.9,6.7]
+    rangedic['m814w']    = [23.76,28.82]
+    rangedic['Llya']     = [-12420,24500]
+    rangedic['FWHMlya']  = [0,17]
+    rangedic['EW0lya']   = [0,2000]
+    rangedic['beta']     = [-15.5,8.2]
+
+    for param1,param2 in combinations( ['z','m814w','Llya','FWHMlya','EW0lya','beta'],2):
+        globstr = specdir+'*'+param1+'_bin*'+param2+'_bin*.fits'
+        spectra = np.sort(glob.glob(globstr))
+        outname = specdir+'composite_overview_'+param1+'_VS_'+param2+'.pdf'
+        uves.stack_composite_plotNxNspecs(param1,param2,rangedic[param1],rangedic[param2],spectra,outname)
+
+    # --- one parameter binned ---
+    param1  = 'z'
+    globstr = specdir+'*'+param1+'LT2p9_bin*of3.fits'
+    spectra = np.sort(glob.glob(globstr))
+    outname = specdir+'composite_overview_'+param1+'LT2p9.pdf'
+    uves.stack_composite_plotNxNspecs(param1,None,[1.5,2.9],None,spectra,outname)
+
+    param1  = 'z'
+    globstr = specdir+'*'+param1+'GT2p9_bin*of4.fits'
+    spectra = np.sort(glob.glob(globstr))
+    outname = specdir+'composite_overview_'+param1+'GT2p9.pdf'
+    uves.stack_composite_plotNxNspecs(param1,None,[2.9,6.7],None,spectra,outname)
+
+    param1  = 'm814w'
+    globstr = specdir+'*'+param1+'_bin*of4.fits'
+    spectra = np.sort(glob.glob(globstr))
+    outname = specdir+'composite_overview_'+param1+'Detections.pdf'
+    uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname)
+
+    for plotparam in ['Llya','FWHMlya','EW0lya','beta']:
+        globstr = specdir+'*'+plotparam+'_bin*of4.fits'
+        spectra = np.sort(glob.glob(globstr))
+        outname = specdir+'composite_overview_'+plotparam+'.pdf'
+        uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,verbose=True):
