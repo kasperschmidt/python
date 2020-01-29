@@ -980,6 +980,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
                         yrangefull=None, xrangefull=[4500,18000], speccols=None, linenames=None,
                         col_matrix=False, col_matrix_title='The Color Matrix', col_matrix_text='Text',
                         col_matrix_labels=['xparam','yparam'], col_matrix_ranges=[[0,3],[0,3]],
+                        col_matrix_binranges=None,col_matrix_p1dat=None,col_matrix_p2dat=None,
                         verbose=True):
     """
 
@@ -1201,32 +1202,62 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         plt.subplot(4, 3, 12) # Color matrix
         plt.title(col_matrix_title)
 
-        cmatrix      = np.zeros([3,3])
-        pixval     = 0
-        for xx in np.arange(np.sqrt(len(spectra))):
-            for yy in np.arange(np.sqrt(len(spectra)))[::-1]:
-                cmatrix[int(yy),int(xx)] = pixval
-                pixtext = col_matrix_text[pixval]
-                #pixtext = 'pix'+str(int(xx))+str(int(yy))+'\\\\(val='+str(pixval)+')'
-                plt.text(xx,yy,pixtext,zorder=30,color='gray',#speccols[int(pixval)],
-                         size=Fsize*2,horizontalalignment='center',verticalalignment='center')
-                pixval    = pixval + 1
+        NxNmatrix = False
+        if NxNmatrix:
+            cmatrix      = np.zeros([3,3])
+            pixval       = 0
+            for xx in np.arange(np.sqrt(len(spectra))):
+                for yy in np.arange(np.sqrt(len(spectra)))[::-1]:
+                    cmatrix[int(yy),int(xx)] = pixval
+                    pixtext = col_matrix_text[pixval]
+                    #pixtext = 'pix'+str(int(xx))+str(int(yy))+'\\\\(val='+str(pixval)+')'
+                    plt.text(xx,yy,pixtext,zorder=30,color='gray',#speccols[int(pixval)],
+                             size=Fsize*2,horizontalalignment='center',verticalalignment='center')
+                    pixval    = pixval + 1
 
-        cmap         = plt.cm.gray
-        cmap_norm    = plt.Normalize(cmatrix.min(), cmatrix.max())
-        cmatrix_cmap = cmap(cmap_norm(cmatrix))
+            cmap         = plt.cm.gray
+            cmap_norm    = plt.Normalize(cmatrix.min(), cmatrix.max())
+            cmatrix_cmap = cmap(cmap_norm(cmatrix))
 
-        pixval = 0
-        for xx in np.arange(np.sqrt(len(spectra))):
-            for yy in np.arange(np.sqrt(len(spectra)))[::-1]:
-                cmatrix_cmap[int(yy),int(xx),:3] = speccols[pixval]
-                pixval = pixval + 1
+            pixval = 0
+            for xx in np.arange(np.sqrt(len(spectra))):
+                for yy in np.arange(np.sqrt(len(spectra)))[::-1]:
+                    cmatrix_cmap[int(yy),int(xx),:3] = speccols[pixval]
+                    pixval = pixval + 1
 
-        plt.imshow(cmatrix_cmap,zorder=10)
-        plt.xticks([])
-        plt.yticks([])
-        plt.xlabel(str(col_matrix_ranges[0][0])+' $<$ '+col_matrix_labels[0]+' $<$ '+str(col_matrix_ranges[0][1]))
-        plt.ylabel(str(col_matrix_ranges[1][0])+' $<$ '+col_matrix_labels[1]+' $<$ '+str(col_matrix_ranges[1][1]))
+            plt.imshow(cmatrix_cmap,zorder=10)
+            plt.xticks([])
+            plt.yticks([])
+            plt.xlabel(str(col_matrix_ranges[0][0])+' $<$ '+col_matrix_labels[0]+' $<$ '+str(col_matrix_ranges[0][1]))
+            plt.ylabel(str(col_matrix_ranges[1][0])+' $<$ '+col_matrix_labels[1]+' $<$ '+str(col_matrix_ranges[1][1]))
+        else:
+            xr_full       = [col_matrix_binranges[0][0][0],col_matrix_binranges[0][-1][1]]
+            yr_full       = [col_matrix_binranges[1][0][0],col_matrix_binranges[1][-1][1]]
+
+            boxval = 0
+            for xx in np.arange(int(np.sqrt(len(spectra)))):
+                xr = col_matrix_binranges[0][xx]
+                for yy in np.arange(int(np.sqrt(len(spectra)))):
+                    yr = col_matrix_binranges[1][yy]
+                    boxcol  = speccols[boxval]
+                    boxtext = col_matrix_text[boxval]
+
+                    plt.fill_between(xr,[yr[0],yr[0]],[yr[1],yr[1]],alpha=1.00,color=boxcol,zorder=10)
+
+                    plt.text(xr[0]+np.abs(np.diff(xr)/2.),yr[0]+np.abs(np.diff(yr)/2.),
+                             boxtext,zorder=30,color='black',#backgroundcolor = 'gray',#speccols[int(pixval)],
+                             size=Fsize*1.5,horizontalalignment='center',verticalalignment='center',
+                             bbox=dict(boxstyle="round",edgecolor='none',facecolor='white',alpha=0.6))
+
+                    boxval  = boxval + 1
+
+            if (col_matrix_p1dat is not None) & (col_matrix_p2dat is not None):
+                plt.plot(col_matrix_p1dat,col_matrix_p2dat,'ok',zorder=20,markersize=1.5)
+
+            plt.xlim(xr_full)
+            plt.ylim(yr_full)
+            plt.xlabel(col_matrix_labels[0])
+            plt.ylabel(col_matrix_labels[1])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.savefig(specfigure, dpi=300) # dpi = dot per inch for rasterized points
