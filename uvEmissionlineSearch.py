@@ -9894,7 +9894,7 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
                                         plotSN=plotSN,verbose=False)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=False,verbose=True):
+def stack_composites_generate_setup(outputfile,equalsizebins=False,overwrite=False,verbose=True):
     """
     Function automatically putting together a file containing the setups for generating composites
     needed by
@@ -9905,8 +9905,8 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
     outarray   = uves.stack_composites_generate_setup(outputfile,overwrite=True)
 
     """
-    if equalsizbins:
-        outputfile = outputfile.replace('.txt','_equalbins.txt')
+    if equalsizebins:
+        outputfile = outputfile.replace('.txt','_equalsizebins.txt')
 
     if os.path.isfile(outputfile) & (overwrite == False):
         sys.exit(' Overwrite was set to "False" and found existing copy of the file \n '+outputfile)
@@ -9937,7 +9937,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
     for Nbins in [4,10]:
         for colbase in ['z']:
             binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']>2.9],Nbins,verbose=False,
-                                                  equalsizbins=equalsizbins)
+                                                  equalsizebins=equalsizebins)
             for bb, br in enumerate(binranges):
                 specid   = specid+1
                 label    = 'zGT2p9_bin'+str(bb+1)+'of'+str(Nbins)
@@ -9949,7 +9949,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
     Nbins     = 3
     for colbase in ['z']:
         binranges = uves.get_vector_intervals(infodat['redshift'][infodat['redshift']<2.9],Nbins,verbose=False,
-                                              equalsizbins=equalsizbins)
+                                              equalsizebins=equalsizebins)
         for bb, br in enumerate(binranges):
             specid   = specid+1
             label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
@@ -9965,7 +9965,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
     for Nbins in [4,10]:
         for colbase in ['m814w']:
             datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.39]
-            binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False,equalsizbins=equalsizbins)
+            binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False,equalsizebins=equalsizebins)
 
             for bb, br in enumerate(binranges):
                 specid   = specid+1
@@ -9978,7 +9978,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Selection of objects with m814w non-edetections (limiting mag) ')
     datvec    = infodat[coltrans['m814wmin']][infodat[coltrans['m814wmin']]>29.39]
-    binranges = uves.get_vector_intervals(datvec,1,verbose=True,equalsizbins=equalsizbins)
+    binranges = uves.get_vector_intervals(datvec,1,verbose=True,equalsizebins=equalsizebins)
     specid    = specid+1
     label     = colbase+'nondet_bin1of1'
     outrow    = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
@@ -9993,7 +9993,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
     Nbins     = 4
     for colbase in ['Llya','FWHMlya','EW0lya','beta']:
         binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False,
-                                              equalsizbins=equalsizbins)
+                                              equalsizebins=equalsizebins)
         for bb, br in enumerate(binranges):
             specid   = specid+1
             label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
@@ -10016,7 +10016,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
             datvec1 = infodat[coltrans[colbase1+'min']][infodat[coltrans[colbase1+'min']]<29.39]
         else:
             datvec1 = infodat[coltrans[colbase1+'min']]
-        binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False,equalsizbins=equalsizbins)
+        binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False,equalsizebins=equalsizebins)
 
         if colbase2 == 'z':
             datvec2 = infodat['redshift'][infodat['redshift']>2.9]
@@ -10024,7 +10024,7 @@ def stack_composites_generate_setup(outputfile,equalsizbins=False,overwrite=Fals
             datvec2 = infodat[coltrans[colbase2+'min']][infodat[coltrans[colbase2+'min']]<29.39]
         else:
             datvec2 = infodat[coltrans[colbase2+'min']]
-        binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False,equalsizbins=equalsizbins)
+        binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False,equalsizebins=equalsizebins)
 
         for bb1, br1 in enumerate(binranges1):
             for bb2, br2 in enumerate(binranges2):
@@ -10406,14 +10406,14 @@ def plot_compositespec_wrapper():
         uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_vector_intervals(vector,Nsamples,equalsizbins=False,verbose=True):
+def get_vector_intervals(vector,Nsamples,equalsizebins=False,verbose=True):
     """
     Function to split vector in intervals for generating sub-samples.
 
     --- INPUT ---
     vector        The data vector to bin up
     Nsamples      Number of samples to generate, i.e., the number of bins to return
-    equalsizbins  To return bins of equal size instead of the default with bins
+    equalsizebins To return bins of equal size instead of the default with bins
                   contianing equal number of objects set this keyword to True.
     verbose       Toggle verbosity
 
@@ -10433,7 +10433,7 @@ def get_vector_intervals(vector,Nsamples,equalsizbins=False,verbose=True):
     vector_s    = np.sort(vector)
 
     binranges = []
-    if not equalsizbins:
+    if not equalsizebins:
         Nobj_perbin = int(np.floor(len(vector)/Nsamples))
         if verbose:
             print(' - Divding vector of length '+str(len(vector))+' with min and max values ['+str(np.min(vector))+','+str(np.max(vector))+'] into subsamples:')
