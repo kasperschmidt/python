@@ -10199,6 +10199,8 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
 def stack_composite_col_translator(ztype,verbose=True):
     """
 
+    coltranslationdic = uves.stack_composite_col_translator('zcat')
+
     """
     if ztype.lower() == 'zcat':
         zcol = 'redshift'
@@ -10264,9 +10266,33 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     col_matrix_title = '' #'The Color Matrix'
     # col_matrix_text  =  [ss.split('.fit')[0].split(param1+'_')[-1].replace('bin','').replace('of','/').replace('_'+param2+'_','-')
     #                      for ss in spectra]
+    setupinfo_ents   = np.unique(np.asarray( [np.where(setupinfo['label'] == ll)[0] for ll in setuplabels] ))
     col_matrix_text  = [str(setupinfo[np.where(setupinfo['label'] == ll)[0]]['nspec'][0]) for ll in setuplabels]
     col_matrix_labels=[param1,param2]
     col_matrix_ranges=[param1range,param2range]
+
+    transdic      = uves.stack_composite_col_translator('zcat')
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
+    infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
+
+
+    datent        = np.where((infodat[transdic[param1+'min']] >= param1range[0]) &
+                             (infodat[transdic[param1+'max']] <= param1range[1]) &
+                             (infodat[transdic[param2+'min']] >= param2range[0]) &
+                             (infodat[transdic[param2+'max']] <= param2range[1]))[0]
+    col_matrix_p1dat = infodat[transdic[param1+'min']][datent]
+    col_matrix_p2dat = infodat[transdic[param2+'min']][datent]
+
+    minvals1     = np.unique(setupinfo[setupinfo_ents][param1+'min'])
+    maxvals1     = np.unique(setupinfo[setupinfo_ents][param1+'max'])
+    param1ranges = [[minvals1[ii],maxvals1[ii]] for ii in [0,1,2]]
+
+    minvals2     = np.unique(setupinfo[setupinfo_ents][param2+'min'])
+    maxvals2     = np.unique(setupinfo[setupinfo_ents][param2+'max'])
+    param2ranges = [[minvals2[ii],maxvals2[ii]] for ii in [0,1,2]]
+
+    col_matrix_binranges = [param1ranges,param2ranges]
 
     plotz        = 0.0
     voffset      = 0.0
@@ -10274,7 +10300,7 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     wavecols_sky = [None]*len(plotspecs)
     fluxcols_sky = [None]*len(plotspecs)
     yrangefull   = [-30,100]
-    xrangefull   = [600,3800]
+    xrangefull   = [600,2500]
 
     mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
                             skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
@@ -10282,6 +10308,8 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
                             yrangefull=yrangefull, xrangefull=xrangefull,
                             col_matrix=col_matrix, col_matrix_title=col_matrix_title, col_matrix_text=col_matrix_text,
                             col_matrix_labels=col_matrix_labels, col_matrix_ranges=col_matrix_ranges,
+                            col_matrix_binranges=col_matrix_binranges,
+                            col_matrix_p1dat=col_matrix_p1dat,col_matrix_p2dat=col_matrix_p2dat,
                             plotSN=False,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
