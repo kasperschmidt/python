@@ -10453,8 +10453,14 @@ def get_vector_intervals(vector,Nsamples,equalsizbins=False,verbose=True):
         dbin = vectorrange/Nsamples
 
         for bb in np.arange(Nsamples):
-            binmin = np.min(vector)+dbin*bb
-            binmax = np.min(vector)+dbin*(bb+1)
+            if bb == 0:
+                binmin = np.min(vector) - np.abs(np.min(vector)*0.01)
+            else:
+                binmin = np.min(vector)+dbin*bb
+            if bb == Nsamples-1:
+                binmax = np.max(vector) +  np.abs(np.max(vector)*0.01)
+            else:
+                binmax = np.min(vector) +dbin*(bb+1)
             binlen = len(vector[(vector>=binmin) & (vector<=binmax)])
 
             if verbose: print('   subsample '+str(bb+1)+'   ['+str("%12.4f" % binmin)+' '+str("%12.4f" % binmax)+
