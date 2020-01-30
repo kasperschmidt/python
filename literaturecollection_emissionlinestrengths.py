@@ -32,7 +32,7 @@ def generate_literature_fitscatalog(verbose=True):
 
     # updating plots
     lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=False,shownames=False)
-    lce.plot_literature_fitscatalog_legend(legendshape=(14.0, 2.0),ncol=4,extra_textlist=['UVES restults'],extra_symlist=['o'])
+    lce.plot_literature_fitscatalog_legend(legendshape=(14.0, 2.0),ncol=3,extra_textlist=['UVES restults'],extra_symlist=['o'])
 
     """
     outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
@@ -90,6 +90,10 @@ def generate_literature_fitscatalog(verbose=True):
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
     dataref, dataarray     = lce.data_mai18(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+    dataref, dataarray     = lce.data_sha03(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
@@ -183,7 +187,7 @@ def referencedictionary():
     refdic['sta14'] = [7e10,    'Stark et al. (2014)',                                    'p']
     refdic['sta15'] = [8e10,    'Stark et al. (2015a,b, 2017)',                           'P']
     refdic['mai18'] = [9e10,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
-    refdic['xxx'] = [10e9,    'XXX et al. (2017)',                                    'h']
+    refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
     refdic['dummy'] = [11e9,    'dummy',                                                  'H']
     refdic['dummy'] = [12e9,    'dummy',                                                  '+']
     refdic['dummy'] = [13e9,    'dummy',                                                  'x']
@@ -207,10 +211,7 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Stark16   Stark   et al. (2017)
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Shap03    Shapley et al. (2003)
+
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Bay14     Bayliss et al. (2014)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2372,4 +2373,45 @@ def data_mai18(fluxscale=1e2,verbose=True):
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sha03(fluxscale=1.0,verbose=True):
+    """
+    Data collected from Shapley+2003
+
+    NOTE ON DATA
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sha03'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['LAEgr1','LAEgr2','LAEgr3','LAEgr4'])
+    datadic['id']        = np.array([1,2,3,4]) + baseid
+    datadic['ra']        = np.array([0.0,0.0,0.0,0.0])
+    datadic['dec']       = np.array([0.0,0.0,0.0,0.0])
+    datadic['redshift']  = np.array([0.0,0.0,0.0,0.0])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['EW0_Lya']        = np.array([-14.92  ,  -1.10      ,  11.0          ,  52.63        ])
+    datadic['EW0err_Lya']     = np.array([0.56    ,  0.38       ,  0.71          ,  2.74        ])
+
+    datadic['EW0_OIII']       = np.array([0.23    ,  0.01       ,  0.10          ,  1.16        ])
+    datadic['EW0err_OIII']    = np.array([0.19    ,  0.16       ,  0.12          ,  0.56        ])
+
+    datadic['EW0_CIII2']      = np.array([0.41    ,  2.89       ,  1.90          ,  5.37        ])
+    datadic['EW0err_CIII2']   = np.array([0.39    ,  1.04       ,  1.07          ,  2.99        ])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
