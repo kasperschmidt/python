@@ -97,6 +97,10 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_bay14(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
@@ -188,7 +192,7 @@ def referencedictionary():
     refdic['sta15'] = [8e10,    'Stark et al. (2015a,b, 2017)',                           'P']
     refdic['mai18'] = [9e10,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
     refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
-    refdic['dummy'] = [11e9,    'dummy',                                                  'H']
+    refdic['bay14'] = [11e9,    'Bayliss et al. (2014)',                                  'H']
     refdic['dummy'] = [12e9,    'dummy',                                                  '+']
     refdic['dummy'] = [13e9,    'dummy',                                                  'x']
     refdic['dummy'] = [14e9,    'dummy',                                                  'D']
@@ -211,9 +215,6 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
-
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Bay14     Bayliss et al. (2014)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Schmidt et al. (2016)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2410,6 +2411,100 @@ def data_sha03(fluxscale=1.0,verbose=True):
 
     datadic['EW0_CIII2']      = np.array([0.41    ,  2.89       ,  1.90          ,  5.37        ])
     datadic['EW0err_CIII2']   = np.array([0.39    ,  1.04       ,  1.07          ,  2.99        ])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_bay14(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Bayliss+2014
+
+    It is not clear if the OIII4363 is a 3sigma limit.
+    Including only the measrued fluxes (corrected for lensing magnification). De-reddened fluxes also available.
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'bay14'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['SGAS_J105039.6+001730'])
+    datadic['id']        = np.array([1]) + baseid
+    rasex                = np.array(['10:50:41.336'])
+    decsex               = np.array(['+00:17:23.35'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([3.6253])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['f_HeII']      = np.array([0.29   ])
+    datadic['f_OIII1']     = np.array([0.10   ])
+    datadic['f_OIII2']     = np.array([0.29   ])
+    datadic['f_NIII']      = np.array([0.08   ])
+    datadic['f_SiIII1']    = np.array([0.26   ])
+    datadic['f_SiIII2']    = np.array([0.15   ])
+    datadic['f_CIII1']     = np.array([1.14   ])
+    datadic['f_CIII2']     = np.array([0.69   ])
+    datadic['f_OII1']      = np.array([2.26   ])
+    datadic['f_OII2']      = np.array([2.22   ])
+    datadic['f_NeIII']     = np.array([1.83   ])
+    datadic['f_Hgamma']    = np.array([2.96   ])
+    datadic['f_OIII4363']  = np.array([0.81   ])
+    datadic['f_Hbeta']     = np.array([5.71   ])
+    datadic['f_OIII4960']  = np.array([13.44  ])
+    datadic['f_OIII5008']  = np.array([46.12  ])
+
+    datadic['ferr_HeII']      = np.array([   0.04  ])
+    datadic['ferr_OIII1']     = np.array([   0.04  ])
+    datadic['ferr_OIII2']     = np.array([   0.04  ])
+    datadic['ferr_NIII']      = np.array([   0.03  ])
+    datadic['ferr_SiIII1']    = np.array([   0.04  ])
+    datadic['ferr_SiIII2']    = np.array([   0.04  ])
+    datadic['ferr_CIII1']     = np.array([   0.07  ])
+    datadic['ferr_CIII2']     = np.array([   0.08  ])
+    datadic['ferr_OII1']      = np.array([   0.06  ])
+    datadic['ferr_OII2']      = np.array([   0.06  ])
+    datadic['ferr_NeIII']     = np.array([   0.04  ])
+    datadic['ferr_Hgamma']    = np.array([   0.12  ])
+    datadic['ferr_OIII4363']  = np.array([   +99   ])
+    datadic['ferr_Hbeta']     = np.array([   0.06  ])
+    datadic['ferr_OIII4960']  = np.array([   0.10  ])
+    datadic['ferr_OIII5008']  = np.array([   0.12  ])
+
+    linename = 'SiIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'])
+
+    linename = 'OIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'])
+
+    linename = 'CIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
