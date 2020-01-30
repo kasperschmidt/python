@@ -9609,16 +9609,15 @@ def pointing_selector():
     return pointing_selector_dic
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def prepare_reextractionPostVetting(verbose=True):
+def prepare_reextractionPostVetting(verbose=True,printVetComment=False):
     """
-    Function prepare setupfiles (by editing exiting files) and collecting objects to perfor re-extractions for
+    Function to prepare setupfiles (by editing exiting files) and collecting objects to perform re-extractions for
     based on the TDOSE vetting summary generated with tdose_utilities.vet_tdose_extractions() collected in
     parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
     uves.prepare_reextractionPostVetting()
-
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -9638,6 +9637,21 @@ def prepare_reextractionPostVetting(verbose=True):
     if verbose: print(' - Found '+str(Nvets)+' objects that had been vetted; '+str(Nreext)+
                       ' of those should be re-extracted (vet results > 2)')
     if verbose: print('   These are spread out over '+str(len(point_reext_u))+' individual MUSE pointings.')
+
+    if printVetComment:
+        print('   The comments for these objects from the vetting file are:')
+        print('   - - - - - - - - - - - - - - - - - - - - - - - - ')
+        fvet      = open(vetresults,'r')
+        for line in fvet.readlines():
+            if line.split()[0] in id_reext.astype(str):
+                notesstr = line.split('#Notes:')[-1].split('\n')[0]
+                if ('fov' in notesstr.lower()) or ('use point source' in notesstr.lower()):
+                    print('\033[91m'+'  '+line.split()[0]+':  '+notesstr+'\033[0m')
+                else:
+                    print('  '+line.split()[0]+':  '+notesstr)
+
+        print('   - - - - - - - - - - - - - - - - - - - - - - - - ')
+        fvet.close()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Initializing setup files for re-extractions based on original TDOSE setup files.')
@@ -9670,6 +9684,9 @@ def prepare_reextractionPostVetting(verbose=True):
                 line   = line.replace('tdose_models/','tdose_models_reext/')
             if line.startswith('spec1D_directory'):
                 line   = line.replace('tdose_spectra/','tdose_spectra_reext/')
+
+            if line.startswith('max_centroid_shift'):
+                line   = line.replace('  10  ','  2  ')
 
             if line.startswith('sources_to_extract'):
                 sourceextfile = line.split()[1]
