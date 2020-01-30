@@ -10353,7 +10353,7 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
                             plotSN=False,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_compositespec_wrapper():
+def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/'):
     """
 
     wrapper to stack_composite_plotNxNspecs() setting up and plotting the overveiws of the composite spectra
@@ -10363,8 +10363,6 @@ def plot_compositespec_wrapper():
     uves.plot_compositespec_wrapper()
 
     """
-    specdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/'
-
     # --- two parameters binned ---
     rangedic = {}
     rangedic['z']        = [2.9,6.7]
@@ -10387,17 +10385,18 @@ def plot_compositespec_wrapper():
     outname = specdir+'composite_overview_'+param1+'LT2p9.pdf'
     uves.stack_composite_plotNxNspecs(param1,None,[1.5,2.9],None,spectra,outname)
 
-    param1  = 'z'
-    globstr = specdir+'*'+param1+'GT2p9_bin*of4.fits'
-    spectra = np.sort(glob.glob(globstr))
-    outname = specdir+'composite_overview_'+param1+'GT2p9.pdf'
-    uves.stack_composite_plotNxNspecs(param1,None,[2.9,6.7],None,spectra,outname)
+    for Nbin in [4,10]:
+        param1  = 'z'
+        globstr = specdir+'*'+param1+'GT2p9_bin*of'+str(Nbin)+'.fits'
+        spectra = np.sort(glob.glob(globstr))
+        outname = specdir+'composite_overview_'+param1+'GT2p9.pdf'
+        uves.stack_composite_plotNxNspecs(param1,None,[2.9,6.7],None,spectra,outname)
 
-    param1  = 'm814w'
-    globstr = specdir+'*'+param1+'_bin*of4.fits'
-    spectra = np.sort(glob.glob(globstr))
-    outname = specdir+'composite_overview_'+param1+'Detections.pdf'
-    uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname)
+        param1  = 'm814w'
+        globstr = specdir+'*'+param1+'_bin*of'+str(Nbin)+'.fits'
+        spectra = np.sort(glob.glob(globstr))
+        outname = specdir+'composite_overview_'+param1+'Detections.pdf'
+        uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname)
 
     for plotparam in ['Llya','FWHMlya','EW0lya','beta']:
         globstr = specdir+'*'+plotparam+'_bin*of4.fits'
