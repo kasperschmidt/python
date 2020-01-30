@@ -181,9 +181,9 @@ def referencedictionary():
     refdic['rig15'] = [5e10,    'Rigby et al. (2015)',                                    '8']
     refdic['erb10'] = [6e10,    'Erb et al. (2010)',                                      's']
     refdic['sta14'] = [7e10,    'Stark et al. (2014)',                                    'p']
-    refdic['sta15'] = [8e10,    'Stark et al. (2015a,b)',                                 'P']
-    refdic['mai18'] = [9e10,    'Mainali et al. (2018)',                                  '*']
-    refdic['dummy'] = [10e9,    'dummy',                                                  'h']
+    refdic['sta15'] = [8e10,    'Stark et al. (2015a,b, 2017)',                           'P']
+    refdic['mai18'] = [9e10,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
+    refdic['xxx'] = [10e9,    'XXX et al. (2017)',                                    'h']
     refdic['dummy'] = [11e9,    'dummy',                                                  'H']
     refdic['dummy'] = [12e9,    'dummy',                                                  '+']
     refdic['dummy'] = [13e9,    'dummy',                                                  'x']
@@ -208,7 +208,7 @@ def referencedictionary():
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Stark16   Stark   et al. (2016)
+    # Stark16   Stark   et al. (2017)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Shap03    Shapley et al. (2003)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2129,11 +2129,11 @@ def data_sta14(fluxscale=1.0,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_sta15(fluxscale=1.0,verbose=True):
     """
-    Data collected from Stark et al. (2015a,b)
+    Data collected from Stark et al. (2015a,b, 2017)
 
     GN-108036 Lya measurements from Ono+12.
     A1703-zd4 and A1703-zD1 limits on UV lines taken from Mainali+18.
-    CIII measurements from A1703-zd6 also taken from Mainali+18.
+    CIII measurements from A1703-zd6 also taken from Mainali+18, who has it from Stark et al. (2017).
 
     Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
 
@@ -2237,12 +2237,14 @@ def data_sta15(fluxscale=1.0,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_mai18(fluxscale=1e2,verbose=True):
     """
-    Data collected from Mainali et al (2018)
+    Data collected from Mainali et al (2018) and Stark et al. (2017)
 
     Not including A1703-zd4, A1703-zD1 and A1703-zd6 as those are included in the sta15 lists.
-    Lya info for EGS-zs8-1 from Oesch+15
-    Lya info for EGS-zs8-2 from Roberts-Borsani+16 and Stark+17
-    Lya info for EGSY8p7   from Zitrin+15
+    Lya  info for EGS-zs8-1 from Oesch+15
+    Lya  info for EGS-zs8-2 from Roberts-Borsani+16 and Stark+17
+    Lya  info for EGSY8p7   from Zitrin+15
+    CIII info for EGS-zs8-1 from Stark+17
+    CIII info for EGS-zs8-2 from Stark+17
 
     Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
 
@@ -2341,15 +2343,15 @@ def data_mai18(fluxscale=1e2,verbose=True):
                                                    EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    datadic['f_CIII1']       = np.array([np.nan   ,  np.nan   ,  np.nan   ,  1.7      ,  3.2           ,  3.2           ,  12.0       ,  np.nan        ,  np.nan        ])
-    datadic['ferr_CIII1']    = np.array([np.nan   ,  np.nan   ,  np.nan   ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
-    datadic['EW0_CIII1']     = np.array([np.nan   ,  np.nan   ,  np.nan   ,  5.8      ,  15.6          ,  15.6          ,  7.3        ,  np.nan        ,  np.nan        ])
-    datadic['EW0err_CIII1']  = np.array([np.nan   ,  np.nan   ,  np.nan   ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
+    datadic['f_CIII1']       = np.array([np.nan   ,  4.5      ,  2.3      ,  1.7      ,  3.2           ,  3.2           ,  12.0       ,  np.nan        ,  np.nan        ])
+    datadic['ferr_CIII1']    = np.array([np.nan   ,  0.5      ,  +99      ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
+    datadic['EW0_CIII1']     = np.array([np.nan   ,  12.0     ,  7.1      ,  5.8      ,  15.6          ,  15.6          ,  7.3        ,  np.nan        ,  np.nan        ])
+    datadic['EW0err_CIII1']  = np.array([np.nan   ,  2.0      ,  +99      ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - -  - - - - - - - - - - - - - - - - - - - - - - - -
-    datadic['f_CIII2']       = np.array([np.nan   ,  np.nan   ,  np.nan   ,  1.2      ,  3.2           ,  3.2           ,  8.4        ,  np.nan        ,  np.nan        ])
-    datadic['ferr_CIII2']    = np.array([np.nan   ,  np.nan   ,  np.nan   ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
-    datadic['EW0_CIII2']     = np.array([np.nan   ,  np.nan   ,  np.nan   ,  4.1      ,  15.6          ,  15.6          ,  5.2        ,  np.nan        ,  np.nan        ])
-    datadic['EW0err_CIII2']  = np.array([np.nan   ,  np.nan   ,  np.nan   ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
+    datadic['f_CIII2']       = np.array([np.nan   ,  3.6      ,  2.3      ,  1.2      ,  3.2           ,  3.2           ,  8.4        ,  np.nan        ,  np.nan        ])
+    datadic['ferr_CIII2']    = np.array([np.nan   ,  0.5      ,  +99      ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
+    datadic['EW0_CIII2']     = np.array([np.nan   ,  10.0     ,  7.1      ,  4.1      ,  15.6          ,  15.6          ,  5.2        ,  np.nan        ,  np.nan        ])
+    datadic['EW0err_CIII2']  = np.array([np.nan   ,  1.0      ,  +99      ,  +99      ,  +99           ,  +99           ,  +99        ,  np.nan        ,  np.nan        ])
 
     linename = 'CIII'
     datadic['f_'+linename], datadic['ferr_'+linename], \
