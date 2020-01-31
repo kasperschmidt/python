@@ -101,6 +101,10 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_sch16(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
@@ -193,7 +197,7 @@ def referencedictionary():
     refdic['mai18'] = [9e10,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
     refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
     refdic['bay14'] = [11e9,    'Bayliss et al. (2014)',                                  'H']
-    refdic['dummy'] = [12e9,    'dummy',                                                  '+']
+    refdic['sch16'] = [12e9,    'Schmidt et al. (2016)',                                  '+']
     refdic['dummy'] = [13e9,    'dummy',                                                  'x']
     refdic['dummy'] = [14e9,    'dummy',                                                  'D']
     refdic['dummy'] = [15e9,    'dummy',                                                  'd']
@@ -215,8 +219,6 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Schmidt et al. (2016)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Huang et al. (2016b)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2499,6 +2501,93 @@ def data_bay14(fluxscale=1e2,verbose=True):
     datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'] = \
         lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sch16(fluxscale=1e3,verbose=True):
+    """
+    Data collected from Schmidt+2016
+
+    Stacked values published in Matthee+17 with f_lya calculated from Schmidt+16 fluxes.
+    RXJ1347_01037 has DEIMOS Lya from Huang+2016a
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sch16'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['GLASSstack_z7p2','RXJ1347_01037','MACS2129_00899'])
+    datadic['id']        = np.array([1,2,3]) + baseid
+    datadic['ra']        = np.array([0.0, 206.900859670, 322.343220360])
+    datadic['dec']       = np.array([0.0, -11.754209621, -7.693382243])
+    datadic['redshift']  = np.array([7.2, 6.76, 8.10])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    # Fluxes used for estimating GLASS stack f_lya
+    # f_lya  ferr_lya
+    # 1.91   0.7   A2744-135-150223_00463-G102.2D.fits
+    # 2.76   0.94  A2744-135-150223_00844-G102.2D.fits
+    # 2.0    0.56  MACS1423.8+2404-008-150223_00648-G102.2D.fits
+    # 1.87   0.63  MACS1423.8+2404-008-150223_01102-G102.2D.fits
+    # 3.45   0.87  MACS2129.4-0741-050-150223_00677-G102.2D.fits
+    # 3.42   0.70  MACS2129.4-0741-328-150223_00677-G102.2D.fits
+    # 0.74   0.52  MACS2129.4-0741-050-150223_00899-G102.2D.fits
+    # 1.26   0.47  MACS2129.4-0741-050-150223_00899-G141.2D.fits
+    # 2.7    0.85  MACS2129.4-0741-050-150223_01516-G102.2D.fits
+    # 2.55   1.07  RXJ2248-053-150223_00207-G141.2D.fits
+
+    f_lya_stack    = np.sum(np.array([1.91,2.76,2.0 ,1.87,3.45,3.42,0.74,1.26,2.7,2.55]))/10
+    ferr_lya_stack = np.sqrt(np.sum(np.array([0.7 ,0.94,0.56,0.63,0.87,0.70,0.52,0.47,0.85,1.07])**2))/10
+
+
+    datadic['f_Lya']          = np.array([f_lya_stack,     2.6,    1.00])
+    datadic['ferr_Lya']       = np.array([ferr_lya_stack,  0.4,    0.25])
+    datadic['EW0_Lya']        = np.array([np.nan,          74.33, 59.0])
+    datadic['EW0err_Lya']     = np.array([np.nan,          12.09, 21.0])
+
+    datadic['f_CIV']          = np.array([0.3*datadic['f_Lya'][0], 0.36*datadic['f_Lya'][1], 0.64*datadic['f_Lya'][2]])*3./2.
+    datadic['ferr_CIV']       = np.array([+99, +99, +99 ])
+    datadic['EW0_CIV']        = np.array([0.3*datadic['EW0_Lya'][0], 0.36*datadic['EW0_Lya'][1], 0.64*datadic['EW0_Lya'][2]])*3./2.
+    datadic['EW0err_CIV']     = np.array([+99, +99, +99 ])
+
+    datadic['f_CIII']         = np.array([.2*datadic['f_Lya'][0]*3./2., 0.25 *datadic['f_Lya'][1]*3./2. , np.nan ])
+    datadic['ferr_CIII']      = np.array([+99, +99, np.nan ])
+    datadic['EW0_CIII']       = np.array([.2*datadic['EW0_Lya'][0]*3./2., 0.25 *datadic['EW0_Lya'][1]*3./2. , np.nan ])
+    datadic['EW0err_CIII']    = np.array([+99, +99, np.nan ])
+
+    datadic['f_HeII']         = np.array([0.2*datadic['f_Lya'][0] * 3./2. , np.nan, np.nan ])
+    datadic['ferr_HeII']      = np.array([+99, np.nan, np.nan ])
+    datadic['EW0_HeII']       = np.array([0.2*datadic['EW0_Lya'][0] * 3./2. , np.nan, np.nan ])
+    datadic['EW0err_HeII']    = np.array([+99, np.nan, np.nan ])
+
+    datadic['f_OIII']         = np.array([0.2*datadic['f_Lya'][0] * 3./2. , np.nan, np.nan ])
+    datadic['ferr_OIII']      = np.array([+99, np.nan, np.nan ])
+    datadic['EW0_OIII']       = np.array([0.2*datadic['EW0_Lya'][0] * 3./2. , np.nan, np.nan ])
+    datadic['EW0err_OIII']    = np.array([+99, np.nan, np.nan ])
+
+    datadic['f_NV']           = np.array([0.4*datadic['f_Lya'][0] * 3./2. , np.nan, np.nan ])
+    datadic['ferr_NV']        = np.array([+99, np.nan, np.nan ])
+    datadic['EW0_NV']         = np.array([0.4*datadic['EW0_Lya'][0] * 3./2. , np.nan, np.nan ])
+    datadic['EW0err_NV']      = np.array([+99, np.nan, np.nan ])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
