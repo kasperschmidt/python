@@ -109,6 +109,10 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_amo17(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
 
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -210,7 +214,8 @@ def referencedictionary():
     refdic['dummy'] = [17e9,    'dummy',                                                  '2']
     refdic['dummy'] = [18e9,    'dummy',                                                  '3']
     refdic['dummy'] = [19e9,    'dummy',                                                  '4']
-    refdic['dummy'] = [20e9,    'dummy',                                                  '$\\alpha$']
+    refdic['amo17'] = [51e9,    'Amorin et al. (2017)',                                   '$\\alpha$']
+    refdic['dummy'] = [20e9,    'dummy',                                                  '$\beta$']
     refdic['dummy'] = [21e9,    'dummy',                                                  (5, 0, 180)] # pentagon rotated 180deg
 
     # --- MUSE-Wide def: ---
@@ -270,8 +275,6 @@ def referencedictionary():
     # Herenz+20 Lya blob with Lya, HeII and CIV(limit) detections at three locations
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Guo+20 MUSE AGN with CIV, CIII and HeII but only Ly fluxes provided - they show L(CIV) so maybe ask... or check when published
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Amoring et al. (2017) VUDS sources in nature
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 
@@ -2691,4 +2694,61 @@ def data_lef19(fluxscale=1e2,verbose=True):
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_amo17(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Amorin+2017
+
+    NOTE ON DATA
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'amo17'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['5100534435',   '5100565880',   '5100750978',   '5100994378',   '5100998761',   '5101421970',   '5101444192',   '510583858' ,   '511267982' ,   '510838687', 'composite' ])
+    datadic['id']        = np.array([   5100534435,      5100565880,     5100750978,     5100994378,     5100998761,     5101421970,     5101444192,     510583858 ,     511267982 ,     510838687,      1]) + baseid
+    datadic['ra']        = np.array([np.nan]*11) # coordinates not public but see email 170207
+    datadic['dec']       = np.array([np.nan]*11) # coordinates not public but see email 170207
+    datadic['redshift']  = np.array([2.9635,3.0505,2.963 ,2.797,2.446,2.465 ,3.424,2.4141,2.8256,2.5539,np.nan])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['EW0_Lya']        =   np.array([  111.0,   35.0,   56.0,  47.0,  168.0,  82.0,  89.0,  185.0,  261.0,  267.0,  131.0,   ])
+    datadic['EW0err_Lya']     =   np.array([  16.0,   12.0,   12.0,  11.0,  10.0,  12.0,  10.0,  35.0,  30.0,  35.0,  11.0,   ])
+
+    datadic['f_Lya']          =   np.array([  126.3,   19.5,   67.7,  44.0,  567.1,  120.9,  377.0,  361.5,  738.4,  182.3,  260.0,   ])
+    datadic['ferr_Lya']       =   np.array([  6.8,   3.2,   4.2,  4.0,  8.1,  5.9,  11.7,  21.4,  31.5,  3.5,  2.0,   ])
+
+    datadic['f_CIV']        =   np.array([  4.1,5.7,4.6,1.4,41.3,1.6,6.1,8.3,27.7,3.5,9.1   ])
+    datadic['ferr_CIV']     =   np.array([1.4,1.1,1.1,+99,5.3,0.8,1.1,1.4,4.9,0.9,1.1   ])
+
+    datadic['f_HeII']         =   np.array([10.2,1.4,3.8,2.0,9.3,2.0,10.6,6.9,16.6,2.7,7.0   ])
+    datadic['ferr_HeII']      =   np.array([5.1,+99,+99,+99,1.2,1.2,1.9,3.1,3.5,0.4,1.2   ])
+
+    datadic['f_OIII']         =   np.array([7.2,4.6,6.9,4.0,13.0,4.0,7.6,8.6,22.5,4.9,8.2   ])
+    datadic['ferr_OIII']      =   np.array([1.4,1.1,1.5,0.8,2.0,1.2,1.1,1.7,3.5,0.9,1.0   ])
+
+    datadic['f_CIII']         =   np.array([8.2,12.4,16.6,4.6,36.9,7.9,22.0,21.4,26.0,11.5,15.2   ])
+    datadic['ferr_CIII']      =   np.array([1.4,1.8,3.8,1.9,6.5,1.2,1.5,2.4,5.2,1.3,1.2   ])
+
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
