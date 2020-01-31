@@ -105,6 +105,11 @@ def generate_literature_fitscatalog(verbose=True):
     outputdataarray        = np.append(outputdataarray,dataarray)
     if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
 
+    dataref, dataarray     = lce.data_lef19(verbose=True)
+    outputdataarray        = np.append(outputdataarray,dataarray)
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+
+
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
@@ -198,7 +203,7 @@ def referencedictionary():
     refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
     refdic['bay14'] = [11e9,    'Bayliss et al. (2014)',                                  'H']
     refdic['sch16'] = [12e9,    'Schmidt et al. (2016)',                                  '+']
-    refdic['dummy'] = [13e9,    'dummy',                                                  'x']
+    refdic['lef19'] = [13e9,    'Le Fevre et al. (2019)',                                 'x']
     refdic['dummy'] = [14e9,    'dummy',                                                  'D']
     refdic['dummy'] = [15e9,    'dummy',                                                  'd']
     refdic['dummy'] = [16e9,    'dummy',                                                  '1']
@@ -232,11 +237,7 @@ def referencedictionary():
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # SILVERRUSH - Shibuya+2017b collection of CIV, NV, HeII limits - no CIII limits. Table 6 in appendix
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Senchyna, Stark+2017 local reference sample has UV EL detected
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Matthee+2017 compilation
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Le Fevre+2017 VUDS CIII emitters
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Nakajima+2017/18 Composite spectra
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -269,6 +270,8 @@ def referencedictionary():
     # Herenz+20 Lya blob with Lya, HeII and CIV(limit) detections at three locations
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Guo+20 MUSE AGN with CIV, CIII and HeII but only Ly fluxes provided - they show L(CIV) so maybe ask... or check when published
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Amoring et al. (2017) VUDS sources in nature
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 
@@ -2398,8 +2401,8 @@ def data_sha03(fluxscale=1.0,verbose=True):
     datadic = {}
     datadic['name']      = np.array(['LAEgr1','LAEgr2','LAEgr3','LAEgr4'])
     datadic['id']        = np.array([1,2,3,4]) + baseid
-    datadic['ra']        = np.array([0.0,0.0,0.0,0.0])
-    datadic['dec']       = np.array([0.0,0.0,0.0,0.0])
+    datadic['ra']        = np.array([np.nan,np.nan,np.nan,np.nan])
+    datadic['dec']       = np.array([np.nan,np.nan,np.nan,np.nan])
     datadic['redshift']  = np.array([0.0,0.0,0.0,0.0])
     datadic['reference'] = [catreference]*len(datadic['id'])
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
@@ -2535,8 +2538,8 @@ def data_sch16(fluxscale=1e3,verbose=True):
     datadic = {}
     datadic['name']      = np.array(['GLASSstack_z7p2','RXJ1347_01037','MACS2129_00899'])
     datadic['id']        = np.array([1,2,3]) + baseid
-    datadic['ra']        = np.array([0.0, 206.900859670, 322.343220360])
-    datadic['dec']       = np.array([0.0, -11.754209621, -7.693382243])
+    datadic['ra']        = np.array([np.nan, 206.900859670, 322.343220360])
+    datadic['dec']       = np.array([np.nan, -11.754209621, -7.693382243])
     datadic['redshift']  = np.array([7.2, 6.76, 8.10])
     datadic['reference'] = [catreference]*len(datadic['id'])
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
@@ -2598,4 +2601,94 @@ def data_sch16(fluxscale=1e3,verbose=True):
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_lef19(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Le Fevre+2019 VUDS CIII emitter stacks
+
+    Guessing fluxes to be 1e-18 as that's what they are in Amorin+2017
+    ----> Fluxes are relative to CIII which is set to one  <----
+    Individual objects not provided in paper...
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'lef19'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['ewGT20','ewLT20GT20','ewLT10GT5','AGNtypeII','SFGs_z2.5','SFGs_z3.5'])
+    datadic['id']        = np.array([1,2,3,4,5,6]) + baseid
+    # rasex                = np.array(['04:22:00.81'])
+    # decsex               = np.array(['-38:37:03.59'])
+    # datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    # datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['ra']        = np.array([np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['dec']       = np.array([np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['redshift']  = np.array([3.0,3.0,3.0,3.0,2.5,3.5])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    # ----> Fluxes are relative to CIII which is set to one; guessing fluxes to be 1e-18 as that's what they are in Amorin+2017 <----
+    # datadic['f_CIII']         =   np.array([  1.00  , 1.00    , 1.00    , 1.00  , 1.0     , 1.0     ])
+    # datadic['f_Lya']          =   np.array([  4.6  *datadic['f_CIII'][0] , 6.40 *datadic['f_CIII'][1]     , 5.2    *datadic['f_CIII'][2]   , 6.25 *datadic['f_CIII'][3]   , 3.5    *datadic['f_CIII'][4]   , 14.8   *datadic['f_CIII'][5]   ])
+    # datadic['f_NV']           =   np.array([  0.05 *datadic['f_CIII'][0] , 0.02 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 1.31 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_SiII']         =   np.array([  0.07 *datadic['f_CIII'][0] , 0.04 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 0.12 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_SiIV']         =   np.array([  0.13 *datadic['f_CIII'][0] , 0.02 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 0.14 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_NIV']          =   np.array([  0.19 *datadic['f_CIII'][0] , 0.08 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 0.19 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_CIV']          =   np.array([  0.31 *datadic['f_CIII'][0] , 0.36 *datadic['f_CIII'][1]     , 0.01   *datadic['f_CIII'][2]   , 3.00 *datadic['f_CIII'][3]   , -2.1   *datadic['f_CIII'][4]   , -1.2   *datadic['f_CIII'][5]   ])
+    # datadic['f_HeII']         =   np.array([  0.27 *datadic['f_CIII'][0] , 0.49 *datadic['f_CIII'][1]     , 0.30   *datadic['f_CIII'][2]   , 0.92 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_OIII']         =   np.array([  0.27 *datadic['f_CIII'][0] , 0.14 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 0.13 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_NIII']         =   np.array([  0.07 *datadic['f_CIII'][0] , 0.04 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 0.13 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    # datadic['f_SiIII']        =   np.array([  0.18 *datadic['f_CIII'][0] , 0.31 *datadic['f_CIII'][1]     , np.nan *datadic['f_CIII'][2]   , 0.19 *datadic['f_CIII'][3]   , np.nan *datadic['f_CIII'][4]   , np.nan *datadic['f_CIII'][5]   ])
+    #
+    #
+    # datadic['ferr_CIII']      =   np.array([  0.05  ,  0.04   , 0.15    , 0.09  ,  0.05   , 0.05    ])
+    # datadic['ferr_Lya']       =   np.array([  0.07    ,  0.04    , 0.2      , 0.06   ,  0.1     , 0.12      ])
+    # datadic['ferr_NV']        =   np.array([  0.02    ,  0.01    , np.nan   , 0.10   ,  np.nan  , np.nan    ])
+    # datadic['ferr_SiII']      =   np.array([  0.02    ,  0.02    , np.nan   , 0.04   ,  np.nan  , np.nan    ])
+    # datadic['ferr_SiIV']      =   np.array([  0.03    ,  0.02    , np.nan   , 0.04   ,  np.nan  , np.nan    ])
+    # datadic['ferr_NIV']       =   np.array([  0.02    ,  0.02    , np.nan   , 0.05   ,  np.nan  , np.nan    ])
+    # datadic['ferr_CIV']       =   np.array([  0.03    ,  0.02    , 0.1      , 0.08   ,  0.05    , 0.05      ])
+    # datadic['ferr_HeII']      =   np.array([  0.03    ,  0.03    , 0.06     , 0.06   ,  np.nan  , np.nan    ])
+    # datadic['ferr_OIII']      =   np.array([  0.03    ,  0.02    , np.nan   , 0.05   ,  np.nan  , np.nan    ])
+    # datadic['ferr_NIII']      =   np.array([  0.03    ,  0.02    , np.nan   , 0.06   ,  np.nan  , np.nan    ])
+    # datadic['ferr_SiIII']     =   np.array([  0.12    ,  0.10    , np.nan   , 0.02   ,  np.nan  , np.nan    ])
+
+    datadic['EW0_CIII']       =   np.array([  23.5  , 11.1   , 7.1     , 13.2  , 2.0     , 2.24    ])
+    datadic['EW0_Lya']        =   np.array([  71.7  , 58.8   , 30.3    , 98.9  , 7.9     , 14.8    ])
+    datadic['EW0_NV']         =   np.array([  0.9   , 0.3    , np.nan  , 19.1  , np.nan  , np.nan  ])
+    datadic['EW0_SiII']       =   np.array([  0.6   , 0.2    , np.nan  , 1.7   , np.nan  , np.nan  ])
+    datadic['EW0_SiIV']       =   np.array([  1.4   , 0.1    , np.nan  , 1.9   , np.nan  , np.nan  ])
+    datadic['EW0_NIV']        =   np.array([  2.2   , 0.6    , np.nan  , 2.5   , np.nan  , np.nan  ])
+    datadic['EW0_CIV']        =   np.array([  4.4   , 2.4    , 0.1     , 38.8  , 2.78    , 2.84    ])
+    datadic['EW0_HeII']       =   np.array([  4.3   , 3.2    , 1.7     , 11.7  , np.nan  , np.nan  ])
+    datadic['EW0_OIII']       =   np.array([  5.5   , 1.4    , 0.7     , 1.7   , np.nan  , np.nan  ])
+    datadic['EW0_NIII']       =   np.array([  1.1   , 0.4    , np.nan  , 1.5   , np.nan  , np.nan  ])
+    datadic['EW0_SiIII']      =   np.array([  5.0   , 4.0    , np.nan  , 2.5   , np.nan  , np.nan  ])
+
+    datadic['EW0err_CIII']    =   np.array([  1.8   , 1.2    , 1.3     , 1.2   , 0.2     , 0.3    ])
+    datadic['EW0err_Lya']     =   np.array([  5.0   , 7.0    , 2.30    , 3.0   , 1.3     , 1.5     ])
+    datadic['EW0err_NV']      =   np.array([  0.3   , 0.15   , np.nan  , 2.0   , np.nan  , np.nan ])
+    datadic['EW0err_SiII']    =   np.array([  0.2   , 0.15   , np.nan  , 0.4   , np.nan  , np.nan ])
+    datadic['EW0err_SiIV']    =   np.array([  0.2   , 0.15   , np.nan  , 0.5   , np.nan  , np.nan ])
+    datadic['EW0err_NIV']     =   np.array([  0.3   , 0.10   , np.nan  , 0.5   , np.nan  , np.nan ])
+    datadic['EW0err_CIV']     =   np.array([  0.6   , 0.5    , 0.3     , 2.1   , 0.11    , 0.15   ])
+    datadic['EW0err_HeII']    =   np.array([  0.7   , 0.5    , 0.2     , 1.0   , np.nan  , np.nan ])
+    datadic['EW0err_OIII']    =   np.array([  0.6   , 0.4    , 0.2     , 0.6   , np.nan  , np.nan ])
+    datadic['EW0err_NIII']    =   np.array([  0.2   , 0.2    , np.nan  , 0.7   , np.nan  , np.nan ])
+    datadic['EW0err_SiIII']   =   np.array([  0.4   , 0.5    , np.nan  , 0.9   , np.nan  , np.nan ])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
