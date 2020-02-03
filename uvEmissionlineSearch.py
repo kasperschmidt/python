@@ -9767,9 +9767,9 @@ def print_specs():
     vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
     for ii, id in enumerate(vetdat['id']):
         if vetdat['vetresult'][ii] > 2:
-            print(str("%s" % id)+'    '+vetdat['spectrum'][ii].replace('tdose_spectra/','tdose_spectra_reext/').replace('MWuves_gauss','MWuves_reext_gauss'))
+            print("#"+str("%s" % id)+'    '+vetdat['spectrum'][ii].replace('tdose_spectra/','tdose_spectra_reext/').replace('MWuves_gauss','MWuves_reext_gauss').replace('..','/store/data/musewide/TDOSE/'))
         else:
-            print(str("%s" % id)+'    '+vetdat['spectrum'][ii])
+            print(str("%s" % id)+'    '+vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/'))
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/MWuves-full-v1p0_speclist12XXXX.txt',
@@ -9788,7 +9788,7 @@ def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    import sys, numpy as np, shutil, os
+    import sys, numpy as np, os, tdose_utilities as tu
     if os.path.isdir(outputdir) != True:
         sys.exit(' Did not find output directory '+outputdir)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -9813,11 +9813,17 @@ def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for ss, spec in enumerate(specdat['spectrum']):
         newspec = outputdir+'tdose_spectrum_'+namestring+'_'+str("%.10d" % int(specdat['id'][ss]))+'.fits'
+        if verbose:
+            infostr = ' - Removing SOURCECUBE and renaming spectrum for id='+str("%.10d" % int(specdat['id'][ss]))+\
+                      '  ('+str("%.5d" % (ss+1))+' / '+str("%.5d" % len(specdat['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
         try:
-            shutil.copyfile(spec,newspec)
+            tu.strip_extension_from_fitsfile(spec,outputdir,removeextension='SOURCECUBE',overwrite=False,verbose=False)
+            os.rename(outputdir+spec.split('/')[-1],newspec)
         except:
             print('\nWARNING Attempt to copy '+spec+' to '+newspec+' failed.')
-
+    if verbose: print('\n   ... done')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose:
         print(' - To tar up the directory and its content excecute: ')
@@ -9826,7 +9832,8 @@ def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/
             tarname = outputdir.split('/')[-2]
         else:
             tarname = outputdir.split('/')[-1]
-        print('   bash> tar -zcvf ./'+tarname+'.tar.gz '+outputdir+'tdose_spectrum_'+namestring+'*.fits')
+        print('   bash> tar -zcvf ./'+tarname+'.tar.gz '+outputdir.split('/')[-2]+'/tdose_spectrum_'+namestring+'*.fits')
+        print('   kbs>  scp kasper@arche.aip.de:'+outputdir+'../'+tarname+'.tar.gz  /Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
     """
