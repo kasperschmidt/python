@@ -123,17 +123,28 @@ def stack_1D(wavelengths, fluxes, variances, stacktype='mean', errtype='varsum',
     if errtype.lower() == 'varsum':
         # standard error on the mean, i.e., std scales as 1/sqrt(N) so
         # var_stack = Sum(var_i)/N    =>    std = sqrt(Sum(std_i)**2/N) = Sum(std_i) / sqrt(N)
-        variance_out_ma = np.sum(vararr_ma,axis=1)
+        variance_out_ma = np.ma.sum(vararr_ma,axis=1)
         variance_out    = variance_out_ma.filled(fill_value=np.nan) / Nspecstack
         err_out         = np.sqrt(variance_out)
     elif errtype.lower() == 'fspread':
-        err_out_ma      = np.abs(np.max(fluxarr_ma,axis=1) - np.min(fluxarr_ma,axis=1)  )/2.0
+        err_out_ma      = np.abs(np.ma.max(fluxarr_ma,axis=1) - np.ma.min(fluxarr_ma,axis=1)  )/2.0
         err_out         = err_out_ma.filled(fill_value = np.nan)
     elif errtype.lower() == 'std':
-        err_out_ma      = np.std(fluxarr_ma,axis=1)
+        err_out_ma      = np.ma.std(fluxarr_ma,axis=1)
         err_out         = err_out_ma.filled(fill_value = np.nan)
+    elif errtype.lower() == 'stdonmean':
+        # meanval_ma      = np.ma.mean(fluxarr_ma,axis=1)
+        # meanval_ma_3D   = np.ma.MaskedArray.repeat(meanval_ma[:, np.newaxis], 12, axis=1)
+        # varval_ma       = np.ma.sum((fluxarr_ma - meanval_ma_3D)**2,axis=1)/ (Nspecstack-1)
+        # err_out         = np.sqrt(varval_ma.filled(fill_value = np.nan) / Nspecstack)
+        # plt.plot(stdval_init.filled(fill_value = np.nan)-np.sqrt(varval_ma.filled(fill_value = np.nan)),label='diff')
+        # plt.plot(stdval_init.filled(fill_value = np.nan),'r')
+        # plt.plot(np.sqrt(varval_ma.filled(fill_value = np.nan)),'g')
+        # plt.savefig('/Users/kschmidt/Desktop/errtest.pdf')
+        stdval_ma       = np.ma.std(fluxarr_ma,axis=1)
+        err_out         = stdval_ma.filled(fill_value = np.nan) / Nspecstack
     elif errtype.lower() == 'medianvar':
-        variance_out_ma = np.median(vararr_ma,axis=1)
+        variance_out_ma = np.ma.median(vararr_ma,axis=1)
         variance_out    = variance_out_ma.filled(fill_value = np.nan)
         err_out         = np.sqrt(variance_out)
     else:
