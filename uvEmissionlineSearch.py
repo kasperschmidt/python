@@ -10387,18 +10387,21 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     skyspectra   = [None]*len(plotspecs)
     wavecols_sky = [None]*len(plotspecs)
     fluxcols_sky = [None]*len(plotspecs)
-    yrangefull   = [-30,100]
-    xrangefull   = [600,2500]
+    xrangefull   = [600,3800]
 
-    mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
-                            skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
-                            outputfigure=outname, speccols=speccolors, show_error=False,
-                            yrangefull=yrangefull, xrangefull=xrangefull,
-                            col_matrix=col_matrix, col_matrix_title=col_matrix_title, col_matrix_text=col_matrix_text,
-                            col_matrix_labels=col_matrix_labels, col_matrix_ranges=col_matrix_ranges,
-                            col_matrix_binranges=col_matrix_binranges,
-                            col_matrix_p1dat=col_matrix_p1dat,col_matrix_p2dat=col_matrix_p2dat,
-                            plotSN=False,verbose=True)
+    for plotSNval in [True,False]:
+        if plotSNval is False:
+            yrangefull   = [-30,150]
+
+        mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
+                                skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                outputfigure=outname, speccols=speccolors, show_error=False,
+                                yrangefull=yrangefull, xrangefull=xrangefull,
+                                col_matrix=col_matrix, col_matrix_title=col_matrix_title, col_matrix_text=col_matrix_text,
+                                col_matrix_labels=col_matrix_labels, col_matrix_ranges=col_matrix_ranges,
+                                col_matrix_binranges=col_matrix_binranges,
+                                col_matrix_p1dat=col_matrix_p1dat,col_matrix_p2dat=col_matrix_p2dat,
+                                plotSN=plotSNval,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/'):
@@ -10437,19 +10440,19 @@ def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionline
         param1  = 'z'
         globstr = specdir+'*'+param1+'GT2p9_bin*of'+str(Nbin)+'*.fits'
         spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+param1+'GT2p9.pdf'
+        outname = specdir+'composite_overview_'+param1+'GT2p9_'+str(Nbin)+'bins.pdf'
         uves.stack_composite_plotNxNspecs(param1,None,[2.9,6.7],None,spectra,outname)
 
         param1  = 'm814w'
         globstr = specdir+'*'+param1+'_bin*of'+str(Nbin)+'*.fits'
         spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+param1+'Detections.pdf'
+        outname = specdir+'composite_overview_'+param1+'Detections_'+str(Nbin)+'bins.pdf'
         uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname)
 
     for plotparam in ['Llya','FWHMlya','EW0lya','beta']:
         globstr = specdir+'*'+plotparam+'_bin*of4*.fits'
         spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+plotparam+'.pdf'
+        outname = specdir+'composite_overview_'+plotparam+'_4bins.pdf'
         uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
