@@ -10098,8 +10098,7 @@ def stack_composites_generate_setup(outputfile,equalsizebins=False,overwrite=Fal
     fout.close()
     return outarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_composites(compositesetup,
-                     plotstackoverview=True,verbose=True):
+def stack_composites(compositesetup,plotstackoverview=True,inloopload=False,verbose=True):
     """
     Function collecting spectra and stacking them based on various collection cuts defined in "stackdefs"
 
@@ -10113,14 +10112,26 @@ def stack_composites(compositesetup,
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     outdir        = parentdir+compositesetup.split('/')[-1].split('.tx')[0]+'/'
-    #specdir       = parentdir+'spectra_renamed2001XX/'
-    specdir       = parentdir+'spectra_all/*/*/'
+    specdir       = parentdir+'UVESselection200203noreext/'
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
 
     stackinfo     = np.genfromtxt(compositesetup,names=True,skip_header=2,comments='#',dtype=None)
     Nstacks       = len(stackinfo['id'])
+
+    if not inloopload:
+        specdatadic   = {}
+        if verbose: print(' - Assembling master dictionary with data from spectra (instead of loading in-loop)')
+        for ii, id in enumerate(infodat['id']):
+            searchstr = specdir+'*_0'+str(id)+'.fits'
+            objspecs  = glob.glob(searchstr)
+            if len(objspecs) != 1:
+                print('WARNING Found '+str(len(objspecs))+' spectra (expected 1) globbing for:\n        '+searchstr)
+                specdatadic[str(id)] = np.nan, np.nan, np.nan
+            else:
+                data                     = afits.open(objspecs[0])[1].data
+                specdatadic[objspecs[0]] = data['wave'], data['flux'], data['fluxerror']**2.0
 
     if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
     for ii, stackid in enumerate(stackinfo['id']):
@@ -10129,21 +10140,21 @@ def stack_composites(compositesetup,
         wavelengths     = []
         fluxes          = []
         variances       = []
-        redshifts       = []
 
         if verbose: print('       > selecting indexes')
         ent_sample      = uves.stack_composites_objselection(stackinfo[ii],infodat)
         spectra         = []
-        for ent_s in ent_sample:
-            searchstr = specdir+'*gauss_0'+str(infodat['id'][ent_s])+'.fits'
+        for ee, ent_s in enumerate(ent_sample):
+            searchstr = specdir+'*_0'+str(infodat['id'][ent_s])+'.fits'
             objspecs  = glob.glob(searchstr)
             if len(objspecs) != 1:
-                spectra.append(objspecs[0])
-                # sys.exit(' Found '+str(len(objspecs))+' spectra (expected 1) globbing for:\n   '+searchstr)
+                # print('WARNING Found '+str(len(objspecs))+' spectra (expected 1) globbing for:\n        '+searchstr)
+                ent_sample[ee] = -99
             else:
                 spectra.append(objspecs[0])
         spectra   = np.asarray(spectra)
         Nspec     = len(spectra)
+        ent_sample = ent_sample[ent_sample != -99]
 
         if stackinfo[ii]['ztype'].lower() == 'zcat':
             objredshift  = infodat['redshift'][ent_sample]
@@ -10162,42 +10173,55 @@ def stack_composites(compositesetup,
 
         if verbose: print('       > building input structures for stacking the selected '+str(Nspec)+' objects ')
         for spectrum in spectra:
-            data        = afits.open(spectrum)[1].data
-            wavelengths.append(data['wave'])
-            fluxes.append(data['flux'])
-            variances.append(data['fluxerror']**2.0)
+            if inloopload:
+                data        = afits.open(spectrum)[1].data
+                wavelengths.append(data['wave'])
+                fluxes.append(data['flux'])
+                variances.append(data['fluxerror']**2.0)
+            else:
+                datwave, datflux, datvariance = specdatadic[spectrum]
+                wavelengths.append(datwave)
+                fluxes.append(datflux)
+                variances.append(datvariance)
 
-        if verbose: print('       > performing stacking of the selected '+str(Nspec)+' objects ')
+        if verbose: print('       > performing stacking of the selected '+str(Nspec)+' objects: ')
 
         stacktype ='mean'   # 'median'
-        errtype   ='fspread'
-        wave_out, flux_out, variance_out, Nspecstack = \
-            stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=objredshift, Nsigmaclip=1,
-                              stacktype=stacktype, errtype=errtype, wavemin=600, wavemax=3800,
-                              deltawave=0.1, outfile=outfile, verbose=False)
+        errtypes  =['varsum']#,'stdonmean','fspread','std','medianvar']
+        for errtype in errtypes:
+            if verbose: print('          > estimating errors with the method "'+errtype+'" ')
+            outfile_errappend = outfile.replace('.fits','_ERR'+errtype+'.fits')
+            wave_out, flux_out, variance_out, Nspecstack = \
+                stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=objredshift, Nsigmaclip=1,
+                                  stacktype=stacktype, errtype=errtype, wavemin=600, wavemax=3800,
+                                  deltawave=0.1, outfile=outfile_errappend, verbose=False)
 
-        if plotstackoverview:
-            if verbose: print('       > plotting the result ')
-            plotspecs    = [outfile]
-            labels       = [stackinfo['label'][ii].replace('_','\_')+' (stack of '+str(Nspec)+' spectra)']
-            wavecols     = ['wave']
-            fluxcols     = ['flux']
-            fluxerrcols  = ['fluxerror']
+            if plotstackoverview:
+                if verbose: print('            plotting the result ')
+                plotspecs    = [outfile_errappend]
+                labels       = [stackinfo['label'][ii].replace('_','\_')+' (stack of '+str(Nspec)+' spectra)']
+                wavecols     = ['wave']
+                fluxcols     = ['flux']
+                fluxerrcols  = ['fluxerror']
 
-            plotz        = 0.0
-            voffset      = 0.0
-            skyspectra   = [None]*len(plotspecs)
-            wavecols_sky = [None]*len(plotspecs)
-            fluxcols_sky = [None]*len(plotspecs)
-            yrangefull   = [-30,100]
-            xrangefull   = [600,3800]
+                plotz        = 0.0
+                voffset      = 0.0
+                skyspectra   = [None]*len(plotspecs)
+                wavecols_sky = [None]*len(plotspecs)
+                fluxcols_sky = [None]*len(plotspecs)
+                yrangefull   = [-30,100]
+                xrangefull   = [600,3800]
 
-            mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
-                                    skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
-                                    outputfigure=outfile.replace('.fits','_overview.pdf'),
-                                    yrangefull=yrangefull, xrangefull=xrangefull,
-                                    plotSN=False,verbose=False)
-            # No S/N spectra as they don't really make sense for composite stacks. Err is spread of input population
+                mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
+                                        skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                        outputfigure=plotspecs[0].replace('.fits','_overview.pdf'),
+                                        yrangefull=yrangefull, xrangefull=xrangefull,
+                                        show_error=False,verbose=False,plotSN=False)
+                mwp.plot_1DspecOverview(plotspecs, labels, wavecols, fluxcols, fluxerrcols, plotz, voffset=voffset,
+                                        skyspectra=skyspectra, wavecols_sky=wavecols_sky, fluxcols_sky=fluxcols_sky,
+                                        outputfigure=plotspecs[0].replace('.fits','_overview.pdf'),
+                                        yrangefull=yrangefull, xrangefull=xrangefull,
+                                        show_error=False,verbose=False,plotSN=True)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     """
@@ -10285,7 +10309,7 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     setupinfo      = np.genfromtxt(compositesetup,names=True,skip_header=2,comments='#',dtype=None)
 
     Nspec   = len(spectra)
-    setuplabels    = [(param1+ss.split('.fit')[0].split('_'+param1)[-1]) for ss in spectra]
+    setuplabels    = [(param1+ss.split('.fit')[0].split('_'+param1)[-1].split('_ERR')[0]) for ss in spectra]
 
     # plot overview figure with 9 spectra in
     if verbose: print(' - Plotting the '+str(Nspec)+' spectra provided \n   ')
@@ -10404,26 +10428,26 @@ def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionline
 
     # --- one parameter binned ---
     param1  = 'z'
-    globstr = specdir+'*'+param1+'LT2p9_bin*of3.fits'
+    globstr = specdir+'*'+param1+'LT2p9_bin*of3*.fits'
     spectra = np.sort(glob.glob(globstr))
     outname = specdir+'composite_overview_'+param1+'LT2p9.pdf'
     uves.stack_composite_plotNxNspecs(param1,None,[1.5,2.9],None,spectra,outname)
 
     for Nbin in [4,10]:
         param1  = 'z'
-        globstr = specdir+'*'+param1+'GT2p9_bin*of'+str(Nbin)+'.fits'
+        globstr = specdir+'*'+param1+'GT2p9_bin*of'+str(Nbin)+'*.fits'
         spectra = np.sort(glob.glob(globstr))
         outname = specdir+'composite_overview_'+param1+'GT2p9.pdf'
         uves.stack_composite_plotNxNspecs(param1,None,[2.9,6.7],None,spectra,outname)
 
         param1  = 'm814w'
-        globstr = specdir+'*'+param1+'_bin*of'+str(Nbin)+'.fits'
+        globstr = specdir+'*'+param1+'_bin*of'+str(Nbin)+'*.fits'
         spectra = np.sort(glob.glob(globstr))
         outname = specdir+'composite_overview_'+param1+'Detections.pdf'
         uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname)
 
     for plotparam in ['Llya','FWHMlya','EW0lya','beta']:
-        globstr = specdir+'*'+plotparam+'_bin*of4.fits'
+        globstr = specdir+'*'+plotparam+'_bin*of4*.fits'
         spectra = np.sort(glob.glob(globstr))
         outname = specdir+'composite_overview_'+plotparam+'.pdf'
         uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname)
