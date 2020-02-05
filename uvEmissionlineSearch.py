@@ -10168,9 +10168,9 @@ def stack_composites(compositesetup,plotstackoverview=True,inloopload=False,verb
         ent_sample = ent_sample[ent_sample != -99]
 
         if stackinfo[ii]['ztype'].lower() == 'zcat':
-            objredshift  = infodat['redshift'][ent_sample]
+            objredshift  = infodat['redshift'][ent_sample.astype(int)]
         elif stackinfo[ii]['ztype'].lower() == 'zv18':
-            objredshift  = infodat['z_sys_V18'][ent_sample]
+            objredshift  = infodat['z_sys_V18'][ent_sample.astype(int)]
         else:
             sys.exit(' Invalid entry for ztype (='+stackinfo[ii]['ztype']+') in '+compositesetup)
 
