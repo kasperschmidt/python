@@ -9750,7 +9750,7 @@ def get_idlist_for_reext_pointing(idsinput,pointing,idmaster=None):
 
     return idsout
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def print_specs():
+def print_specs(outputfile, overwrite=True, verbose=True):
     """
     Small function to print ID and spec list from TDOSE vetting results
 
@@ -9758,19 +9758,36 @@ def print_specs():
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    uves.print_specs()
+    uves.print_specs('./outfile.txt')
 
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
-    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
-    print(' - Printing IDs and Spec from vetting results: \n'+vetresults)
-    vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
-    for ii, id in enumerate(vetdat['id']):
-        if vetdat['vetresult'][ii] > 2:
-            print("#"+str("%s" % id)+'    '+vetdat['spectrum'][ii].replace('tdose_spectra/','tdose_spectra_reext/').replace('MWuves_gauss','MWuves_reext_gauss').replace('..','/store/data/musewide/TDOSE/'))
-        else:
-            print(str("%s" % id)+'    '+vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/'))
+    vr_main       = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    vr_reext1     = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_output_manuallycombined.txt'
+    vetresults    = [vr_main,vr_reext1]
 
+    if (overwrite == False) & os.path.isfile(outputfile):
+        sys.exit('The file '+outputfile+' already exists but overwrite=False ')
+
+    fout = open(outputfile,'w')
+    fout.write('# List of spectra to search for UV emission with FELIS. \n')
+    fout.write('# List generated with uves.print_specs() on '+kbs.DandTstr2()+' based on the TDOSE vetting results in: \n')
+    fout.write('# '+' and '.join(vetresults)+'\n')
+    fout.write('# \n')
+    fout.write('# id           spectrum \n')
+
+    if verbose: print(' - Looping over vetting results and writing output to \n   '+outputfile)
+    for vetresult in vetresults:
+        fout.write('### IDs and Spec from vetting results collected in: '+vetresult.split('/')[-1]+' ###\n')
+        vetdat        = np.genfromtxt(vetresult,names=True,comments='#',dtype=None,skip_header=28)
+        for ii, id in enumerate(vetdat['id']):
+            if vetdat['vetresult'][ii] > 2:
+                fout.write("# Needs re-extraction: "+str("%s" % id)+'    '+
+                           vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/')+' \n')
+            else:
+                fout.write(str("%s" % id)+'    '+
+                           vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/')+' \n')
+    fout.close()
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/MWuves-full-v1p0_speclist12XXXX.txt',
                              outputdir='/store/data/musewide/TDOSE/MWuves100full/MWuvesSpecs20XXXX/',
@@ -9870,12 +9887,12 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
             ll = ll+1
 
     if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
-    infofile      = 'Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infodat       = afits.open(infofile)[1].data
 
     for oo, objid in enumerate(stackids.keys()):
         spectra, fields = stackids[objid]
-        outfile         = outdir+'tdose_spectrum_stack_'+str(objid)+'_inclFields_'+'-'.join(fields)+'.fits'
+        outfile         = outdir+'tdose_spectrum_stackInclFields'+'-'.join(fields)+'_'+str("%.10d" % int(objid))+'.fits'
         wavelengths     = []
         fluxes          = []
         variances       = []
@@ -9891,7 +9908,7 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
         errtype   ='varsum'
         wave_out, flux_out, variance_out, Nspecstack = \
             stacking.stack_1D(wavelengths, fluxes, variances, z_systemic=np.zeros(len(spectra)),
-                              stacktype=stacktype, errtype=errtype, wavemin=4750, wavemax=9350,
+                              stacktype=stacktype, errtype=errtype, wavemin=4750, wavemax=9350, Nsigmaclip=None,
                               deltawave=1.25, outfile=outfile, verbose=False)
 
         if plotstackoverview:
