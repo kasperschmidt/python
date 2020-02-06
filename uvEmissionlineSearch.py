@@ -9788,6 +9788,25 @@ def print_specs(outputfile, overwrite=True, verbose=True):
                 fout.write(str("%s" % id)+'    '+
                            vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/')+' \n')
     fout.close()
+
+    if verbose: print(' - Loading output and summarizing: ')
+    outdat = np.genfromtxt(outputfile,names=True,comments='#',dtype=None,skip_header=4)
+    Nobj   = len(outdat['id'])
+    Nobj_u = len(np.unique(outdat['id']))
+    if Nobj != Nobj_u:
+        if verbose: print('    The following objects appear N times in output ')
+        if verbose: print(' objid       N')
+        for objid in np.unique(outdat['id']):
+            objent = np.where(outdat['id'] == objid)[0]
+            if len(objent) > 1:
+                if verbose: print(str(objid)+'   '+str(len(objent)))
+        if verbose: print(' -> But there should be no duplications... go fix. ')
+    else:
+        if verbose:
+            print('   Found '+str(Nobj_u)+' unique objects in output')
+            print('   To be compared with 2197 expected (minus 15 multifield-stacks = 2182)')
+            print('   (not accounted for duplicates UDF-CDFS-UDF10 as of 200206)')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/MWuves-full-v1p0_speclist12XXXX.txt',
                              outputdir='/store/data/musewide/TDOSE/MWuves100full/MWuvesSpecs20XXXX/',
