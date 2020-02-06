@@ -9929,9 +9929,6 @@ def stack_composites_generate_setup(outputfile,equalsizebins=False,overwrite=Fal
     outarray   = uves.stack_composites_generate_setup(outputfile,overwrite=True)
 
     """
-    if equalsizebins:
-        outputfile = outputfile.replace('.txt','_equalsizebins.txt')
-
     if os.path.isfile(outputfile) & (overwrite == False):
         sys.exit(' Overwrite was set to "False" and found existing copy of the file \n '+outputfile)
 
@@ -9947,133 +9944,150 @@ def stack_composites_generate_setup(outputfile,equalsizebins=False,overwrite=Fal
                      'EW0lyamin','EW0lyamax',
                      'betamin','betamax']
 
-    outarray    = np.array([],dtype=[('id', 'i4'), ('label', 'U50'), ('nspec', 'i4'), ('ztype', 'U5')]+
+    outarray    = np.array([],dtype=[('id', 'i4'), ('label', 'U50'), ('nspec', 'i4'), ('ztype', 'U5'), ('bintype', 'U12')]+
                                     [(cn,'>f8') for cn in columns])
     emptyval    = 9999
-    for ztype in ['zcat','zv18']:
-        coltrans  = uves.stack_composite_col_translator(ztype)
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Setup for composite cintaining all spectra')
-        if ztype == 'zcat':
-            specid   = 10001
-        elif ztype == 'zv18':
-            specid   = 20001
+    for equalsizebins in [False,True]:
+        if not equalsizebins:
+            eqbinstring = 'EqNumberBins'
+            binid       = 100000
         else:
-            sys.exit(' Invalid entry for ztype (='+ztype+')')
+            eqbinstring = 'EqSizeBins'
+            binid       = 200000
 
-        outrow   = np.asarray((specid,'all',99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
-        outarray = np.append(outarray,outrow)
+        for ztype in ['zcat','zv18']:
+            if verbose: print('----------------- Generate setups for '+eqbinstring+' and '+ztype+' -----------------')
+            coltrans  = uves.stack_composite_col_translator(ztype)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' - Setup for composite cintaining all spectra')
+            if ztype == 'zcat':
+                specid   = 10001+binid
+            elif ztype == 'zv18':
+                specid   = 20001+binid
+            else:
+                sys.exit(' Invalid entry for ztype (='+ztype+')')
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Generating z-binning setups')
-        for Nbins in [4,10]:
+            outrow   = np.asarray((specid,'all',99,ztype,eqbinstring)+
+                                  (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+            outarray = np.append(outarray,outrow)
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' - Generating z-binning setups')
+            for Nbins in [4,10]:
+                for colbase in ['z']:
+                    binranges = uves.get_vector_intervals(infodat[coltrans['zmin']][infodat[coltrans['zmin']]>2.9],
+                                                          Nbins,verbose=False,
+                                                          equalsizebins=equalsizebins)
+                    for bb, br in enumerate(binranges):
+                        specid   = specid+1
+                        label    = 'zGT2p9_bin'+str(bb+1)+'of'+str(Nbins)
+                        outrow   = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                              (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+                        outrow[colbase+'min'] = br[0]
+                        outrow[colbase+'max'] = br[1]
+                        outarray = np.append(outarray,outrow)
+
+            Nbins     = 3
             for colbase in ['z']:
-                binranges = uves.get_vector_intervals(infodat[coltrans['zmin']][infodat[coltrans['zmin']]>2.9],
-                                                      Nbins,verbose=False,
+                if ztype != 'zv18':
+                    binranges = uves.get_vector_intervals(infodat[coltrans['zmin']][infodat[coltrans['zmin']]<2.9],
+                                                          Nbins,verbose=False,equalsizebins=equalsizebins)
+                    for bb, br in enumerate(binranges):
+                        specid   = specid+1
+                        label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
+                        outrow   = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                              (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+                        outrow[colbase+'min'] = br[0]
+                        outrow[colbase+'max'] = br[1]
+                        outarray = np.append(outarray,outrow)
+                else:
+                    for bb, br in enumerate(np.arange(Nbins)):
+                        specid   = specid+1
+                        label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
+                        outrow   = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                              (np.nan,np.nan)*(len(columns)/2),dtype=outarray.dtype)
+                        outarray = np.append(outarray,outrow)
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' - Generating m814w binning (seperating non-detections out) ')
+            for Nbins in [4,10]:
+                for colbase in ['m814w']:
+                    datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.39]
+                    binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False,equalsizebins=equalsizebins)
+
+                    for bb, br in enumerate(binranges):
+                        specid   = specid+1
+                        label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
+                        outrow   = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                              (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+                        outrow[colbase+'min'] = br[0]
+                        outrow[colbase+'max'] = br[1]
+                        outarray = np.append(outarray,outrow)
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' - Selection of objects with m814w non-edetections (limiting mag) ')
+            datvec    = infodat[coltrans['m814wmin']][infodat[coltrans['m814wmin']]>29.39]
+            binranges = uves.get_vector_intervals(datvec,1,verbose=True,equalsizebins=equalsizebins)
+            specid    = specid+1
+            label     = colbase+'nondet_bin1of1'
+            outrow    = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                   (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+            outrow[colbase+'min'] = binranges[0][0]-0.0001 # manually expand range as all values are identical
+            outrow[colbase+'max'] = binranges[0][1]+0.0001 # manually expand range as all values are identical
+            outarray = np.append(outarray,outrow)
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' - Generating 4-bin selections (cut on just one parameter) ')
+            coltrans  = uves.stack_composite_col_translator(ztype)
+            Nbins     = 4
+            for colbase in ['Llya','FWHMlya','EW0lya','beta']:
+                binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False,
                                                       equalsizebins=equalsizebins)
                 for bb, br in enumerate(binranges):
                     specid   = specid+1
-                    label    = 'zGT2p9_bin'+str(bb+1)+'of'+str(Nbins)
-                    outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
-                    outrow[colbase+'min'] = br[0]
-                    outrow[colbase+'max'] = br[1]
-                    outarray = np.append(outarray,outrow)
-
-        Nbins     = 3
-        for colbase in ['z']:
-            if ztype != 'zv18':
-                binranges = uves.get_vector_intervals(infodat[coltrans['zmin']][infodat[coltrans['zmin']]<2.9],
-                                                      Nbins,verbose=False,equalsizebins=equalsizebins)
-                for bb, br in enumerate(binranges):
-                    specid   = specid+1
-                    label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
-                    outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
-                    outrow[colbase+'min'] = br[0]
-                    outrow[colbase+'max'] = br[1]
-                    outarray = np.append(outarray,outrow)
-            else:
-                for bb, br in enumerate(np.arange(Nbins)):
-                    specid   = specid+1
-                    label    = 'zLT2p9_bin'+str(bb+1)+'of'+str(Nbins)
-                    outrow   = np.asarray((specid,label,99,ztype)+(np.nan,np.nan)*(len(columns)/2),dtype=outarray.dtype)
-                    outarray = np.append(outarray,outrow)
-
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Generating m814w binning (seperating non-detections out) ')
-        for Nbins in [4,10]:
-            for colbase in ['m814w']:
-                datvec    = infodat[coltrans[colbase+'min']][infodat[coltrans[colbase+'min']]<29.39]
-                binranges = uves.get_vector_intervals(datvec,Nbins,verbose=False,equalsizebins=equalsizebins)
-
-                for bb, br in enumerate(binranges):
-                    specid   = specid+1
                     label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
-                    outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+                    outrow   = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                          (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
                     outrow[colbase+'min'] = br[0]
                     outrow[colbase+'max'] = br[1]
                     outarray = np.append(outarray,outrow)
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Selection of objects with m814w non-edetections (limiting mag) ')
-        datvec    = infodat[coltrans['m814wmin']][infodat[coltrans['m814wmin']]>29.39]
-        binranges = uves.get_vector_intervals(datvec,1,verbose=True,equalsizebins=equalsizebins)
-        specid    = specid+1
-        label     = colbase+'nondet_bin1of1'
-        outrow    = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
-        outrow[colbase+'min'] = binranges[0][0]-0.0001 # manually expand range as all values are identical
-        outrow[colbase+'max'] = binranges[0][1]+0.0001 # manually expand range as all values are identical
-        outarray = np.append(outarray,outrow)
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if verbose: print(' - Generating 3-bin selections (cut on two parameters) ')
+            coltrans  = uves.stack_composite_col_translator(ztype)
+            Nbins     = 3
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Generating 4-bin selections (cut on just one parameter) ')
-        coltrans  = uves.stack_composite_col_translator(ztype)
-        Nbins     = 4
-        for colbase in ['Llya','FWHMlya','EW0lya','beta']:
-            binranges = uves.get_vector_intervals(infodat[coltrans[colbase+'min']],Nbins,verbose=False,
-                                                  equalsizebins=equalsizebins)
-            for bb, br in enumerate(binranges):
-                specid   = specid+1
-                label    = colbase+'_bin'+str(bb+1)+'of'+str(Nbins)
-                outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
-                outrow[colbase+'min'] = br[0]
-                outrow[colbase+'max'] = br[1]
-                outarray = np.append(outarray,outrow)
+            for colbase1,colbase2 in combinations( ['z','m814w','Llya','FWHMlya','EW0lya','beta'],2):
+                if colbase1 == 'z':
+                    datvec1 = infodat[coltrans['zmin']][infodat[coltrans['zmin']]>2.9]
+                elif colbase1 == 'm814w':
+                    datvec1 = infodat[coltrans[colbase1+'min']][infodat[coltrans[colbase1+'min']]<29.39]
+                else:
+                    datvec1 = infodat[coltrans[colbase1+'min']]
+                binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False,equalsizebins=equalsizebins)
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if verbose: print(' - Generating 3-bin selections (cut on two parameters) ')
-        coltrans  = uves.stack_composite_col_translator(ztype)
-        Nbins     = 3
+                if colbase2 == 'z':
+                    datvec2 = infodat[coltrans['zmin']][infodat[coltrans['zmin']]>2.9]
+                elif colbase2 == 'm814w':
+                    datvec2 = infodat[coltrans[colbase2+'min']][infodat[coltrans[colbase2+'min']]<29.39]
+                else:
+                    datvec2 = infodat[coltrans[colbase2+'min']]
+                binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False,equalsizebins=equalsizebins)
 
-        for colbase1,colbase2 in combinations( ['z','m814w','Llya','FWHMlya','EW0lya','beta'],2):
-            if colbase1 == 'z':
-                datvec1 = infodat[coltrans['zmin']][infodat[coltrans['zmin']]>2.9]
-            elif colbase1 == 'm814w':
-                datvec1 = infodat[coltrans[colbase1+'min']][infodat[coltrans[colbase1+'min']]<29.39]
-            else:
-                datvec1 = infodat[coltrans[colbase1+'min']]
-            binranges1 = uves.get_vector_intervals(datvec1,Nbins,verbose=False,equalsizebins=equalsizebins)
-
-            if colbase2 == 'z':
-                datvec2 = infodat[coltrans['zmin']][infodat[coltrans['zmin']]>2.9]
-            elif colbase2 == 'm814w':
-                datvec2 = infodat[coltrans[colbase2+'min']][infodat[coltrans[colbase2+'min']]<29.39]
-            else:
-                datvec2 = infodat[coltrans[colbase2+'min']]
-            binranges2 = uves.get_vector_intervals(datvec2,Nbins,verbose=False,equalsizebins=equalsizebins)
-
-            for bb1, br1 in enumerate(binranges1):
-                for bb2, br2 in enumerate(binranges2):
-                    specid   = specid+1
-                    label    = colbase1+'_bin'+str(bb1+1)+'of'+str(Nbins)+'_'+colbase2+'_bin'+str(bb2+1)+'of'+str(Nbins)
-                    outrow   = np.asarray((specid,label,99,ztype)+(-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
-                    outrow[colbase1+'min'] = br1[0]
-                    outrow[colbase1+'max'] = br1[1]
-                    outrow[colbase2+'min'] = br2[0]
-                    outrow[colbase2+'max'] = br2[1]
-                    outarray = np.append(outarray,outrow)
+                for bb1, br1 in enumerate(binranges1):
+                    for bb2, br2 in enumerate(binranges2):
+                        specid   = specid+1
+                        label    = colbase1+'_bin'+str(bb1+1)+'of'+str(Nbins)+'_'+colbase2+'_bin'+str(bb2+1)+'of'+str(Nbins)
+                        outrow   = np.asarray((specid,label,99,ztype,eqbinstring)+
+                                              (-emptyval,emptyval)*(len(columns)/2),dtype=outarray.dtype)
+                        outrow[colbase1+'min'] = br1[0]
+                        outrow[colbase1+'max'] = br1[1]
+                        outrow[colbase2+'min'] = br2[0]
+                        outrow[colbase2+'max'] = br2[1]
+                        outarray = np.append(outarray,outrow)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Counting number of objects for each setup ')
+    if verbose: print('----------------- Counting objects for each setup and generating output -----------------')
     Nrows        = outarray.shape[0]
     # ppp = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     # ccc = ppp + 'stacks1D_sample_selection.txt'
@@ -10095,16 +10109,18 @@ def stack_composites_generate_setup(outputfile,equalsizebins=False,overwrite=Fal
     fout = open(outputfile, 'w')
     fout.write('# Setup file for generating coposite spectra with uves.stack_composites() \n')
     fout.write('# Created with uves.stack_composites_generate_setup() on '+kbs.DandTstr2()+' \n')
-    fout.write('#  id                                             label                nspec              ztype'+
+    fout.write('#  id                                             label                '
+               'nspec              ztype              bintype'+
                ' '.join([str("%14s" % cc) for cc in columns])+'\n')
     for rr in np.arange(Nrows):
         outstr = str('%.5d' % outarray[rr][0])+\
                  str('%50s' % outarray[rr][1])+\
                  str('%20s' % outarray[rr][2])+\
                  str('%20s' % outarray[rr][3])+\
-                 ' '.join([str('%14.4f' % val) for val in outarray[rr].tolist()[4:]])
+                 str('%20s' % outarray[rr][4])+\
+                 ' '.join([str('%14.4f' % val) for val in outarray[rr].tolist()[5:]])
         if '     all     ' in outstr:
-            fout.write('#'+''.join(['-------------------']*15)+'\n')
+            fout.write('#'+''.join(['-------------------']*16)+'\n')
         fout.write(outstr+'\n')
 
     fout.close()
@@ -10245,7 +10261,7 @@ def stack_composites_objselection(selectinfo,selectdata,verbose=True):
     coltranslationdic = uves.stack_composite_col_translator(selectinfo['ztype'].lower())
 
     indexlist = np.arange(len(selectdata)) # all entries returned by default
-    colsets   = np.unique(np.asarray([colname[:-3] for colname in selectinfo.dtype.names[4:]]))
+    colsets   = np.unique(np.asarray([colname[:-3] for colname in selectinfo.dtype.names[5:]]))
 
     for colset in colsets:
         mincol = colset+'min'
