@@ -9623,15 +9623,33 @@ def prepare_reextractionPostVetting(verbose=True,printVetComment=False):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading vetting results and grabbing list of original TDOSE setup file to modify.')
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
-    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    # vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
+    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_output_manuallycombined.txt'
     if verbose: print('   Vetting results from: '+vetresults)
     outdir        = parentdir+'tdose_reextractionPostVetting/'
     orig_setups   = glob.glob(parentdir+'tdose_setupfiles/*tdose_setupfile_MWuves*_gauss.txt')
     vetdat        = np.genfromtxt(vetresults,names=True,comments='#',dtype=None,skip_header=28)
     Nvets         = len(vetdat['id'])
     ent_reext     = np.where(vetdat['vetresult'] > 2)[0]
-    Nreext        = len(ent_reext)
     id_reext      = vetdat['id'][ent_reext]
+    #--------------------------------------------------------------------
+    # speclistfile = parentdir+'MWuves-full-v1p0_spectra_paperselection.txt'
+    # if os.path.isfile(speclistfile):
+    #     speclistdat = np.genfromtxt(speclistfile,names=True,comments='#',dtype=None,skip_header=4)
+    #     if verbose: print(' - Loading output from uves.print_specs to get list of objects with existing good specs')
+    #     IDswGoodSpec = speclistdat['id']
+    #
+    #     for ii, id_re in enumerate(id_reext):
+    #         if id_re in IDswGoodSpec:
+    #             id_reext[ii]  = -99
+    #             ent_reext[ii] = -99
+    #
+    #     id_reext  = id_reext[id_reext > -1]
+    #     ent_reext = ent_reext[ent_reext > -1]
+    # else:
+    #     if verbose: print(' - Did not find uves.print_specs() list of objects with existing good specs; including all ids')
+    #--------------------------------------------------------------------
+    Nreext        = len(ent_reext)
     point_reext   = [spec.split('tdose_spectrum_')[-1].split('-full')[0] for spec in vetdat['spectrum'][ent_reext]]
     point_reext_u = np.unique(point_reext)
     if verbose: print(' - Found '+str(Nvets)+' objects that had been vetted; '+str(Nreext)+
