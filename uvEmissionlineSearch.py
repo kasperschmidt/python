@@ -10308,7 +10308,8 @@ def stack_composite_col_translator(ztype,verbose=True):
 
     return coltranslationdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,outname,ztype='zcat',verbose=True):
+def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,outname,
+                                 ztype='zcat',bintype='EqNumberBins',verbose=True):
     """
     function plotting the composite spectra from the binning of the objects displaying the binning
     in a seperate panel of the overview plot.
@@ -10369,9 +10370,11 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     # col_matrix_text  =  [ss.split('.fit')[0].split(param1+'_')[-1].replace('bin','').replace('of','/').replace('_'+param2+'_','-')
     #                      for ss in spectra]
     setupinfo_ents   = np.unique(np.asarray( [np.where((setupinfo['label'] == ll) &
-                                                       (setupinfo['ztype'] == ztype))[0] for ll in setuplabels] ))
+                                                       (setupinfo['ztype'] == ztype) &
+                                                       (setupinfo['bintype'] == bintype))[0] for ll in setuplabels] ))
     col_matrix_text  = [str(setupinfo[np.where((setupinfo['label'] == ll) &
-                                               (setupinfo['ztype'] == ztype))[0]]['nspec'][0]) for ll in setuplabels]
+                                               (setupinfo['ztype'] == ztype) &
+                                               (setupinfo['bintype'] == bintype))[0]]['nspec'][0]) for ll in setuplabels]
     col_matrix_labels=[param1,param2]
     if param2 is None:
         col_matrix_labels=[param1,'']
@@ -10439,7 +10442,7 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
                                 plotSN=plotSNval,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/',ztype='zcat'):
+def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/stacks1D_sample_selection/'):
     """
 
     wrapper to stack_composite_plotNxNspecs() setting up and plotting the overveiws of the composite spectra
@@ -10449,54 +10452,77 @@ def plot_compositespec_wrapper(specdir='/Users/kschmidt/work/MUSE/uvEmissionline
     uves.plot_compositespec_wrapper(ztype='zcat')
 
     """
-    if ztype == 'zcat':
-        baseid   = '_0000000'
-    elif ztype == 'zv18':
-        baseid   = '_0000020'
-    else:
-        sys.exit('Uknown ztype = "'+ztype+'"')
+    bintypes = ['EqNumberBins','EqSizeBins']
+    ztypes   = ['zcat','zv18']
 
-    # --- two parameters binned ---
-    rangedic = {}
-    rangedic['z']        = [2.9,6.7]
-    rangedic['m814w']    = [23.76,28.82]
-    rangedic['Llya']     = [-12420,24500]
-    rangedic['FWHMlya']  = [0,17]
-    rangedic['EW0lya']   = [0,2000]
-    rangedic['beta']     = [-15.5,8.2]
+    for bintype in bintypes:
+        if bintype == 'EqNumberBins':
+            binid = 10
+        elif bintype == 'EqSizeBins':
+            binid = 20
+        else:
+            sys.exit('Uknown bintype = "'+bintype+'"')
+        for ztype in ztypes:
+            if ztype == 'zcat':
+                zid = 1
+            elif ztype == 'zv18':
+                zid = 2
+            else:
+                sys.exit('Uknown ztype = "'+ztype+'"')
 
-    for param1,param2 in combinations( ['z','m814w','Llya','FWHMlya','EW0lya','beta'],2):
-        globstr = specdir+'*'+baseid+'*'+param1+'_bin*'+param2+'_bin*.fits'
-        spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+ztype+'_'+param1+'_VS_'+param2+'.pdf'
-        uves.stack_composite_plotNxNspecs(param1,param2,rangedic[param1],rangedic[param2],spectra,outname,ztype=ztype)
+            baseid = '_0000'+str(binid+zid)
 
-    # --- one parameter binned ---
-    if ztype == 'zcat':
-        param1  = 'z'
-        globstr = specdir+'*'+baseid+'*'+param1+'LT2p9_bin*of3*.fits'
-        spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+ztype+'_'+param1+'LT2p9.pdf'
-        uves.stack_composite_plotNxNspecs(param1,None,[1.5,2.9],None,spectra,outname,ztype=ztype)
+            # --- two parameters binned ---
+            rangedic = {}
+            rangedic['z']        = [2.8,6.7]
+            rangedic['m814w']    = [23.76,28.82]
+            rangedic['Llya']     = [-12420,24500]
+            rangedic['FWHMlya']  = [0,17]
+            rangedic['EW0lya']   = [0,2000]
+            rangedic['beta']     = [-15.5,8.2]
 
-    for Nbin in [4,10]:
-        param1  = 'z'
-        globstr = specdir+'*'+baseid+'*'+param1+'GT2p9_bin*of'+str(Nbin)+'*.fits'
-        spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+ztype+'_'+param1+'GT2p9_'+str(Nbin)+'bins.pdf'
-        uves.stack_composite_plotNxNspecs(param1,None,[2.9,6.7],None,spectra,outname,ztype=ztype)
+            for param1,param2 in combinations( ['z','m814w','Llya','FWHMlya','EW0lya','beta'],2):
+                globstr = specdir+'*'+baseid+'*'+param1+'_bin*'+param2+'_bin*.fits'
+                spectra = np.sort(glob.glob(globstr))
+                outname = specdir+'composite_overview_'+ztype+'_'+bintype+'_'+param1+'_VS_'+param2+'.pdf'
+                if len(spectra) > 0:
+                    uves.stack_composite_plotNxNspecs(param1,param2,rangedic[param1],rangedic[param2],spectra,outname,
+                                                      ztype=ztype,bintype=bintype)
 
-        param1  = 'm814w'
-        globstr = specdir+'*'+baseid+'*'+param1+'_bin*of'+str(Nbin)+'*.fits'
-        spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+ztype+'_'+param1+'Detections_'+str(Nbin)+'bins.pdf'
-        uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname,ztype=ztype)
+            # --- one parameter binned ---
+            if ztype == 'zcat':
+                param1  = 'z'
+                globstr = specdir+'*'+baseid+'*'+param1+'LT2p9_bin*of3*.fits'
+                spectra = np.sort(glob.glob(globstr))
+                outname = specdir+'composite_overview_'+ztype+'_'+bintype+'_'+param1+'LT2p9.pdf'
+                if len(spectra) > 0:
+                    uves.stack_composite_plotNxNspecs(param1,None,[1.45,2.95],None,spectra,outname,
+                                                      ztype=ztype,bintype=bintype)
 
-    for plotparam in ['Llya','FWHMlya','EW0lya','beta']:
-        globstr = specdir+'*'+baseid+'*'+plotparam+'_bin*of4*.fits'
-        spectra = np.sort(glob.glob(globstr))
-        outname = specdir+'composite_overview_'+ztype+'_'+plotparam+'_4bins.pdf'
-        uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname,ztype=ztype)
+            for Nbin in [4,10]:
+                param1  = 'z'
+                globstr = specdir+'*'+baseid+'*'+param1+'GT2p9_bin*of'+str(Nbin)+'*.fits'
+                spectra = np.sort(glob.glob(globstr))
+                outname = specdir+'composite_overview_'+ztype+'_'+bintype+'_'+param1+'GT2p9_'+str(Nbin)+'bins.pdf'
+                if len(spectra) > 0:
+                    uves.stack_composite_plotNxNspecs(param1,None,[2.8,6.7],None,spectra,outname,
+                                                      ztype=ztype,bintype=bintype)
+
+                param1  = 'm814w'
+                globstr = specdir+'*'+baseid+'*'+param1+'_bin*of'+str(Nbin)+'*.fits'
+                spectra = np.sort(glob.glob(globstr))
+                outname = specdir+'composite_overview_'+ztype+'_'+bintype+'_'+param1+'Detections_'+str(Nbin)+'bins.pdf'
+                if len(spectra) > 0:
+                    uves.stack_composite_plotNxNspecs(param1,None,rangedic[param1],None,spectra,outname,
+                                                      ztype=ztype,bintype=bintype)
+
+            for plotparam in ['Llya','FWHMlya','EW0lya','beta']:
+                globstr = specdir+'*'+baseid+'*'+plotparam+'_bin*of4*.fits'
+                spectra = np.sort(glob.glob(globstr))
+                outname = specdir+'composite_overview_'+ztype+'_'+bintype+'_'+plotparam+'_4bins.pdf'
+                if len(spectra) > 0:
+                    uves.stack_composite_plotNxNspecs(plotparam,None,rangedic[plotparam],None,spectra,outname,
+                                                      ztype=ztype,bintype=bintype)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_vector_intervals(vector,Nsamples,equalsizebins=False,verbose=True):
