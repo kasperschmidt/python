@@ -6687,10 +6687,10 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     else:
         sample = 'udf10'
         if obj2show is 'goodspec_only':
-            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
             idlist2show = ids_goodTDOSEspec
         elif obj2show is 'badspec_only':
-            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
             idlist2show = ids_badTDOSEspec
         else:
             idlist2show = obj2show
@@ -7334,10 +7334,10 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     else:
         sample = 'udf10'
         if obj2show is 'goodspec_only':
-            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
             idlist2show = ids_goodTDOSEspec
         elif obj2show is 'badspec_only':
-            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(sample=sample,verbose=verbose)
+            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
             idlist2show = ids_badTDOSEspec
         else:
             idlist2show = obj2show
@@ -9599,7 +9599,9 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Filling output with data adjusting for vetting results ')
-    ids_badspec, ids_goodspec = uves.summarize_tdosevetting(sample='all')
+
+    # ----> this need to be changed now that we (almost) have a complete list of spectra... KBS200207
+    ids_badspec, ids_goodspec = uves.summarize_tdosevetting(returnsample='all')
     pointing_selector_dic     = uves.pointing_selector()
 
     for ii, id in enumerate(dat_info['id'][:]):
