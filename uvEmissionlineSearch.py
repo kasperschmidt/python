@@ -1992,7 +1992,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
                 sys.exit(' Color type '+colortype+' not enabled ')
 
             colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
-            cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+            cmaparr = np.linspace(cmin, cmax, num=50)
             m       = plt.cm.ScalarMappable(cmap=cmap)
             m.set_array(cmaparr)
             cb      = plt.colorbar(m)
@@ -2147,7 +2147,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
                 sys.exit(' Color type '+colortype+' not enabled ')
 
             colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
-            cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+            cmaparr = np.linspace(cmin, cmax, num=50)
             m       = plt.cm.ScalarMappable(cmap=cmap)
             m.set_array(cmaparr)
             cb      = plt.colorbar(m)
@@ -2272,7 +2272,7 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         #         sys.exit(' Color type '+colortype+' not enabled ')
         #
         #     colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
-        #     cmaparr = np.linspace(cmin, cmax, cmax-cmin)
+        #     cmaparr = np.linspace(cmin, cmax, num=50)
         #     m       = plt.cm.ScalarMappable(cmap=cmap)
         #     m.set_array(cmaparr)
         #     cb      = plt.colorbar(m)
@@ -5224,7 +5224,7 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
     cmin    = np.min(np.append(varydatSF,varydatAGN))
     cmax    = np.max(np.append(varydatSF,varydatAGN))
     colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
-    cmaparr = np.linspace(cmin, cmax, 30) #cmax-cmin)
+    cmaparr = np.linspace(cmin, cmax, num=50) #cmax-cmin)
     mm      = plt.cm.ScalarMappable(cmap=cmap)
     mm.set_array(cmaparr)
 
@@ -8964,6 +8964,83 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
         print('# - Done; so that was '+str(matchcount)+' objects with at least one line matching the cuts: ')
         print('#   S2N(FELIS) > '+str(S2Nmin))
         print('#   vshift     < '+str(vshiftmax)+' km/s ')
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_FELISs2nMap(felisresults,outputdir='./',S2Nmarkerthreshold=3.0,verbose=True):
+    """
+    Function plotting a map of the S/N obtained from fitting a given set of templates
+
+    --- INPUT ---
+    felisresults    = The FELIS output pickle file to grab information for results from
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    plotdir      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FELIStemplatematch2uvesobjects/all_gauss190926/s2nmaps/'
+    felisresults = plotdir+'../tdose_spectrum_udf-10-full-v1p0-MWuves_gauss_0720680577_CCresults_templateCIII_FELISmatch2uves190926_gauss.pkl'
+    uves.plot_FELISs2nMap(felisresults,outputdir=plotdir)
+
+
+    """
+    resultsdic = felis.load_picklefile(felisresults)
+
+    if verbose: print(' --------- Loading content of results dictionary key: ---------')
+    for dickey in resultsdic.keys():
+        if verbose: print(' - Loading data from \n   '+dickey)
+        zvals      = resultsdic[dickey]['zCCmaxvec']
+        S2Nvals    = resultsdic[dickey]['S2NCCmaxvec']
+        templates  = resultsdic[dickey]['templatevec']
+        sigmavals  = np.asarray([str(tt).split('sigma')[-1].split('_skew')[0].replace('p','.') for tt in templates]).astype(float)
+        fratiovals = np.asarray([str(tt).split('Fratio')[-1].split('_z')[0].replace('p','.') for tt in templates]).astype(float)
+
+        tempbase = templates[0].split('/')[-1].split('_noise')[0]
+        plotname = outputdir+dickey.split('/')[-1].replace('.fits','_fitto_'+tempbase+'_templates_FELISresultsS2Nmap.pdf')
+
+        if verbose: print('   Setting up and generating plot:\n   '+plotname)
+        fig = plt.figure(figsize=(5, 4))
+        fig.subplots_adjust(wspace=0.1, hspace=0.5,left=0.13, right=0.99, bottom=0.13, top=0.98)
+        Fsize    = 11
+        lthick   = 2
+        marksize = 10
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+
+        cmin        = np.min(S2Nvals)
+        cmax        = np.max(S2Nvals)
+
+        cmap        = plt.cm.viridis_r
+        colnorm     = plt.Normalize(vmin=cmin,vmax=cmax)
+        cmaparr     = np.linspace(cmin, cmax, num=50)
+        tempcolors  = [cmap(colnorm(S2Nval)) for S2Nval in S2Nvals]
+        m           = plt.cm.ScalarMappable(cmap=cmap)
+        m.set_array(cmaparr)
+        cb          = plt.colorbar(m)
+        cb.set_label('Max S/N of template cross correlation')
+
+        for cc, tempcol in enumerate(tempcolors):
+            if S2Nvals[cc] == np.max(S2Nvals):
+                tempmarker = 'X'
+            elif S2Nvals[cc] < S2Nmarkerthreshold:
+                tempmarker = 'o'
+            else:
+                tempmarker = 's'
+
+            plt.plot(sigmavals[cc],fratiovals[cc],tempmarker,color=tempcol,markersize=marksize,zorder=10)
+
+        plt.xlim([np.min(sigmavals)-0.1,np.max(sigmavals)+0.1])
+        plt.ylim([np.min(fratiovals)-0.1,np.max(fratiovals)+0.1])
+        plt.xlabel(' Template $\sigma$ [\AA] ')
+        plt.ylabel(' Template doublet flux ratio [F(blue)/F(red)]')
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print('   succesfully saved plot')
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def count_SpecOnArche(countfields):
     """
@@ -9451,7 +9528,7 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    outputfits = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/results_master_catalog_version191202.fits'
+    outputfits = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/results_master_catalog_testversion2002XX.fits'
     uves.build_mastercat(outputfits)
 
     """
