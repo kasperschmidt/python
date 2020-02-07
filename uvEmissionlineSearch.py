@@ -9663,8 +9663,10 @@ def prepare_reextractionPostVetting(verbose=True,printVetComment=False):
         for line in fvet.readlines():
             if line.split()[0] in id_reext.astype(str):
                 notesstr = line.split('#Notes:')[-1].split('\n')[0]
-                if ('fov' in notesstr.lower()) or ('use point source' in notesstr.lower()):
+                if ('point source' in notesstr.lower()):
                     print('\033[91m'+'  '+line.split()[0]+':  '+notesstr+'\033[0m')
+                elif ('fov' in notesstr.lower()):
+                    print('\033[94m'+'  '+line.split()[0]+':  '+notesstr+'\033[0m')
                 else:
                     print('  '+line.split()[0]+':  '+notesstr)
 
