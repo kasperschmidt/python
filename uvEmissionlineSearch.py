@@ -9863,7 +9863,8 @@ def print_specs(outputfile, overwrite=True, verbose=True):
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     vr_main       = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
     vr_reext1     = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_output_manuallycombined.txt'
-    vetresults    = [vr_main,vr_reext1]
+    vr_reext2     = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_2ndround_manuallycombined.txt'
+    vetresults    = [vr_main,vr_reext1,vr_reext2]
 
     if (overwrite == False) & os.path.isfile(outputfile):
         sys.exit('The file '+outputfile+' already exists but overwrite=False ')
@@ -9876,12 +9877,29 @@ def print_specs(outputfile, overwrite=True, verbose=True):
     fout.write('# id           spectrum \n')
 
     if verbose: print(' - Looping over vetting results and writing output to \n   '+outputfile)
+    Nmultistack = 0
     for vetresult in vetresults:
         fout.write('### IDs and Spec from vetting results collected in: '+vetresult.split('/')[-1]+' ###\n')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        vetinfo       = open(vetresult,'r')
+        stackent      = []
+        lineindex     = 0
+        for line in vetinfo.readlines():
+            if line.startswith('#'):
+                continue
+            else:
+                if 'n6-' in line:
+                    stackent.append(lineindex)
+            lineindex = lineindex+1
+        Nmultistack = Nmultistack + len(stackent)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - -
         vetdat        = np.genfromtxt(vetresult,names=True,comments='#',dtype=None,skip_header=28)
         for ii, id in enumerate(vetdat['id']):
             if vetdat['vetresult'][ii] > 2:
                 fout.write("# Needs re-extraction: "+str("%s" % id)+'    '+
+                           vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/')+' \n')
+            elif ii in stackent:
+                fout.write("# Replaced by multi-field stack: "+str("%s" % id)+'    '+
                            vetdat['spectrum'][ii].replace('..','/store/data/musewide/TDOSE/')+' \n')
             else:
                 fout.write(str("%s" % id)+'    '+
@@ -9891,11 +9909,11 @@ def print_specs(outputfile, overwrite=True, verbose=True):
     if verbose: print(' - Loading output and summarizing: ')
     outdat = np.genfromtxt(outputfile,names=True,comments='#',dtype=None,skip_header=4)
     Nobj   = len(outdat['id'])
-    Nobj_u = len(np.unique(outdat['id']))
+    Nobj_u = len(np.unique(np.sort(outdat['id'])))
     if Nobj != Nobj_u:
         if verbose: print('    The following objects appear N times in output ')
         if verbose: print(' objid       N')
-        for objid in np.unique(outdat['id']):
+        for objid in np.unique(np.sort(outdat['id'])):
             objent = np.where(outdat['id'] == objid)[0]
             if len(objent) > 1:
                 if verbose: print(str(objid)+'   '+str(len(objent)))
@@ -9903,7 +9921,8 @@ def print_specs(outputfile, overwrite=True, verbose=True):
     else:
         if verbose:
             print('   Found '+str(Nobj_u)+' unique objects in output')
-            print('   To be compared with 2197 expected (minus 15 multifield-stacks = 2182)')
+            print('   To be compared with '+str(2197-Nmultistack)+' expected (2197 unique IDs minus '+
+                  str(Nmultistack)+' multifield-stacks)')
             print('   (not accounted for duplicates UDF-CDFS-UDF10 as of 200206)')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
