@@ -9703,7 +9703,8 @@ def prepare_reextractionPostVetting(verbose=True,printVetComment=False):
     if verbose: print(' - Loading vetting results and grabbing list of original TDOSE setup file to modify.')
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     # vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
-    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_output_manuallycombined.txt'
+    # vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_output_manuallycombined.txt'
+    vetresults    = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_2ndround_manuallycombined.txt'
     if verbose: print('   Vetting results from: '+vetresults)
     outdir        = parentdir+'tdose_reextractionPostVetting/'
     orig_setups   = glob.glob(parentdir+'tdose_setupfiles/*tdose_setupfile_MWuves*_gauss.txt')
@@ -9864,7 +9865,8 @@ def print_specs(outputfile, overwrite=True, verbose=True):
     vr_main       = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_extractions_output_manuallycombined.txt'
     vr_reext1     = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_output_manuallycombined.txt'
     vr_reext2     = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_2ndround_manuallycombined.txt'
-    vetresults    = [vr_main,vr_reext1,vr_reext2]
+    vr_reext3     = parentdir+'vet_tdose_extractions_outputs/MWuves-full-v1p0_vet_tdose_re-extractions_3rdround_manuallycombined.txt'
+    vetresults    = [vr_main,vr_reext1,vr_reext2,vr_reext3]
 
     if (overwrite == False) & os.path.isfile(outputfile):
         sys.exit('The file '+outputfile+' already exists but overwrite=False ')
@@ -9878,6 +9880,7 @@ def print_specs(outputfile, overwrite=True, verbose=True):
 
     if verbose: print(' - Looping over vetting results and writing output to \n   '+outputfile)
     Nmultistack = 0
+    stackids    = []
     for vetresult in vetresults:
         fout.write('### IDs and Spec from vetting results collected in: '+vetresult.split('/')[-1]+' ###\n')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -9890,6 +9893,7 @@ def print_specs(outputfile, overwrite=True, verbose=True):
             else:
                 if 'n6-' in line:
                     stackent.append(lineindex)
+                    stackids.append(int(line.split()[0]))
             lineindex = lineindex+1
         Nmultistack = Nmultistack + len(stackent)
         # - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -9924,6 +9928,17 @@ def print_specs(outputfile, overwrite=True, verbose=True):
             print('   To be compared with '+str(2197-Nmultistack)+' expected (2197 unique IDs minus '+
                   str(Nmultistack)+' multifield-stacks)')
             print('   (not accounted for duplicates UDF-CDFS-UDF10 as of 200206)')
+
+    if verbose:
+        print('\n - The following IDs were not found among the vetting results and hence, do not exist in output list')
+        infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+        infodat       = afits.open(infofile)[1].data
+        for infoid in infodat['id']:
+            if (infoid not in np.unique(np.sort(outdat['id']))) & (~str(infoid).startswith('5')):
+                if infoid in stackids:
+                    print('   '+str(infoid)+'   (part of multi-field staced saple)')
+                else:
+                    print('   '+str(infoid))
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def collectAndRenamArcheSpec(speclist='/store/data/musewide/TDOSE/MWuves100full/MWuves-full-v1p0_speclist12XXXX.txt',
