@@ -10768,7 +10768,7 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
-    ids_ignore, duplicate_dictionary = uves.get_object_duplication_list(matchtol=0.1)
+    ids_ignore, duplicate_dictionary = uves.get_object_duplication_list(matchtol=0.2)
 
     """
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
@@ -10794,8 +10794,9 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
             ids_dup    = infodat['id'][ent_dup]
             rmatch_dup = rmatch[ent_dup]
             if len(ent_dup) > 2:
-                print(' --> WARNING: Found more than 2 objects at same location with distances '+str(rmatch_dup)+
-                      ' and ids='+str(ids_dup)+' to coordinates of '+str(objid))
+                print('WARNING: Found more than 2 matched at location of '+str(objid)+' (within '+str(matchtol)+
+                      ' arcsec) with distances and ids \n         '+str(rmatch_dup)+
+                      '\n         '+str(ids_dup))
             idkey = np.max(ids_dup)
             if idkey not in duplicate_dic.keys():
                 duplicate_dic[idkey] = ids_dup[ids_dup != idkey][0]
@@ -10803,4 +10804,82 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
     ignoreids = np.sort(np.asarray([duplicate_dic[idkey] for idkey in duplicate_dic.keys()]))
 
     return ignoreids, duplicate_dic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/MWuves-full-v1p0_DS9regions_200213selection',verbose=True):
+    """
+    Function to generate DS9 region files for the samples in the UVES study
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uves.object_region_files()
+
+    """
+    matchtol      = 0.2
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
+    infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    if verbose: print(' - Generating DS9 region file for excluded sources ')
+    regionname = basename+'_sampleexclusion.reg'
+    id_remove  = [158002004,208014258,213022109,600341002,601931670] # the five objects removed from sample analysis
+    sampleent  = np.asarray([np.where(infodat['id'] == ir)[0][0] for ir in id_remove])
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='x')
+
+    if verbose: print(' - Generating DS9 region file for cosmos sources ')
+    regionname = basename+'_cosmos.reg'
+    sampleent  = np.where((infodat['id']>1.9e8) & (infodat['id']<2.9e8))[0]
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    # kbs.create_DS9region(regionname,ras,decs,color='cyan',circlesize=12,textlist=None,clobber=True,point='circle')
+    kbs.create_DS9region(regionname,ras,decs,color='cyan',circlesize=matchtol,textlist=None,clobber=True,point=None)
+
+    if verbose: print(' - Generating DS9 region file for cdfs parallel sources ')
+    regionname = basename+'_cdfsparallel.reg'
+    sampleent  = np.where((infodat['id']>2.9e8) & (infodat['id']<4.9e8))[0]
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    # kbs.create_DS9region(regionname,ras,decs,color='cyan',circlesize=12,textlist=None,clobber=True,point='circle')
+    kbs.create_DS9region(regionname,ras,decs,color='cyan',circlesize=matchtol,textlist=None,clobber=True,point=None)
+
+    if verbose: print(' - Generating DS9 region file for cdfs sources ')
+    regionname = basename+'_cdfs.reg'
+    sampleent  = np.where((infodat['id']>0.9e8) & (infodat['id']<1.9e8))[0]
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    # kbs.create_DS9region(regionname,ras,decs,color='cyan',circlesize=12,textlist=None,clobber=True,point='circle')
+    kbs.create_DS9region(regionname,ras,decs,color='cyan',circlesize=matchtol,textlist=None,clobber=True,point=None)
+
+    if verbose: print(' - Generating DS9 region file for UDF sources ')
+    regionname = basename+'_udfmosaic.reg'
+    sampleent  = np.where((infodat['id']>5.9e8) & (infodat['id']<6.9e8))[0]
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    kbs.create_DS9region(regionname,ras,decs,color='green',circlesize=20,textlist=None,clobber=True,point='diamond')
+
+    if verbose: print(' - Generating DS9 region file for UDF10 sources ')
+    regionname = basename+'_udf10.reg'
+    sampleent  = np.where((infodat['id']>6.9e8) & (infodat['id']<7.9e8))[0]
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    kbs.create_DS9region(regionname,ras,decs,color='magenta',circlesize=20,textlist=None,clobber=True,point='box')
+
+    if verbose: print(' - Generating DS9 region file for duplicates to ignore ')
+    regionname = basename+'_dupicates2ignore.reg'
+    ids_ignore, duplicate_dictionary = uves.get_object_duplication_list(matchtol=matchtol)
+    sampleent  = np.asarray([np.where(infodat['id'] == ig)[0][0] for ig in ids_ignore])
+    ras        = infodat['ra'][sampleent]
+    decs       = infodat['dec'][sampleent]
+    kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_uves_FOoV(regionfiles,verbose=True):
+    """
+    Generata plot of CDFS and COSMOS region with UVES samples overplotted
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+
+    """
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
