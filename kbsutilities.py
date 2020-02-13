@@ -304,15 +304,19 @@ def getAv_area(RAcenter,DECcenter,radius,filter='F125W',valreturn=None,stepsize=
     return Av_final, EBV_final, gridreturn
 
 #-------------------------------------------------------------------------------------------------------------
-def create_DS9region(outputfile,ralist,declist,color='red',circlesize=0.5,textlist=None,clobber=False):
+def create_DS9region(outputfile,ralist,declist,color='red',circlesize=0.5,textlist=None,clobber=False,
+                     point=None):
     """
     Generate a basic DS9 region file with circles around a list of coordinates
 
     ralist
     declist
     color
-    size
-    text
+    circlesize
+    textlist
+    clobber
+    point    To use points instead of circle; options are: box, cross, x, circle, diamond. In this case "circlesize"
+             should provide the size of the point to plot.
 
     """
     if type(color) is str:
@@ -326,7 +330,10 @@ def create_DS9region(outputfile,ralist,declist,color='red',circlesize=0.5,textli
     fout.write("# Region file format: DS9 version 4.1 \nfk5\n")
 
     for rr, ra in enumerate(ralist):
-        string = 'circle('+str(ra)+','+str(declist[rr])+','+str(circlesize)+'") # color='+color[rr]+' width=3 '
+        if point is None:
+            string = 'circle('+str(ra)+','+str(declist[rr])+','+str(circlesize)+'") # color='+color[rr]+' width=3 '
+        else:
+            string = 'point('+str(ra)+','+str(declist[rr])+') # point='+point+' '+str(circlesize)+' color='+color[rr]+' width=3 '
 
         if textlist is not None:
             string = string+' font="times 10 bold roman" text={'+textlist[rr]+'}'
