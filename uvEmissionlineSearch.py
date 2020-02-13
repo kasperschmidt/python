@@ -10308,7 +10308,7 @@ def stack_composites(compositesetup,plotstackoverview=True,inloopload=False,verb
     """
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     outdir        = parentdir+compositesetup.split('/')[-1].split('.tx')[0]+'/'
-    specdir       = parentdir+'UVESselection200203noreext/'
+    specdir       = parentdir+'MWuves-full-v1p0_spectra_paperselection200213/'
     infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
