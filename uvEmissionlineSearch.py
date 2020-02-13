@@ -10761,3 +10761,46 @@ def get_vector_intervals(vector,Nsamples,equalsizebins=False,verbose=True):
 
     return binranges
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_object_duplication_list(matchtol=0.1,verbose=True):
+    """
+    Function returning a dictionary of objects and their duplicates so they can be ignored/accounted for
+    in the analysis.
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    ids_ignore, duplicate_dictionary = uves.get_object_duplication_list(matchtol=0.1)
+
+    """
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat       = afits.open(infofile)[1].data
+    infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+    Nobj          = len(infodat['id'])
+    matchtol_deg  = matchtol/3600.
+    duplicate_dic = {}
+    if verbose: print(' - Looking for duplicates among the '+str(Nobj)+' objects in infofile ')
+    for ii, objid in enumerate(infodat['id']):
+        if verbose:
+            infostr = '   checking duplicates for id='+str(objid)+\
+                      ' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(infodat['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        objra     = infodat['ra'][ii]
+        objdec    = infodat['dec'][ii]
+        rmatch    = np.sqrt( (np.cos(np.deg2rad(objdec))*(infodat['ra']-objra))**2.0 + (infodat['dec']-objdec)**2.0 )
+        ent_dup   = np.where(rmatch < matchtol_deg)[0]
+
+        if len(ent_dup) > 1:
+            ids_dup    = infodat['id'][ent_dup]
+            rmatch_dup = rmatch[ent_dup]
+            if len(ent_dup) > 2:
+                print(' --> WARNING: Found more than 2 objects at same location with distances '+str(rmatch_dup)+
+                      ' and ids='+str(ids_dup)+' to coordinates of '+str(objid))
+            idkey = np.max(ids_dup)
+            if idkey not in duplicate_dic.keys():
+                duplicate_dic[idkey] = ids_dup[ids_dup != idkey][0]
+
+    ignoreids = np.sort(np.asarray([duplicate_dic[idkey] for idkey in duplicate_dic.keys()]))
+
+    return ignoreids, duplicate_dic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
