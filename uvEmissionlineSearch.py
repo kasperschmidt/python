@@ -9088,6 +9088,12 @@ def count_SpecOnArche(countfields):
     setupfiledir['guoudf10full']   = list(np.sort(glob.glob('Guo-UDF10-full-v1p0/'+setupglobstr)))
     setupfiledir['guoudfmock']     = list(np.sort(glob.glob('Guo-UDF-MWmock-v1p0/'+setupglobstr)))
 
+    setupfiledir['whitaker']    = list(np.sort(glob.glob('Whitaker-*/'+setupglobstr)))
+    setupfiledir['whitcdfs']    = list(np.sort(glob.glob('Whitaker-CDFS-full-v1p0/'+setupglobstr)))
+    setupfiledir['whitcdfspar'] = list(np.sort(glob.glob('Whitaker-CDFSparallel-full-v1p0/'+setupglobstr)))
+    setupfiledir['whitudf']     = list(np.sort(glob.glob('Whitaker-UDF-full-v1p0/'+setupglobstr)))
+    setupfiledir['whitudf10']   = list(np.sort(glob.glob('Whitaker-UDF10-full-v1p0/'+setupglobstr)))
+
     if countfields == 'all':
         setupfiles = setupfiledir['rafelski']+setupfiledir['skelton']+setupfiledir['uves']
     else:
