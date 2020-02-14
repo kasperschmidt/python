@@ -10777,6 +10777,11 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
     Nobj          = len(infodat['id'])
     matchtol_deg  = matchtol/3600.
     duplicate_dic = {}
+
+    dupGT2_ids    = []
+    dupGT2_ras    = []
+    dupGT2_decs   = []
+
     if verbose: print(' - Looking for duplicates among the '+str(Nobj)+' objects in infofile ')
     for ii, objid in enumerate(infodat['id']):
         if verbose:
@@ -10797,9 +10802,21 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
                 print('WARNING: Found more than 2 matched at location of '+str(objid)+' (within '+str(matchtol)+
                       ' arcsec) with distances and ids \n         '+str(rmatch_dup)+
                       '\n         '+str(ids_dup))
+                dupGT2_ids.append(objid)
+                dupGT2_ras.append(objra)
+                dupGT2_decs.append(objdec)
+
             idkey = np.max(ids_dup)
             if idkey not in duplicate_dic.keys():
                 duplicate_dic[idkey] = ids_dup[ids_dup != idkey][0]
+
+    if len(dupGT2_ids) > 0: # If there are objects with more than 2 duplications, make region file of those
+        regionname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objects_with_more_than_2_matches_within_'+\
+                     str(matchtol).replace('.','p')+'_of_coordinate.reg'
+        if verbose: print('\n - Generated DS9 region file with '+str(len(dupGT2_ids))+
+                          ' case of >2 matches to coordinate. Saved to\n   '+regionname)
+        kbs.create_DS9region(regionname,dupGT2_ras,dupGT2_decs,color='red',circlesize=matchtol,
+                             textlist=np.asarray(dupGT2_ids).astype(str),clobber=True,point=None)
 
     ignoreids = np.sort(np.asarray([duplicate_dic[idkey] for idkey in duplicate_dic.keys()]))
 
