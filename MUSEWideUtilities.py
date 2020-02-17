@@ -1897,7 +1897,7 @@ def TDOSE_sourcecat_from_Whitaker(outputnamebase,refimage,minRaper=0.5,minCutwid
     refimghdr        = afits.open(refimage)[0].header
     arcsecPerPix_Whi = 0.06 # 60 mas
 
-    ids_all     = whitdat['id']
+    ids_all     = whitdat['id'].astype(int)
     ras_all     = whitdat['ra']
     decs_all    = whitdat['dec']
     fluxf_all   = whitdat['f_f160w']
