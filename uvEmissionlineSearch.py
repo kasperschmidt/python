@@ -4927,10 +4927,10 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
 
         #--------- X and Y limits ---------
-        y_uplimarr = (np.asarray(yerr).astype(int) == +99)
-        y_lolimarr = (np.asarray(yerr).astype(int) == -99)
-        x_uplimarr = (np.asarray(xerr).astype(int) == +99)
-        x_lolimarr = (np.asarray(xerr).astype(int) == -99)
+        y_uplimarr = (np.asarray(yerr) == +99)  # .astype(int) # KBS removed on 200217
+        y_lolimarr = (np.asarray(yerr) == -99)  # .astype(int) # KBS removed on 200217
+        x_uplimarr = (np.asarray(xerr) == +99)  # .astype(int) # KBS removed on 200217
+        x_lolimarr = (np.asarray(xerr) == -99)  # .astype(int) # KBS removed on 200217
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
             # checking for upper/lower limits
             if ids is not None:
@@ -5519,7 +5519,7 @@ def gen_tdosespecFELISresults_summary(summaryfile,picklefiles,overwrite=False,ve
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     return summarydat
 
