@@ -8907,9 +8907,12 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
                 afile = spec.replace('gauss','aperture')
                 if os.path.isfile(afile):
                     aperspec.append(afile)
-
-            specoverview = gaussspec + aperspec
-            labels       = ['TDOSE gauss']*len(gaussspec) +['TDOSE aper']*len(aperspec)
+            if gfile != afile:
+                specoverview = gaussspec + aperspec
+                labels       = ['TDOSE gauss']*len(gaussspec) +['TDOSE aper']*len(aperspec)
+            else:
+                specoverview = gaussspec
+                labels       = ['TDOSE spectrum']*len(gaussspec)
 
             wavecols     = ['wave']*len(specoverview)
             fluxcols     = ['flux']*len(specoverview)
