@@ -9382,12 +9382,16 @@ def summarize_tdosevetting(returnsample='udf10',verbose=True):
     vetdat = np.genfromtxt(vetcat,names=True,comments='#',dtype=None,skip_header=28)
 
     selcuts = collections.OrderedDict()
-    selcuts['all fields'] = [0.0,   1e12]
+    selcuts['all']        = [0.0,   1e12]
     selcuts['cdfs']       = [0.9e8, 1.9e8 ]
     selcuts['parallels']  = [2.9e8, 4.9e8  ]
     selcuts['cosmos']     = [1.9e8, 2.9e8  ]
     selcuts['udfmosaic']  = [5.9e8, 6.9e8  ]
     selcuts['udf10']      = [6.9e8, 7.9e8  ]
+
+    if returnsample not in selcuts.keys():
+        sys.exit(' - Invalid sample to return ("'+returnsample+'") provided to uves.summarize_tdosevetting(). '
+                                                               '\n   Choose between: '+str(selcuts.keys()))
 
     # - - - -  count - - - -
     print(' ---- vetting results in '+vetcat.split('/')[-1]+' ----')
@@ -9606,7 +9610,7 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
                 col_out = col_def
 
     Ncols = Ncols - Nskip
-    if verbose: print('\n   (Skipped the '+str(Nskip)+' rows containing NV so Nrows='+str(Ncols))
+    if verbose: print('\n   (Skipped the '+str(Nskip)+' rows containing NV so Ncols='+str(Ncols))
 
     if verbose: print('   Creating fits file HDU with column definitions ')
     hdu_out     = afits.BinTableHDU.from_columns(col_out)
