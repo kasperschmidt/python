@@ -3654,7 +3654,7 @@ def pre190911_gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     return summarydat
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -3683,7 +3683,7 @@ def pre190911_plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortyp
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat = np.genfromtxt(summaryfile,skip_header=39,dtype=fmt,comments='#',names=True)
     specnumber = np.arange(len(summarydat))+1.0
 
@@ -4428,7 +4428,7 @@ def gen_mocspecFELISresults_summary(summaryfile,picklefiles,overwrite=False,verb
     if verbose: print('\n   ...done')
     fout.close()
 
-    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat = np.genfromtxt(summaryfile,skip_header=34,dtype=fmt,comments='#',names=True)
     return summarydat
 
@@ -4453,7 +4453,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat = np.genfromtxt(summaryfile,skip_header=34,dtype=fmt,comments='#',names=True)
     specnumber = np.arange(len(summarydat))+1.0
 
@@ -5549,7 +5549,7 @@ def plot_tdosespecFELISresults_summary(summaryfile,plotbasename,colortype='lineS
 
     """
     if verbose: print(' - Loading and plotting the content of \n   '+summaryfile)
-    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
     Nspecin     = len(summarydat['spectrum'])
 
@@ -6370,7 +6370,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading content of the '+str(lineindicators)+' summary files provided')
     dic_summarydat = {}
-    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     for ss, sfile in enumerate(summaryfiles):
         summarydat  = np.genfromtxt(sfile,skip_header=25,dtype=fmt,comments='#',names=True)
         dic_summarydat[lineindicators[ss]] = summarydat
@@ -8702,7 +8702,7 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
     summaryfile  = outdir+'CCresults_summary_templateCIII_FELISmatch2udf10masedaobj190913.txt'
     if gaussspec:
         summaryfile = summaryfile.replace('.txt','_gauss.txt')
-    fmt          = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+    fmt          = 'd,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
     summarydat   = np.genfromtxt(summaryfile,skip_header=24,dtype=fmt,comments='#',names=True)
     sortindex_S  = np.argsort(summarydat['id'])
     Nspecin      = len(summarydat['spectrum'])
@@ -8824,7 +8824,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
     if verbose: print('# - Loading the data of the '+str(len(summaryfiles))+' summary files into memory')
     summarfiledat_dic = {}
     for summaryfile in summaryfiles:
-        fmt                             = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,200a,200a'
+        fmt                             = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
         summarfiledat_dic[summaryfile]  = np.genfromtxt(summaryfile,skip_header=25,dtype=fmt,comments='#',names=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
