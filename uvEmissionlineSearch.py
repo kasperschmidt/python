@@ -822,7 +822,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
 
     c69 = pyfitsOLD.Column(name='leadline', format='10A', unit='', array=leadline)
     c70 = pyfitsOLD.Column(name='leadlineS2N', format='D', unit='', array=leadlineSN)
-    c71 = pyfitsOLD.Column(name='leadlineConf', format='D', unit='', array=leadlineSN)
+    c71 = pyfitsOLD.Column(name='leadlineConf', format='D', unit='', array=leadlineCONF)
 
     coldefs = pyfitsOLD.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,
                                  c9,c10,c11,c12,c13,c14,
