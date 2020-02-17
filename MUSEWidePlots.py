@@ -1420,7 +1420,7 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
     for ss, specname in enumerate(spectra):
         if plotSN:
             waveent = (datadic[specname]['spec_wave'] > xrange[0]) & (datadic[specname]['spec_wave'] < xrange[1])
-            meanerr = np.mean(datadic[specname]['spec_ferr'])
+            meanerr = np.mean(datadic[specname]['spec_ferr'][np.isfinite(datadic[specname]['spec_ferr'])])
         else:
             meanerr = 1.0
 
