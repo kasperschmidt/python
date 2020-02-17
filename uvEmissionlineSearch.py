@@ -10826,10 +10826,18 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
                 dupGT2_ids.append(objid)
                 dupGT2_ras.append(objra)
                 dupGT2_decs.append(objdec)
+            elif str(ids_dup[0])[0] == str(ids_dup[1])[0]:
+                print('WARNING: The 2 matches to the location of '+str(objid)+' (within '+str(matchtol)+
+                      ' arcsec) come from same survey: with distances and ids \n         '+str(rmatch_dup)+
+                      '\n         '+str(ids_dup))
+                dupGT2_ids.append(objid)
+                dupGT2_ras.append(objra)
+                dupGT2_decs.append(objdec)
 
             idkey = np.max(ids_dup)
             if idkey not in duplicate_dic.keys():
                 duplicate_dic[idkey] = ids_dup[ids_dup != idkey][0]
+
 
     if len(dupGT2_ids) > 0: # If there are objects with more than 2 duplications, make region file of those
         regionname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objects_with_more_than_2_matches_within_'+\
