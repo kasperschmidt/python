@@ -9151,6 +9151,7 @@ def count_SpecOnArche(countfields):
     return completefields, incompletefields, emptyfields
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3.0,
+                       emlines=['NV', 'CIV', 'HeII', 'OIII', 'SiIII', 'CIII', 'MgII'],
                        infofile='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits',
                        FELISsummary=False,EWestimates=False,overwrite=False,verbose=True):
     """
@@ -9192,7 +9193,6 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
         fout.write('# The columns are followed by notes on the object \n')
         fout.write('# \n')
         fout.write('# Columns are:\n')
-        emlines    = ['NV', 'CIV', 'HeII', 'OIII', 'SiIII', 'CIII', 'MgII']
         fout.write('#  id               pointing'+''.join([str("%13s" % ('trust'+el)) for el in emlines])+'\n')
 
     if verbose: print(' - Loading main info file: '+infofile)
@@ -9225,9 +9225,10 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
             continue
         objpointings     = dat_lineratio['pointing'][objent_lineratio]
 
+        mainplots = ' '
         for plotdir in plotdirs:
-            mainplots = ' '.join(glob.glob(plotdir+'overview_1DspecWzooms*'+str("%.9d" % objid)+'*.pdf'))
-
+            plolist   = ' '.join(glob.glob(plotdir+'overview_1DspecWzooms*'+str("%.9d" % objid)+'*.pdf'))
+            mainplots = mainplots + plolist
         opencommand = 'open -n -F '
         if mainplots != '':
             pipe_mainplots = subprocess.Popen(opencommand+mainplots,shell=True,executable=os.environ["SHELL"])
@@ -10833,10 +10834,10 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
                 dupGT2_ids.append(objid)
                 dupGT2_ras.append(objra)
                 dupGT2_decs.append(objdec)
-
-            idkey = np.max(ids_dup)
-            if idkey not in duplicate_dic.keys():
-                duplicate_dic[idkey] = ids_dup[ids_dup != idkey][0]
+            else:
+                idkey = np.min(ids_dup)
+                if idkey not in duplicate_dic.keys():
+                    duplicate_dic[idkey] = ids_dup[ids_dup != idkey][0]
 
 
     if len(dupGT2_ids) > 0: # If there are objects with more than 2 duplications, make region file of those
