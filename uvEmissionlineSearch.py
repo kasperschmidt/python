@@ -336,6 +336,14 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
     leadlineSN  = []
     leadlineCONF= []
 
+    # v v v  Get duplication info v v v
+    ids_ignore, duplicate_dictionary = uves.get_object_duplication_list(matchtol=0.25)
+
+    # dupspecial0 = [135010177,135010178,    601621599,601621600,    608733593,608733594]
+    # dupspecial1 = [608933623,722290970,    722290971]
+    # dupspecial2 = [610943897,610943898,722661024,722661025]
+
+    duplication_main = []
     for ii,id in enumerate(objids):
         if verbose:
             infostr = '  >Getting info for '+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % NLAEs)+')        '
@@ -343,6 +351,24 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
             sys.stdout.write("%s\r" % infostr)
             sys.stdout.flush()
         imgignorstr = '_wht_'
+
+        if id in duplicate_dictionary.keys():
+            duplication_main.append(duplicate_dictionary[id])
+        elif id in [135010177,135010178]:
+            duplication_main.append(0)
+        elif id in [601621599,601621600]:
+            duplication_main.append(0)
+        elif id in [608733593,608733594]:
+            duplication_main.append(0)
+        elif id in [608933623]:
+            duplication_main.append(722290970)
+        elif id in [610943897]:
+            duplication_main.append(722661024)
+        elif id in [610943898]:
+            duplication_main.append(722661025)
+        else:
+            duplication_main.append(0)
+
         # - - - - - - - - - - GET LSDCAT COORDINATES - - - - - - - - - -
         if str(id) in e24_ids:
             pointingname = mu.gen_pointingname(id)
@@ -824,6 +850,9 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
     c70 = pyfitsOLD.Column(name='leadlineS2N', format='D', unit='', array=leadlineSN)
     c71 = pyfitsOLD.Column(name='leadlineConf', format='D', unit='', array=leadlineCONF)
 
+    c72 = pyfitsOLD.Column(name='duplicationID', format='D', unit='', array=duplication_main)
+
+
     coldefs = pyfitsOLD.ColDefs([c1,c2,c3,c4,c5,c6,c7,c8,
                                  c9,c10,c11,c12,c13,c14,
                                  c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,
@@ -831,7 +860,7 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
                                  c39,c40,c41,c42,c43,c44,c45,c46,c47,c48,c49,c50,c51,c52,
                                  c53,c54,c55,c56,c57,c58,c59,c60,
                                  c61,c62,c63,c64,c65,c66,c67,c68,
-                                 c69,c70,c71])
+                                 c69,c70,c71,c72])
     th      = pyfitsOLD.new_table(coldefs) # creating default header
 
     # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
