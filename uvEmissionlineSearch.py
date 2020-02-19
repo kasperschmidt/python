@@ -9566,8 +9566,162 @@ def summarize_felisvetting(vetoutput,verbose=True):
                              ,circlesize=0.3,clobber=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
+                       printwarning=True, overwrite=False, verbose=True):
+    """
+    Function assembling a master output catalog from the flux ratio measurements and EW estimates.
+    Based on uves.build_mastercat() but now assumes that the TDOSE vetting has already been performed
+    prior to FELIS vetting.
+
+    Catalog also accounts for duplicate objects in the sence that that the information is included
+
+    Ideally, this should be the catalog plotted, analyzed and released with any publication.
+
+    This can also form the base of generating LaTeX tables
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    outputfits = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/results_master_catalog_testversion2002XX.fits'
+    file_info        = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    file_fluxratio   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/fluxratios_FELISmatch2all_200213_preFELISvetting.txt'
+    file_EWestimates = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/fluxratios_FELISmatch2all_200213_preFELISvetting_EW0estimates.txt'
+
+    uves.build_mastercat_v2(outputfits,file_info,file_fluxratio,file_EWestimates)
+
+    """
+    if os.path.isfile(outputfits) and (overwrite == False):
+        sys.exit('The output file '+outputfits+' already exists and overwrite=False ')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' --- Building the master catalog for the UVES study --- ')
+
+    if verbose: print(' - Load infofile data ')
+    dat_info         = afits.open(file_info)[1].data
+    dat_info         = dat_info[np.where((dat_info['id']<4.9e8) | (dat_info['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    if verbose: print(' - Load fluxratio data ')
+    dat_fluxratio    = np.genfromtxt(file_fluxratio,    dtype=None,comments='#',names=True,skip_header=7)
+
+    if verbose: print(' - Load EW estiamtes ')
+    dat_EWestimates  = np.genfromtxt(file_EWestimates,  dtype=None,comments='#',names=True,skip_header=8)
+
+    pointingIDdic            = {}
+    pointingIDdic[106004019] = 'stackof01and06'
+    pointingIDdic[109014056] = 'stackof04and09'
+    pointingIDdic[121004014] = 'stackof20and21'
+    pointingIDdic[122022112] = 'stackof16and22'
+    pointingIDdic[124038073] = 'stackof24and18'
+    pointingIDdic[130012014] = 'stackof11and30'
+    pointingIDdic[131021114] = 'stackof31and41'
+    pointingIDdic[133021057] = 'stackof33and28'
+    pointingIDdic[139032271] = 'stackof39and40'
+    pointingIDdic[143029102] = 'stackof43and45'
+    pointingIDdic[154037129] = 'stackof54and50'
+    pointingIDdic[158007026] = 'stackof57and58'
+    pointingIDdic[159006015] = 'stackof02and59'
+    pointingIDdic[202010025] = 'stackof02and03'
+    pointingIDdic[215027065] = 'stackof08and15'
+
+    file_specsel     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/' \
+                       'MWuves-full-v1p0_spectra_paperselection200213.txt'
+    dat_specsel      = np.genfromtxt(file_specsel,    dtype=None,comments='#',names=True,skip_header=4)
+    pointing_sel     = [ss.split('/')[-1].split('-full-')[0].split('spectrum_')[-1] for ss in dat_specsel['spectrum']]
+    for ss, selid in enumerate(dat_specsel['id']):
+        if selid not in pointingIDdic.keys():
+            pointingIDdic[selid] = pointing_sel[ss]
+        else:
+            print(' ID already in dictionary with pointings... that should not happen; stopping to investigate...')
+            pdb.set_trace()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Setting up output structure. \n   Definiing columns: ')
+    outcolnames = dat_fluxratio.dtype.names + dat_EWestimates.dtype.names[2:]
+    Nrows       = len(dat_info)
+    Ncols       = len(outcolnames)
+    for cc, colname in enumerate(outcolnames):
+        if verbose:
+            infostr = '   '+str("%20s" % colname)+'   ( '+str("%.5d" % (cc+1))+' / '+str("%.5d" % Ncols)+' ) '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+        try:
+            npstr   = dat_fluxratio.dtype[colname].str
+        except:
+            npstr   = dat_EWestimates.dtype[colname].str
+
+        if '|S' in npstr:
+            fmt = npstr.split('S')[1]+'A'
+            if colname == 'pointing': fmt = '30A'
+            dat = np.asarray(['None'*Nrows])
+        elif npstr == '<i8':
+            fmt     = 'K'
+            dat     = (np.zeros(Nrows)-99).astype(int)
+        elif npstr == '<f8':
+            fmt     = 'D'
+            dat     = np.zeros(Nrows)*np.nan
+        else:
+            sys.exit(' No setup for the numpy array format "'+npstr+'"')
+
+        col_def  = afits.ColDefs([afits.Column(name=colname, format=fmt, array=dat)])
+        try:
+            col_out = col_out + col_def
+        except:
+            col_out = col_def
+
+    col_def  = afits.ColDefs([afits.Column(name='duplicationID', format='K', array=(np.zeros(Nrows)-99).astype(int))])
+    col_out  = col_out[:2] + col_def + col_out[2:]
+
+    col_def  = afits.ColDefs([afits.Column(name='redshift', format='D', array=dat_info['redshift'])])
+    col_out  = col_out[:2] + col_def + col_out[2:]
+
+
+    Ncols    = len(col_out)
+    if verbose: print('\n - After adding additional columns the total number of columns to output are: '+str(Ncols))
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('   Creating fits file HDU with column definitions ')
+    hdu_out     = afits.BinTableHDU.from_columns(col_out)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Filling output with data')
+    for ii, id in enumerate(dat_info['id']):
+        if verbose:
+            infostr = '   Checking data for id='+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(dat_info['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        hdu_out.data['duplicationID'][ii] = dat_info['duplicationID'][ii]
+
+        # ------------- Pulling out data from catalogs and writing it to master cat -------------
+        objent_flux      = np.where(dat_fluxratio['id']   == id)[0]
+        objent_ew        = np.where(dat_EWestimates['id'] == id)[0]
+
+        if len(objent_flux) == 1:
+            for colname in dat_fluxratio.dtype.names:
+                if colname == 'pointing':
+                    hdu_out.data[colname][ii] = pointingIDdic[id]
+                else:
+                    hdu_out.data[colname][ii] = dat_fluxratio[colname][objent_flux][0]
+
+        if len(objent_ew) == 1:
+            for colname in dat_EWestimates.dtype.names[2:]:
+                hdu_out.data[colname][ii] = dat_EWestimates[colname][objent_ew][0]
+
+        if hdu_out.data['id'][ii] == -99: # checking that data for object was inserted
+            hdu_out.data['id'][ii]       = id
+            hdu_out.data['pointing'][ii] = 'NoDataToInsert'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Storing final catalog to '+outputfits)
+    hdu_primary = afits.PrimaryHDU()
+    hdulist     = afits.HDUList([hdu_primary, hdu_out])
+    hdulist.writeto(outputfits, overwrite=overwrite)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True):
     """
+    --------------------------------------------------------------------------------------------------------
+    ---> See uves.build_mastercat_v2() making this function sobsolete for ouputs generated after 200218 <---
+    --------------------------------------------------------------------------------------------------------
+
     Function assembling a master output catalog from the flux ratio measurements and EW estimates taking
     the results of the FELIS and TDOSE vetting into account.
 
@@ -9650,8 +9804,6 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Filling output with data adjusting for vetting results ')
-
-    # ----> this need to be changed now that we (almost) have a complete list of spectra... KBS200207
     ids_badspec, ids_goodspec = uves.summarize_tdosevetting(returnsample='all')
     pointing_selector_dic     = uves.pointing_selector()
 
