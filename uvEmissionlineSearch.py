@@ -9296,10 +9296,18 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
                           str("%8.4f" % dat_ew0['beta'][objent_ew0]))
                 print('\n')
                 for el in emlines:
-                    print(' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+' @ S/N ='+
-                          str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+'   with Dv = '+
-                          str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+' km/s  and  sigma = '+
-                          str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr]))
+                    if el.lower()  != 'heii':
+                        print(' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+' @ S/N ='+
+                              str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+'   with Dv = '+
+                              str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+' km/s,  sigma = '+
+                              str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr])+' and double flux ratio = '+
+                              str("%8.2f" % dat_lineratio['FR_'+el+'1'+el+'2'][objent_lr]))
+                    else:
+                        print(' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+' @ S/N ='+
+                              str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+'   with Dv = '+
+                              str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+' km/s,  sigma = '+
+                              str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr]))
+
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             if verbose: print('\n (Info from summaries; -99 = no data file provided; None = ID missing) ')
             outstr = str("%12s" % objid)+' '+str("%15s" % objpoint)+' '
@@ -9318,7 +9326,7 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
                         answer = 'lows2n'
                     elif ~np.isfinite(lineS2N):
                         answer = 'nocov'
-                    elif np.abs(dat_lineratio['vshift_'+el][objent_lr]) > 1000.0:
+                    elif np.abs(dat_lineratio['vshift_'+emline][objent_lr]) > 1000.0:
                         answer = 'n'
                     else:
                         lp_all = ''
