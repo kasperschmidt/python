@@ -9240,7 +9240,6 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
     else:
         dat_ew0 = None
 
-
     answerkeys = {'y':1, 'n':0, 'm':9, 'nocov':-99, 'lows2n':99, 'idmissing':np.nan}
     if verbose: print(' - Loop over objects while opening figures and printing info ')
     for ii, objid in enumerate(idlist):
@@ -9319,10 +9318,17 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
                         answer = 'lows2n'
                     elif ~np.isfinite(lineS2N):
                         answer = 'nocov'
+                    elif np.abs(dat_lineratio['vshift_'+el][objent_lr]) > 1000.0:
+                        answer = 'n'
                     else:
+                        lp_all = ''
                         for plotdir in plotdirs:
-                            lineplots = ' '.join(glob.glob(plotdir+'*'+str(objpoint)+'*'+
-                                                           str("%.9d" %  objid)+'*'+str(emline)+'*.pdf'))
+                            lp_all = lp_all+' '+' '.join(glob.glob(plotdir+'*'+str(objpoint)+'*'+
+                                                                   str("%.9d" %  objid)+'*'+str(emline)+'*.pdf'))
+                        lineplots = ''
+                        for lp in lp_all.split():
+                            if (lp.split('/')[-1]).startswith("overview_1DspecWzooms") == False:
+                                lineplots = lineplots+' '+lp
 
                         if lineplots != '':
                             pipe_lineplots = subprocess.Popen(opencommand+lineplots,shell=True,executable=os.environ["SHELL"])
