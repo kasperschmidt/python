@@ -109,7 +109,10 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    uves.build_LAEfitstable(clobber=True)
+    objinfofile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats.fits'
+    uves.build_LAEfitstable(fitsname=objinfofile,clobber=False)
+
+    uves.append_JKthesisCat2maininfofile(objinfofile=objinfofile, objrmatch=0.20, overwrite=False)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
