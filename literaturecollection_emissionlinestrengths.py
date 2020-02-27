@@ -32,7 +32,7 @@ def generate_literature_fitscatalog(verbose=True):
 
     # updating plots
     lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=False,shownames=False)
-    lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['UVES restults'],extra_symlist=['o'])
+    lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['UVES results'],extra_symlist=['o'])
 
     """
     outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
@@ -198,15 +198,15 @@ def referencedictionary():
     """
     refdic = collections.OrderedDict()
     #                  baseid   reference                                             plotsymbol
-    refdic['nan19'] = [1e10,    'Nanaykkara et al. (2019)',                               '^']
-    refdic['sch17'] = [2e10,    'Schmidt et al. (2017) & Mainali et al. (2017)',          '<']
-    refdic['sen17'] = [3e10,    'Senchyna et al. (2017)',                                 'v']
-    refdic['rig14'] = [4e10,    'Rigby et al. (2014)',                                    '>']
-    refdic['rig15'] = [5e10,    'Rigby et al. (2015)',                                    '8']
-    refdic['erb10'] = [6e10,    'Erb et al. (2010)',                                      's']
-    refdic['sta14'] = [7e10,    'Stark et al. (2014)',                                    'p']
-    refdic['sta15'] = [8e10,    'Stark et al. (2015a,b, 2017)',                           'P']
-    refdic['mai18'] = [9e10,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
+    refdic['nan19'] = [01e9,    'Nanaykkara et al. (2019)',                               '^']
+    refdic['sch17'] = [02e9,    'Schmidt et al. (2017) & Mainali et al. (2017)',          '<']
+    refdic['sen17'] = [03e9,    'Senchyna et al. (2017)',                                 'v']
+    refdic['rig14'] = [04e9,    'Rigby et al. (2014)',                                    '>']
+    refdic['rig15'] = [05e9,    'Rigby et al. (2015)',                                    '8']
+    refdic['erb10'] = [06e9,    'Erb et al. (2010)',                                      's']
+    refdic['sta14'] = [07e9,    'Stark et al. (2014)',                                    'p']
+    refdic['sta15'] = [08e9,    'Stark et al. (2015a,b, 2017)',                           'P']
+    refdic['mai18'] = [09e9,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
     refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
     refdic['bay14'] = [11e9,    'Bayliss et al. (2014)',                                  'H']
     refdic['sch16'] = [12e9,    'Schmidt et al. (2016)',                                  '+']
