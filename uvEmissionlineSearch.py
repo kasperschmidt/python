@@ -9296,18 +9296,19 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
                           str("%8.4f" % dat_ew0['beta'][objent_ew0]))
                 print('\n')
                 for el in emlines:
-                    if el.lower()  != 'heii':
-                        print(' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+' @ S/N ='+
-                              str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+'   with Dv = '+
-                              str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+' km/s,  sigma = '+
-                              str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr])+' and double flux ratio = '+
-                              str("%8.2f" % dat_lineratio['FR_'+el+'1'+el+'2'][objent_lr]))
-                    else:
-                        print(' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+' @ S/N ='+
-                              str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+'   with Dv = '+
-                              str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+' km/s,  sigma = '+
-                              str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr]))
+                    printstr = ' f('+str("%5s" % el)+')   = '+str("%8.2f" % dat_lineratio['f_'+el][objent_lr])+\
+                               ' @ S/N ='+str("%8.2f" % dat_lineratio['s2n_'+el][objent_lr])+\
+                               '   with Dv = '+str("%8.2f" % dat_lineratio['vshift_'+el][objent_lr])+\
+                               ' km/s,  sigma = '+str("%8.2f" % dat_lineratio['sigma_'+el][objent_lr]+' .')
 
+                    if el.lower()  != 'heii':
+                        FRstring = ' and double flux ratio = '+str("%8.2f" % dat_lineratio['FR_'+el+'1'+el+'2'][objent_lr]+' .')
+                        printstr = printstr.replace(' .',FRstring)
+
+                    if (dat_lineratio['s2n_'+el][objent_lr] > 3.0) & (np.abs(dat_lineratio['vshift_'+el][objent_lr]) < 1000.0):
+                        print('\033[94m'+printstr+'\033[0m') # color potential detections blue
+                    else:
+                        print('\033[91m'+printstr+'\033[0m') # color low-S/N or high-vshift detections red
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             if verbose: print('\n (Info from summaries; -99 = no data file provided; None = ID missing) ')
             outstr = str("%12s" % objid)+' '+str("%15s" % objpoint)+' '
