@@ -6837,7 +6837,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     for lineset in linesetlist_fluxes:
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
-                                                 overwrite=overwrite,verbose=verbose)
+                                                 showlimits=showlimits,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ratios_range = [1e-4,1e3]
@@ -6879,12 +6879,12 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
-                                                 overwrite=overwrite,verbose=verbose,
+                                                 overwrite=overwrite,verbose=verbose,showlimits=showlimits,
                                                  photoionizationplotparam=photoionizationplotparam)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                             photoionizationplotparam=None,point_text=None,
+                                             photoionizationplotparam=None,point_text=None,showlimits=True,
                                              overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True):
     """
     Wrapper to define input data and excecute plot command
@@ -6896,11 +6896,18 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         plotname = plotbasename+'_linefluxes_'+line1+'vs'+line2+\
                    '_Nsigma'+str(Nsigma).replace('.','p')+\
                    '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
-        if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names):
+        if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names) & showlimits:
             goodent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) &
                                 (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
                                 (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
                                 (fluxratiodat['id'].astype(float) < 1e10))[0]
+        elif ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names) & (not showlimits):
+            goodent  = np.where((np.abs(fluxratiodat['ferr_'+line1]) != 99) & (np.abs(fluxratiodat['ferr_'+line2]) != 99) &
+                                np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) &
+                                (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
+                                (fluxratiodat['id'].astype(float) < 1e10))[0]
+            plotname = plotname.replace('.pdf','_nolimits.pdf')
         else:
             goodent  = []
 
@@ -6937,14 +6944,25 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                    '_Nsigma'+str(Nsigma).replace('.','p')+\
                    '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
 
-        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
-            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names) & showlimits:
+            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) &
+                                np.isfinite(fluxratiodat['FR_'+line3+line4]) &
                                 (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
                                 (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
                                 (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
                                 (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
                                 (fluxratiodat['id'].astype(float) < 1e10))[0]
-
+        elif ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names) & (not showlimits):
+            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) &
+                                np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                                (np.abs(fluxratiodat['FRerr_'+line1+line2]) != 99) &
+                                (np.abs(fluxratiodat['FRerr_'+line3+line4]) != 99) &
+                                (np.abs(fluxratiodat['vshift_'+line1]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line2]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
+                                (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
+                                (fluxratiodat['id'].astype(float) < 1e10))[0]
+            plotname = plotname.replace('.pdf','_nolimits.pdf')
         else:
             goodent  = []
 
@@ -7022,34 +7040,52 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
 
     # - - - - - - - - - Literature - - - - - - - - -
     if (line3 is None) & (line4 is None):
-        if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names):
-            litent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) & np.isfinite(fluxratiodat['f_'+line2]) &
+        if ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names) & showlimits:
+            litent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) &
+                               np.isfinite(fluxratiodat['f_'+line2]) &
                                (fluxratiodat['id'].astype(float) > 1e10))[0]
 
-            if len(litent) > 0:
-                xvalues    = np.append(xvalues,fluxratiodat['f_'+line1][litent])
-                xerr       = np.append(xerr,fluxratiodat['ferr_'+line1][litent])
-                yvalues    = np.append(yvalues,fluxratiodat['f_'+line2][litent])
-                yerr       = np.append(yerr,fluxratiodat['ferr_'+line2][litent])
-                cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
-                if point_text is not None:
-                    point_textALL = np.append(point_textALL,point_text[litent])
+        elif ('f_'+line1 in fluxratiodat.dtype.names) & ('f_'+line2 in fluxratiodat.dtype.names) & (not showlimits):
+            litent  = np.where(np.isfinite(fluxratiodat['f_'+line1]) &
+                               np.isfinite(fluxratiodat['f_'+line2]) &
+                               np.abs((fluxratiodat['ferr_'+line1]) != 99) &
+                               np.abs((fluxratiodat['ferr_'+line2]) != 99) &
+                               (fluxratiodat['id'].astype(float) > 1e10))[0]
+        else:
+            litent = []
 
+        if len(litent) > 0:
+            xvalues    = np.append(xvalues,fluxratiodat['f_'+line1][litent])
+            xerr       = np.append(xerr,fluxratiodat['ferr_'+line1][litent])
+            yvalues    = np.append(yvalues,fluxratiodat['f_'+line2][litent])
+            yerr       = np.append(yerr,fluxratiodat['ferr_'+line2][litent])
+            cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
+            IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+            if point_text is not None:
+                point_textALL = np.append(point_textALL,point_text[litent])
     else:
-        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names):
-            litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) & np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+        if ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names) & showlimits:
+            litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) &
+                               np.isfinite(fluxratiodat['FR_'+line3+line4]) &
                                (fluxratiodat['id'].astype(float) > 1e10))[0]
+        elif ('FR_'+line1+line2 in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names) & (not showlimits):
+            litent  = np.where(np.isfinite(fluxratiodat['FR_'+line1+line2]) &
+                               np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                               np.abs((fluxratiodat['FRerr_'+line1+line2]) != 99) &
+                               np.abs((fluxratiodat['FRerr_'+line3+line4]) != 99) &
+                               (fluxratiodat['id'].astype(float) > 1e10))[0]
+        else:
+            litent = []
 
-            if len(litent) > 0:
-                xvalues    = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
-                xerr       = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
-                yvalues    = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
-                yerr       = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
-                cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
-                if point_text is not None:
-                    point_textALL = np.append(point_textALL,point_text[litent])
+        if len(litent) > 0:
+            xvalues    = np.append(xvalues,fluxratiodat['FR_'+line1+line2][litent])
+            xerr       = np.append(xerr,fluxratiodat['FRerr_'+line1+line2][litent])
+            yvalues    = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
+            yerr       = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
+            cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
+            IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+            if point_text is not None:
+                point_textALL = np.append(point_textALL,point_text[litent])
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
 
