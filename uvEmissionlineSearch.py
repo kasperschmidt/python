@@ -4970,7 +4970,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
                     markersym   = 'X'
                 elif (ids[ii] > 1e10): # Literature objects
-                    markersym   = lce.get_reference(ids[ii],verbose=False)[4]
+                    markersym   = lce.get_reference_fromID(ids[ii],verbose=False)[4]
             else:
                 markersym   = 'o'
             ms          = marksize
@@ -6717,8 +6717,21 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     if verbose: print(' - Loading flux ratio data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
 
+    if verbose: print(' - Loading infofile data for expanded selection and plotting ')
+    infofiledat      = afits.open(infofile)[1].data
+    infofiledat      = infofiledat[np.where((infofiledat['id']<4.9e8) | (infofiledat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
     if obj2show is 'all':
         showent = np.arange(len(fluxratiodatALL))
+    elif obj2show is 'all_nodup':
+        idlist2show = infofiledat[(infofiledat['duplicationID'] == 0.0) & (infofiledat['redshift'] <= 4.955)]['id']
+        showent     = np.array([])
+        for objid in idlist2show:
+            objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
+            if len(objent) > 0:
+                showent = np.append(showent,objent)
+            # else:
+            #     print(str(objid)+'  '+str(infofiledat[(infofiledat['id'] == objid)]['redshift']))
     elif obj2show.lower() == 'none':
         showent = np.array([0])
     else:
@@ -6745,8 +6758,6 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     else:
         if verbose: print(' WARNING No flux ratio matches found in summary file satisfying cuts; returning...')
         return
-
-    infofiledat  = afits.open(infofile)[1].data
 
     if colorvar_obj in fluxratiodat.dtype.names:
         cdatvec   = fluxratiodat[colorvar_obj]
@@ -6894,7 +6905,8 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         ylabel   = line2+' [1e-20erg/s/cm$^2$]'
 
         if len(goodent) == 0:
-            if verbose: print('\n - OLD WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
+            pass
+            # if verbose: print('\n - OLD WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
             # goodent  = np.asarray([0,1])
             # xvalues  = [1e10]*2
             # xerr     = [1.0]*2
@@ -6937,7 +6949,8 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         ylabel   = line3+'/'+line4
 
         if len(goodent) == 0:
-            if verbose: print('\n - OLD WARNING No good values found for the plot \n           '+plotname.split('/')[-1]+'\n')
+            pass
+            # if verbose: print('\n - OLD WARNING No good values found for the plot \n           '+plotname.split('/')[-1]+'\n')
             # goodent  = np.asarray([0,1])
             # xvalues  = [1e10]*2
             # xerr     = [1.0]*2
@@ -7044,6 +7057,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         yvalues    = [1e10]*2
         yerr       = [1.0]*2
         cdatvecALL = np.asarray([0.0]*2)
+        IDsALL     = np.asarray([0.0]*2)
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,ids=IDsALL,
@@ -7360,12 +7374,24 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
 
     """
-    if verbose: print(' - Loading EW data to plot ')
+    if verbose: print(' - Loading flux ratio and EW data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
     EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
 
+
+    if verbose: print(' - Loading infofile data for expanded selection and plotting ')
+    infofiledat      = afits.open(infofile)[1].data
+    infofiledat      = infofiledat[np.where((infofiledat['id']<4.9e8) | (infofiledat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
     if obj2show is 'all':
         showent = np.arange(len(fluxratiodatALL))
+    elif obj2show is 'all_nodup':
+        idlist2show = infofiledat[(infofiledat['duplicationID'] == 0.0) & (infofiledat['redshift'] <= 4.955)]['id']
+        showent     = np.array([])
+        for objid in idlist2show:
+            objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
+            if len(objent) > 0:
+                showent = np.append(showent,objent)
     elif obj2show.lower() == 'none':
         showent = np.array([0])
     else:
@@ -7394,9 +7420,6 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     else:
         if verbose: print(' WARNING No flux ratio matches found in summary file satisfying cuts; returning...')
         #return
-
-    # Getting info from infofile
-    infofiledat  = afits.open(infofile)[1].data
 
     LyaEW         = np.zeros(len(fluxratiodat['id']))*np.nan
     LyaEWerr      = np.zeros(len(fluxratiodat['id']))*np.nan
