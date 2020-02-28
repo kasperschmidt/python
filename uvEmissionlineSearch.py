@@ -6525,20 +6525,22 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
         fluxratioarray[ii,0] = float(id)
 
         if vetfelis_output is not None:
-            ent_vet_felis = np.where((dat_vetfelis['id'] == id) & (dat_vetfelis['pointing'] == pointings[ii]))[0]
+            if 'UVESselectio' in pointings[ii]:
+                ent_vet_felis = np.where((dat_vetfelis['id'] == id))[0]
+            else:
+                ent_vet_felis = np.where((dat_vetfelis['id'] == id) & (dat_vetfelis['pointing'] == pointings[ii]))[0]
 
             if len(ent_vet_felis) > 1:
                 sys.exit('\n WARNING: object '+str(id)+' in '+pointings[ii]+
                          ' exisits multiple times in FELIS vetting output; sort this out befor calculating lineratios...')
             elif len(ent_vet_felis) == 0:
                 if verbose: print('\n           Object '+str(id)+' in '+pointings[ii]+' not found in FELIS vetting output')
-                # continue
-                obj_vetfelis = dat_vetfelis[0]#*0.0 (101009024, 'cdfs-01', 99, 99, 99, 99, 99, 99, -99)
+                # creating dummy obj_vetfelis entry filled with 9999s
+                obj_vetfelis = dat_vetfelis[0].copy()#*0.0 (101009024, 'cdfs-01', 99, 99, 99, 99, 99, 99, -99)
                 obj_vetfelis['id']       = id
                 obj_vetfelis['pointing'] = pointings[ii]
                 for col in obj_vetfelis.dtype.names[2:]:
-                    if obj_vetfelis[col] != -99:
-                        obj_vetfelis[col] = 9999 # no inspection exists; obj_vetfelis made by hand
+                    obj_vetfelis[col] = 9999 # no inspection exists; obj_vetfelis made by hand
             else:
                 obj_vetfelis = dat_vetfelis[ent_vet_felis]
 
@@ -6572,7 +6574,9 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
                     if (obj_vetfelis['trust'+numerator_line] == 9999) & \
                             (fluxratioarray[ii,colents['s2n_'+numerator_line]] > Nsigmalimits):
                         if verbose: print('\033[91m        ... and '+numerator_line+' has S/N > '+
-                                          str(Nsigmalimits)+'; make sure to include it in the vetting resykts as it will be set to '+
+                                          str(Nsigmalimits)+' (vshift = '+
+                                          str(fluxratioarray[ii,colents['vshift_'+numerator_line]])+
+                                          '); make sure to include it in the vetting results as it will be set to '+
                                               str(Nsigmalimits)+'sigma limits here ...\033[0m')
 
                     fluxratioarray[ii,colents['f_'+numerator_line]]      = ferr_num
