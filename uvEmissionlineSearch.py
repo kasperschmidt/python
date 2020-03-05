@@ -11183,7 +11183,7 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FOoV(regionfiles,verbose=True):
+def plot_uves_FoV(regionfiles,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
@@ -11191,4 +11191,171 @@ def plot_uves_FOoV(regionfiles,verbose=True):
     import uvEmissionlineSearch as uves
 
     """
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=False,verbose=True):
+    """
+    Wrapper to uves.mastercat_latextable() generating a table of the emitters with either CIII or CIV detections
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    mastercat = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    uves.mastercat_latextable_wrappers(mastercat,infofile,verbose=True,overwrite=True,sortcol='redshift')
+
+    """
+
+    infodat   = afits.open(infofile)[1].data
+    masterdat = afits.open(mastercatalog)[1].data
+
+    if verbose: print('-------------------- Tables for Carbon emitters -------------------- ')
+    outname_base  = '/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_CarbonEmitters.tex'
+    goodent       = np.where(((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
+                             ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII']))  )[0]
+
+    columnslist   = [['ra','dec','redshift','EW_0','EW_0_err',
+                      'id_skelton','sep_skelton','id_rafelski','sep_rafelski','id_guo','sep_guo','id_laigle','sep_laigle'],
+                     ['ra','dec','redshift','f_CIV','f_HeII','f_OIII','f_SiIII','f_CIII','f_MgII'],
+                     ['ra','dec','redshift',
+                      'FR_CIV1CIV2','FR_OIII1OIII2','FR_SiIII1SiIII2','FR_CIII1CIII2','FR_MgII1MgII2']]
+    tabstrings    = ['lyainfo','fluxes','fluxratios']
+
+    for cc, columns in enumerate(columnslist):
+        latexout  = outname_base.replace('.tex','_'+tabstrings[cc]+'.tex')
+        sortindex = np.argsort(masterdat[sortcol][goodent])
+        ids       = masterdat['id'][goodent][sortindex]
+        uves.mastercat_latextable(latexout,masterdat,infodat,columns,ids,overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=False,verbose=True):
+    """
+    Generate a LaTeX table based on a master catalog restricting to certain columns and IDs
+
+    --- Example of use ---
+    see uves.mastercat_latextable_wrappers()
+
+    """
+    if os.path.isfile(latexoutput) & (overwrite == False):
+        sys.exit(' The requested output ('+latexoutput+') exists and overwrite=False ')
+
+    if verbose: print(' - Putting together table...')
+    Nrow     = len(ids)
+
+    Ncol     = 1
+    colnames = 'ID & '
+    for col in columns:
+        if ('f_' in col) or ('FR_' in col) or ('vshift_' in col) or ('sigma_' in col):
+            colnames = colnames+(uves.mastercat_latextable_colnames(col)+'   &   ')+\
+                       (uves.mastercat_latextable_colnames(col.replace('_','err_'))+'   &   ')
+            Ncol = Ncol + 2
+        else:
+            colnames = colnames+(uves.mastercat_latextable_colnames(col)+'   &   ')
+            Ncol = Ncol + 1
+
+    posstr   = 'r'*Ncol
+    fout     = open(latexoutput,'w')
+    fout.write("""
+\\begin{table*}
+\caption{\label{tab:tablelable}Caption Caption CAPTION Caption Caption}
+\centering
+\\resizebox{\\textwidth}{!}{ %% command scaling table to textwidth
+\\begin{tabular}{%s}
+\hline\hline
+%s
+\hline
+""" % (posstr,colnames[:-5]+'\\\\'))
+
+    for objid in ids:
+        row_string    = str(objid)+'  & '
+        objent_info   = np.where(infodat['id'] == objid)[0]
+        objent_master = np.where(masterdat['id'] == objid)[0]
+
+        for col in columns:
+            try:
+                colval = infodat[col][objent_info]
+            except:
+                colval = masterdat[col][objent_master]
+
+            if col in ['ra','dec']:
+                row_string = row_string+str("%16.8f" % colval)+'  &  '
+            elif col in ['redshift']:
+                row_string = row_string+str("%12.4f" % colval)+'  &  '
+            elif ('f_' in col) or ('FR_' in col) or ('vshift_' in col) or ('sigma_' in col):
+                try:
+                    errval = infodat[col.replace('_','err_')][objent_info]
+                except:
+                    errval = masterdat[col.replace('_','err_')][objent_master]
+
+                if errval == 99.0:
+                    row_string = row_string+'$<$'+str("%.2f" % colval)+'  &    &  '
+                elif errval == -99.0:
+                    row_string = row_string+'$>$'+str("%.2f" % colval)+'  &    &  '
+                else:
+                    row_string = row_string+str("%.2f" % colval)+'  &  '+str("%12.2f" % errval)+'  &  '
+            else:
+                row_string = row_string+str("%.2f" % colval)+'  &  '
+
+        fout.write(row_string.replace('nan','-')[:-5]+' \\\\ \n')
+    fout.write("""\hline
+\end{tabular}
+}
+\\tablefoot{Main text in footer\\\\
+\\tablefoottext{a}{Some information on values in the table}\\\\
+\\tablefoottext{b}{Some more info on table values}\\\\
+}
+\end{table*}
+""")
+
+    if verbose: print(' - Wrote latex table of '+str(Ncol)+' columns and '+str(Nrow)+' rows to \n   '+latexoutput)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def mastercat_latextable_colnames(colname):
+    """
+    Formatting column names for LaTeX
+
+    """
+    linenames = {}
+    linenames['lya']  = 'Ly$\\alpha$'
+    linenames['nv']   = 'NV'
+    linenames['nv1']  = 'NV$\\lambda$1239'
+    linenames['nv2']  = 'NV$\\lambda$1243'
+    linenames['civ']  = 'CIV'
+    linenames['civ1'] = 'CIV$\\lambda$1548'
+    linenames['civ2'] = 'CIV$\\lambda$1551'
+    linenames['heii'] = 'HeII'
+    linenames['oiii']  = 'OIII'
+    linenames['oiii1'] = 'OIII$\\lambda$1661'
+    linenames['oiii2'] = 'OIII$\\lambda$1666'
+    linenames['siiii']  = 'SiIII'
+    linenames['siiii1'] = 'SiIII$\\lambda$1883'
+    linenames['siiii2'] = 'SiIII$\\lambda$1892'
+    linenames['ciii']  = 'CIII'
+    linenames['ciii1'] = 'CIII$\\lambda$1907'
+    linenames['ciii2'] = 'CIII$\\lambda$1909'
+    linenames['mgii']  = 'MgII'
+    linenames['mgii1'] = 'MgII$\\lambda$2796'
+    linenames['mgii2'] = 'MgII$\\lambda$2803'
+
+    if colname.lower() == 'id':
+        colname_fmt = 'ID$_\\textrm{MUSE-Wide/Deep}$'
+    elif colname.lower() == 'redshift':
+        colname_fmt = '$z_\\textrm{Ly$\\alpha$}$'
+    elif colname.lower() == 'ra':
+        colname_fmt = 'R.A.'
+    elif colname.lower() == 'dec':
+        colname_fmt = 'Dec.'
+    elif colname.lower().startswith('f_'):
+        linename = linenames[colname.split('_')[-1].lower()]
+        colname_fmt = 'F$_\\textrm{'+linename+'}$'
+    elif colname.lower().startswith('ferr_'):
+        linename = linenames[colname.split('_')[-1].lower()]
+        colname_fmt = '$\\delta$F$_\\textrm{'+linename+'}$'
+    elif colname.lower().startswith('sigma_'):
+        linename = linenames[colname.split('_')[-1].lower()]
+        colname_fmt = '$\sigma_\\textrm{'+linename+'}$'
+    elif colname.lower().startswith('sigmaerr_'):
+        linename = linenames[colname.split('_')[-1].lower()]
+        colname_fmt = '$\\delta\sigma_\\textrm{'+linename+'}$'
+    else:
+        colname_fmt = colname.replace('_','\_')
+
+    return colname_fmt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
