@@ -11207,11 +11207,7 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     infodat   = afits.open(infofile)[1].data
     masterdat = afits.open(mastercatalog)[1].data
 
-    if verbose: print('-------------------- Tables for Carbon emitters -------------------- ')
-    outname_base  = '/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_CarbonEmitters.tex'
-    goodent       = np.where(((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
-                             ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII']))  )[0]
-
+    if verbose: print(' - Defining colum sets for tables to generate')
     columnslist   = [['ra','dec','redshift','EW_0','EW_0_err',
                       'id_skelton','sep_skelton','id_rafelski','sep_rafelski','id_guo','sep_guo','id_laigle','sep_laigle'],
                      ['ra','dec','redshift','f_CIV','f_HeII','f_OIII','f_SiIII','f_CIII','f_MgII'],
@@ -11219,11 +11215,47 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
                       'FR_CIV1CIV2','FR_OIII1OIII2','FR_SiIII1SiIII2','FR_CIII1CIII2','FR_MgII1MgII2']]
     tabstrings    = ['lyainfo','fluxes','fluxratios']
 
-    for cc, columns in enumerate(columnslist):
-        latexout  = outname_base.replace('.tex','_'+tabstrings[cc]+'.tex')
-        sortindex = np.argsort(masterdat[sortcol][goodent])
-        ids       = masterdat['id'][goodent][sortindex]
-        uves.mastercat_latextable(latexout,masterdat,infodat,columns,ids,overwrite=overwrite,verbose=verbose)
+    if verbose: print(' - Collecting objects for the individual tables ')
+    outname_bases = []
+    goodents      = []
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('   LAEs with at least one other detection')
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_LAEsWithUVLineDetection.tex')
+    goodents.append(np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                               ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                               ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                               ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                               ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
+                               ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
+                             (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0] )
+
+    if verbose: print('   Carbon emitters (either CIII or CIV detected) ')
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_CarbonEmitters.tex')
+    goodents.append(np.where(( ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
+                               ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) ) &
+                             (masterdat['duplicationID'] == 0.0) )[0] )
+
+    if verbose: print('   LAEs with Carbon detection (either CIII or CIV detected)')
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_LAEsWithCarbonDetection.tex')
+    goodents.append(np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                               ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
+                             (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0] )
+
+    if verbose: print('   OIII1663 doublet emitters ')
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_OxygenEmitters.tex')
+    goodents.append(np.where(((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII'])) &
+                             (masterdat['duplicationID'] == 0.0) )[0] )
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Looping over object lists and column sets to generate individual tables ')
+    for gg, goodent in enumerate(goodents):
+        onb = outname_bases[gg]
+        for cc, columns in enumerate(columnslist):
+            latexout  = onb.replace('.tex','_'+tabstrings[cc]+'.tex')
+            sortindex = np.argsort(masterdat[sortcol][goodent])
+            ids       = masterdat['id'][goodent][sortindex]
+            uves.mastercat_latextable(latexout,masterdat,infodat,columns,ids,overwrite=overwrite,verbose=verbose)
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=False,verbose=True):
