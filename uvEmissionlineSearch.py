@@ -11243,7 +11243,7 @@ def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=Fal
     Ncol     = 1
     colnames = 'ID & '
     for col in columns:
-        if ('f_' in col) or ('FR_' in col) or ('vshift_' in col) or ('sigma_' in col):
+        if ('f_' in col):
             colnames = colnames+(uves.mastercat_latextable_colnames(col)+'   &   ')+\
                        (uves.mastercat_latextable_colnames(col.replace('_','err_'))+'   &   ')
             Ncol = Ncol + 2
@@ -11279,7 +11279,7 @@ def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=Fal
                 row_string = row_string+str("%16.8f" % colval)+'  &  '
             elif col in ['redshift']:
                 row_string = row_string+str("%12.4f" % colval)+'  &  '
-            elif ('f_' in col) or ('FR_' in col) or ('vshift_' in col) or ('sigma_' in col):
+            elif ('f_' in col):
                 try:
                     errval = infodat[col.replace('_','err_')][objent_info]
                 except:
@@ -11342,18 +11342,44 @@ def mastercat_latextable_colnames(colname):
         colname_fmt = 'R.A.'
     elif colname.lower() == 'dec':
         colname_fmt = 'Dec.'
+    elif colname.lower() == 'ew_0':
+        colname_fmt = 'EW$_{0,\\textrm{Ly}\\alpha}$'
+    elif colname.lower() == 'ew_0_err':
+        colname_fmt = '$\\delta$EW$_{0,\\textrm{Ly}\\alpha}$'
+    elif colname.lower().startswith('id_'):
+        colname_fmt = 'ID$_\\textrm{'+colname.split('_')[-1][0].upper()+colname.split('_')[-1][1:].lower()+'}$'
+    elif colname.lower().startswith('sep_'):
+        colname_fmt = '$\\Delta_\\textrm{'+colname.split('_')[-1][0].upper()+colname.split('_')[-1][1:].lower()+'}$["]'
     elif colname.lower().startswith('f_'):
         linename = linenames[colname.split('_')[-1].lower()]
-        colname_fmt = 'F$_\\textrm{'+linename+'}$'
+        colname_fmt = '$f_\\textrm{'+linename+'}$'
     elif colname.lower().startswith('ferr_'):
         linename = linenames[colname.split('_')[-1].lower()]
-        colname_fmt = '$\\delta$F$_\\textrm{'+linename+'}$'
+        colname_fmt = '$\\delta f_\\textrm{'+linename+'}$'
     elif colname.lower().startswith('sigma_'):
         linename = linenames[colname.split('_')[-1].lower()]
         colname_fmt = '$\sigma_\\textrm{'+linename+'}$'
     elif colname.lower().startswith('sigmaerr_'):
         linename = linenames[colname.split('_')[-1].lower()]
         colname_fmt = '$\\delta\sigma_\\textrm{'+linename+'}$'
+    elif colname.lower().startswith('fr'):
+        subscript = colname.split('_')[-1].lower()
+        for ln in linenames.keys():
+            if subscript.startswith(ln):
+                if subscript.split(ln)[1].startswith('1'):
+                    numerator = ln+'1'
+                elif subscript.split(ln)[1].startswith('2'):
+                    numerator = ln+'2'
+                else:
+                    numerator = ln
+
+                denominator = subscript.split(numerator)[-1]
+
+        ratiostring = '\\frac{f_\\textrm{'+linenames[numerator]+'}}{f_\\textrm{'+linenames[denominator]+'}}'
+        if colname.lower().startswith('fr_'):
+            colname_fmt = '$'+ratiostring+'$'
+        else:
+            colname_fmt = '$\\delta\left('+ratiostring+'\\right)$'
     else:
         colname_fmt = colname.replace('_','\_')
 
