@@ -25,7 +25,7 @@ def loadcatalogs(verbose=True):
     IDlist, ra, dec, redshifts = mwp.loadcatalogs()
 
     """
-    if verbose: print)' - Loading catalogs and defining ID, RA, Dec and redshift lists')
+    if verbose: print(' - Loading catalogs and defining ID, RA, Dec and redshift lists')
     photcat_e24 = '/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits'
     e24_id      = afits.open(photcat_e24)[1].data['UNIQUE_ID']
     e24_ra      = afits.open(photcat_e24)[1].data['RA']
@@ -1808,37 +1808,46 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
 
     """
 
-    ids  = np.array([])
-    mags = np.array([])
+    ids      = np.array([])
+    mags     = np.array([])
+    magnames = np.array([])
 
     if (catname.lower() == 'skelton') or (catname.lower() == 'skelton_goodss') or (catname.lower() == 'all'):
         photcat_goodss = '/Users/kschmidt/work/catalogs/MUSE_GTO/goodss_3dhst.v4.1_inMUSEWideFootprint.fits'
         photdat_goodss = afits.open(photcat_goodss)[1].data
         ids            = np.append(ids,photdat_goodss['id']+1100000000)
-        mags           = np.append(mags,25.0-2.5*np.log10(photdat_goodss['f_F814Wcand']))
+        magcol         = 'f_F814Wcand'
+        mags           = np.append(mags,25.0-2.5*np.log10(photdat_goodss[magcol]))
+        magnames       = np.append(magnames,magcol.replace('_','\_'))
 
     if (catname.lower() == 'skelton') or (catname.lower() == 'skelton_cosmos') or (catname.lower() == 'all'):
         photcat_cosmos = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos_3dhst.v4.1_inMUSEWideFootprint.fits'
         photdat_cosmos = afits.open(photcat_cosmos)[1].data
         ids            = np.append(ids,photdat_cosmos['id']+2100000000)
-        mags           = np.append(mags,25.0-2.5*np.log10(photdat_cosmos['f_F814W']))
+        magcol         = 'f_F814W'
+        mags           = np.append(mags,25.0-2.5*np.log10(photdat_cosmos[magcol]))
+        magnames       = np.append(magnames,magcol.replace('_','\_'))
 
     if (catname.lower() == 'whitaker') or (catname.lower() == 'all'):
-        photcat = '/Users/kschmidt/work/catalogs/MUSE_GTO/hlsp_hlf_hst_60mas_goodss_v2.0_catalog_inMUSEWideFootprint.fits'
-        photdat = afits.open(photcat)[1].data
-        ids     = np.append(ids,photdat['id']+1200000000)
-        mags    = np.append(mags,25.0-2.5*np.log10(photdat['f_f814w']))
+        photcat  = '/Users/kschmidt/work/catalogs/MUSE_GTO/hlsp_hlf_hst_60mas_goodss_v2.0_catalog_inMUSEWideFootprint.fits'
+        photdat  = afits.open(photcat)[1].data
+        ids      = np.append(ids,photdat['id']+1200000000)
+        magcol   = 'f_f814w'
+        mags     = np.append(mags,25.0-2.5*np.log10(photdat[magcol]))
+        magnames = np.append(magnames,magcol.replace('_','\_'))
 
     if (catname.lower() == 'laigle') or (catname.lower() == 'all'):
-        photcat = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos2015_laigle_v1.1_candelsregion_inMUSEWideFootprint.fits'
-        photdat = afits.open(photcat)[1].data
-        ids     = np.append(ids,photdat['NUMBER']+2200000000)
-        mags    = np.append(mags,photdat['V_MAG_ISO'])
+        photcat  = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos2015_laigle_v1.1_candelsregion_inMUSEWideFootprint.fits'
+        photdat  = afits.open(photcat)[1].data
+        ids      = np.append(ids,photdat['NUMBER']+2200000000)
+        magcol   = 'V_MAG_ISO'
+        mags     = np.append(mags,photdat[magcol])
+        magnames = np.append(magnames,magcol.replace('_','\_'))
 
     if len(ids) == 0:
         sys.exit('No IDs available for "catname='+str(catname)+'"')
 
-    goodent    = np.where((mags < 34) & (mags > 5) & np.isfinite(mags))[0]
+    goodent    = np.where((mags < 40) & (mags > 5) & np.isfinite(mags))[0]
     mags_good  = mags[goodent]
     ids_good   = ids[goodent]
 
@@ -1857,7 +1866,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
     plotname = plotdir+'mag_histogram_'+catname.lower()+'.pdf'
     if verbose: print(' - Setting up and generating histogram of MUSE-Wide sources in \n   '+plotname)
     fig = plt.figure(figsize=(5, 4))
-    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.95, bottom=0.15, top=0.95)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.95, bottom=0.2, top=0.95)
     Fsize    = 14
     lthick   = 2
     marksize = 3
@@ -1903,7 +1912,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
                                 fill=fillval,fc=goodcolor)
 
     plt.xlim(xrange)
-    plt.xlabel(r'AB magnitude', fontsize=Fsize)
+    plt.xlabel('AB magnitude \n('+', '.join(list(magnames))+')', fontsize=Fsize)
 
     #plt.ylim(yrange)
     plt.ylabel('Number of '+catname.replace('_','\_')+' catalog objects over \nMUSE-Wide 100 field footprint', fontsize=Fsize)
