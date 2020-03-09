@@ -2,7 +2,6 @@
 import os
 import glob
 import astropy.io.fits as afits
-import pyfits
 import kbsutilities as kbs
 import numpy as np
 import MUSEWidePlots as mwp
@@ -26,19 +25,19 @@ def loadcatalogs(verbose=True):
     IDlist, ra, dec, redshifts = mwp.loadcatalogs()
 
     """
-    if verbose: print ' - Loading catalogs and defining ID, RA, Dec and redshift lists'
+    if verbose: print)' - Loading catalogs and defining ID, RA, Dec and redshift lists')
     photcat_e24 = '/Users/kschmidt/work/catalogs/MUSE_GTO/candels_1-24_emline_master_v2.1.fits'
-    e24_id      = pyfits.open(photcat_e24)[1].data['UNIQUE_ID']
-    e24_ra      = pyfits.open(photcat_e24)[1].data['RA']
-    e24_dec     = pyfits.open(photcat_e24)[1].data['DEC']
-    e24_z       = pyfits.open(photcat_e24)[1].data['REDSHIFT']
+    e24_id      = afits.open(photcat_e24)[1].data['UNIQUE_ID']
+    e24_ra      = afits.open(photcat_e24)[1].data['RA']
+    e24_dec     = afits.open(photcat_e24)[1].data['DEC']
+    e24_z       = afits.open(photcat_e24)[1].data['REDSHIFT']
 
     #photcat_e36 = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v0.2.fits'
     photcat_e36 = '/Users/kschmidt/work/catalogs/MUSE_GTO/merged_catalog_e36_v1.0.fits'
-    e36_id      = pyfits.open(photcat_e36)[1].data['ID']
-    e36_ra      = pyfits.open(photcat_e36)[1].data['RA']
-    e36_dec     =  pyfits.open(photcat_e36)[1].data['DEC']
-    e36_z       = pyfits.open(photcat_e36)[1].data['REDSHIFT']
+    e36_id      = afits.open(photcat_e36)[1].data['ID']
+    e36_ra      = afits.open(photcat_e36)[1].data['RA']
+    e36_dec     = afits.open(photcat_e36)[1].data['DEC']
+    e36_z       = afits.open(photcat_e36)[1].data['REDSHIFT']
 
     IDlist      = np.append(e24_id,e36_id)
     ra          = np.append(e24_ra,e36_ra)
@@ -68,10 +67,10 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
     specdir     = '/Users/kschmidt/work/MUSE/spectra1D/Arche170127/spectra/'
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #if verbose: print '\n - Makeing sub-selection of objects'
+    #if verbose: print('\n - Makeing sub-selection of objects')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print '\n - Generating image for non-median-subtracted 1D spectra'
+    if verbose: print('\n - Generating image for non-median-subtracted 1D spectra')
     outimage    = specdir+'Spec1DCOmbinationImage_e24ANDe36_'+date+'.fits'
     imgarray    = mwp.gen_Spec1DCombinationImage(IDlist,redshifts,specdir,specstring=specstring,NrowPerSpec=NrowPerSpec,
                                                  wavelengthgrid=wavegrid,fluxext=fluxext,waveext=waveext,
@@ -80,7 +79,7 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
     returnname  = outimage
     returnarray = imgarray
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print '\n - Generating image for median-subtracted 1D spectra'
+    if verbose: print('\n - Generating image for median-subtracted 1D spectra')
     outimage    = specdir+'Spec1DCOmbinationImage_e24ANDe36_'+date+'_mediansubtracted.fits'
     imgarray    = mwp.gen_Spec1DCombinationImage(IDlist,redshifts,specdir,specstring=specstring,NrowPerSpec=NrowPerSpec,
                                                  wavelengthgrid=wavegrid,fluxext=fluxext,waveext=waveext,
@@ -88,7 +87,7 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
                                                  scale='None',subtract='median')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print '\n - Generating image for max-scaled and median-subtracted 1D spectra'
+    if verbose: print('\n - Generating image for max-scaled and median-subtracted 1D spectra')
     outimage    = specdir+'Spec1DCOmbinationImage_e24ANDe36_'+date+'_maxscale_mediansubtracted.fits'
     imgarray    = mwp.gen_Spec1DCombinationImage(IDlist,redshifts,specdir,specstring=specstring,NrowPerSpec=NrowPerSpec,
                                                  wavelengthgrid=wavegrid,fluxext=fluxext,waveext=waveext,
@@ -96,7 +95,7 @@ def Spec1DCombinationImage_e24ANDe36(date='1701XX',verbose=True):
                                                  scale='max',subtract='median')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print '\n - Returning resulting image array from '+returnname
+    if verbose: print('\n - Returning resulting image array from '+returnname)
     return returnarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*IIIII*.fits',NrowPerSpec=1,
@@ -133,7 +132,7 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Setting up output image dimensions'
+    if verbose: print(' - Setting up output image dimensions')
 
     Nspec     = len(IDlist)
     Nrows     = Nspec*NrowPerSpec
@@ -147,21 +146,21 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
     imgarray  = np.zeros([Nrows,Ncols])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Filling output image with fluxes interpolated to requested wavelength grid'
+    if verbose: print(' - Filling output image with fluxes interpolated to requested wavelength grid')
     for ss in xrange(Nspec):
         objid   = str(IDsort[ss])
         globstr = spec1Ddir+specstring.replace('IIIII',objid)
         spec    = glob.glob(globstr)
 
         if len(spec) == 0:
-            if verbose: print ' - WARNING: No spectrum found for '+objid
+            if verbose: print(' - WARNING: No spectrum found for '+objid)
         else:
             if len(spec) > 1:
-                if verbose: print ' - WARNING: More than two spectra found when globbing for:\n            '+globstr
-                if verbose: print ' -          Will plot the first spectrum found'
+                if verbose: print(' - WARNING: More than two spectra found when globbing for:\n            '+globstr)
+                if verbose: print(' -          Will plot the first spectrum found')
 
-            flux       = pyfits.open(spec[0])[1].data[fluxext]
-            wave       = pyfits.open(spec[0])[1].data[waveext]
+            flux       = afits.open(spec[0])[1].data[fluxext]
+            wave       = afits.open(spec[0])[1].data[waveext]
             fluxinterp = kbs.interpn(wave,flux,wavegrid)
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -170,7 +169,7 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
                     if scale == 'max':
                         fluxinterp = fluxinterp/np.max(fluxinterp)
                     else:
-                        if verbose: print ' WARNING "'+scale+'" invalid value of scale keyword; not scaling performed'
+                        if verbose: print(' WARNING "'+scale+'" invalid value of scale keyword; not scaling performed')
                 else:
                     if len(scale) > 1:
                         fluxinterp = fluxinterp/scale[ss]
@@ -184,7 +183,7 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
                     elif subtract == 'mean':
                         fluxinterp = fluxinterp - np.mean(fluxinterp)
                     else:
-                        if verbose: print ' WARNING "'+scale+'" invalid value of scale keyword; not scaling performed'
+                        if verbose: print(' WARNING "'+scale+'" invalid value of scale keyword; not scaling performed')
                 else:
                     if len(subtract) > 1:
                         fluxinterp = fluxinterp/subtract[ss]
@@ -196,8 +195,8 @@ def gen_Spec1DCombinationImage(IDlist,redshifts,spec1Ddir,specstring='spectrum_*
             imgarray[ss*NrowPerSpec:ss*NrowPerSpec+NrowPerSpec,1]  = int(objid)
             imgarray[ss*NrowPerSpec:ss*NrowPerSpec+NrowPerSpec,2:] = fluxinterp
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Storing image to fits file '+imagename
-    hdu = pyfits.PrimaryHDU(imgarray)
+    if verbose: print(' - Storing image to fits file '+imagename)
+    hdu = afits.PrimaryHDU(imgarray)
     # writing hdrkeys:'---KEY--',                             '----------------MAX LENGTH COMMENT-------------'
     hdu.header.append(('EXTNAME ', 'SPECIMG'                  ,'Nem of extension'),end=True)
     hdu.header.append(('CRPIX1  ', 1.0+Ninfopixs              ,''),end=True)
@@ -227,11 +226,11 @@ def gen_DS9regionfile(outputfile_base,circlesize=0.5,width=3,addIDlabel=True,fon
 
 
     """
-    if verbose: print ' - Generating MUSE-Wide region files. Saving them to :'
+    if verbose: print(' - Generating MUSE-Wide region files. Saving them to :')
     outputfile_CDFS   = outputfile_base+'_cdfs.reg'
     outputfile_COSMOS = outputfile_base+'_cosmos.reg'
-    if verbose: print '   '+outputfile_CDFS
-    if verbose: print '   '+outputfile_COSMOS
+    if verbose: print('   '+outputfile_CDFS)
+    if verbose: print('   '+outputfile_COSMOS)
 
     IDlist, ra, dec, redshifts = mwp.loadcatalogs(verbose=verbose)
 
@@ -281,10 +280,10 @@ def plot_redshifthistograms(plotname='/Users/kschmidt/work/MUSE/MUSEWide_sourceh
 
 
     """
-    if verbose: print ' - Loading source catalogs'
+    if verbose: print(' - Loading source catalogs')
     IDlist, ra, dec, redshifts = mwp.loadcatalogs(verbose=verbose)
 
-    if verbose: print ' - Setting up and generating histogram of MUSE-Wide sources in \n   '+plotname
+    if verbose: print(' - Setting up and generating histogram of MUSE-Wide sources in \n   '+plotname)
     fig = plt.figure(figsize=(10, 3))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.98, bottom=0.2, top=0.95)
     Fsize    = 15
@@ -324,7 +323,7 @@ def plot_redshifthistograms(plotname='/Users/kschmidt/work/MUSE/MUSEWide_sourceh
 
         infostr   = infostr+'  zrange = '+str(zrange)+'  Nobj = '+str(len(goodent))+'  color = '+goodcolor+\
                     '  zmin = '+str("%.5f" % zmin)+'  zmax = '+str("%.5f" % zmax)
-        if verbose: print infostr
+        if verbose: print(infostr)
 
         hist = plt.hist(goodz,color=goodcolor,bins=bins,histtype="step",lw=lthick,label=goodlabel,
                         fill=fill,fc=goodcolor)
@@ -345,7 +344,7 @@ def plot_redshifthistograms(plotname='/Users/kschmidt/work/MUSE/MUSEWide_sourceh
         leg.get_frame().set_alpha(0.7)
         #--------------------------
 
-    if verbose: print '   Saving plot... '
+    if verbose: print('   Saving plot... ')
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
@@ -367,7 +366,7 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loaking for spectra by globbing using the input path-strings'
+    if verbose: print(' - Loaking for spectra by globbing using the input path-strings')
     tdosespecs   = glob.glob(tdosespecssearch)
     caruanaspecs = glob.glob(caruanaspecssearch)
     urrutiaspecs = glob.glob(urrutiaspecssearch)
@@ -376,7 +375,7 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
     if Ntdose == 0:
         sys.exit('No tdose spectra found in '+tdosespecssearch)
     else:
-        if verbose: print ' - Will generate comparison plots for the '+str(Ntdose)+' TDOSE spectra found '
+        if verbose: print(' - Will generate comparison plots for the '+str(Ntdose)+' TDOSE spectra found ')
 
     if len(caruanaspecs) == 0:
         if verbose: print(' - WARNING No Caruana spectra found in \n   '+caruanaspecssearch)
@@ -385,21 +384,21 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Putting together lists of IDs'
-    if verbose: print '   Generate ID list for TDOSE spectra'
+    if verbose: print(' - Putting together lists of IDs')
+    if verbose: print('   Generate ID list for TDOSE spectra')
     ids_tdose = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in tdosespecs]
     ids_tdose = np.asarray(ids_tdose)
 
-    if verbose: print '   Generate ID list for Caruana spectra'
+    if verbose: print('   Generate ID list for Caruana spectra')
     ids_car = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in caruanaspecs]
     ids_car = np.asarray(ids_car)
 
     if len(urrutiaspecs) > 0:
-        if verbose: print '   Generate ID list for Urrutia spectra'
+        if verbose: print('   Generate ID list for Urrutia spectra')
         ids_urr_MW = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in urrutiaspecs]
         ids_urr_MW = np.asarray(ids_urr_MW)
 
-        idmatch    = pyfits.open(TDOSE2MWidmatch)[1].data
+        idmatch    = afits.open(TDOSE2MWidmatch)[1].data
         ids_urr    = []
         rmatch_urr = []
         for MWid in ids_urr_MW:
@@ -417,10 +416,10 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if outdir is None:
         outdir = '/'.join(os.path.abspath(tdosespecs[0]).split('/')[:-1])+'/'
-    if verbose: print ' - Will store output figures in \n   '+outdir
+    if verbose: print(' - Will store output figures in \n   '+outdir)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Looping over objects and generating plots'
+    if verbose: print(' - Looping over objects and generating plots')
 
     for ii, tspec in enumerate(tdosespecs):
         filename = tspec.split('/')[-1]
@@ -441,7 +440,7 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
 
         if skipthisobj: continue
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        dat_tdose    = pyfits.open(tspec)[1].data
+        dat_tdose    = afits.open(tspec)[1].data
         t_flux    = dat_tdose['flux']
         t_fluxerr = dat_tdose['fluxerror']
         t_wave    = dat_tdose['wave']
@@ -449,8 +448,8 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
 
         cent   = np.where(ids_car == ids_tdose[ii])[0]
         if len(cent) == 1:
-            c_flux    = pyfits.open(caruanaspecs[cent[0]])[0].data
-            c_fluxerr = pyfits.open(caruanaspecs[cent[0]])[1].data
+            c_flux    = afits.open(caruanaspecs[cent[0]])[0].data
+            c_fluxerr = afits.open(caruanaspecs[cent[0]])[1].data
             c_wave    = t_wave
 
         else:
@@ -461,7 +460,7 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
         if len(urrutiaspecs) > 0:
             uent   = np.where(ids_urr == str(int(ids_tdose[ii])))[0]
             if (len(uent) == 1) & (uent != 0):
-                dat_urr   = pyfits.open(urrutiaspecs[uent[0]])[1].data
+                dat_urr   = afits.open(urrutiaspecs[uent[0]])[1].data
                 u_flux    = dat_urr['FLUX']
                 u_fluxerr = dat_urr['FLUXERR']
                 u_wave    = dat_urr['WAVE_AIR']
@@ -614,12 +613,12 @@ def compare_TDOSEspecs(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions/sp
                              labels=colors,plotSNcurve=True,shownoise=True,lthick=lthick,fillalpha=0.30,verbose=True)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        #if verbose: print ' - Saving plot to',plotname
+        #if verbose: print(' - Saving plot to'+plotname)
         plt.savefig(plotname)
         plt.clf()
         plt.close('all')
 
-    if verbose: print '\n ... done '
+    if verbose: print('\n ... done ')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def gen_compare_text(ax,title,t_wave,t_flux,t_fluxerr,c_wave,c_flux,c_fluxerr,u_wave,u_flux,u_fluxerr,u_rmatch,MWid,
                      colors,fontsize=5):
@@ -697,7 +696,7 @@ def gen_compare_spec(ax,spectitle,
         diff    = np.abs(np.asarray(t_wave)-markwave)
         markent = np.where(diff == np.min(diff))[0]
         if len(markent) == 0:
-            if verbose: print ' WARNING the "markwave" is outside provided plotting xrange '
+            if verbose: print(' WARNING the "markwave" is outside provided plotting xrange ')
             markwave = False
 
         if plotSNcurve:
@@ -769,7 +768,7 @@ def plot_comparison_stats(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions
     """
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Loaking for spectra by globbing using the input path-strings'
+    if verbose: print(' - Loaking for spectra by globbing using the input path-strings')
     tdosespecs   = glob.glob(tdosespecssearch)
     caruanaspecs = glob.glob(caruanaspecssearch)
 
@@ -777,18 +776,18 @@ def plot_comparison_stats(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions
     if Ntdose == 0:
         sys.exit('No tdose spectra found in '+tdosespecssearch)
     else:
-        if verbose: print ' - Will collect and plot stats for the '+str(Ntdose)+' TDOSE spectra found '
+        if verbose: print(' - Will collect and plot stats for the '+str(Ntdose)+' TDOSE spectra found ')
 
     if len(caruanaspecs) == 0:
         sys.exit(' No Caruana spectra found in '+caruanaspecssearch)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Putting together lists of IDs'
-    if verbose: print '   Generate ID list for TDOSE spectra'
+    if verbose: print(' - Putting together lists of IDs')
+    if verbose: print('   Generate ID list for TDOSE spectra')
     ids_tdose = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in tdosespecs]
     ids_tdose = np.asarray(ids_tdose)
 
-    if verbose: print '   Generate ID list for Caruana spectra'
+    if verbose: print('   Generate ID list for Caruana spectra')
     ids_car = [float(tt.split('/')[-1].split('_')[-1].split('.')[0]) for tt in caruanaspecs]
     ids_car = np.asarray(ids_car)
 
@@ -821,7 +820,7 @@ def plot_comparison_stats(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions
 
     plotname = outdir+'spec_stat_histograms.pdf'
     for ii, tspec in enumerate(tdosespecs):
-        dat_tdose    = pyfits.open(tspec)[1].data
+        dat_tdose    = afits.open(tspec)[1].data
         t_flux    = dat_tdose['flux']
         t_fluxerr = dat_tdose['fluxerror']
         t_wave    = dat_tdose['wave']
@@ -836,8 +835,8 @@ def plot_comparison_stats(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions
 
         cent   = np.where(ids_car == ids_tdose[ii])[0]
         if len(cent) == 1:
-            c_flux    = pyfits.open(caruanaspecs[cent[0]])[0].data
-            c_fluxerr = pyfits.open(caruanaspecs[cent[0]])[1].data
+            c_flux    = afits.open(caruanaspecs[cent[0]])[0].data
+            c_fluxerr = afits.open(caruanaspecs[cent[0]])[1].data
             c_wave    = t_wave
             c_statdic = mwu.get_specstat(c_wave,c_flux,c_fluxerr)
 
@@ -955,7 +954,7 @@ def plot_comparison_stats(tdosespecssearch='/Volumes/DATABCKUP2/TDOSEextractions
     mwp.plot_comp_hist(ax,'Max S/N',t_max_s2n,c_max_s2n,colors,Fsize,lthick,bins)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #if verbose: print ' - Saving plot to',plotname
+    #if verbose: print(' - Saving plot to',plotname)
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
@@ -1056,7 +1055,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     datadic = collections.OrderedDict()
 
     for ss, specname in enumerate(spectra):
-        spec_dat      = pyfits.open(specname)[1].data
+        spec_dat      = afits.open(specname)[1].data
         spec_wave     = spec_dat[wavecols[ss]]
         spec_flux     = spec_dat[fluxcols[ss]]
         spec_ferr     = spec_dat[fluxerrcols[ss]]
@@ -1066,7 +1065,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         spec_wavecov  = [np.min(spec_wave),np.max(spec_wave)]
 
         if skyspectra[ss] is not None:
-            spec_dat      = pyfits.open(skyspectra[ss])[1].data
+            spec_dat      = afits.open(skyspectra[ss])[1].data
             spec_wave_sky = spec_dat[wavecols_sky[ss]]
             spec_flux_sky = spec_dat[fluxcols_sky[ss]]
         else:
@@ -1506,9 +1505,9 @@ def plot_FoVoverview(ras,decs,names,sizeFoV,outputdir='./',pointings=None,showre
 
     --- EXAMPLE OF USE ---
     import MUSEWidePlots as mwp
-    import pyfits
+    import afits
 
-    objdata   = pyfits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    objdata   = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
     names     = [str(id) for id in objdata['id']][-5:]
     ras       = objdata['ra'][-5:]
     decs      = objdata['dec'][-5:]
@@ -1604,7 +1603,7 @@ def plot_FoVoverview(ras,decs,names,sizeFoV,outputdir='./',pointings=None,showre
                 if os.path.isfile(region):
                     fig.show_regions(region)
                 else:
-                    if verbose: print 'WARNING: The region file '+region+' does not exist, hence nothing shown'
+                    if verbose: print('WARNING: The region file '+region+' does not exist, hence nothing shown')
 
         # - - - - LABELS - - - -
         # fig.add_label(34.455, 54.112, 'My favorite galaxy')
