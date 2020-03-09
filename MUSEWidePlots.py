@@ -1,6 +1,7 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import os
 import glob
+import astropy.io.fits as afits
 import pyfits
 import kbsutilities as kbs
 import numpy as np
@@ -1795,4 +1796,131 @@ def plot_MgIIemitterUDF939spec(datestamp='190515',smoothsigma=0,verbose=True):
                          comp_wavecol='wave',comp_fluxcol='flux',comp_errcol='fluxerror',
                          xrange=xrange,yrange=yrange,showspecs=False,shownoise=showfluxnoise,verbose=True,pubversion=True,
                          showlinelists=linelist,linelistcolors=linecols,smooth=smoothsigma,ylog=ylogval)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/work/MUSE/MWv2_analysis/continuum_source_selection/',
+                                   xrange=None,bins=None,verbose=True):
+    """
+    Diagnostics of the sub-catalogs in the MUSE-Wide footprint generated with mwu.create_subcatalogs_inMWfootprint()
+
+    --- EXAMPLE OF USE ---
+    import MUSEWidePlots as mwp
+    mwp.subcatsMWfootprint_diagnostics(catname='Skelton')
+
+    """
+
+    ids  = np.array([])
+    mags = np.array([])
+
+    if (catname.lower() == 'skelton') or (catname.lower() == 'skelton_goodss') or (catname.lower() == 'all'):
+        photcat_goodss = '/Users/kschmidt/work/catalogs/MUSE_GTO/goodss_3dhst.v4.1_inMUSEWideFootprint.fits'
+        photdat_goodss = afits.open(photcat_goodss)[1].data
+        ids            = np.append(ids,photdat_goodss['id']+1100000000)
+        mags           = np.append(mags,25.0-2.5*np.log10(photdat_goodss['f_F814Wcand']))
+
+    if (catname.lower() == 'skelton') or (catname.lower() == 'skelton_cosmos') or (catname.lower() == 'all'):
+        photcat_cosmos = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos_3dhst.v4.1_inMUSEWideFootprint.fits'
+        photdat_cosmos = afits.open(photcat_cosmos)[1].data
+        ids            = np.append(ids,photdat_cosmos['id']+2100000000)
+        mags           = np.append(mags,25.0-2.5*np.log10(photdat_cosmos['f_F814W']))
+
+    if (catname.lower() == 'whitaker') or (catname.lower() == 'all'):
+        photcat = '/Users/kschmidt/work/catalogs/MUSE_GTO/hlsp_hlf_hst_60mas_goodss_v2.0_catalog_inMUSEWideFootprint.fits'
+        photdat = afits.open(photcat)[1].data
+        ids     = np.append(ids,photdat['id']+1200000000)
+        mags    = np.append(mags,25.0-2.5*np.log10(photdat['f_f814w']))
+
+    if (catname.lower() == 'laigle') or (catname.lower() == 'all'):
+        photcat = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos2015_laigle_v1.1_candelsregion_inMUSEWideFootprint.fits'
+        photdat = afits.open(photcat)[1].data
+        ids     = np.append(ids,photdat['NUMBER']+2200000000)
+        mags    = np.append(mags,photdat['V_MAG_ISO'])
+
+    if len(ids) == 0:
+        sys.exit('No IDs available for "catname='+str(catname)+'"')
+
+    goodent    = np.where((mags < 34) & (mags > 5) & np.isfinite(mags))[0]
+    mags_good  = mags[goodent]
+    ids_good   = ids[goodent]
+
+    Nbad       = len(ids) - len(ids_good)
+    Ncosmos    = len(np.where(ids_good > 1.9e9)[0])
+    Ngoodss    = len(np.where(ids_good < 1.9e9)[0])
+    Ntotal     = Ngoodss+Ncosmos
+
+    if verbose: print(' - Read the catalog selection "'+catname+'" finding the following number of sources:')
+    if verbose: print('   (discarding '+str(Nbad)+' sources for not being finite or having poor mags)')
+    if verbose: print('   Total   :   '+str(Ntotal))
+    if verbose: print('   GOODS-S :   '+str(Ngoodss))
+    if verbose: print('   COSMOS  :   '+str(Ncosmos))
+
+    # - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - -
+    plotname = plotdir+'mag_histogram_'+catname.lower()+'.pdf'
+    if verbose: print(' - Setting up and generating histogram of MUSE-Wide sources in \n   '+plotname)
+    fig = plt.figure(figsize=(5, 4))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.95, bottom=0.15, top=0.95)
+    Fsize    = 14
+    lthick   = 2
+    marksize = 3
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title('M^\star',fontsize=Fsize)
+
+    if xrange is None:
+        xrange = [np.min(mags_good),np.max(mags_good)]
+
+    if bins is None:
+        bin_dz = 0.1
+        bins   = np.arange(np.min(mags_good),np.max(mags_good)+bin_dz,bin_dz)
+
+    magranges = [[0,24],[24,25],[25,26],[26,99],[0,26]]
+    colors    = ['blue','green','orange','red','black']
+
+    for mm, magrange in enumerate(magranges):
+        goodent   = np.where((mags_good > magrange[0]) & (mags_good <= magrange[1]))[0]
+        Ngood     = len(goodent)
+
+        if Ngood>1:
+            goodIDs   = ids[goodent]
+            goodmag   = mags_good[goodent]
+            goodcolor = colors[mm]
+            magmin    = np.min(goodmag)
+            magmax    = np.max(goodmag)
+
+            infostr   = '   Histinfo:'
+
+            percent  = float(Ngood)/float(Ntotal)*100.
+            label    = str(magrange[0])+'$<$mag$<$'+str(magrange[1])+' \n('+str(Ngood)+' obj; '+str('%.2f' % percent)+'\%)'
+
+            if mm < len(magranges)-1:
+                fillval = True
+            else:
+                fillval = False
+            hist     = plt.hist(goodmag,color=goodcolor,bins=bins,histtype="step",lw=lthick,label=label,
+                                fill=fillval,fc=goodcolor)
+
+    plt.xlim(xrange)
+    plt.xlabel(r'AB magnitude', fontsize=Fsize)
+
+    #plt.ylim(yrange)
+    plt.ylabel('Number of '+catname.replace('_','\_')+' catalog objects over \nMUSE-Wide 100 field footprint', fontsize=Fsize)
+
+    #--------- LEGEND ---------
+    anchorpos = (0.5, 1.2)
+    leg = plt.legend(fancybox=True,numpoints=1, loc='upper left',prop={'size':Fsize-3},ncol=1)#,
+                     #bbox_to_anchor=anchorpos)  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
