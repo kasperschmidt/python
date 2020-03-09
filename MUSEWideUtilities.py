@@ -2010,3 +2010,82 @@ def TDOSE_sourcecat_from_Whitaker(outputnamebase,refimage,minRaper=0.5,minCutwid
         fitsfmt       = ['D']*10
         sourcecatfits = tu.ascii2fits(outtxt,asciinames=True,skip_header=2,fitsformat=fitsfmt,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_subcat_contained_in_MW(fitscatalog,racol='ra',deccol='dec',map_selection=[0.0,1e24],verbose=True):
+    """
+    Function returning the sources of a catalog within the MUSE-Wide footprints
+    based on the MUSE-Wide weight images
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+
+    fitscat         = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    indices, subdat = mwu.get_subcat_contained_in_MW(fitscat,racol='ra',deccol='dec',map_selection=[0.0,1e24])
+
+    """
+    if verbose: print(' - Getting indices of objects within MUSE-Wide footprint from \n   '+fitscatalog)
+    file_cdfs  = '/Users/kschmidt/work/MUSE/MWv2_analysis/weight_image_cdfs_100fields.fits'
+    file_cos   = '/Users/kschmidt/work/MUSE/MWv2_analysis/weight_image_cosmos_100fields.fits'
+
+    catdat     = afits.open(fitscatalog)[1].data
+
+    filelist   = [file_cdfs,file_cos]
+
+    indexlist  = np.array([])
+    for filename in filelist:
+        map         = afits.open(filename)[0].data
+        hdr         = afits.open(filename)[0].header
+
+        wcs_in      = wcs.WCS(hdr)
+        skycoord    = SkyCoord(catdat[racol], catdat[deccol], frame='fk5', unit='deg')
+        pixcoord    = wcs.utils.skycoord_to_pixel(skycoord,wcs_in,origin=0)
+
+        if verbose: print('\n - Checking objects in catalog against the map \n   '+filename)
+        for xx, xcomp in enumerate(np.round(pixcoord).astype(int)[0]):
+            ycomp       = np.round(pixcoord).astype(int)[1][xx]
+
+            if verbose:
+                infostr = '   object '+str("%8.f" % (xx+1))+' / '+str("%8.f" % len(pixcoord[0]))
+                sys.stdout.write("%s\r" % infostr)
+                sys.stdout.flush()
+
+            if (xcomp > 0) & (xcomp <= map.shape[1]-1) & (ycomp > 0) & (ycomp <= map.shape[0]-1):
+                if (map[ycomp,xcomp] > map_selection[0]) & (map[ycomp,xcomp] < map_selection[1]):
+                    indexlist   = np.append(indexlist,xx)
+
+    if verbose: print('\n')
+    goodindices_unique = np.unique(np.sort(indexlist))
+
+    return goodindices_unique.astype(int), catdat[goodindices_unique.astype(int)]
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def create_subcatalogs_inMWfootprint(overwrite=False,verbose=True):
+    """
+    Storing sub-catalogs containing objects in MW footprint based on MW wheight maps.
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    mwu.create_subcatalogs_inMWfootprint()
+
+    """
+    outdir   = '/Users/kschmidt/work/catalogs/MUSE_GTO/'
+    fitscats = ['/Users/kschmidt/work/catalogs/laigle/COSMOS2015_Laigle_v1.1_candelsregion.fits',
+                '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS',
+                '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS',
+                '/Users/kschmidt/work/catalogs/whitaker/hlsp_hlf_hst_60mas_goodss_v2.0_catalog.fits']
+
+    radeccol = [['ALPHA_J2000','DELTA_J2000'],['ra','dec'],['ra','dec'],['ra','dec']]
+
+    for ff, fitscat in enumerate(fitscats):
+        outfits = outdir+fitscat.split('/')[-1].lower().replace('.cat','').replace('.fits','_inMUSEWideFootprint.fits')
+        indices, subdat = mwu.get_subcat_contained_in_MW(fitscat,racol=radeccol[ff][0],deccol=radeccol[ff][1],
+                                                         map_selection=[0.0,1e24],verbose=verbose)
+
+        if verbose: print(' - Storing sub-catalog (containing '+str(len(indices))+' sources) in \n   '+outfits+'\n')
+        hdu     = afits.BinTableHDU(data=subdat)
+        hdu.writeto(outfits,overwrite=overwrite)
+
+        kbs.create_DS9region(outfits.replace('.fits','.reg'),subdat[radeccol[ff][0]],subdat[radeccol[ff][1]],
+                             color='red',circlesize=0.25,clobber=overwrite)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
