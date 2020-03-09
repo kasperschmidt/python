@@ -1868,7 +1868,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
     fig = plt.figure(figsize=(5, 4))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.95, bottom=0.2, top=0.95)
     Fsize    = 14
-    lthick   = 2
+    lthick   = 1.5
     marksize = 3
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif',size=Fsize)
@@ -1902,14 +1902,16 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
             infostr   = '   Histinfo:'
 
             percent  = float(Ngood)/float(Ntotal)*100.
-            label    = str(magrange[0])+'$<$mag$<$'+str(magrange[1])+' \n('+str(Ngood)+' obj; '+str('%.2f' % percent)+'\%)'
+            label    = str(magrange[0])+'$<$mag$<=$'+str(magrange[1])+' \n('+str(Ngood)+' obj; '+str('%.2f' % percent)+'\%)'
 
             if mm < len(magranges)-1:
                 fillval = True
+                linest  = '-'
             else:
                 fillval = False
-            hist     = plt.hist(goodmag,color=goodcolor,bins=bins,histtype="step",lw=lthick,label=label,
-                                fill=fillval,fc=goodcolor)
+                linest  = ':'
+            hist     = plt.hist(goodmag,color=goodcolor,bins=bins,histtype="step",lw=lthick,label=label,ls=linest,
+                                fill=fillval,fc=goodcolor,alpha=0.8)
 
     plt.xlim(xrange)
     plt.xlabel('AB magnitude \n('+', '.join(list(magnames))+')', fontsize=Fsize)
