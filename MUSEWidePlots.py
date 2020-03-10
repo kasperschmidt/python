@@ -1881,9 +1881,12 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
     if xrange is None:
         xrange = [np.min(mags_good),np.max(mags_good)]
 
-    if bins is None:
+    if (bins is None):
         bin_dz = 0.1
         bins   = np.arange(np.min(mags_good),np.max(mags_good)+bin_dz,bin_dz)
+        if xrange is not None:
+            bins   = np.arange(np.min(xrange),np.max(xrange)+bin_dz,bin_dz)
+
 
     magranges = [[0,24],[24,25],[25,26],[26,99],[0,26]]
     colors    = ['blue','green','orange','red','black']
@@ -1917,7 +1920,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
     plt.xlabel('AB magnitude \n('+', '.join(list(magnames))+')', fontsize=Fsize)
 
     #plt.ylim(yrange)
-    plt.ylabel('Number of '+catname.replace('_','\_')+' catalog objects over \nMUSE-Wide 100 field footprint', fontsize=Fsize)
+    plt.ylabel(catname.replace('_','\_')+' catalog objects\nover MUSE-Wide 100 field footprint', fontsize=Fsize)
 
     #--------- LEGEND ---------
     anchorpos = (0.5, 1.2)
