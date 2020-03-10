@@ -2269,5 +2269,48 @@ def plot_template_spectra(xrange=[1000,3000],norm2max=True,verbose=True,noisesig
     if verbose: print(' - Saved figure to '+outname)
 
 #-------------------------------------------------------------------------------------------------------------
+def generate_fitscatalog_selection(fitscatalog,columns,ranges,outputfits,overwrite=False,verbose=True):
+    """
+
+    Function loading fits table and storing a defined selection of rows to a new fits file.
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    import kbsutilities as kbs
+
+    fitscat = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos_3dhst.v4.1_inMUSEWideFootprint.fits'
+    outfits = '/Users/kschmidt/work/MUSE/MWv2_analysis/cosmos_3dhst.v4.1_inMUSEWideFootprint_magselection200309.fits'
+    columns = ['f_F814W','f_F160W']
+    ranges  = [ 10**(-(np.array([25.,1.])-25.0)/2.5), 10**(-(np.array([50.,25.])-25.0)/2.5) ]
+    kbs.generate_fitscatalog_selection(fitscat,columns,ranges,outfits)
+
+    """
+    if os.path.isfile(outputfits) & (overwrite == False):
+        sys.exit(' Output fits file '+outputfits+' already exists and overwrite=False ')
+
+    input_dat = afits.open(fitscatalog)[1].data
+    Ncol      = len(input_dat.dtype.names)
+    Nrow      = len(input_dat)
+    if verbose: print(' - Succesfully loaded the binary fits table with Ncol='+str(Ncol)+' and Nrow='+str(Nrow))
+
+    if verbose: print(' - Performing selection:')
+
+    goodent = np.arange(Nrow)
+    for ss, sel in enumerate(columns):
+        if verbose: print('   '+str("%15s" % sel)+'    is contained in        ] '+str(ranges[ss][0])+', '+str(ranges[ss][1])+' ]')
+        selent    =  np.where( (input_dat[sel] > ranges[ss][0]) & (input_dat[sel] <= ranges[ss][1]) &
+                               np.isfinite(input_dat[sel]) )[0]
+        goodent   = np.intersect1d(goodent, selent)
+
+    if len(goodent) == 0:
+        print(' WARNING: No lines in fits file satisfy the selection so no output fits table generated ')
+    else:
+        output_dat = input_dat[goodent]
+        hdu        = afits.BinTableHDU(data=output_dat)
+        hdu.writeto(outputfits,overwrite=overwrite)
+        if verbose: print(' - Wrote fits table of '+str(len(goodent))+' rows satisfying selection to \n   '+outputfits)
+
+#-------------------------------------------------------------------------------------------------------------
 #                                                  END
 #-------------------------------------------------------------------------------------------------------------
