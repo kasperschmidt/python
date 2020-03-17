@@ -11219,32 +11219,99 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     outname_bases = []
     goodents      = []
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('   LAEs with at least one other detection')
+    if verbose: print('   o Objects with at least one detection')
+    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                           ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                           ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
+                           ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
+                            (masterdat['redshift'] >= 0.0) & (masterdat['duplicationID'] == 0.0) )[0]
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_AnyUVLineDetection.tex')
+    goodents.append(selection)
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+    Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+    Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+    if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+
+
+
+    if verbose: print('   o LAEs with at least one other detection')
+    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                           ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                           ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
+                           ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
+                            (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
     outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_LAEsWithUVLineDetection.tex')
-    goodents.append(np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
-                               ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
-                               ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
-                               ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
-                               ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
-                               ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
-                             (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0] )
+    goodents.append(selection)
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+    Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+    Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+    if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
 
-    if verbose: print('   Carbon emitters (either CIII or CIV detected) ')
+    if verbose: print('   o Carbon emitters (either CIII or CIV detected) ')
+    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
+                           ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) ) &
+                            (masterdat['duplicationID'] == 0.0) )[0]
     outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_CarbonEmitters.tex')
-    goodents.append(np.where(( ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
-                               ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) ) &
-                             (masterdat['duplicationID'] == 0.0) )[0] )
+    goodents.append(selection)
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+    Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+    Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+    if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
 
-    if verbose: print('   LAEs with Carbon detection (either CIII or CIV detected)')
+    if verbose: print('   o LAEs with Carbon detection (either CIII or CIV detected)')
+    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
+                            (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
     outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_LAEsWithCarbonDetection.tex')
-    goodents.append(np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
-                               ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
-                             (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0] )
+    goodents.append(selection)
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+    Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+    Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+    if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
 
-    if verbose: print('   OIII1663 doublet emitters ')
-    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_OxygenEmitters.tex')
-    goodents.append(np.where(((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII'])) &
-                             (masterdat['duplicationID'] == 0.0) )[0] )
+    for linesel in ['ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']:
+        linename = linesel.split('err_')[-1]
+        if verbose: print('   o '+linename+' doublet emitters ')
+        selection = np.where(((np.abs(masterdat[linesel])  != 99.0) & np.isfinite(masterdat[linesel])) &
+                              (masterdat['duplicationID'] == 0.0) )[0]
+        if len(selection) > 0:
+            outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_'+
+                                 linename+'Emitters.tex')
+            goodents.append(selection)
+        if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+        if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+        Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+        Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+        Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+        if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+
+    for linesel in ['ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']:
+        linename = linesel.split('err_')[-1]
+        if verbose: print('   o '+linename+' doublet emitters with Lya (z>2.9)')
+        selection = np.where(((np.abs(masterdat[linesel])  != 99.0) & np.isfinite(masterdat[linesel])) &
+                              (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
+        if len(selection) > 0:
+            outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_LAEsWith'+
+                                 linename+'Detection.tex')
+            goodents.append(selection)
+        if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+        if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+        Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+        Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+        Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+        if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Looping over object lists and column sets to generate individual tables ')
