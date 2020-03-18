@@ -1816,7 +1816,10 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
         photcat_goodss = '/Users/kschmidt/work/catalogs/MUSE_GTO/goodss_3dhst.v4.1_inMUSEWideFootprint.fits'
         photdat_goodss = afits.open(photcat_goodss)[1].data
         ids            = np.append(ids,photdat_goodss['id']+1100000000)
-        magcol         = 'f_F'+skeltonwhitakermag+'Wcand'
+        if skeltonwhitakermag in ['775','606']:
+            magcol         = 'f_F'+skeltonwhitakermag+'W'
+        else:
+            magcol         = 'f_F'+skeltonwhitakermag+'Wcand'
         mags           = np.append(mags,25.0-2.5*np.log10(photdat_goodss[magcol]))
         magnames       = np.append(magnames,magcol.replace('_','\_'))
 
