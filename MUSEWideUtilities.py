@@ -2089,14 +2089,14 @@ def create_subcatalogs_inMWfootprint(overwrite=False,verbose=True):
                              color='red',circlesize=0.25,clobber=overwrite)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def subcatalogs_paramselection(maglim=25.0,generateDS9region=True,overwrite=False,verbose=True):
+def subcatalogs_paramselection(maglim=25.0,skeltonwhitakermag='606',generateDS9region=True,overwrite=False,verbose=True):
     """
     Wrapper of kbs.generate_fitscatalog_selection() generating fits catalogs containing selection of
     objects in MUSE-Wide footprint. The parent catalogs were generated with mwu.create_subcatalogs_inMWfootprint().
 
     --- EXAMPLE OF USE ---
     import MUSEWideUtilities as mwu
-    mwu.subcatalogs_paramselection()
+    mwu.subcatalogs_paramselection(maglim=25.0,skeltonwhitakermag='606')
 
     """
 
@@ -2104,7 +2104,7 @@ def subcatalogs_paramselection(maglim=25.0,generateDS9region=True,overwrite=Fals
                 '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos_3dhst.v4.1_inMUSEWideFootprint.fits',
                 '/Users/kschmidt/work/catalogs/MUSE_GTO/goodss_3dhst.v4.1_inMUSEWideFootprint.fits',
                 '/Users/kschmidt/work/catalogs/MUSE_GTO/hlsp_hlf_hst_60mas_goodss_v2.0_catalog_inMUSEWideFootprint.fits']
-    colvals  = ['V_MAG_ISO','f_F814W','f_F814Wcand','f_f814w']
+    colvals  = ['V_MAG_ISO','f_F'+skeltonwhitakermag+'W','f_F'+skeltonwhitakermag+'Wcand','f_f'+skeltonwhitakermag+'w']
     radeccol = [['ALPHA_J2000','DELTA_J2000'],['ra','dec'],['ra','dec'],['ra','dec']]
 
     for ff, fitscat in enumerate(fitscats):
@@ -2116,7 +2116,7 @@ def subcatalogs_paramselection(maglim=25.0,generateDS9region=True,overwrite=Fals
             ranges  = [ [0.,maglim] ]
         else:
             outfits = '/Users/kschmidt/work/MUSE/MWv2_analysis/continuum_source_selection/'+\
-                      basestr+'_m814wLT'+str(maglim).replace('.','p')+'.fits'
+                      basestr+'_m'+skeltonwhitakermag+'wLT'+str(maglim).replace('.','p')+'.fits'
             ranges  = [ 10**(-(np.array([maglim,0.])-25.0)/2.5)]
         kbs.generate_fitscatalog_selection(fitscat,columns,ranges,outfits,overwrite=overwrite,verbose=verbose)
 

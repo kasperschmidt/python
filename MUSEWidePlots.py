@@ -1798,13 +1798,13 @@ def plot_MgIIemitterUDF939spec(datestamp='190515',smoothsigma=0,verbose=True):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/work/MUSE/MWv2_analysis/continuum_source_selection/',
-                                   xrange=None,bins=None,verbose=True):
+                                   skeltonwhitakermag='814',xrange=None,bins=None,verbose=True):
     """
     Diagnostics of the sub-catalogs in the MUSE-Wide footprint generated with mwu.create_subcatalogs_inMWfootprint()
 
     --- EXAMPLE OF USE ---
     import MUSEWidePlots as mwp
-    mwp.subcatsMWfootprint_diagnostics(catname='Skelton')
+    mwp.subcatsMWfootprint_diagnostics(catname='Skelton',skeltonwhitakermag='814')
 
     """
 
@@ -1816,7 +1816,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
         photcat_goodss = '/Users/kschmidt/work/catalogs/MUSE_GTO/goodss_3dhst.v4.1_inMUSEWideFootprint.fits'
         photdat_goodss = afits.open(photcat_goodss)[1].data
         ids            = np.append(ids,photdat_goodss['id']+1100000000)
-        magcol         = 'f_F814Wcand'
+        magcol         = 'f_F'+skeltonwhitakermag+'Wcand'
         mags           = np.append(mags,25.0-2.5*np.log10(photdat_goodss[magcol]))
         magnames       = np.append(magnames,magcol.replace('_','\_'))
 
@@ -1824,7 +1824,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
         photcat_cosmos = '/Users/kschmidt/work/catalogs/MUSE_GTO/cosmos_3dhst.v4.1_inMUSEWideFootprint.fits'
         photdat_cosmos = afits.open(photcat_cosmos)[1].data
         ids            = np.append(ids,photdat_cosmos['id']+2100000000)
-        magcol         = 'f_F814W'
+        magcol         = 'f_F'+skeltonwhitakermag+'W'
         mags           = np.append(mags,25.0-2.5*np.log10(photdat_cosmos[magcol]))
         magnames       = np.append(magnames,magcol.replace('_','\_'))
 
@@ -1832,7 +1832,7 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
         photcat  = '/Users/kschmidt/work/catalogs/MUSE_GTO/hlsp_hlf_hst_60mas_goodss_v2.0_catalog_inMUSEWideFootprint.fits'
         photdat  = afits.open(photcat)[1].data
         ids      = np.append(ids,photdat['id']+1200000000)
-        magcol   = 'f_f814w'
+        magcol   = 'f_f'+skeltonwhitakermag+'w'
         mags     = np.append(mags,25.0-2.5*np.log10(photdat[magcol]))
         magnames = np.append(magnames,magcol.replace('_','\_'))
 
@@ -1863,7 +1863,11 @@ def subcatsMWfootprint_diagnostics(catname='Skelton',plotdir='/Users/kschmidt/wo
     if verbose: print('   COSMOS  :   '+str(Ncosmos))
 
     # - - - - - - - - - - - - - - - - - - - - PLOTTING - - - - - - - - - - - - - - - - - - - -
-    plotname = plotdir+'mag_histogram_'+catname.lower()+'.pdf'
+    if catname.lower() == 'all':
+        magext = 'm'+skeltonwhitakermag
+    else:
+        magext = magcol
+    plotname = plotdir+'mag_histogram_'+catname.lower()+'_'+magext+'.pdf'
     if verbose: print(' - Setting up and generating histogram of MUSE-Wide sources in \n   '+plotname)
     fig = plt.figure(figsize=(5, 4))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.95, bottom=0.2, top=0.95)
