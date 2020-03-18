@@ -9,6 +9,7 @@ import astropy
 import scipy
 import MiGs
 import astropy.io.fits as afits
+import pyregion
 import pyfits as pyfitsOLD
 import datetime
 import numpy as np
@@ -11183,14 +11184,84 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FoV(regionfiles,verbose=True):
+def plot_uves_FoV(figbasename,showobjects=False,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
+    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV.pdf'
+    uves.plot_uves_FoV(figbasename,showobjects=False,verbose=True)
 
     """
+    fields = ['GOODS-S','COSMOS']
+
+    # imagefiles = ['/Users/kschmidt/work/images_MAST/hlsp_candels_hst_wfc3_gs-tot_f125w_v1.0_drz.fits',
+    #               '/Users/kschmidt/work/images_MAST/hlsp_candels_hst_wfc3_cos-tot_f125w_v1.0_drz.fits']
+
+    imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
+                  '/Users/kschmidt/work/images_MAST/cosmos_mosaic_Shrink50.fits']
+
+    pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings-all.reg',
+                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings-all.reg']
+
+    for ii, imagefile in enumerate(imagefiles):
+        plotname = figbasename.replace('.pdf','_'+fields[ii]+'.pdf')
+        hdu      = afits.open(imagefile)[0]
+        hud_wcs  = wcs.WCS(hdu.header)
+
+        fig = plt.figure(figsize=(5, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.97)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 4
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        ax = plt.subplot(projection=hud_wcs, label='overlays')
+
+        ax.imshow(hdu.data, vmin=-2.e-5, vmax=2.e-4, origin='lower', cmap='Greys')
+
+        ax.coords.grid(True, color='white', ls='dotted')
+        ax.coords[0].set_axislabel('Right Ascension (J2000)')
+        ax.coords[1].set_axislabel('Declination (J2000)')
+
+        # overlay = ax.get_coords_overlay('fk5')
+        # overlay.grid(color='white', ls='dotted')
+        # overlay[0].set_axislabel('Right Ascension (J2000)')
+        # overlay[1].set_axislabel('Declination (J2000)')
+
+        ax.scatter(53.1243740333,-27.8516127209, transform=ax.get_transform('fk5'), s=300,
+                   edgecolor='white', facecolor='red', alpha=0.5)
+
+        ax.scatter(53.1243740333,-27.8516127209, transform=ax.get_transform('fk5'), s=100, marker='s',
+                   edgecolor='orange', facecolor='green', alpha=0.5)
+
+        # ds9reg = pyregion.open(pointingregions[ii])
+        # regstr = "circle(53.1243740333,-27.8516127209,0.5") # color=magenta width=3  font="times 10 bold roman" text={115003085} "
+        # r2 = pyregion.parse(ds9reg).as_imagecoord(hdu.header)
+        # patch_list, artist_list = r2.get_mpl_patches_texts()
+        # for p in patch_list:
+        #     ax.add_patch(p)
+        # for t in artist_list:
+        #     ax.add_artist(t)
+
+        # plt.xlabel('R.A.')
+        # plt.ylabel('Dec.')
+
+        # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.7},ncol=3,numpoints=1,
+        #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
+        # leg.get_frame().set_alpha(0.7)
+
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+        if verbose: print('   Saved figure to '+plotname)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=False,verbose=True):
     """
