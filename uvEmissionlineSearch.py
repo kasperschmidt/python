@@ -6813,31 +6813,31 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     fluxes_range       = [10,1e4]
     linesetlist_fluxes = []
     linesetlist_fluxes.append(['CIII','CIV'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-    #
-    # linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
     #
     linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
-    # linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
     # linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
     # linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
-    linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
 
     Nhistbins = 30
     histaxes  = True
@@ -6856,7 +6856,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist.append(['HeII','CIII','OIII','CIII',ratios_range,ratios_range, 'Byler+20 fig. 4                           '])
     linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
     # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
-    # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
+    linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
     # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
     # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
     # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
@@ -6868,7 +6868,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     #
     # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
     # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIII','CIV','OIII','SiIII',ratios_range,ratios_range  , None])
     # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
     # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
