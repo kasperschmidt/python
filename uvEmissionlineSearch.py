@@ -22,6 +22,7 @@ import kbsutilities as kbs
 import tdose_utilities as tu
 from astropy import wcs
 from astropy.coordinates import SkyCoord
+import astropy.coordinates as acoord
 from astropy import units as u
 import subprocess
 import collections
@@ -29,6 +30,7 @@ import uvEmissionlineSearch as uves
 from uncertainties import unumpy
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from matplotlib.ticker import NullFormatter
 import NEOGALmodels as nm
 #import rxj2248_BooneBalestraSource as bbs
@@ -6847,9 +6849,12 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ratios_range = [1e-4,1e3]
     linesetlist  = []
-    linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
-    linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Schmidt+17 fig. 7 center                  '])
-    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  ,'Schmidt+17 fig. 7 bottom                  '])
+    linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
+    linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range , 'Schmidt+17 fig. 7 center                  '])
+    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 bottom                  '])
+    linesetlist.append(['SiIII','CIII','OIII','CIII',ratios_range,ratios_range,'Byler+20 fig. 3                           '])
+    linesetlist.append(['HeII','CIII','OIII','CIII',ratios_range,ratios_range, 'Byler+20 fig. 4                           '])
+    linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
     # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
     # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
     # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
@@ -11184,29 +11189,77 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FoV(figbasename,showobjects=False,verbose=True):
+def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
     figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV.pdf'
-    uves.plot_uves_FoV(figbasename,showobjects=False,verbose=True)
+    mastercat   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
 
     """
-    fields = ['GOODS-S','COSMOS']
+    ### From TU on 171020
+    agn     = [104014050,115003085,214002011]
+    agncand = [123048186,123501191,121033078]
 
-    # imagefiles = ['/Users/kschmidt/work/images_MAST/hlsp_candels_hst_wfc3_gs-tot_f125w_v1.0_drz.fits',
-    #               '/Users/kschmidt/work/images_MAST/hlsp_candels_hst_wfc3_cos-tot_f125w_v1.0_drz.fits']
+    ### From TU on 180115
+    # agn     = [104014050,115003085,214002011]
+    # agncand = [123048186,123501191,121033078]
 
-    imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
-                  '/Users/kschmidt/work/images_MAST/cosmos_mosaic_Shrink50.fits']
+    if verbose: print(' - Loading master cat and defining sub-samples')
+    masterdat = afits.open(mastercat)[1].data
+    infodat   = afits.open(infofile)[1].data
+
+    if verbose: print('   o Objects with at least one detection')
+    sel_UVdet = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                           ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                           ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
+                           ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
+                            (masterdat['redshift'] >= 0.0) & (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o LAEs ')
+    sel_LAEs = np.where( (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o CIII emitters ')
+    sel_CIII = np.where(((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o CIV emitters ')
+    sel_CIV  = np.where(((np.abs(masterdat['ferr_CIV']) != 99.0) & np.isfinite(masterdat['ferr_CIV'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o OIII emitters ')
+    sel_OIII = np.where(((np.abs(masterdat['ferr_OIII']) != 99.0) & np.isfinite(masterdat['ferr_OIII'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o OIII emitters ')
+    sel_SiIII= np.where(((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print(' - Defining images and ranges')
+    fields  = ['GOODS-S','COSMOS']
+
+    imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det.fits',
+                  '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits']
+    vmin = 0.5
+    vmax = 40.
+
+    # imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
+    #               '/Users/kschmidt/work/images_MAST/cosmos_mosaic_Shrink50.fits']
+    # vmin=0.0001
+    # vmax=0.5
 
     pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings-all.reg',
                        '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings-all.reg']
 
     for ii, imagefile in enumerate(imagefiles):
         plotname = figbasename.replace('.pdf','_'+fields[ii]+'.pdf')
+        if verbose: print(' - Generating '+plotname)
         hdu      = afits.open(imagefile)[0]
         hud_wcs  = wcs.WCS(hdu.header)
 
@@ -11225,9 +11278,10 @@ def plot_uves_FoV(figbasename,showobjects=False,verbose=True):
 
         ax = plt.subplot(projection=hud_wcs, label='overlays')
 
-        ax.imshow(hdu.data, vmin=-2.e-5, vmax=2.e-4, origin='lower', cmap='Greys')
+        #ax.imshow(hdu.data, origin='lower', cmap='Greys', vmin=-0.001, vmax=0.05) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
+        ax.imshow(hdu.data, origin='lower', cmap='Greys', vmin=vmin, vmax=vmax, norm=LogNorm()) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
 
-        ax.coords.grid(True, color='white', ls='dotted')
+        ax.coords.grid(True, color='black', ls='dotted')
         ax.coords[0].set_axislabel('Right Ascension (J2000)')
         ax.coords[1].set_axislabel('Declination (J2000)')
 
@@ -11236,20 +11290,62 @@ def plot_uves_FoV(figbasename,showobjects=False,verbose=True):
         # overlay[0].set_axislabel('Right Ascension (J2000)')
         # overlay[1].set_axislabel('Declination (J2000)')
 
-        ax.scatter(53.1243740333,-27.8516127209, transform=ax.get_transform('fk5'), s=300,
-                   edgecolor='white', facecolor='red', alpha=0.5)
+        ds9regs = pyregion.open(pointingregions[ii]).as_imagecoord(header=hdu.header)
+        patch_list, artist_list = ds9regs.get_mpl_patches_texts()
 
-        ax.scatter(53.1243740333,-27.8516127209, transform=ax.get_transform('fk5'), s=100, marker='s',
-                   edgecolor='orange', facecolor='green', alpha=0.5)
-
-        # ds9reg = pyregion.open(pointingregions[ii])
-        # regstr = "circle(53.1243740333,-27.8516127209,0.5") # color=magenta width=3  font="times 10 bold roman" text={115003085} "
-        # r2 = pyregion.parse(ds9reg).as_imagecoord(hdu.header)
+        # regstr = 'box(53.1243740333,-27.8516127209,0.01666667,0.01666667,340.0) # color=blue width=3 font="times 10 bold roman" text={Testing box}'
+        # text 53.11950302d -27.85599899d {15} # color=blue
+        # regstr = 'circle(53.1243740333,-27.8516127209,0.5") # color=magenta width=3  font="times 10 bold roman" text={115003085} '
+        # r2 = pyregion.parse(regstr).as_imagecoord(header=hdu.header)
         # patch_list, artist_list = r2.get_mpl_patches_texts()
-        # for p in patch_list:
-        #     ax.add_patch(p)
-        # for t in artist_list:
-        #     ax.add_artist(t)
+
+        for pp in patch_list:
+            ax.add_patch(pp)
+        for tt in artist_list:
+            ax.add_artist(tt)
+
+        for ii, objid in enumerate(masterdat['id']):
+            if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+                if str(objid).startswith('2'):
+                    continue
+            elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+                if ~str(objid).startswith('2'):
+                    continue
+
+            infoent = np.where(infodat['id'] == objid)[0]
+
+            if objid in masterdat['id'][sel_LAEs]:
+                plotmarker = 's'
+            else:
+                plotmarker = 'o'
+
+            if (objid in agn) or (objid in agncand):
+                plotmarker = '*'
+
+            if (objid in masterdat['id'][sel_CIII]) & (objid not in masterdat['id'][sel_CIV]):
+                pointcolor = 'green'
+            elif (objid in masterdat['id'][sel_CIV]) & (objid not in masterdat['id'][sel_CIII]):
+                pointcolor = 'blue'
+            elif (objid in masterdat['id'][sel_CIV]) & (objid in masterdat['id'][sel_CIII]):
+                pointcolor = 'orange'
+            else:
+                pointcolor = 'red'
+
+            if objid in masterdat['id'][sel_UVdet]:
+                facecolor  = pointcolor
+            else:
+                facecolor  = None
+
+            ax.scatter(infodat['ra'][infoent],infodat['dec'][infoent], transform=ax.get_transform('fk5'), marker=plotmarker,
+                       s=50, edgecolor=pointcolor, facecolor=facecolor, alpha=0.5)
+
+        xmin, xmax, ymin, ymax = ax.axis()
+        if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+            plt.xlim([xmax*0.1,xmax*0.9])
+            plt.ylim([ymin*0.4,ymax*1.0])
+        elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+            plt.xlim([xmax*0.20,xmax*0.70])
+            plt.ylim([ymin*0.25,ymax*0.75])
 
         # plt.xlabel('R.A.')
         # plt.ylabel('Dec.')
@@ -11261,7 +11357,8 @@ def plot_uves_FoV(figbasename,showobjects=False,verbose=True):
         plt.savefig(plotname)
         plt.clf()
         plt.close('all')
-        if verbose: print('   Saved figure to '+plotname)
+        if verbose: print('   Succesfully stored plot to figure')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=False,verbose=True):
     """
@@ -11554,4 +11651,35 @@ def mastercat_latextable_colnames(colname):
         colname_fmt = colname.replace('_','\_')
 
     return colname_fmt
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def convert_FoVcoordinates():
+    """
+    import uvEmissionlineSearch as uves
+    uves.convert_FoVcoordinates()
+
+    """
+    fieldcoord_gs = np.array([[53.062397   ,-27.80815506],[53.06840134 ,-27.82277679],[53.07440948 ,-27.83739662],[53.08042145 ,-27.85201454],[53.08643341 ,-27.86663437],[53.07892227 ,-27.80284119],[53.08493423 ,-27.81746101],[53.09094238 ,-27.83208084],[53.09695435 ,-27.84669876],[53.10297012 ,-27.86131859],[53.09545135 ,-27.79752731],[53.1014595  ,-27.81214523],[53.10747528 ,-27.82676315],[53.11348724 ,-27.84138107],[53.11950302 ,-27.85599899],[53.13603592 ,-27.8506794 ],[53.15256882 ,-27.84535599],[53.1690979  ,-27.84003258],[53.18562698 ,-27.83470535],[53.20215225 ,-27.82937813],[53.21867752 ,-27.82404709],[53.13002014 ,-27.83606148],[53.14654922 ,-27.83073997],[53.16307449 ,-27.82541656],[53.17960358 ,-27.82009125],[53.19612503 ,-27.81476212],[53.12400436 ,-27.82144356],[53.11798859 ,-27.80682755],[53.11197662 ,-27.79220963],[53.10596466 ,-27.7775898 ],[53.0999527  ,-27.76297188],[53.14052963 ,-27.81612396],[53.13451385 ,-27.80150604],[53.12849808 ,-27.78689003],[53.12248611 ,-27.77227211],[53.11647415 ,-27.75765419],[53.13900375 ,-27.76695061],[53.13299179 ,-27.75233459],[53.08943939 ,-27.78290749],[53.08343124 ,-27.76828766],[53.07291794 ,-27.78822327],[53.05038452 ,-27.77891541],[53.18253708 ,-27.73636246],[53.19457626 ,-27.76559067],[53.20059967 ,-27.78020477],[53.06690979 ,-27.77360344],[53.05638885 ,-27.79353523],[53.14950943 ,-27.74701118],[53.16602325 ,-27.74168777],[53.18855667 ,-27.75097656],[53.20662308 ,-27.79481888],[53.17203903 ,-27.75630379],[53.19010162 ,-27.80014801],[53.03385925 ,-27.78422546],[53.03986359 ,-27.7988472 ],[53.04586411 ,-27.81346703],[53.05187225 ,-27.82808876],[53.05787659 ,-27.84270859],[53.06388474 ,-27.85732841],[53.0698967  ,-27.87195015],[53.26665497 ,-27.68647957],[53.25360107 ,-27.67607117],[53.24184418 ,-27.68763161],[53.25489807 ,-27.69804001],[53.27975082 ,-27.85684013],[53.2653389  ,-27.84791946],[53.25524521 ,-27.86066055],[53.26965714 ,-27.86958313]])
+    textcoord_gs  = np.array([[53.062397  , -27.80815506],[53.06840134, -27.82277679],[53.07440948, -27.83739662],[53.08042145, -27.85201454],[53.08643341, -27.86663437],[53.07892227, -27.80284119],[53.08493423, -27.81746101],[53.09094238, -27.83208084],[53.09695435, -27.84669876],[53.10297012, -27.86131859],[53.09545135, -27.79752731],[53.1014595 , -27.81214523],[53.10747528, -27.82676315],[53.11348724, -27.84138107],[53.11950302, -27.85599899],[53.13603592, -27.8506794 ],[53.15256882, -27.84535599],[53.1690979 , -27.84003258],[53.18562698, -27.83470535],[53.20215225, -27.82937813],[53.21867752, -27.82404709],[53.13002014, -27.83606148],[53.14654922, -27.83073997],[53.16307449, -27.82541656],[53.17960358, -27.82009125],[53.19612503, -27.81476212],[53.12400436, -27.82144356],[53.11798859, -27.80682755],[53.11197662, -27.79220963],[53.10596466, -27.7775898 ],[53.0999527 , -27.76297188],[53.14052963, -27.81612396],[53.13451385, -27.80150604],[53.12849808, -27.78689003],[53.12248611, -27.77227211],[53.11647415, -27.75765419],[53.13900375, -27.76695061],[53.13299179, -27.75233459],[53.08943939, -27.78290749],[53.08343124, -27.76828766],[53.07291794, -27.78822327],[53.05038452, -27.77891541],[53.18253708, -27.73636246],[53.19457626, -27.76559067],[53.20059967, -27.78020477],[53.06690979, -27.77360344],[53.05638885, -27.79353523],[53.14950943, -27.74701118],[53.16602325, -27.74168777],[53.18855667, -27.75097656],[53.20662308, -27.79481888],[53.17203903, -27.75630379],[53.19010162, -27.80014801],[53.03385925, -27.78422546],[53.03986359, -27.7988472 ],[53.04586411, -27.81346703],[53.05187225, -27.82808876],[53.05787659, -27.84270859],[53.06388474, -27.85732841],[53.0698967 , -27.87195015],[53.26665497, -27.68647957],[53.25360107, -27.67607117],[53.24184418, -27.68763161],[53.25489807, -27.69804001],[53.27975082, -27.85684013],[53.2653389 , -27.84791946],[53.25524521, -27.86066055],[53.26965714, -27.86958313],[53.15960312, -27.76493263],[53.17351151, -27.77551079],[53.18653107, -27.78676605],[53.14808273, -27.77723885],[53.16083908, -27.78763008],[53.17481613, -27.79899406],[53.13550186, -27.78861046],[53.14797974, -27.79980278],[53.16194153, -27.81017494]])
+
+    coord_cos = np.array([[150.09121704 , 2.20111012],[150.09121704 , 2.20111012],[150.10679626 , 2.2011106 ],[150.10679626 , 2.2011106 ],[150.12236023 , 2.20111084],[150.12236023 , 2.20111084],[150.13792419 , 2.20111084],[150.13792419 , 2.20111084],[150.15348816 , 2.20111084],[150.15348816 , 2.20111084],[150.16905212 , 2.2011106 ],[150.16905212 , 2.2011106 ],[150.18463135 , 2.20111012],[150.18463135 , 2.20111012],[150.09121704 , 2.21666574],[150.09121704 , 2.21666574],[150.10679626 , 2.21666622],[150.10679626 , 2.21666622],[150.12236023 , 2.21666646],[150.12236023 , 2.21666646],[150.13792419 , 2.21666646],[150.13792419 , 2.21666646],[150.15348816 , 2.21666646],[150.15348816 , 2.21666646],[150.16905212 , 2.21666622],[150.16905212 , 2.21666622],[150.18463135 , 2.21666574],[150.18463135 , 2.21666574],[150.09121704 , 2.23222136],[150.09121704 , 2.23222136],[150.10679626 , 2.2322216 ],[150.10679626 , 2.2322216 ],[150.12236023 , 2.23222184],[150.12236023 , 2.23222184],[150.13792419 , 2.23222208],[150.13792419 , 2.23222208],[150.15348816 , 2.23222184],[150.15348816 , 2.23222184],[150.16905212 , 2.2322216 ],[150.16905212 , 2.2322216 ],[150.18463135 , 2.23222136],[150.18463135 , 2.23222136],[150.09121704 , 2.24777675],[150.09121704 , 2.24777675],[150.10679626 , 2.24777722],[150.10679626 , 2.24777722],[150.12236023 , 2.24777746],[150.12236023 , 2.24777746],[150.13792419 , 2.2477777 ],[150.13792419 , 2.2477777 ],[150.15348816 , 2.24777746],[150.15348816 , 2.24777746],[150.16905212 , 2.24777722],[150.16905212 , 2.24777722],[150.18463135 , 2.24777675],[150.18463135 , 2.24777675],[150.09121704 , 2.26333237],[150.09121704 , 2.26333237],[150.10679626 , 2.26333284],[150.10679626 , 2.26333284],[150.12236023 , 2.26333308],[150.12236023 , 2.26333308],[150.13792419 , 2.26333308],[150.13792419 , 2.26333308],[150.15348816 , 2.26333308],[150.15348816 , 2.26333308],[150.16905212 , 2.26333284],[150.16905212 , 2.26333284],[150.18463135 , 2.26333237],[150.18463135 , 2.26333237],[150.09121704 , 2.27888799],[150.09121704 , 2.27888799],[150.10678101 , 2.27888846],[150.10678101 , 2.27888846],[150.12236023 , 2.2788887 ],[150.12236023 , 2.2788887 ],[150.13792419 , 2.2788887 ],[150.13792419 , 2.2788887 ],[150.15348816 , 2.2788887 ],[150.15348816 , 2.2788887 ],[150.16906738 , 2.27888846],[150.16906738 , 2.27888846],[150.18463135 , 2.27888799],[150.18463135 , 2.27888799],[150.09121704 , 2.29444361],[150.09121704 , 2.29444361],[150.10678101 , 2.29444408],[150.10678101 , 2.29444408],[150.12236023 , 2.29444432],[150.12236023 , 2.29444432],[150.13792419 , 2.29444432],[150.13792419 , 2.29444432],[150.15348816 , 2.29444432],[150.15348816 , 2.29444432],[150.16906738 , 2.29444408],[150.16906738 , 2.29444408],[150.18463135 , 2.29444361],[150.18463135 , 2.29444361],[150.09126282 , 2.30999923],[150.09126282 , 2.30999923],[150.10681152 , 2.3099997 ],[150.10681152 , 2.3099997 ],[150.12237549 , 2.30999994],[150.12237549 , 2.30999994],[150.13792419 , 2.30999994],[150.13792419 , 2.30999994],[150.1534729 ,  2.30999994],[150.1534729 ,  2.30999994],[150.16903687 , 2.3099997 ],[150.16903687 , 2.3099997 ],[150.18458557 , 2.30999923],[150.18458557 , 2.30999923],[150.09121704 , 2.32555485],[150.09121704 , 2.32555485],[150.10678101 , 2.32555509],[150.10678101 , 2.32555509],[150.12236023 , 2.32555556],[150.12236023 , 2.32555556],[150.13792419 , 2.32555556],[150.13792419 , 2.32555556],[150.15348816 , 2.32555556],[150.15348816 , 2.32555556],[150.16906738 , 2.32555509],[150.16906738 , 2.32555509],[150.18463135 , 2.32555485],[150.18463135 , 2.32555485],[150.09121704 , 2.34111023],[150.09121704 , 2.34111023],[150.10678101 , 2.34111071],[150.10678101 , 2.34111071],[150.12236023 , 2.34111094],[150.12236023 , 2.34111094],[150.13792419 , 2.34111118],[150.13792419 , 2.34111118],[150.15348816 , 2.34111094],[150.15348816 , 2.34111094],[150.16906738 , 2.34111071],[150.16906738 , 2.34111071],[150.18463135 , 2.34111023],[150.18463135 , 2.34111023],[150.09121704 , 2.35666585],[150.09121704 , 2.35666585],[150.10678101 , 2.35666633],[150.10678101 , 2.35666633],[150.12236023 , 2.35666656],[150.12236023 , 2.35666656],[150.13792419 , 2.3566668 ],[150.13792419 , 2.3566668 ],[150.15348816 , 2.35666656],[150.15348816 , 2.35666656],[150.16906738 , 2.35666633],[150.16906738 , 2.35666633],[150.18463135 , 2.35666585],[150.18463135 , 2.35666585],[150.09121704 , 2.37222147],[150.09121704 , 2.37222147],[150.10678101 , 2.37222195],[150.10678101 , 2.37222195],[150.12236023 , 2.37222219],[150.12236023 , 2.37222219],[150.13792419 , 2.37222219],[150.13792419 , 2.37222219],[150.15348816 , 2.37222219],[150.15348816 , 2.37222219],[150.16906738 , 2.37222195],[150.16906738 , 2.37222195],[150.18463135 , 2.37222147],[150.18463135 , 2.37222147],[150.09121704 , 2.38777709],[150.09121704 , 2.38777709],[150.10678101 , 2.38777757],[150.10678101 , 2.38777757],[150.12236023 , 2.38777781],[150.12236023 , 2.38777781],[150.13792419 , 2.38777781],[150.13792419 , 2.38777781],[150.15348816 , 2.38777781],[150.15348816 , 2.38777781],[150.16906738 , 2.38777757],[150.16906738 , 2.38777757],[150.18463135 , 2.38777709],[150.18463135 , 2.38777709],[150.09121704 , 2.40333271],[150.09121704 , 2.40333271],[150.10678101 , 2.40333295],[150.10678101 , 2.40333295],[150.12236023 , 2.40333343],[150.12236023 , 2.40333343],[150.13792419 , 2.40333343],[150.13792419 , 2.40333343],[150.15348816 , 2.40333343],[150.15348816 , 2.40333343],[150.16906738 , 2.40333295],[150.16906738 , 2.40333295],[150.18463135 , 2.40333271],[150.18463135 , 2.40333271]])
+
+    coordsets = [fieldcoord_gs,textcoord_gs,coord_cos]
+    for cs in coordsets:
+        uves.convert_coordinates_deg2sex(cs)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def convert_coordinates_deg2sex(coordinateset):
+    """
+
+
+    """
+    print('------------------------')
+    ravals        = acoord.Angle(coordinateset[:,0], u.degree)
+    decvals       = acoord.Angle(coordinateset[:,1], u.degree)
+
+    for cc, raval in enumerate(ravals):
+        print( str(raval.to_string(unit=u.hour, sep=':'))+' , '+str(decvals[cc].to_string(sep=':')) )
+
+
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
