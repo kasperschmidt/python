@@ -4975,8 +4975,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     markersym   = 'D'
                 elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
                     markersym   = 'X'
-                elif (ids[ii] > 1e10): # Literature objects
+                elif (ids[ii] > 1e9): # Literature objects
                     markersym   = lce.get_reference_fromID(ids[ii],verbose=False)[4]
+                else:
+                    print(' WARNING - stopped as could not assing a marker symbol to the id '+str(ids[ii]))
+                    pdb.set_trace()
             else:
                 markersym   = 'o'
             ms          = marksize
@@ -11190,7 +11193,7 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True):
+def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
@@ -11243,28 +11246,49 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
                         (masterdat['duplicationID'] == 0.0) )[0]
 
     if verbose: print(' - Defining images and ranges')
-    fields  = ['GOODS-S','COSMOS']
+    fields  = ['GOODS-S','COSMOS','UDF']
 
     imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det.fits',
-                  '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits']
-    vmin = 0.5
-    vmax = 40.
+                  '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits',
+                  '/Users/kschmidt/work/images_MAST/hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci.fits']
 
     # imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
     #               '/Users/kschmidt/work/images_MAST/cosmos_mosaic_Shrink50.fits']
     # vmin=0.0001
     # vmax=0.5
 
-    pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings-all.reg',
-                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings-all.reg']
+    pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings.reg',
+                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings.reg',
+                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg',]
 
     for ii, imagefile in enumerate(imagefiles):
-        plotname = figbasename.replace('.pdf','_'+fields[ii]+'.pdf')
+        # if ii != 2:
+        #     continue
+        plotname  = figbasename.replace('.pdf','_'+fields[ii]+'.pdf')
+        if showobjects:
+            plotname  = plotname.replace('.pdf','_withobj.pdf')
         if verbose: print(' - Generating '+plotname)
-        hdu      = afits.open(imagefile)[0]
-        hud_wcs  = wcs.WCS(hdu.header)
+        pointings = pointingregions[ii]
+        hdu       = afits.open(imagefile)[0]
+        hud_wcs   = wcs.WCS(hdu.header)
 
-        fig = plt.figure(figsize=(5, 5))
+        if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+            fig = plt.figure(figsize=(5, 5))
+            vmin = 0.5
+            vmax = 40.
+        elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+            fig = plt.figure(figsize=(4, 5))
+            vmin = 0.5
+            vmax = 40.
+        elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
+            fig = plt.figure(figsize=(5, 5))
+            vmin = 0.001
+            vmax = 1.
+        else:
+            fig = plt.figure(figsize=(5, 5))
+            vmin = 0.0001
+            vmax = 0.5
+
         fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.97)
         Fsize    = 10
         lthick   = 2
@@ -11291,7 +11315,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
         # overlay[0].set_axislabel('Right Ascension (J2000)')
         # overlay[1].set_axislabel('Declination (J2000)')
 
-        ds9regs = pyregion.open(pointingregions[ii]).as_imagecoord(header=hdu.header)
+        ds9regs = pyregion.open(pointings).as_imagecoord(header=hdu.header)
         patch_list, artist_list = ds9regs.get_mpl_patches_texts()
 
         # regstr = 'box(53.1243740333,-27.8516127209,0.01666667,0.01666667,340.0) # color=blue width=3 font="times 10 bold roman" text={Testing box}'
@@ -11305,48 +11329,60 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
         for tt in artist_list:
             ax.add_artist(tt)
 
-        for ii, objid in enumerate(masterdat['id']):
-            if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
-                if str(objid).startswith('2'):
-                    continue
-            elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
-                if ~str(objid).startswith('2'):
-                    continue
+        if showobjects:
+            for ii, objid in enumerate(masterdat['id']):
+                if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+                    if (str(objid)[0] == '2') or (int(str(objid)[0]) >= 6):
+                        continue
+                elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
+                    if str(objid)[0] != '2':
+                        continue
+                elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
+                    if (int(str(objid)[0]) < 6):
+                        continue
 
-            infoent = np.where(infodat['id'] == objid)[0]
+                infoent = np.where(infodat['id'] == objid)[0]
 
-            if objid in masterdat['id'][sel_LAEs]:
-                plotmarker = 's'
-            else:
-                plotmarker = 'o'
+                if objid in masterdat['id'][sel_LAEs]:
+                    plotmarker = 's'
+                else:
+                    plotmarker = 'o'
 
-            if (objid in agn) or (objid in agncand):
-                plotmarker = '*'
+                if (objid in masterdat['id'][sel_CIII]) & (objid not in masterdat['id'][sel_CIV]):
+                    pointcolor = 'green'
+                elif (objid in masterdat['id'][sel_CIV]) & (objid not in masterdat['id'][sel_CIII]):
+                    pointcolor = 'blue'
+                elif (objid in masterdat['id'][sel_CIV]) & (objid in masterdat['id'][sel_CIII]):
+                    pointcolor = 'orange'
+                else:
+                    pointcolor = 'red'
 
-            if (objid in masterdat['id'][sel_CIII]) & (objid not in masterdat['id'][sel_CIV]):
-                pointcolor = 'green'
-            elif (objid in masterdat['id'][sel_CIV]) & (objid not in masterdat['id'][sel_CIII]):
-                pointcolor = 'blue'
-            elif (objid in masterdat['id'][sel_CIV]) & (objid in masterdat['id'][sel_CIII]):
-                pointcolor = 'orange'
-            else:
-                pointcolor = 'red'
+                if objid in masterdat['id'][sel_UVdet]:
+                    facecolor  = pointcolor
+                    edgecolor  = 'None'
+                    symsize    = 10
+                else:
+                    facecolor  = 'None'
+                    edgecolor  = pointcolor
+                    symsize    = 7
 
-            if objid in masterdat['id'][sel_UVdet]:
-                facecolor  = pointcolor
-            else:
-                facecolor  = None
+                if (objid in agn) or (objid in agncand):
+                    plotmarker = '*'
+                    symsize = 20
 
-            ax.scatter(infodat['ra'][infoent],infodat['dec'][infoent], transform=ax.get_transform('fk5'), marker=plotmarker,
-                       s=50, edgecolor=pointcolor, facecolor=facecolor, alpha=0.5)
+                ax.scatter(infodat['ra'][infoent],infodat['dec'][infoent], transform=ax.get_transform('fk5'), marker=plotmarker,
+                           s=symsize, edgecolor=edgecolor, facecolor=facecolor, alpha=0.5, zorder=1e10, lw=0.5)
 
         xmin, xmax, ymin, ymax = ax.axis()
         if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
-            plt.xlim([xmax*0.1,xmax*0.9])
-            plt.ylim([ymin*0.4,ymax*1.0])
+            plt.xlim([xmax*0.05,xmax*0.9])
+            plt.ylim([ymax*0.25,ymax*1.0])
         elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
-            plt.xlim([xmax*0.20,xmax*0.70])
-            plt.ylim([ymin*0.25,ymax*0.75])
+            plt.xlim([xmax*0.18,xmax*0.70])
+            plt.ylim([ymax*0.23,ymax*0.48])
+        elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
+            plt.xlim([xmax*0.10,xmax*0.95])
+            plt.ylim([ymax*0.15,ymax*0.95])
 
         # plt.xlabel('R.A.')
         # plt.ylabel('Dec.')
