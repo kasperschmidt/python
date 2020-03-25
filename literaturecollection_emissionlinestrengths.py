@@ -164,8 +164,7 @@ def get_reference_fromID(idlist,verbose=True):
     if verbose: print(' - Looping over the '+str(len(idlist))+' IDs provide in list\n')
     for id in idlist:
         idstr  = str(id)
-
-        if (len(idstr) != 11) or idstr.startswith('0'):
+        if (len(idstr) < 9) or idstr.startswith('0'):
             if verbose: print(' - The id '+idstr+' is not on the right format. It should be 11 digits long and not start with 0')
         else:
             baseid = int(idstr[0:3].ljust(11,'0'))
@@ -178,7 +177,6 @@ def get_reference_fromID(idlist,verbose=True):
 
             if not foundref:
                 returnrefs.append([idstr,'NoRef',baseid,'NoRef','$??$'])
-
 
     if len(idlist) != len(returnrefs):
         sys.exit('The provided ID list and the found references have different lengths:\n   len(idlist) = '+str(len(idlist))+':\n  '+str(idlist)+'\n   len(references) = '+str(len(returnrefs))+':\n   '+str(returnrefs)+'\n')
@@ -218,7 +216,7 @@ def referencedictionary():
     refdic['dummy'] = [18e9,    'dummy',                                                  '3']
     refdic['dummy'] = [19e9,    'dummy',                                                  '4']
     refdic['amo17'] = [51e9,    'Amorin et al. (2017)',                                   '$\\alpha$']
-    refdic['dummy'] = [20e9,    'dummy',                                                  '$\beta$']
+    refdic['dummy'] = [20e9,    'dummy',                                                  '$\\beta$']
     refdic['dummy'] = [21e9,    'dummy',                                                  (5, 0, 180)] # pentagon rotated 180deg
 
     # --- MUSE-Wide def: ---
@@ -232,6 +230,10 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Senchyna et al. (2019); Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Plat et al. (2019) compilation... check
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Huang et al. (2016b)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -2714,7 +2716,7 @@ def data_amo17(fluxscale=1e2,verbose=True):
     baseid              = lce.referencedictionary()[catreference][0]
     datadic = {}
     datadic['name']      = np.array(['5100534435',   '5100565880',   '5100750978',   '5100994378',   '5100998761',   '5101421970',   '5101444192',   '510583858' ,   '511267982' ,   '510838687', 'composite' ])
-    datadic['id']        = np.array([   5100534435,      5100565880,     5100750978,     5100994378,     5100998761,     5101421970,     5101444192,     510583858 ,     511267982 ,     510838687,      1]) + baseid
+    datadic['id']        = np.array([   534435,      565880,     750978,     994378,     998761,     1421970,     1444192,     583858 ,     1267982 ,     838687,      1]) + baseid
     datadic['ra']        = np.array([np.nan]*11) # coordinates not public but see email 170207
     datadic['dec']       = np.array([np.nan]*11) # coordinates not public but see email 170207
     datadic['redshift']  = np.array([2.9635,3.0505,2.963 ,2.797,2.446,2.465 ,3.424,2.4141,2.8256,2.5539,np.nan])
