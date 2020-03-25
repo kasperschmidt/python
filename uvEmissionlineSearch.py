@@ -11399,13 +11399,15 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=False,verbose=True):
     """
-    Wrapper to uves.mastercat_latextable() generating a table of the emitters with either CIII or CIV detections
+    Wrapper to uves.mastercat_latextable() generating a table of the emitters with either CIII or CIV detections.
+    This wraper also returns a dictionary with number counts of detections and available objects for searching
+    based on the content of the master catalog.
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
     mastercat = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
     infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
-    uves.mastercat_latextable_wrappers(mastercat,infofile,verbose=True,overwrite=True,sortcol='redshift')
+    detectiondic = uves.mastercat_latextable_wrappers(mastercat,infofile,verbose=True,overwrite=True,sortcol='redshift')
 
     """
 
@@ -11423,6 +11425,22 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     if verbose: print(' - Collecting objects for the individual tables ')
     outname_bases = []
     goodents      = []
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # stat dictionary
+    detectiondic   = collections.OrderedDict()
+    areanames      = ['100fields','musewide','cdfsproper','cosmos','cdfspar1','cdfspar2','udfmosaic','udf10']
+    idstart        = [1,2,3,4,6,7]
+    idstartname    = areanames[2:]
+    rangename      = ['allobj','allobjUVrange','CIIIorCIV','CIV','HeII','OIII','SiIII','CIII','MgII']
+    subsel         = ['full','LAEs']
+    Nkeys_init     = 0
+    for rr in rangename:
+        for aa in areanames:
+            for ss in subsel:
+                detectiondic[aa+'_'+rr+'_'+ss] = [np.nan]
+                Nkeys_init = Nkeys_init + 1
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('   o Objects with at least one detection')
     selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
@@ -11439,8 +11457,14 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
     Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
     if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
-
-
+    detectiondic['100fields_allobj_full'] = [len(selection)]
+    detectiondic['musewide_allobj_full']  = [int(Nwide)]
+    detectiondic['udfmosaic_allobj_full'] = [int(Nmosaic)]
+    detectiondic['udf10_allobj_full']     = [int(Nudf10)]
+    detectiondic['100fields_allobjUVrange_full'] = [len(selection)]
+    detectiondic['musewide_allobjUVrange_full']  = [int(Nwide)]
+    detectiondic['udfmosaic_allobjUVrange_full'] = [int(Nmosaic)]
+    detectiondic['udf10_allobjUVrange_full']     = [int(Nudf10)]
 
     if verbose: print('   o LAEs with at least one other detection')
     selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
@@ -11458,6 +11482,14 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
     Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
     if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+    detectiondic['100fields_allobj_LAEs'] = [len(selection)]
+    detectiondic['musewide_allobj_LAEs']  = [int(Nwide)]
+    detectiondic['udfmosaic_allobj_LAEs'] = [int(Nmosaic)]
+    detectiondic['udf10_allobj_LAEs']     = [int(Nudf10)]
+    detectiondic['100fields_allobjUVrange_LAEs'] = [len(selection)]
+    detectiondic['musewide_allobjUVrange_LAEs']  = [int(Nwide)]
+    detectiondic['udfmosaic_allobjUVrange_LAEs'] = [int(Nmosaic)]
+    detectiondic['udf10_allobjUVrange_LAEs']     = [int(Nudf10)]
 
     if verbose: print('   o Carbon emitters (either CIII or CIV detected) ')
     selection = np.where(( ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
@@ -11471,6 +11503,10 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
     Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
     if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+    detectiondic['100fields_CIIIorCIV_full'] = [len(selection)]
+    detectiondic['musewide_CIIIorCIV_full']  = [int(Nwide)]
+    detectiondic['udfmosaic_CIIIorCIV_full'] = [int(Nmosaic)]
+    detectiondic['udf10_CIIIorCIV_full']     = [int(Nudf10)]
 
     if verbose: print('   o LAEs with Carbon detection (either CIII or CIV detected)')
     selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
@@ -11484,6 +11520,10 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
     Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
     if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+    detectiondic['100fields_CIIIorCIV_LAEs'] = [len(selection)]
+    detectiondic['musewide_CIIIorCIV_LAEs']  = [int(Nwide)]
+    detectiondic['udfmosaic_CIIIorCIV_LAEs'] = [int(Nmosaic)]
+    detectiondic['udf10_CIIIorCIV_LAEs']     = [int(Nudf10)]
 
     for linesel in ['ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']:
         linename = linesel.split('err_')[-1]
@@ -11500,6 +11540,10 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
         Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
         Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
         if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+        detectiondic['100fields_'+linesel.split('_')[-1]+'_full'] = [len(selection)]
+        detectiondic['musewide_'+linesel.split('_')[-1]+'_full']  = [int(Nwide)]
+        detectiondic['udfmosaic_'+linesel.split('_')[-1]+'_full'] = [int(Nmosaic)]
+        detectiondic['udf10_'+linesel.split('_')[-1]+'_full']     = [int(Nudf10)]
 
     for linesel in ['ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']:
         linename = linesel.split('err_')[-1]
@@ -11516,7 +11560,178 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
         Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
         Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
         if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+' are in the Wide/Mosaic/UDF10 fields ')
+        detectiondic['100fields_'+linesel.split('_')[-1]+'_LAEs'] = [len(selection)]
+        detectiondic['musewide_'+linesel.split('_')[-1]+'_LAEs']  = [int(Nwide)]
+        detectiondic['udfmosaic_'+linesel.split('_')[-1]+'_LAEs'] = [int(Nmosaic)]
+        detectiondic['udf10_'+linesel.split('_')[-1]+'_LAEs']     = [int(Nudf10)]
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # Nall = len(masterdat['redshift'][(masterdat['redshift']>0) &
+    #                                  (masterdat['redshift']<4.9699) &
+    #                                  (masterdat['duplicationID'] == 0) &
+    #                                  (masterdat['id'] != 158002004) &
+    #                                  (masterdat['id'] != 601931670) &
+    #                                  (masterdat['id'] != 208014258) &
+    #                                  (masterdat['id'] != 600341002)])
+    # NLAE = len(masterdat['redshift'][(masterdat['redshift']>2.9) &
+    #                                  (masterdat['redshift']<4.9699) &
+    #                                  (masterdat['duplicationID'] == 0) &
+    #                                  (masterdat['id'] != 158002004) &
+    #                                  (masterdat['id'] != 601931670) &
+    #                                  (masterdat['id'] != 208014258) &
+    #                                  (masterdat['id'] != 600341002)])
+    # print('\n All/LAEs  = '+str(Nall)+'/'+str(NLAE))
+
+    zranges   = [[0,10.0],[0,4.9699],[1.5241,4.9699],[2.1114,4.9699],[1.9379,4.6411],
+                 [1.8969,4.5632],[1.5514,3.9067],[1.5241,3.8548],[0.7174,2.3142]]
+
+    if verbose: print('-------------------- Number counts in all 100 arcmin2 --------------------')
+    for zz, zr in enumerate(zranges):
+        Nall = len(masterdat['redshift'][(masterdat['redshift']>zr[0]) &
+                                         (masterdat['redshift']<zr[1]) &
+                                         (masterdat['duplicationID'] == 0) &
+                                         (masterdat['id'] != 158002004) &
+                                         (masterdat['id'] != 601931670) &
+                                         (masterdat['id'] != 208014258) &
+                                         (masterdat['id'] != 600341002)])
+        NLAE = len(masterdat['redshift'][(masterdat['redshift']>np.max([zr[0],2.9])) &
+                                         (masterdat['redshift']<zr[1]) &
+                                         (masterdat['duplicationID'] == 0) &
+                                         (masterdat['id'] != 158002004) &
+                                         (masterdat['id'] != 601931670) &
+                                         (masterdat['id'] != 208014258) &
+                                         (masterdat['id'] != 600341002)])
+
+        Nallwd = len(masterdat['redshift'][(masterdat['redshift']>zr[0]) &
+                                           (masterdat['redshift']<zr[1]) &
+                                           # (masterdat['duplicationID'] == 0) &
+                                           (masterdat['id'] != 158002004) &
+                                           (masterdat['id'] != 601931670) &
+                                           (masterdat['id'] != 208014258) &
+                                           (masterdat['id'] != 600341002)])
+        NLAEwd = len(masterdat['redshift'][(masterdat['redshift']>np.max([zr[0],2.9])) &
+                                           (masterdat['redshift']<zr[1]) &
+                                           # (masterdat['duplicationID'] == 0) &
+                                           (masterdat['id'] != 158002004) &
+                                           (masterdat['id'] != 601931670) &
+                                           (masterdat['id'] != 208014258) &
+                                           (masterdat['id'] != 600341002)])
+
+        if verbose: print(' [All/LAEs]_'+str("%-15s" % rangename[zz])+'  = '+str("%-4s" % Nall)+'/'+str("%-4s" % NLAE)+
+                          '  (with duplication '+str("%-4s" % Nallwd)+'/'+str("%-4s" % NLAEwd)+')')
+
+        detectiondic['100fields_'+rangename[zz]+'_full'].append(Nall)
+        detectiondic['100fields_'+rangename[zz]+'_LAEs'].append(NLAE)
+
+    if verbose: print('-------------------- Number counts in musewide (CDFS+PAR+COSMOS) --------------------')
+    for zz, zr in enumerate(zranges):
+        Nall = len(masterdat['redshift'][(masterdat['redshift']>zr[0]) &
+                                         (masterdat['redshift']<zr[1]) &
+                                         (masterdat['duplicationID'] == 0) &
+                                         (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) < 5) &
+                                         (masterdat['id'] != 158002004) &
+                                         (masterdat['id'] != 601931670) &
+                                         (masterdat['id'] != 208014258) &
+                                         (masterdat['id'] != 600341002)])
+        NLAE = len(masterdat['redshift'][(masterdat['redshift']>np.max([zr[0],2.9])) &
+                                         (masterdat['redshift']<zr[1]) &
+                                         (masterdat['duplicationID'] == 0) &
+                                         (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) < 5) &
+                                         (masterdat['id'] != 158002004) &
+                                         (masterdat['id'] != 601931670) &
+                                         (masterdat['id'] != 208014258) &
+                                         (masterdat['id'] != 600341002)])
+
+        Nallwd = len(masterdat['redshift'][(masterdat['redshift']>zr[0]) &
+                                           (masterdat['redshift']<zr[1]) &
+                                           # (masterdat['duplicationID'] == 0) &
+                                           (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) < 5) &
+                                           (masterdat['id'] != 158002004) &
+                                           (masterdat['id'] != 601931670) &
+                                           (masterdat['id'] != 208014258) &
+                                           (masterdat['id'] != 600341002)])
+        NLAEwd = len(masterdat['redshift'][(masterdat['redshift']>np.max([zr[0],2.9])) &
+                                           (masterdat['redshift']<zr[1]) &
+                                           # (masterdat['duplicationID'] == 0) &
+                                           (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) < 5) &
+                                           (masterdat['id'] != 158002004) &
+                                           (masterdat['id'] != 601931670) &
+                                           (masterdat['id'] != 208014258) &
+                                           (masterdat['id'] != 600341002)])
+
+        if verbose: print(' [All/LAEs]_'+str("%-15s" % rangename[zz])+'  = '+str("%-4s" % Nall)+'/'+str("%-4s" % NLAE)+
+                          '  (with duplication '+str("%-4s" % Nallwd)+'/'+str("%-4s" % NLAEwd)+')')
+        detectiondic['musewide_'+rangename[zz]+'_full'].append(Nall)
+        detectiondic['musewide_'+rangename[zz]+'_LAEs'].append(NLAE)
+
+    for ii, idst in enumerate(idstart):
+        if verbose: print('-------------------- Number counts in '+idstartname[ii]+' --------------------')
+        for zz, zr in enumerate(zranges):
+            Nall = len(masterdat['redshift'][(masterdat['redshift']>zr[0]) &
+                                             (masterdat['redshift']<zr[1]) &
+                                             (masterdat['duplicationID'] == 0) &
+                                             (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) == idst) &
+                                             (masterdat['id'] != 158002004) &
+                                             (masterdat['id'] != 601931670) &
+                                             (masterdat['id'] != 208014258) &
+                                             (masterdat['id'] != 600341002)])
+            NLAE = len(masterdat['redshift'][(masterdat['redshift']>np.max([zr[0],2.9])) &
+                                             (masterdat['redshift']<zr[1]) &
+                                             (masterdat['duplicationID'] == 0) &
+                                             (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) == idst) &
+                                             (masterdat['id'] != 158002004) &
+                                             (masterdat['id'] != 601931670) &
+                                             (masterdat['id'] != 208014258) &
+                                             (masterdat['id'] != 600341002)])
+
+            Nallwd = len(masterdat['redshift'][(masterdat['redshift']>zr[0]) &
+                                               (masterdat['redshift']<zr[1]) &
+                                               # (masterdat['duplicationID'] == 0) &
+                                               (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) == idst) &
+                                               (masterdat['id'] != 158002004) &
+                                               (masterdat['id'] != 601931670) &
+                                               (masterdat['id'] != 208014258) &
+                                               (masterdat['id'] != 600341002)])
+            NLAEwd = len(masterdat['redshift'][(masterdat['redshift']>np.max([zr[0],2.9])) &
+                                               (masterdat['redshift']<zr[1]) &
+                                               # (masterdat['duplicationID'] == 0) &
+                                               (np.asarray([int(str(mid)[0]) for mid in masterdat['id']]) == idst) &
+                                               (masterdat['id'] != 158002004) &
+                                               (masterdat['id'] != 601931670) &
+                                               (masterdat['id'] != 208014258) &
+                                               (masterdat['id'] != 600341002)])
+
+            if verbose: print(' [All/LAEs]_'+str("%-15s" % rangename[zz])+'  = '+str("%-4s" % Nall)+'/'+str("%-4s" % NLAE)+
+                              '  (with duplication '+str("%-4s" % Nallwd)+'/'+str("%-4s" % NLAEwd)+')')
+
+            detectiondic[idstartname[ii]+'_'+rangename[zz]+'_full'].append(Nall)
+            detectiondic[idstartname[ii]+'_'+rangename[zz]+'_LAEs'].append(NLAE)
+
+
+    if Nkeys_init != len(detectiondic.keys()):
+        print(' WARNING The intial number of keys in the detection dictionary has changed... ')
+        print('         Faulty key/entry added along the way... setting trace to investigate')
+        pdb.set_trace()
+    else:
+        print(' - - - - - - - - - - - Stats from detection dictionary - - - - - - - - - - -')
+        for key in detectiondic.keys():
+            if verbose:
+                if detectiondic[key][1] == 0:
+                    print(str("%-30s" % key)+str("%-20s" % detectiondic[key])+
+                          str("%20.4f" % (float(detectiondic[key][0])))+'%')
+                else:
+                    print(str("%-30s" % key)+str("%-20s" % detectiondic[key])+
+                          str("%20.4f" % (float(detectiondic[key][0])/float(detectiondic[key][1])*100.))+'%')
+
+                # if detectiondic[key] == [np.nan]:
+                #     print(str("%-20s" % key)+'[np.nan]')
+                # else:
+                #     print(str("%-20s" % key)+str(detectiondic[key]))
+
+        uves.plot_detectiondic(detectiondic,outdir='/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/',
+                               subsel='LAEs',verbose=verbose)
+        uves.plot_detectiondic(detectiondic,outdir='/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/',
+                               subsel='full',verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Looping over object lists and column sets to generate individual tables ')
@@ -11528,7 +11743,7 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
             ids       = masterdat['id'][goodent][sortindex]
             uves.mastercat_latextable(latexout,masterdat,infodat,columns,ids,overwrite=overwrite,verbose=verbose)
 
-
+    return detectiondic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=False,verbose=True):
     """
@@ -11716,7 +11931,188 @@ def convert_coordinates_deg2sex(coordinateset):
     for cc, raval in enumerate(ravals):
         print( str(raval.to_string(unit=u.hour, sep=':'))+' , '+str(decvals[cc].to_string(sep=':')) )
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_detectiondic(detectiondic,outdir='/Users/kschmidt/Desktop/',subsel='LAEs',verbose=True):
+    """
+    Generate a LaTeX table based on a master catalog restricting to certain columns and IDs
+
+    --- Example of use ---
+    see uves.mastercat_latextable_wrappers()
+
+    """
 
 
+    if verbose: print(' - Setting up and generating plot')
+    plotname = outdir+'detectiondicstats_'+subsel+'.pdf'
+    fig = plt.figure(figsize=(7, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+    Fsize    = 10
+    lthick   = 2
+    marksize = 6
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(inforstr[:-2],fontsize=Fsize)
+
+    tnames    = []
+    showkeys  = ['100fields_allobjUVrange_'+subsel,
+                 'musewide_allobjUVrange_'+subsel,
+                 'udfmosaic_allobjUVrange_'+subsel,
+                 'udf10_allobjUVrange_'+subsel,
+                 #----------,
+                 '100fields_CIIIorCIV_'+subsel,
+                 'musewide_CIIIorCIV_'+subsel,
+                 'udfmosaic_CIIIorCIV_'+subsel,
+                 'udf10_CIIIorCIV_'+subsel,
+                 #----------,
+                 '100fields_CIII_'+subsel,
+                 'musewide_CIII_'+subsel,
+                 'udfmosaic_CIII_'+subsel,
+                 'udf10_CIII_'+subsel,
+                 #----------,
+                 '100fields_CIV_'+subsel,
+                 'musewide_CIV_'+subsel,
+                 'udfmosaic_CIV_'+subsel,
+                 'udf10_CIV_'+subsel,
+                 #----------,
+                 '100fields_OIII_'+subsel,
+                 'musewide_OIII_'+subsel,
+                 'udfmosaic_OIII_'+subsel,
+                 'udf10_OIII_'+subsel,
+                 #----------,
+                 '100fields_SiIII_'+subsel,
+                 'musewide_SiIII_'+subsel,
+                 'udfmosaic_SiIII_'+subsel,
+                 'udf10_SiIII_'+subsel,
+                 #----------,
+                 '100fields_HeII_'+subsel,
+                 'musewide_HeII_'+subsel,
+                 'udfmosaic_HeII_'+subsel,
+                 'udf10_HeII_'+subsel,
+                 #----------,
+                 '100fields_MgII_'+subsel,
+                 'musewide_MgII_'+subsel,
+                 'udfmosaic_MgII_'+subsel,
+                 'udf10_MgII_'+subsel]
+
+    ticknames = {'100fields_allobjUVrange_'+subsel:'100 Fields allobjUVrange ',
+                 'musewide_allobjUVrange_'+subsel:'MUSE-Wide allobjUVrange ',
+                 'udfmosaic_allobjUVrange_'+subsel:'UDF mosaic allobjUVrange ',
+                 'udf10_allobjUVrange_'+subsel:'UDF-10 allobjUVrange ',
+                 #----------,
+                 '100fields_CIIIorCIV_'+subsel:'100 Fields CIII or CIV ',
+                 'musewide_CIIIorCIV_'+subsel:'MUSE-Wide CIII or CIV ',
+                 'udfmosaic_CIIIorCIV_'+subsel:'UDF mosaic CIII or CIV ',
+                 'udf10_CIIIorCIV_'+subsel:'UDF-10 CIII or CIV ',
+                 #----------,
+                 '100fields_CIII_'+subsel:'100 Fields CIII ',
+                 'musewide_CIII_'+subsel:'MUSE-Wide CIII ',
+                 'udfmosaic_CIII_'+subsel:'UDF mosaic CIII ',
+                 'udf10_CIII_'+subsel:'UDF-10 CIII ',
+                 #----------,
+                 '100fields_CIV_'+subsel:'100 Fields CIV ',
+                 'musewide_CIV_'+subsel:'MUSE-Wide CIV ',
+                 'udfmosaic_CIV_'+subsel:'UDF mosaic CIV ',
+                 'udf10_CIV_'+subsel:'UDF-10 CIV ',
+                 #----------,
+                 '100fields_OIII_'+subsel:'100 Fields OIII ',
+                 'musewide_OIII_'+subsel:'MUSE-Wide OIII ',
+                 'udfmosaic_OIII_'+subsel:'UDF mosaic OIII ',
+                 'udf10_OIII_'+subsel:'UDF-10 OIII ',
+                 #----------,
+                 '100fields_SiIII_'+subsel:'100 Fields SiIII ',
+                 'musewide_SiIII_'+subsel:'MUSE-Wide SiIII ',
+                 'udfmosaic_SiIII_'+subsel:'UDF mosaic SiIII ',
+                 'udf10_SiIII_'+subsel:'UDF-10 SiIII ',
+                 #----------,
+                 '100fields_HeII_'+subsel:'100 Fields HeII ',
+                 'musewide_HeII_'+subsel:'MUSE-Wide HeII ',
+                 'udfmosaic_HeII_'+subsel:'UDF mosaic HeII ',
+                 'udf10_HeII_'+subsel:'UDF-10 HeII ',
+                 #----------,
+                 '100fields_MgII_'+subsel:'100 Fields MgII ',
+                 'musewide_MgII_'+subsel:'MUSE-Wide MgII ',
+                 'udfmosaic_MgII_'+subsel:'UDF mosaic MgII ',
+                 'udf10_MgII_'+subsel:'UDF-10 MgII '}
+    Nobjdet   = []
+    Nobjtot   = []
+    xvalues   = []
+    yvalues   = []
+
+    for ss, dickey in enumerate(showkeys):
+        tnames.append(ticknames[dickey])
+        Nobjdet.append(detectiondic[dickey][0])
+        Nobjtot.append(detectiondic[dickey][1])
+        xvalues.append((ss+1))
+        if detectiondic[dickey][1] == 0:
+            yvalues.append(0.0)
+        else:
+            yvalues.append(float(detectiondic[dickey][0])/float(detectiondic[dickey][1])*100.)
+
+    xerr    = [None]*len(xvalues)
+    yerr    = [None]*len(xvalues)
+
+    plt.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color='darkgray')
+    # plt.errorbar(xvalues,yvalues,xerr=xerr,yerr=yerr,
+    #              marker='o',lw=lthick, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='blue',ecolor='blue',
+    #              markeredgecolor='black',zorder=10)
+
+    plt.ylabel('\% of objects with FELIS UV detection')
+
+    plt.xticks(xvalues, tnames, rotation='vertical')
+
+    #--------- RANGES ---------
+    xrange = [0,len(xvalues)+1]
+
+    if subsel == 'LAEs':
+        yrange = [0,20]
+    else:
+        yrange = [0,110]
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+
+    numbertext = [str(Nobjdet[ii])+'/'+str(Nobjtot[ii]) for ii in np.arange(len(xvalues))]
+    for tt, nt in enumerate(numbertext):
+        plt.text(xvalues[tt],yrange[1]*0.85,nt, fontsize=Fsize, rotation=90,
+                 horizontalalignment='center',verticalalignment='center')
+
+    Nseperators   = 7
+    linepositions = (np.arange(Nseperators)+1)*4+0.5
+    for linepos in linepositions:
+        plt.plot([linepos,linepos],yrange,'--',color='gray',lw=lthick)
+
+    # if logx:
+    #     plt.xscale('log')
+    # if logy:
+    #     plt.yscale('log')
+
+    #--------- LEGEND ---------
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N\_'+key+' $>$ 3)')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label='MW LAE (S/N\_'+key+' $<$ 3)')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker=r'$\nearrow$',lw=0, markersize=marksize*2,alpha=1.0,
+    #              markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,
+    #              label='MW LAE (HST non-det. lower limit)')
+    #
+    #
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+    #
+    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.7},ncol=3,numpoints=1,
+    #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
