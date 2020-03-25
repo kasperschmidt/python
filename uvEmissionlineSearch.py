@@ -5010,55 +5010,23 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 else:
                     xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
-            # drawLaTeXarrows = False
-            # if drawLaTeXarrows:
-            #     markerscale = 3.0
-            #     if (int(xerr[ii]) == -99) & (int(yerr[ii]) == -99):
-            #         markersym ='$\\nearrow$'
-            #         ms        = marksize * markerscale
-            #         xerr[ii]  = None
-            #         yerr[ii]  = None
-            #     elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == +99):
-            #         markersym ='$\swarrow$'
-            #         ms        = marksize * markerscale
-            #         xerr[ii]  = None
-            #         yerr[ii]  = None
-            #     elif (int(xerr[ii]) == -99) & (int(yerr[ii]) == +99):
-            #         markersym ='$\\nwarrow$'
-            #         ms        = marksize * markerscale
-            #         xerr[ii]  = None
-            #         yerr[ii]  = None
-            #     elif (int(xerr[ii]) == +99) & (int(yerr[ii]) == -99):
-            #         markersym ='$\searrow$'
-            #         ms        = marksize * markerscale
-            #         xerr[ii]  = None
-            #         yerr[ii]  = None
-            #     elif (int(xerr[ii]) == -99) & (int(yerr[ii]) not in [-99,0,+99]):
-            #         markersym ='$\rightarrow$'
-            #         ms        = marksize * markerscale
-            #         xerr[ii]  = None
-            #     elif (int(xerr[ii]) == +99) & (int(yerr[ii]) not in [-99,0,+99]):
-            #         markersym ='$\leftarrow$'
-            #         ms        = marksize * markerscale
-            #         xerr[ii]  = None
-            #     elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == -99):
-            #         markersym ='$\uparrow$'
-            #         ms        = marksize * markerscale
-            #         yerr[ii]  = None
-            #     elif (int(xerr[ii]) not in [-99,0,+99]) & (int(yerr[ii]) == +99):
-            #         markersym ='$\downarrow$'
-            #         ms        = marksize * markerscale
-            #         yerr[ii]  = None
-            #     elif (int(xerr[ii]) == 0) or (int(yerr[ii]) == 0):
-            #         xvalues[ii] = None
-            #         yvalues[ii] = None
-
+            # change color of limits
+            if y_uplimarr[ii] or y_lolimarr[ii] or x_uplimarr[ii] or x_lolimarr[ii]:
+                ecol         = 'darkgray'
+                mecol        = 'darkgray'
+                fcol         = 'darkgray'
+                markerzorder = 18
+            else:
+                ecol         = colvec[ii]
+                mecol        = colvec[ii]
+                fcol         = facecol[ii]
+                markerzorder = 20
 
             plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],capthick=0.5,
                          uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
                          marker=markersym,lw=lthick/2., markersize=ms,alpha=alphaval,
-                         markerfacecolor=facecol[ii],ecolor=colvec[ii],
-                         markeredgecolor=colvec[ii],zorder=20)
+                         markerfacecolor=fcol,ecolor=ecol,
+                         markeredgecolor=mecol,zorder=markerzorder)
 
         if linetype == 'horizontal':
             plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
@@ -5284,12 +5252,15 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
 
     if varyparam == 'Zgas':
         # colortickvals   = [1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 0.003048, 4e-3, 6e-3, 8e-3, 0.01, 0.01524, 0.02, 0.03, 0.04, 0.07] # 0.014, 0.017,
-        colortickvals   = [1e-4, 3e-4, 7e-4, 1e-4, 0.003048, 0.007, 0.01524, 0.03, 0.07]
-        colorlabels     = [ str(ct) for ct in colortickvals]
-        colorlabels[4]  =  '0.2Z$_\odot$' # = 0.003048
-        colorlabels[6] =  'Z$_\odot$'     # = 0.01524
+        Zsolar          = 0.01524
+        colortickvals   = np.array([0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 4.0])*Zsolar
+        #colortickvals   = [1e-4, 3e-4, 7e-4, 1e-4, 0.003048, 0.007, 0.01524, 0.03, 0.07]
+        # colorlabels     = [ str(ct) for ct in colortickvals]
+        # colorlabels[4]  =  '0.2Z$_\odot$' # = 0.003048
+        # colorlabels[6] =  'Z$_\odot$'     # = 0.01524
+        colorlabels     = ['0.01', '0.02', '0.05', '0.1', '0.2', '0.5', '1.0', '2.0', '4.0']
         colortickvals   = np.log10(np.asarray(colortickvals))
-        cbarlegend      = legenddic[varyparam]
+        cbarlegend      = r'Z$_\textrm{gas}$/Z$_\odot$' # legenddic[varyparam]
     elif varyparam == 'logUs':
         colortickvals = [-5.0,-4.5,-4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0]
         colorlabels   = [ str(ct) for ct in colortickvals]
@@ -6860,22 +6831,22 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
     # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
     linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
-    # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
-    # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
+    linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
+    linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
     # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
-    # linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
+    linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
     # linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
     # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
     # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
-    # linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
     #
-    # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
-    # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
+    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+    linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
     linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
     linesetlist.append(['CIII','CIV','OIII','SiIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
-    # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
     Nhistbins = 30
     histaxes  = False
@@ -6952,7 +6923,6 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             if len(ylimits_ent) > 0:
                 yvalues[ylimits_ent] = yerr[ylimits_ent] * Nsigma
                 yerr[ylimits_ent]    = +99 # upper limit
-
     else:
         plotname = plotbasename+'_lineratios_'+line1+line2+'vs'+line3+line4+\
                    '_Nsigma'+str(Nsigma).replace('.','p')+\
