@@ -14,6 +14,7 @@ from astropy import wcs
 from astropy.coordinates import SkyCoord
 import datetime
 import felis
+import matplotlib.pyplot as plt
 import glob
 import pdb
 import collections
@@ -2136,5 +2137,180 @@ def subcatalogs_paramselection(maglim=25.0,skeltonwhitakermag='606',generateDS9r
                                      color=regioncolor,circlesize=regionsize,clobber=overwrite)
         except:
             print(' ------> WARNING: Not able to generate fits selection for '+fitscat+','+str(columns)+','+str(ranges))
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def explore_WitakerCatalog(overwrite=False,verbose=True):
+    """
+    Producing region files and stats on the Whitaker catalog to explore potetial issues with magnitudes/fluxes.
+
+    --- EXAMPLE OF USE ---
+    import MUSEWideUtilities as mwu
+    mwu.explore_WitakerCatalog()
+
+    """
+    outdir   = '/Users/kschmidt/work/catalogs/whitaker/explorecat/'
+    fitscat  = '/Users/kschmidt/work/catalogs/whitaker/hlsp_hlf_hst_60mas_goodss_v2.0_catalog.fits'
+    fitsdat  = afits.open(fitscat)[1].data
+    radeccol = ['ra','dec']
+
+    cuts_mag_min   = np.array([10.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0])
+    cuts_mag_max   = np.array([22.0,23.0,24.0,25.0,26.0,27.0,28.0,40.0])
+    cuts_flux_min  = 10**((cuts_mag_max-25.0)/-2.5) # notice swap of min/max mags
+    cuts_flux_max  = 10**((cuts_mag_min-25.0)/-2.5) # notice swap of min/max mags
+    cuts_sizes     = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3]
+    cuts_col       = ['purple','blue','cyan','green','yellow','orange','red','magenta']
+
+
+    colnames = ['f606w','f775w','f814w','f850lp']
+    # colnames = ['f775w']
+    markers  = ['o','s','*','p']
+
+    setnames = ['flux','magAB']
+
+    objfracsloc = [16.0,22.5,23.5,24.5,25.5,26.5,27.5,34.0,41.0,42.]
+    objfracserr = [6.0,0.5,0.5,0.5,0.5,0.5,0.5,6.0,0.0,0.0]
+
+    for setname in setnames:
+        for cn, colname in enumerate(colnames):
+            print('------------------ looking at '+setname+' for '+colname+' ------------------        ')
+            objfracs    = []
+            if setname == 'flux':
+                cutsmin = cuts_flux_min
+                cutsmax = cuts_flux_max
+
+                selvec = fitsdat['f_'+colname]
+
+            if setname == 'magAB':
+                cutsmin = cuts_mag_min
+                cutsmax = cuts_mag_max
+
+                selvec = -2.5*np.log10(fitsdat['f_'+colname]) + 25
+
+            idlist         = np.array([])
+            for cc, cmm in enumerate(cuts_mag_min):
+                selent = np.where((selvec > cutsmin[cc]) & (selvec <= cutsmax[cc]))[0]
+                idlist = np.append(idlist,fitsdat['id'][selent])
+
+                kbs.create_DS9region(outdir+'ds9region_'+setname+'_'+
+                                     str(cutsmin[cc]).replace('.','p')+'LT'+colname+'LT'+str(cutsmax[cc]).replace('.','p')+'.reg',
+                                     fitsdat['ra'][selent],fitsdat['dec'][selent],
+                                     color=cuts_col[cc],circlesize=cuts_sizes[cc],clobber=overwrite)
+
+                objfrac = np.float(len(selent))/np.float(len(selvec))
+                print(' -> cut: '+str(cutsmin[cc]) +' < '+setname+' '+colname+' < '+str(cutsmax[cc]))
+                print('    Nobj   = '+str(len(selent)))+' / '+str(len(selvec))+\
+                ' ('+str("%8.4f" % objfrac)+')'
+                print('    std    = '+str(np.std(selvec[selent])))
+                print('    mean   = '+str(np.mean(selvec[selent])))
+                print('    median = '+str(np.median(selvec[selent])))
+                print('    min    = '+str(np.min(selvec[selent])))
+                print('    max    = '+str(np.max(selvec[selent])))
+
+                if setname == 'flux':
+                    objfracs.append(objfrac)
+
+            # - - - - - - - BAD ENT - - - - - - -
+            badcol = 'black'
+            badent = []
+            for ii, id in enumerate(fitsdat['id']):
+                if id not in idlist:
+                    badent.append(ii)
+
+            kbs.create_DS9region(outdir+'ds9region_'+setname+'_'+colname+'_badobj_notinotherregions.reg',
+                                 fitsdat['ra'][badent],fitsdat['dec'][badent],
+                                 color=badcol,circlesize=0.55,clobber=overwrite)
+
+            objfrac = np.float(len(badent))/np.float(len(selvec))
+            print(' -> cut: '+setname+' '+colname+' entries not in above cuts (bad objects)')
+            print('    Nobj   = '+str(len(badent)))+' / '+str(len(selvec))+\
+            ' ('+str("%8.4f" % objfrac)+')'
+            print('    std    = '+str(np.std(selvec[badent])))
+            print('    mean   = '+str(np.mean(selvec[badent])))
+            print('    median = '+str(np.median(selvec[badent])))
+            print('    min    = '+str(np.min(selvec[badent])))
+            print('    max    = '+str(np.max(selvec[badent])))
+
+            finitevals = selvec[badent][np.isfinite(selvec[badent])]
+            if len(finitevals) > 0:
+                finitefrac = np.float(len(finitevals))/np.float(len(selvec))
+                print('    - - - - For finite values ('+str(len(finitevals))+' entries)- - - -    ')
+                print('    std    = '+str(np.std(finitevals)))
+                print('    mean   = '+str(np.mean(finitevals)))
+                print('    median = '+str(np.median(finitevals)))
+                print('    min    = '+str(np.min(finitevals)))
+                print('    max    = '+str(np.max(finitevals)))
+            else:
+                finitefrac = 0.0
+                print(' No "isfinite" values; probably all NaNs')
+
+            if setname == 'flux':
+                objfracs.append(objfrac)
+                objfracs.append(finitefrac)
+
+                # - - - - - - - PLOTTING - - - - - - -
+                plotname = outdir+'objectfractions_magAB_'+colname+'.pdf'
+                print(' - Generating '+plotname)
+                fig = plt.figure(figsize=(10, 3))
+                fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.06, right=0.95, bottom=0.15, top=0.95)
+                Fsize  = 10
+                lthick = 1
+                plt.rc('text', usetex=True)
+                plt.rc('font', family='serif',size=Fsize)
+                plt.rc('xtick', labelsize=Fsize)
+                plt.rc('ytick', labelsize=Fsize)
+                plt.clf()
+                plt.ioff()
+
+                fracolors = cuts_col+['gray','black']
+                for ii, xloc in enumerate(objfracsloc):
+                    xerr = objfracserr[ii]
+                    yloc = objfracs[ii]
+                    fcol = fracolors[ii]
+
+                    plt.errorbar(xloc,yloc,xerr=xerr,yerr=None,
+                                 marker=markers[cn],lw=lthick, markersize=5.0,alpha=1.0,
+                                 markerfacecolor=fcol,ecolor=fcol,
+                                 markeredgecolor=fcol,zorder=10)
+
+                plt.text(42.5,objfracs[-1],colname,
+                         horizontalalignment='left',verticalalignment='center')
+
+                plt.xlabel('magAB', fontsize=Fsize)
+                plt.ylabel('Fraction of objects ', fontsize=Fsize)
+
+                plt.xlim([9,45])
+                plt.ylim([0.0,1.0])
+
+                # leg = plt.legend(fancybox=True, loc='upper right',prop={'size':Fsize},ncol=1,numpoints=1,
+                #                  bbox_to_anchor=(1.25, 1.03))  # add the legend
+                # leg.get_frame().set_alpha(0.7)
+
+                plt.savefig(plotname)
+                plt.clf()
+                plt.close('all')
+
+                if len(finitevals) > 0:
+                    plotname = outdir+'distribution_objectsnotselected_'+colname+'.pdf'
+                    print(' - Generating '+plotname)
+                    fig = plt.figure(figsize=(5, 5))
+                    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.15, top=0.95)
+                    Fsize  = 10
+                    lthick = 1
+                    plt.rc('text', usetex=True)
+                    plt.rc('font', family='serif',size=Fsize)
+                    plt.rc('xtick', labelsize=Fsize)
+                    plt.rc('ytick', labelsize=Fsize)
+                    plt.clf()
+                    plt.ioff()
+
+                    plt.hist(finitevals,bins=50,color='black')
+                    plt.ylim([0.0,150000])
+
+                    plt.xlabel('Finite flux values not in magnitude selections', fontsize=Fsize)
+                    plt.ylabel(' ', fontsize=Fsize)
+
+                    plt.savefig(plotname)
+                    plt.clf()
+                    plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
