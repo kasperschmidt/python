@@ -12316,5 +12316,84 @@ def plot_detectiondic(detectiondic,outdir='/Users/kschmidt/Desktop/',subsel='LAE
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True):
+    """
+    Function estimating the gas-phase abundances (12 + log([O/H])) using the fitting formulas
+    described in Byler et al. (2020) eqautions 7 and 8.
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    kbswork      = '/Users/kschmidt/work/'
+
+    linefluxfile = kbswork+'catalogs/literaturecollection_emissionlinestrengths/literaturecollection_emissionlinestrengths.fits'
+    id_Si3O3C3, Z_Si3O3C3, Z_Si3O3C3_err, id_He2O3C3, Z_He2O3C3, Z_He2O3C3_err  = uves.estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True)
+
+    linefluxfile = kbswork+'MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    id_Si3O3C3, Z_Si3O3C3, Z_Si3O3C3_err, id_He2O3C3, Z_He2O3C3, Z_He2O3C3_err  = uves.estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True)
+
+    """
+    fdat = afits.open(linefluxfile)[1].data
+
+    goodent_OCC_det = np.where(np.isfinite(fdat['f_OIII2'])  & (np.abs(fdat['ferr_OIII2'])  != 99)  &
+                               np.isfinite(fdat['f_CIII1'])  & (np.abs(fdat['ferr_CIII'])   != 99))[0]
+
+    goodent_SCC_det = np.where(np.isfinite(fdat['f_SiIII1']) & (np.abs(fdat['ferr_SiIII1']) != 99)  &
+                               np.isfinite(fdat['f_CIII1'])  & (np.abs(fdat['ferr_CIII'])   != 99))[0]
+
+    goodent_HCC_det = np.where(np.isfinite(fdat['f_HeII'])   & (np.abs(fdat['ferr_HeII'])   != 99)  &
+                               np.isfinite(fdat['f_CIII1'])  & (np.abs(fdat['ferr_CIII'])   != 99))[0]
+
+    # - - - - - - - - - - - - 12 + log([O/H]) for Si3-O3-C3; Byler+20 Eq. 7 - - - - - - - - - - - -
+    ent_Z_Si3O3C3  = np.intersect1d(goodent_OCC_det,goodent_SCC_det)
+    if len(ent_Z_Si3O3C3) > 0:
+        print(' - Calculating '+str(len(ent_Z_Si3O3C3))+' estimates of 12 + log([O/H]) for Si3-O3-C3')
+        id_Si3O3C3 = fdat['id'][ent_Z_Si3O3C3]
+        fOIII2     = fdat['f_OIII2'][ent_Z_Si3O3C3]
+        fCIII      = fdat['f_CIII'][ent_Z_Si3O3C3]
+        fSiIII1    = fdat['f_SiIII1'][ent_Z_Si3O3C3]
+
+        OCC = np.log10( fOIII2  / (fCIII) )
+        SCC = np.log10( fSiIII1 / (fCIII) )
+
+        Z_Si3O3C3 = 3.09 + \
+                    0.09  * OCC - 1.71  * OCC**2.0 - 0.73 * OCC**3.0 - \
+                    16.51 * SCC - 19.84 * SCC**2.0 - 6.26 * SCC**3.0 + \
+                    4.79  * OCC * SCC - 0.28 * OCC * SCC**2.0 + 1.67 * OCC**2.0 * SCC
+
+        Z_Si3O3C3_err = len(OCC)*[0.0]
+    else:
+        print(' - No estimates of 12 + log([O/H]) for Si3-O3-C3 to return ')
+        id_Si3O3C3    = np.nan
+        Z_Si3O3C3     = np.nan
+        Z_Si3O3C3_err = np.nan
+
+    # - - - - - - - - - - - - 12 + log([O/H]) for He2-O3-C3; Byler+20 Eq. 8 - - - - - - - - - - - -
+    ent_Z_He2O3C3 = np.intersect1d(goodent_OCC_det,goodent_HCC_det)
+    if len(ent_Z_He2O3C3) > 0:
+        print(' - Calculating '+str(len(ent_Z_He2O3C3))+' estimates of 12 + log([O/H]) for He2-O3-C3')
+        id_He2O3C3 = fdat['id'][ent_Z_He2O3C3]
+        fOIII2     = fdat['f_OIII2'][ent_Z_He2O3C3]
+        fCIII      = fdat['f_CIII'][ent_Z_He2O3C3]
+        fHeII    = fdat['f_HeII'][ent_Z_He2O3C3]
+
+        OCC = np.log10( fOIII2  / (fCIII) )
+        HCC = np.log10( fHeII  / (fCIII) )
+
+        Z_He2O3C3 = 6.88 - \
+                    1.13  * OCC - 0.46  * OCC**2.0 - 0.03 * OCC**3.0 - \
+                    0.61  * HCC - 0.02  * HCC**2.0 - 0.04 * HCC**3.0 - \
+                    0.32  * OCC * HCC + 0.03 * OCC * HCC**2.0 - 0.21 * OCC**2.0 * HCC
+
+        Z_He2O3C3_err = len(OCC)*[0.0]
+    else:
+        print(' - No estimates of 12 + log([O/H]) for He2-O3-C3 to return ')
+        id_He2O3C3    = np.nan
+        Z_He2O3C3     = np.nan
+        Z_He2O3C3_err = np.nan
+
+
+    return id_Si3O3C3, Z_Si3O3C3, Z_Si3O3C3_err, id_He2O3C3, Z_He2O3C3, Z_He2O3C3_err
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
