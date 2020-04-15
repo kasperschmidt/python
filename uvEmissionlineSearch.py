@@ -4852,7 +4852,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             rect_histy = [left_h, bottom, 0.2, height]
         else:
             fig = plt.figure(2, figsize=(6, 5))
-            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.16, right=0.97, bottom=0.15, top=0.95)
 
         Fsize    = 14
         lthick   = 2
@@ -4895,6 +4895,16 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cmin    = 0.0
                 cmax    = 200.0
                 cextend = 'both'
+            elif colortype == 'f(CIII) [1e-20 erg/s/cm$^2$]':
+                clabel  = colortype
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
+            elif colortype.lower() == 'zmanual':
+                clabel  = '$z$'
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
             elif colortype.lower() == 'ew_0':
                 clabel  = 'EW$_0$(Ly$\\alpha$) [\AA]'
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
@@ -4969,6 +4979,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
             # checking for upper/lower limits
             if ids is not None:
+                mfc         = True
                 if (ids[ii] < 6e8): # CDFS and COSMOS
                     markersym   = 'o'
                 elif (ids[ii] < 7e8) & (ids[ii] > 6e8): # UDF
@@ -4977,6 +4988,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     markersym   = 'X'
                 elif (ids[ii] > 1e9): # Literature objects
                     markersym   = lce.get_reference_fromID(ids[ii],verbose=False)[4]
+                    mfc         = False
                 else:
                     print(' WARNING - stopped as could not assing a marker symbol to the id '+str(ids[ii]))
                     pdb.set_trace()
@@ -5022,10 +5034,15 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 fcol         = facecol[ii]
                 markerzorder = 20
 
+            if mfc:
+                markerfacecolor = fcol
+            else:
+                markerfacecolor = 'None'
+
             plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],capthick=0.5,
                          uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
                          marker=markersym,lw=lthick/2., markersize=ms,alpha=alphaval,
-                         markerfacecolor=fcol,ecolor=ecol,
+                         markerfacecolor=markerfacecolor,ecolor=ecol,
                          markeredgecolor=mecol,zorder=markerzorder)
 
         if linetype == 'horizontal':
@@ -5035,6 +5052,8 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         elif linetype == 'plus':
             plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
             plt.plot([0,0],[-1e5,1e5],'--',color='black',lw=lthick,zorder=10)
+        elif (str(linetype).lower == 'none') or (linetype is None) :
+            pass
         else:
             sys.exit(' Unknown value of linetype = "'+linetype+'"')
 
@@ -5109,10 +5128,10 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         # leg.get_frame().set_alpha(0.7)
         #--------------------------
 
-    if verbose: print('   Saving plot to '+plotname)
-    plt.savefig(plotname)
-    plt.clf()
-    plt.close('all')
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -12361,7 +12380,7 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
                     16.51 * SCC - 19.84 * SCC**2.0 - 6.26 * SCC**3.0 + \
                     4.79  * OCC * SCC - 0.28 * OCC * SCC**2.0 + 1.67 * OCC**2.0 * SCC
 
-        Z_Si3O3C3_err = len(OCC)*[0.0]
+        Z_Si3O3C3_err = np.asarray(len(OCC)*[0.0])
     else:
         print(' - No estimates of 12 + log([O/H]) for Si3-O3-C3 to return ')
         id_Si3O3C3    = np.nan
@@ -12385,7 +12404,7 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
                     0.61  * HCC - 0.02  * HCC**2.0 - 0.04 * HCC**3.0 - \
                     0.32  * OCC * HCC + 0.03 * OCC * HCC**2.0 - 0.21 * OCC**2.0 * HCC
 
-        Z_He2O3C3_err = len(OCC)*[0.0]
+        Z_He2O3C3_err = np.asarray(len(OCC)*[0.0])
     else:
         print(' - No estimates of 12 + log([O/H]) for He2-O3-C3 to return ')
         id_He2O3C3    = np.nan
@@ -12395,5 +12414,205 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
 
     return id_Si3O3C3, Z_Si3O3C3, Z_Si3O3C3_err, id_He2O3C3, Z_He2O3C3, Z_He2O3C3_err
 
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbose=True):
+    """
+    Plotting gas phase abundances estimate with uves.estimateGasPhaseAbundanceFromBylerFittingFunctions()
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/BylerAbundanceFigures/'
+    uves.plot_GasPhaseAbundances(outputdir,overwrite=False,withliterature=False,verbose=True)
+
+    """
+    kbswork      = '/Users/kschmidt/work/'
+
+    # - - - - - - get entries for UVES results - - - - - -
+    if verbose: print(' - Estimate abundances for UVES detections ')
+    linefluxfile_uves  = kbswork+'MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    fdat_uves         = afits.open(linefluxfile_uves)[1].data
+
+    id_Si3O3C3_uves, Z_Si3O3C3_uves, Z_Si3O3C3_err_uves, id_He2O3C3_uves, Z_He2O3C3_uves, Z_He2O3C3_err_uves  = \
+        uves.estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile_uves,verbose=True)
+
+    bothest_id_uves             = np.intersect1d(id_Si3O3C3_uves,id_He2O3C3_uves)
+    bothest_ent_uves            = []
+    bothest_ent_Si3O3C3_uves    = []
+    bothest_ent_He2O3C3_uves    = []
+    ent_Si3O3C3_uves    = []
+    ent_He2O3C3_uves    = []
+    for ent, objid in enumerate(fdat_uves['id']):
+        if objid in bothest_id_uves:
+            bothest_ent_uves.append(ent)
+        if objid in id_Si3O3C3_uves:
+            ent_Si3O3C3_uves.append(ent)
+            if objid in bothest_id_uves:
+                bothest_ent_Si3O3C3_uves.append(ent)
+        if objid in id_He2O3C3_uves:
+            ent_He2O3C3_uves.append(ent)
+            if objid in bothest_id_uves:
+                bothest_ent_He2O3C3_uves.append(ent)
+
+    bothest_ent_Si3O3C3_uves_Z  = []
+    for ent, objid in enumerate(id_Si3O3C3_uves):
+        if objid in bothest_id_uves:
+            bothest_ent_Si3O3C3_uves_Z.append(ent)
+
+    bothest_ent_He2O3C3_uves_Z  = []
+    for ent, objid in enumerate(id_He2O3C3_uves):
+        if objid in bothest_id_uves:
+            bothest_ent_He2O3C3_uves_Z.append(ent)
+
+    # - - - - - - get entries for literature results - - - - - -
+    if verbose: print(' - Estimate abundances for literature collection ')
+    linefluxfile_lit  = kbswork+'catalogs/literaturecollection_emissionlinestrengths/literaturecollection_emissionlinestrengths.fits'
+    fdat_lit          = afits.open(linefluxfile_lit)[1].data
+    id_Si3O3C3_lit, Z_Si3O3C3_lit, Z_Si3O3C3_err_lit, id_He2O3C3_lit, Z_He2O3C3_lit, Z_He2O3C3_err_lit  =\
+        uves.estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile_lit,verbose=True)
+
+    bothest_id_lit             = np.intersect1d(id_Si3O3C3_lit,id_He2O3C3_lit)
+    bothest_ent_lit            = []
+    bothest_ent_Si3O3C3_lit    = []
+    bothest_ent_He2O3C3_lit    = []
+    ent_Si3O3C3_lit    = []
+    ent_He2O3C3_lit    = []
+    for ent, objid in enumerate(fdat_lit['id']):
+        if objid in bothest_id_lit:
+            bothest_ent_lit.append(ent)
+        if objid in id_Si3O3C3_lit:
+            ent_Si3O3C3_lit.append(ent)
+            if objid in bothest_id_lit:
+                bothest_ent_Si3O3C3_lit.append(ent)
+        if objid in id_He2O3C3_lit:
+            ent_He2O3C3_lit.append(ent)
+            if objid in bothest_id_lit:
+                bothest_ent_He2O3C3_lit.append(ent)
+
+    bothest_ent_Si3O3C3_lit_Z  = []
+    for ent, objid in enumerate(id_Si3O3C3_lit):
+        if objid in bothest_id_lit:
+            bothest_ent_Si3O3C3_lit_Z.append(ent)
+
+    bothest_ent_He2O3C3_lit_Z  = []
+    for ent, objid in enumerate(id_He2O3C3_lit):
+        if objid in bothest_id_lit:
+            bothest_ent_He2O3C3_lit_Z.append(ent)
+
+    # - - - - - - - - - - - - - - - - Generate Plots of abundances - - - - - - - - - - - - - - - -
+    if verbose: print('\n ----- Generating plots ----- ')
+
+    # - - - - - - Si3O3C3 vs He2O3C3     - - - - - -
+    plotname   = outputdir+'Byler_abundanceplot_Si3O3C3vsHe2O3C3_uves.pdf'
+    xvalues    = Z_Si3O3C3_uves[bothest_ent_Si3O3C3_uves_Z]
+    yvalues    = Z_He2O3C3_uves[bothest_ent_He2O3C3_uves_Z]
+    xerr       = Z_Si3O3C3_err_uves[bothest_ent_Si3O3C3_uves_Z]
+    yerr       = Z_He2O3C3_err_uves[bothest_ent_He2O3C3_uves_Z]
+    IDsALL     = bothest_id_uves
+    cdatvec    = fdat_uves['redshift'][bothest_ent_uves]
+    point_text = None #bothest_id_uves.astype(str)
+
+    if withliterature:
+        plotname   = plotname.replace('.pdf','AndLiterature.pdf')
+        xvalues    = np.append(xvalues,    Z_Si3O3C3_lit[bothest_ent_Si3O3C3_lit_Z])
+        yvalues    = np.append(yvalues,    Z_He2O3C3_lit[bothest_ent_He2O3C3_lit_Z])
+        xerr       = np.append(xerr,       Z_Si3O3C3_err_lit[bothest_ent_Si3O3C3_lit_Z])
+        yerr       = np.append(yerr,       Z_He2O3C3_err_lit[bothest_ent_He2O3C3_lit_Z])
+        IDsALL     = np.append(IDsALL,     bothest_id_lit)
+        cdatvec    = np.append(cdatvec,    fdat_lit['redshift'][bothest_ent_lit])
+        point_text = None #np.append(point_text, bothest_id_lit.astype(str))
+
+    xlabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1883, OIII1666 and CIII1908}'
+    ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
+    colortype  = 'zmanual'
+    colorcode  = True
+    yrange     = [7.,9.]
+    xrange     = [7.,9.]
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                   'dummydat',linetype='onetoone',title=None,ids=IDsALL,
+                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
+                                                   point_text=point_text,photoionizationplotparam=None,
+                                                   histaxes=False,Nbins=None,
+                                                   overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - Si3O3C3 vs redshift    - - - - - -
+    plotname   = outputdir+'Byler_abundanceplot_zvsSi3O3C3_uves.pdf'
+    xvalues    = fdat_uves['redshift'][ent_Si3O3C3_uves]
+    yvalues    = Z_Si3O3C3_uves
+    xerr       = [None]*len(Z_Si3O3C3_uves)
+    yerr       = Z_Si3O3C3_err_uves
+    IDsALL     = id_Si3O3C3_uves
+    cdatvec    = fdat_uves['f_CIII'][ent_Si3O3C3_uves]
+    point_text = None
+
+    if withliterature:
+        plotname   = plotname.replace('.pdf','AndLiterature.pdf')
+        xvalues    = np.append(xvalues,  fdat_lit['redshift'][ent_Si3O3C3_lit])
+        yvalues    = np.append(yvalues,  Z_Si3O3C3_lit)
+        xerr       = np.append(xerr,     [None]*len(Z_Si3O3C3_lit))
+        yerr       = np.append(yerr,     Z_Si3O3C3_err_lit)
+        IDsALL     = np.append(IDsALL,   id_Si3O3C3_lit)
+        cdatvec    = np.append(cdatvec,  fdat_lit['f_CIII'][ent_Si3O3C3_lit])
+        point_text = None
+
+    xlabel     = '$z$'
+    ylabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1640, OIII1666 and CIII1908}'
+    colortype  = 'f(CIII) [1e-20 erg/s/cm$^2$]'
+    colorcode  = True
+    yrange     = [7.,9.]
+    xrange     = [0.01,7.5]
+
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                   'dummydat',linetype=None,title=None,ids=IDsALL,
+                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
+                                                   point_text=point_text,photoionizationplotparam=None,
+                                                   histaxes=False,Nbins=None,
+                                                   overwrite=overwrite,verbose=verbose)
+
+
+    # - - - - - - He2O3C3 vs redshift    - - - - - -
+    plotname   = outputdir+'Byler_abundanceplot_zvsHe2O3C3_uves.pdf'
+    xvalues    = fdat_uves['redshift'][ent_He2O3C3_uves]
+    yvalues    = Z_He2O3C3_uves
+    xerr       = [None]*len(Z_He2O3C3_uves)
+    yerr       = Z_He2O3C3_err_uves
+    IDsALL     = id_He2O3C3_uves
+    cdatvec    = fdat_uves['f_CIII'][ent_He2O3C3_uves]
+    point_text = None
+
+    if withliterature:
+        plotname   = plotname.replace('.pdf','AndLiterature.pdf')
+        xvalues    = np.append(xvalues,  fdat_lit['redshift'][ent_He2O3C3_lit])
+        yvalues    = np.append(yvalues,  Z_He2O3C3_lit)
+        xerr       = np.append(xerr,     [None]*len(Z_He2O3C3_lit))
+        yerr       = np.append(yerr,     Z_He2O3C3_err_lit)
+        IDsALL     = np.append(IDsALL,   id_He2O3C3_lit)
+        cdatvec    = np.append(cdatvec,  fdat_lit['f_CIII'][ent_He2O3C3_lit])
+        point_text = None
+
+    xlabel     = '$z$'
+    ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
+    colortype  = 'f(CIII) [1e-20 erg/s/cm$^2$]'
+    colorcode  = True
+    yrange     = [7.,9.]
+    xrange     = [0.01,7.5]
+
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                   'dummydat',linetype=None,title=None,ids=IDsALL,
+                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
+                                                   point_text=point_text,photoionizationplotparam=None,
+                                                   histaxes=False,Nbins=None,
+                                                   overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - Si3O3C3 vs EW(Lya)     - - - - - -
+    # - - - - - - Si3O3C3 vs EW(CIII)    - - - - - -
+    # - - - - - - He2O3C3 vs EW(Lya)     - - - - - -
+    # - - - - - - He2O3C3 vs EW(CIII)    - - - - - -
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
