@@ -996,11 +996,22 @@ def plot_literature_fitscatalog_cmd(plotname,
                 else:
                     xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
+            if y_uplimarr[ii] or y_lolimarr[ii] or x_uplimarr[ii] or x_lolimarr[ii]:
+                mfc      = facecol[ii]
+                mec      = 'gray'
+                ecolor   = 'gray'
+                zorder   = 9
+            else:
+                mfc      = facecol[ii]
+                mec      = facecol[ii]
+                ecolor   = facecol[ii]
+                zorder   = 10
+
             plt.errorbar(xval[ii],yval[ii],xerr=xerr[ii],yerr=yerr[ii],capthick=0.5,
                          uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
                          marker=psym[ii],lw=lthick/2., markersize=ms,alpha=1.0,
-                         markerfacecolor=facecol[ii],ecolor=facecol[ii],
-                         markeredgecolor=facecol[ii],zorder=10)
+                         markerfacecolor=mfc,ecolor=ecolor,
+                         markeredgecolor=mec,zorder=zorder)
 
             if point_text is not None:
                 plt.text(xval[ii]*1.03,yval[ii]*1.03,
@@ -1458,6 +1469,7 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
     colaspect   = colaspect/colbarscale
     cextend     = 'neither'
 
+    # cb1      = plt.colorbar(mmAGN,extend=cextend,orientation='vertical',ticks=colortickvals,
     cb1      = plt.colorbar(mm,extend=cextend,orientation='vertical',ticks=colortickvals,
                             pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
     cb1.ax.set_yticklabels(colorlabels,rotation=0)
