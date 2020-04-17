@@ -4872,7 +4872,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
 
             if colortype.lower() == 'redshift':
                 clabel  = '$z$'
-                cmin    = 0.5 # 0.0, 1.4
+                cmin    = 0.01 # 0.0, 1.4
                 cmax    = 7.5 # 10.2, 6.2
                 cextend = 'neither'
             elif colortype.lower() == 's2nfelis':
@@ -5094,7 +5094,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
                 axHistx.set_xscale('log')
 
-            axHistx.hist(np.isfinite(xvalues), bins=bindefs,histtype='step',color='k')
+            axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
             axHistx.set_xticks([])
             axHistx.set_xlim([xminsys,xmaxsys])
 
@@ -6805,32 +6805,55 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lya = []
-    infocols        = ['lyaew_b2','lyaew_many',
+    infocols        = ['lyaew_b2',
                        'lyafwhm_a','lyafwhm_kms',
-                       'beta_many','beta_beta2',
-                       'absmagUV_fix','absmagUV_many',
-                       'magUV_fix','magUV_many']
+                       'beta_beta2',
+                       'absmagUV_fix',
+                       'magUV_fix',
+                       'redshift']
 
-    info_ranges     = [[1,1e3],[1,1e3],
-                       [1,1e5],[1,1e5],
-                       [0,3],[0,3],
-                       [-40,-10],[-40,-10],
-                       [10,40],[10,40]]
+    info_ranges     = [[-100,600],
+                       [-5,30],[-100,1000],
+                       [-4,3],
+                       [-25,-10],
+                       [20,35],
+                       [0.0,8.0]]
+
+    addvaryingbetavalues = False
+    if addvaryingbetavalues:
+        infocols        = infocols+['lyaew_many',
+                           'beta_many',
+                           'absmagUV_many',
+                           'magUV_many']
+
+        info_ranges     = info_ranges+[[-100,600],
+                           [-4,3],
+                           [-25,-10],
+                           [20,35]]
+
     fluxes_range    = [10,1e4]
     ratios_range    = [1e-4,1e3]
 
 
-    for ll, infocol in enumerate(infocols[:2]):
-        linesetlist_lya.append([infocol, None, 'CIII',None ,info_ranges[ll], fluxes_range, None])
+    for ll, infocol in enumerate(infocols):
+        linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'CIV',   None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'OIII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'HeII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'MgII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'SiIII', None ,info_ranges[ll], fluxes_range, None])
 
-        linesetlist_lya.append([infocol, None, 'CIII','CIV',info_ranges[ll], ratios_range, None])
-
+        linesetlist_lya.append([infocol, None, 'CIV','CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'HeII','CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'SiIII1','CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'OIII2','CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
     histaxes  = True
     for lineset in linesetlist_lya:
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                          Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                                         ylog=True,xlog=False,addliteraturevalues=addliteraturevalues,
                                                          overwrite=overwrite,verbose=verbose,showlimits=showlimits)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -6868,6 +6891,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     for lineset in linesetlist_fluxes:
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                                 literaturevaluesadded=addliteraturevalues,
                                                  showlimits=showlimits,overwrite=overwrite,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -6914,12 +6938,14 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                                 literaturevaluesadded=addliteraturevalues,
                                                  overwrite=overwrite,verbose=verbose,showlimits=showlimits,
                                                  photoionizationplotparam=photoionizationplotparam)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                              photoionizationplotparam=None,point_text=None,showlimits=True,
+                                             literaturevaluesadded=False,
                                              overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True):
     """
     Wrapper to define input data and excecute plot command
@@ -7132,6 +7158,8 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         cdatvecALL = np.asarray([0.0]*2)
         IDsALL     = np.asarray([0.0]*2)
 
+    if literaturevaluesadded:
+        plotname = plotname.replace('.pdf','_wLit.pdf')
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,ids=IDsALL,
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
@@ -7141,7 +7169,8 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    overwrite=overwrite,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                                point_text=None,showlimits=True,
+                                                addliteraturevalues=True,
+                                                point_text=None,showlimits=True,ylog=False,xlog=False,
                                                 overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True):
     """
     Wrapper to define input data and excecute plot command
@@ -7167,6 +7196,7 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
     infocols['absmagUV_many'] = ['abs_mag_UV_cont_linear_many',None,                    'M(UV) ($\\beta$ linear multiband fit)']
     infocols['magUV_fix']     = ['mag_UV_cont_beta2',None,                              'm(UV) ($\\beta = -2$)']
     infocols['magUV_many']    = ['mag_UV_cont_linear_many',None,                        'm(UV) ($\\beta$ linear multiband fit)']
+    infocols['redshift']      = ['redshift',None,                                       '$z$']
 
     xlabel    = infocols[line1][2]
 
@@ -7176,14 +7206,19 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                    '_Nsigma'+str(Nsigma).replace('.','p')+\
                    '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
 
+        if 'vshift_'+line3 in fluxratiodat.dtype.names:
+            vshiftcol3 = 'vshift_'+line3
+        else:
+            vshiftcol3 = 'vshift_'+line3[:-1]
+
         if ('f_'+line3 in fluxratiodat.dtype.names) & showlimits:
             goodent  = np.where(np.isfinite(fluxratiodat['f_'+line3]) &
-                                (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
+                                (np.abs(fluxratiodat[vshiftcol3]) < vshiftmax) &
                                 (fluxratiodat['id'].astype(float) < 1e9))[0]
         elif ('f_'+line3 in fluxratiodat.dtype.names) & (not showlimits):
             goodent  = np.where((np.abs(fluxratiodat['ferr_'+line3]) != 99) &
                                 np.isfinite(fluxratiodat['f_'+line3]) &
-                                (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
+                                (np.abs(fluxratiodat[vshiftcol3]) < vshiftmax) &
                                 (fluxratiodat['id'].astype(float) < 1e9))[0]
             plotname = plotname.replace('.pdf','_nolimits.pdf')
         else:
@@ -7197,7 +7232,11 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
             yvalues  = fluxratiodat['f_'+line3][goodent]
             yerr     = fluxratiodat['ferr_'+line3][goodent]
 
-            ylimits_ent  = np.where(fluxratiodat['s2n_'+line3][goodent] < Nsigma)[0]
+            try:
+                ylimits_ent  = np.where(fluxratiodat['s2n_'+line3][goodent] < Nsigma)[0]
+            except:
+                ylimits_ent  = np.where(fluxratiodat['f_'+line3][goodent]/fluxratiodat['ferr_'+line3][goodent] < Nsigma)[0]
+
             if len(ylimits_ent) > 0:
                 yvalues[ylimits_ent] = yerr[ylimits_ent] * Nsigma
                 yerr[ylimits_ent]    = +99 # upper limit
@@ -7206,10 +7245,26 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                    '_Nsigma'+str(Nsigma).replace('.','p')+\
                    '_vshiftLT'+str(vshiftmax).replace('.','p')+'.pdf'
 
+        if 'vshift_'+line3 in fluxratiodat.dtype.names:
+            vshiftcol3 = 'vshift_'+line3
+        else:
+            vshiftcol3 = 'vshift_'+line3[:-1]
+        if 'vshift_'+line4 in fluxratiodat.dtype.names:
+            vshiftcol4 = 'vshift_'+line4
+        else:
+            vshiftcol4 = 'vshift_'+line4[:-1]
+
+
         if ('FR_'+line3+line4 in fluxratiodat.dtype.names) & showlimits:
             goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line3+line4]) &
-                                (np.abs(fluxratiodat['vshift_'+line3]) < vshiftmax) &
-                                (np.abs(fluxratiodat['vshift_'+line4]) < vshiftmax) &
+                                (np.abs(fluxratiodat[vshiftcol3]) < vshiftmax) &
+                                (np.abs(fluxratiodat[vshiftcol4]) < vshiftmax) &
+                                (fluxratiodat['id'].astype(float) < 1e9))[0]
+        elif ('FR_'+line3+line4 in fluxratiodat.dtype.names) & (not showlimits):
+            goodent  = np.where(np.isfinite(fluxratiodat['FR_'+line3+line4]) &
+                                (np.abs(fluxratiodat['FRerr_'+line3+line4]) != 99) &
+                                (np.abs(fluxratiodat[vshiftcol3]) < vshiftmax) &
+                                (np.abs(fluxratiodat[vshiftcol4]) < vshiftmax) &
                                 (fluxratiodat['id'].astype(float) < 1e9))[0]
             plotname = plotname.replace('.pdf','_nolimits.pdf')
         else:
@@ -7223,10 +7278,17 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
             yvalues  = fluxratiodat['FR_'+line3+line4][goodent]
             yerr     = fluxratiodat['FRerr_'+line3+line4][goodent]
 
-            ylimits_ent_num  = np.where((fluxratiodat['s2n_'+line3][goodent] < Nsigma) &
-                                        (fluxratiodat['s2n_'+line3][goodent] > 0.0))[0]
-            ylimits_ent_den  = np.where((fluxratiodat['s2n_'+line4][goodent] < Nsigma) &
-                                        (fluxratiodat['s2n_'+line4][goodent] > 0.0))[0]
+            try:
+                ylimits_ent_num  = np.where((fluxratiodat['s2n_'+line3][goodent] < Nsigma) &
+                                            (fluxratiodat['s2n_'+line3][goodent] > 0.0))[0]
+                ylimits_ent_den  = np.where((fluxratiodat['s2n_'+line4][goodent] < Nsigma) &
+                                            (fluxratiodat['s2n_'+line4][goodent] > 0.0))[0]
+            except:
+                ylimits_ent_num  = np.where((fluxratiodat['f_'+line3][goodent]/fluxratiodat['ferr_'+line3][goodent] < Nsigma) &
+                                            (fluxratiodat['f_'+line3][goodent]/fluxratiodat['ferr_'+line3][goodent] > 0.0))[0]
+                ylimits_ent_den  = np.where((fluxratiodat['f_'+line4][goodent]/fluxratiodat['ferr_'+line4][goodent] < Nsigma) &
+                                            (fluxratiodat['f_'+line4][goodent]/fluxratiodat['ferr_'+line4][goodent] > 0.0))[0]
+
             for yent, yval in enumerate(yvalues):
                 if (yent in ylimits_ent_num) & (yent in ylimits_ent_den):
                     yvalues[yent]   = np.nan
@@ -7245,18 +7307,22 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
 
     lyaents   = []
     for objid in fluxratiodat['id'][goodent]:
-        lyaent = np.where(infofiledat['id'] == objid)[0]
+        lyaent = np.where(infofiledat['id'] == int(objid))[0]
         if len(lyaent) == 0:
+            pdb.set_trace()
             sys.exit(' Weird... no match found in uves.plot_lineratios_fromsummaryfiles_vsInfofile()!')
         else:
-            lyaents.append(lyaent)
-
+            lyaents.append(lyaent[0])
 
     xvalues  = infofiledat[infocols[line1][0]][np.asarray(lyaents)]
-    xerr     = infofiledat[infocols[line1][1]][np.asarray(lyaents)]
+    if infocols[line1][1] is None:
+        xerr     = np.asarray([np.nan]*len(xvalues))
+    else:
+        xerr     = infofiledat[infocols[line1][1]][np.asarray(lyaents)]
 
-    xvalues[xvalues == 0.0] = np.nan
-    xerr[xvalues == 0.0]    = np.nan
+    if len(xvalues[xvalues == 0.0]) > 0:
+        xvalues[xvalues == 0.0] = np.nan
+        xerr[xvalues == 0.0]    = np.nan
 
     if point_text is not None:
         point_textALL = point_text[goodent]
@@ -7273,54 +7339,110 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
         yerr    = np.array([])
 
     # - - - - - - - - - Literature - - - - - - - - -
-    if 'lyaew' in line1:
-        if (line4 is None):
-            if ('EW0_lya' in fluxratiodat.dtype.names) & showlimits:
-                litent  = np.where(np.isfinite(fluxratiodat['EW0_lya']) &
-                                   np.isfinite(fluxratiodat['f_'+line3]) &
-                                   (fluxratiodat['id'].astype(float) > 1e9))[0]
+    if addliteraturevalues:
+        litfile = '/Users/kschmidt/work/catalogs/' \
+                  'literaturecollection_emissionlinestrengths/literaturecollection_emissionlinestrengths.fits'
+        fluxratiodat_lit = afits.open(litfile)[1].data
 
-            elif ('EW0_lya' in fluxratiodat.dtype.names) & (not showlimits):
-                litent  = np.where(np.isfinite(fluxratiodat['EW0_lya']) &
-                                   np.isfinite(fluxratiodat['f_'+line3]) &
-                                   np.abs((fluxratiodat['EW0err_lya']) != 99) &
-                                   np.abs((fluxratiodat['ferr_'+line3]) != 99) &
-                                   (fluxratiodat['id'].astype(float) > 1e9))[0]
+        coltranslationdic= {'f(CIII) [1e-20 erg/s/cm$^2$]':'f_CIII', 'zmanual':'redshift', 'ew_0':'EW0_Lya',
+                            'redshift':'redshift'}
+        cdatvec_lit = fluxratiodat_lit[coltranslationdic[cdattype]]
+
+        if ('lyaew' in line1):
+            if (line4 is None):
+                if ('EW0_Lya' in fluxratiodat_lit.dtype.names) & showlimits:
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['EW0_Lya']) &
+                                       np.isfinite(fluxratiodat_lit['f_'+line3]) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+
+                elif ('EW0_Lya' in fluxratiodat_lit.dtype.names) & (not showlimits):
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['EW0_Lya']) &
+                                       np.isfinite(fluxratiodat_lit['f_'+line3]) &
+                                       np.abs((fluxratiodat_lit['EW0err_Lya']) != 99) &
+                                       np.abs((fluxratiodat_lit['ferr_'+line3]) != 99) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+                else:
+                    litent = []
+
+                if len(litent) > 0:
+                    xvalues    = np.append(xvalues,fluxratiodat_lit['EW0_Lya'][litent])
+                    xerr       = np.append(xerr,fluxratiodat_lit['EW0err_Lya'][litent])
+                    yvalues    = np.append(yvalues,fluxratiodat_lit['f_'+line3][litent])
+                    yerr       = np.append(yerr,fluxratiodat_lit['ferr_'+line3][litent])
+                    cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
+                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if point_text is not None:
+                        point_textALL = np.append(point_textALL,point_text[litent])
             else:
-                litent = []
+                if ('EW0_Lya' in fluxratiodat_lit.dtype.names)  & showlimits:
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['EW0_Lya']) &
+                                       np.isfinite(fluxratiodat_lit['FR_'+line3+line4]) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+                elif ('EW0_Lya' in fluxratiodat_lit.dtype.names) & ('FR_'+line3+line4 in fluxratiodat_lit.dtype.names) & (not showlimits):
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['EW0_Lya']) &
+                                       np.isfinite(fluxratiodat_lit['FR_'+line3+line4]) &
+                                       np.abs((fluxratiodat_lit['EW0err_Lya']) != 99) &
+                                       np.abs((fluxratiodat_lit['FRerr_'+line3+line4]) != 99) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+                else:
+                    litent = []
 
-            if len(litent) > 0:
-                xvalues    = np.append(xvalues,fluxratiodat['EW0_lya'][litent])
-                xerr       = np.append(xerr,fluxratiodat['EW0err_lya'][litent])
-                yvalues    = np.append(yvalues,fluxratiodat['f_'+line3][litent])
-                yerr       = np.append(yerr,fluxratiodat['ferr_'+line3][litent])
-                cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
-                if point_text is not None:
-                    point_textALL = np.append(point_textALL,point_text[litent])
-        else:
-            if ('EW0_lya' in fluxratiodat.dtype.names)  & showlimits:
-                litent  = np.where(np.isfinite(fluxratiodat['EW0_lya']) &
-                                   np.isfinite(fluxratiodat['FR_'+line3+line4]) &
-                                   (fluxratiodat['id'].astype(float) > 1e9))[0]
-            elif ('EW0_lya' in fluxratiodat.dtype.names) & ('FR_'+line3+line4 in fluxratiodat.dtype.names) & (not showlimits):
-                litent  = np.where(np.isfinite(fluxratiodat['EW0_lya']) &
-                                   np.isfinite(fluxratiodat['FR_'+line3+line4]) &
-                                   np.abs((fluxratiodat['EW0err_lya']) != 99) &
-                                   np.abs((fluxratiodat['FRerr_'+line3+line4]) != 99) &
-                                   (fluxratiodat['id'].astype(float) > 1e9))[0]
+                if len(litent) > 0:
+                    xvalues    = np.append(xvalues,fluxratiodat_lit['EW0_Lya'][litent])
+                    xerr       = np.append(xerr,fluxratiodat_lit['EW0err_Lya'][litent])
+                    yvalues    = np.append(yvalues,fluxratiodat_lit['FR_'+line3+line4][litent])
+                    yerr       = np.append(yerr,fluxratiodat_lit['FRerr_'+line3+line4][litent])
+                    cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
+                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if point_text is not None:
+                        point_textALL = np.append(point_textALL,point_text[litent])
+        if ('redshift' in line1):
+            if (line4 is None):
+                if ('redshift' in fluxratiodat_lit.dtype.names) & showlimits:
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['redshift']) &
+                                       np.isfinite(fluxratiodat_lit['f_'+line3]) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+
+                elif ('redshift' in fluxratiodat_lit.dtype.names) & (not showlimits):
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['redshift']) &
+                                       np.isfinite(fluxratiodat_lit['f_'+line3]) &
+                                       np.abs((fluxratiodat_lit['EW0err_Lya']) != 99) &
+                                       np.abs((fluxratiodat_lit['ferr_'+line3]) != 99) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+                else:
+                    litent = []
+
+                if len(litent) > 0:
+                    xvalues    = np.append(xvalues,fluxratiodat_lit['redshift'][litent])
+                    xerr       = np.append(xerr,fluxratiodat_lit['redshift'][litent]*0.0)
+                    yvalues    = np.append(yvalues,fluxratiodat_lit['f_'+line3][litent])
+                    yerr       = np.append(yerr,fluxratiodat_lit['ferr_'+line3][litent])
+                    cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
+                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if point_text is not None:
+                        point_textALL = np.append(point_textALL,point_text[litent])
             else:
-                litent = []
+                if ('redshift' in fluxratiodat_lit.dtype.names)  & showlimits:
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['redshift']) &
+                                       np.isfinite(fluxratiodat_lit['FR_'+line3+line4]) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+                elif ('EW0_Lya' in fluxratiodat_lit.dtype.names) & ('FR_'+line3+line4 in fluxratiodat_lit.dtype.names) & (not showlimits):
+                    litent  = np.where(np.isfinite(fluxratiodat_lit['redshift']) &
+                                       np.isfinite(fluxratiodat_lit['FR_'+line3+line4]) &
+                                       np.abs((fluxratiodat_lit['FRerr_'+line3+line4]) != 99) &
+                                       (fluxratiodat_lit['id'].astype(float) > 1e9))[0]
+                else:
+                    litent = []
 
-            if len(litent) > 0:
-                xvalues    = np.append(xvalues,fluxratiodat['EW0_lya'][litent])
-                xerr       = np.append(xerr,fluxratiodat['EW0err_lya'][litent])
-                yvalues    = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
-                yerr       = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
-                cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
-                if point_text is not None:
-                    point_textALL = np.append(point_textALL,point_text[litent])
+                if len(litent) > 0:
+                    xvalues    = np.append(xvalues,fluxratiodat_lit['redshift'][litent])
+                    xerr       = np.append(xerr,fluxratiodat_lit['redshift'][litent]*0.0)
+                    yvalues    = np.append(yvalues,fluxratiodat_lit['FR_'+line3+line4][litent])
+                    yerr       = np.append(yerr,fluxratiodat_lit['FRerr_'+line3+line4][litent])
+                    cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
+                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if point_text is not None:
+                        point_textALL = np.append(point_textALL,point_text[litent])
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -7333,9 +7455,11 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
         cdatvecALL = np.asarray([0.0]*2)
         IDsALL     = np.asarray([0.0]*2)
 
+    if addliteraturevalues:
+        plotname = plotname.replace('.pdf','_wLit.pdf')
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=title,ids=IDsALL,
-                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
                                                    colortype=cdattype,colorcode=True,cdatvec=cdatvecALL,
                                                    point_text=point_textALL,photoionizationplotparam=None,
                                                    histaxes=histaxes,Nbins=Nhistbins,
@@ -12423,8 +12547,8 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     --- Example of use ---
     import uvEmissionlineSearch as uves
     outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/BylerAbundanceFigures/'
-    uves.plot_GasPhaseAbundances(outputdir,overwrite=False,withliterature=False,verbose=True)
-
+    uves.plot_GasPhaseAbundances(outputdir,overwrite=True,withliterature=False,verbose=True)
+    uves.plot_GasPhaseAbundances(outputdir,overwrite=True,withliterature=True,verbose=True)
     """
     kbswork      = '/Users/kschmidt/work/'
 
@@ -12524,7 +12648,7 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
 
     xlabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1883, OIII1666 and CIII1908}'
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
-    colortype  = 'zmanual'
+    colortype  = 'redshift'
     colorcode  = True
     yrange     = [7.,9.]
     xrange     = [7.,9.]
@@ -12544,7 +12668,7 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     xerr       = [None]*len(Z_Si3O3C3_uves)
     yerr       = Z_Si3O3C3_err_uves
     IDsALL     = id_Si3O3C3_uves
-    cdatvec    = fdat_uves['f_CIII'][ent_Si3O3C3_uves]
+    cdatvec    = xvalues # fdat_uves['f_CIII'][ent_Si3O3C3_uves]
     point_text = None
 
     if withliterature:
@@ -12554,12 +12678,12 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
         xerr       = np.append(xerr,     [None]*len(Z_Si3O3C3_lit))
         yerr       = np.append(yerr,     Z_Si3O3C3_err_lit)
         IDsALL     = np.append(IDsALL,   id_Si3O3C3_lit)
-        cdatvec    = np.append(cdatvec,  fdat_lit['f_CIII'][ent_Si3O3C3_lit])
+        cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_Si3O3C3_lit]) #fdat_lit['f_CIII'][ent_Si3O3C3_lit])
         point_text = None
 
     xlabel     = '$z$'
-    ylabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1640, OIII1666 and CIII1908}'
-    colortype  = 'f(CIII) [1e-20 erg/s/cm$^2$]'
+    ylabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1883, OIII1666 and CIII1908}'
+    colortype  = 'redshift' #'f(CIII) [1e-20 erg/s/cm$^2$]'
     colorcode  = True
     yrange     = [7.,9.]
     xrange     = [0.01,7.5]
@@ -12581,7 +12705,7 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     xerr       = [None]*len(Z_He2O3C3_uves)
     yerr       = Z_He2O3C3_err_uves
     IDsALL     = id_He2O3C3_uves
-    cdatvec    = fdat_uves['f_CIII'][ent_He2O3C3_uves]
+    cdatvec    = xvalues # fdat_uves['f_CIII'][ent_He2O3C3_uves]
     point_text = None
 
     if withliterature:
@@ -12591,12 +12715,12 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
         xerr       = np.append(xerr,     [None]*len(Z_He2O3C3_lit))
         yerr       = np.append(yerr,     Z_He2O3C3_err_lit)
         IDsALL     = np.append(IDsALL,   id_He2O3C3_lit)
-        cdatvec    = np.append(cdatvec,  fdat_lit['f_CIII'][ent_He2O3C3_lit])
+        cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_He2O3C3_lit]) #fdat_lit['f_CIII'][ent_He2O3C3_lit])
         point_text = None
 
     xlabel     = '$z$'
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
-    colortype  = 'f(CIII) [1e-20 erg/s/cm$^2$]'
+    colortype  = 'redshift' # 'f(CIII) [1e-20 erg/s/cm$^2$]'
     colorcode  = True
     yrange     = [7.,9.]
     xrange     = [0.01,7.5]
