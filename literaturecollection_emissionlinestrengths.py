@@ -32,7 +32,7 @@ def generate_literature_fitscatalog(verbose=True):
 
     # updating plots
     lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=False,shownames=False)
-    lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['UVES results'],extra_symlist=['o'])
+    lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2020)','MUSE UDF mosaic (Schmidt et al. 2020)', 'MUSE UDF10 (Schmidt et al. 2020)'],extra_symlist=['o','D','X'],showkeynames=False)
 
     """
     outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
@@ -164,10 +164,12 @@ def get_reference_fromID(idlist,verbose=True):
     if verbose: print(' - Looping over the '+str(len(idlist))+' IDs provide in list\n')
     for id in idlist:
         idstr  = str(id)
-        if (len(idstr) < 9) or idstr.startswith('0'):
-            if verbose: print(' - The id '+idstr+' is not on the right format. It should be 11 digits long and not start with 0')
+        if (len(idstr) < 10) or idstr.startswith('0'):
+            if verbose: print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
+                              '            The id '+idstr+' has less than 10 digitsis which \n            '
+                                                          'does not match any object from the literature collection')
         else:
-            baseid = int(idstr[0:3].ljust(11,'0'))
+            baseid = int(idstr[:-9].ljust(len(idstr),'0'))
 
             foundref = False
             for key in refdic.keys():
@@ -176,6 +178,11 @@ def get_reference_fromID(idlist,verbose=True):
                     foundref = True
 
             if not foundref:
+                if verbose: print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
+                                  '            The id '+idstr+' has no match in literature collection. '
+                                                              'Setting marker for plots to "$??$"')
+
+                pdb.set_trace()
                 returnrefs.append([idstr,'NoRef',baseid,'NoRef','$??$'])
 
     if len(idlist) != len(returnrefs):
@@ -207,17 +214,18 @@ def referencedictionary():
     refdic['mai18'] = [09e9,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
     refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
     refdic['bay14'] = [11e9,    'Bayliss et al. (2014)',                                  'H']
-    refdic['sch16'] = [12e9,    'Schmidt et al. (2016)',                                  '+']
+    refdic['dummy'] = [12e9,    'dummy',                                                  '+']
     refdic['lef19'] = [13e9,    'Le Fevre et al. (2019)',                                 'x']
     refdic['ber19'] = [14e9,    'Berg et al. (2016, 2019a,b)',                            'D']
     refdic['dummy'] = [15e9,    'dummy',                                                  'd']
-    refdic['dummy'] = [16e9,    'dummy',                                                  '1']
-    refdic['dummy'] = [17e9,    'dummy',                                                  '2']
-    refdic['dummy'] = [18e9,    'dummy',                                                  '3']
-    refdic['dummy'] = [19e9,    'dummy',                                                  '4']
-    refdic['amo17'] = [51e9,    'Amorin et al. (2017)',                                   '$\\alpha$']
-    refdic['dummy'] = [20e9,    'dummy',                                                  '$\\beta$']
-    refdic['dummy'] = [21e9,    'dummy',                                                  (5, 0, 180)] # pentagon rotated 180deg
+    refdic['dummy'] = [16e9,    'dummy',                                                  (4, 1, 0)]   # 4-point star
+    refdic['dummy'] = [17e9,    'dummy',                                                  (4, 1, 45)]  # 4-point star
+    refdic['sch16'] = [18e9,    'Schmidt et al. (2016)',                                  (7, 1, 0)]   # 7-point star
+    refdic['dummy'] = [19e9,    'dummy',                                                  (7, 1, 90)]  # 7-point star
+    refdic['dummy'] = [20e9,    'dummy',                                                  (7, 1, 180)] # 7-point star
+    refdic['amo17'] = [51e9,    'Amorin et al. (2017)',                                   (5, 0, 180)] # pentagon rotated 180deg
+    refdic['dummy'] = [52e9,    'dummy',                                                  (5, 0, 90)]  # pentagon rotated 90deg
+    refdic['dummy'] = [53e9,    'dummy',                                                  (5, 0, 270)] # pentagon rotated 270deg
 
     # --- MUSE-Wide def: ---
     # CDFS and COSMOS:  'o'
@@ -242,8 +250,8 @@ def referencedictionary():
     # Smit et al. (2017)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Vanzella et al. (2016) - X-shooter + MUSE
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Vanzella et al. (2017) - X-shooter + MUSE
+    # Vanzella et al. (2020) - X-shooter Ion2 (SunburstArc comparison)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # SILVERRUSH - Shibuya+2017b collection of CIV, NV, HeII limits - no CIII limits. Table 6 in appendix
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -629,7 +637,7 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
     psyms  = []
     for objref in litdat['reference']:
         psyms.append(refdic[objref][2])
-    psyms = np.asarray(psyms)
+    # psyms = np.asarray(psyms)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fluxes_range  = None #[1,1e8]
     EW0_range     = None
@@ -788,7 +796,7 @@ def plot_literature_fitscatalog_cmd(plotname,
         xerr = np.array([np.nan,np.nan])
         yerr = np.array([np.nan,np.nan])
     else:
-        psym   = psym[goodent]
+        psym   = [psym[ii] for ii in goodent]
         xval   = xval[goodent]
         yval   = yval[goodent]
         xerr   = xerr[goodent]
@@ -1156,7 +1164,7 @@ def plot_literature_fitscatalog_cmd(plotname,
     plt.clf()
     plt.close('all')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist=[],extra_symlist=[],verbose=True):
+def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist=[],extra_symlist=[],showkeynames=True,verbose=True):
     """
     Generating the legend for a set of plotting symboles
 
@@ -1196,10 +1204,12 @@ def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist
         if key == 'dummy':
             continue
 
-        label = key+': '+refdic[key][1].replace('&','\&').replace('_','\_')
+        label = refdic[key][1].replace('&','\&').replace('_','\_')
+        if showkeynames:
+            label = key+': '+label
 
         ax.errorbar(-5000,-5000,xerr=None,yerr=1,marker=refdic[key][2],lw=0, markersize=marksize,alpha=1.0,
-                    markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label=label)
+                    markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label=label)
 
     for ee, etl in enumerate(extra_textlist):
         ax.errorbar(-5000,-5000,xerr=None,yerr=1,marker=extra_symlist[ee],lw=0, markersize=marksize,alpha=1.0,
