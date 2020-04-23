@@ -40,6 +40,7 @@ import literaturecollection_emissionlinestrengths as lce
 import stacking
 from itertools import combinations
 import pickle
+import re
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
     """
@@ -12124,7 +12125,7 @@ def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=Fal
     fout     = open(latexoutput,'w')
     fout.write("""
 \\begin{table*}
-\caption{\label{tab:tablelable}Caption Caption CAPTION Caption Caption}
+\caption{\label{tab:tablelable}Table Title/Description - for extensive caption use footer below.}
 \centering
 \\resizebox{\\textwidth}{!}{ %% command scaling table to textwidth
 \\begin{tabular}{%s}
@@ -12139,9 +12140,12 @@ def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=Fal
         objent_master = np.where(masterdat['id'] == objid)[0]
 
         for col in columns:
-            try:
-                colval = infodat[col][objent_info]
-            except:
+            if len(objent_info) == 1:
+                try:
+                    colval = infodat[col][objent_info]
+                except:
+                    colval = masterdat[col][objent_master]
+            else:
                 colval = masterdat[col][objent_master]
 
             if col in ['ra','dec']:
@@ -12160,10 +12164,12 @@ def mastercat_latextable(latexoutput,masterdat,infodat,columns,ids,overwrite=Fal
                     row_string = row_string+'$>$'+str("%.2f" % colval)+'  &    &  '
                 else:
                     row_string = row_string+str("%.2f" % colval)+'  &  '+str("%12.2f" % errval)+'  &  '
+            elif ('name' in col) or ('reference' in col):
+                row_string = row_string+str(colval[0].replace('_','\_'))+'  &  '
             else:
                 row_string = row_string+str("%.2f" % colval)+'  &  '
 
-        fout.write(row_string.replace('nan','-')[:-5]+' \\\\ \n')
+        fout.write(row_string.replace('nan ','- ')[:-5]+' \\\\ \n')
     fout.write("""\hline
 \end{tabular}
 }
@@ -12253,6 +12259,51 @@ def mastercat_latextable_colnames(colname):
         colname_fmt = colname.replace('_','\_')
 
     return colname_fmt
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def literaturecat_latextable_wrapper(sortcol='id',overwrite=False,verbose=True):
+    """
+    Wrapper to uves.mastercat_latextable() generating a table of the emitters with either CIII or CIV detections.
+    This wraper also returns a dictionary with number counts of detections and available objects for searching
+    based on the content of the master catalog.
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uves.literaturecat_latextable_wrapper(verbose=True,overwrite=True,sortcol='id')
+
+    """
+    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infodat   = afits.open(infofile)[1].data
+    workdir   = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+    litcat    = workdir+'literaturecollection_emissionlinestrengths.fits'
+    litdat    = afits.open(litcat)[1].data
+    columns   = ['name','reference','ra','dec','redshift','f_Lya','ferr_Lya','EW0_Lya','EW0err_Lya',
+                 'f_CIV','ferr_CIV','f_HeII','ferr_HeII','f_OIII','ferr_OIII','f_SiIII','ferr_SiIII','f_CIII','ferr_CIII',
+                 'EW0_CIV','EW0err_CIV','EW0_HeII','EW0err_HeII','EW0_OIII','EW0err_OIII',
+                 'EW0_SiIII','EW0err_SiIII','EW0_CIII','EW0err_CIII']
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    latexout  = workdir+'literaturecollection_emissionlinestrengths_fluxtable.tex'
+    if verbose: print(' - Putting together the literature collection latex table and storing it to\n   '+latexout)
+    sortindex = np.argsort(litdat[sortcol])
+    ids       = litdat['id'][sortindex]
+    uves.mastercat_latextable(latexout,litdat,infodat,columns,ids,overwrite=overwrite,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # replace caption with list of references:
+    refshorts = np.unique(litdat['reference'])
+    refexplainer = ' '
+    for refshort in refshorts:
+        reflong  = lce.referencedictionary()[refshort][1]
+        refexplainer = refexplainer+refshort+':'+reflong.replace('&','\&')+', '
+
+    with open(latexout, 'r+') as fdata:
+        text = fdata.read()
+        text = re.sub('Main text in footer', 'References are'+refexplainer[:-2]+'.', text)
+        fdata.seek(0)
+        fdata.write(text)
+        fdata.truncate()
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def convert_FoVcoordinates():
     """
