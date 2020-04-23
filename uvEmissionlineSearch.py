@@ -5052,6 +5052,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         elif linetype == 'plus':
             plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
             plt.plot([0,0],[-1e5,1e5],'--',color='black',lw=lthick,zorder=10)
+        elif linetype == 'onetooneWZsun':
+            plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
+            Zsun = 8.69
+            plt.fill_between([5.0,Zsun,Zsun,10],[10.0,10.0,10.0,10.0],[Zsun,Zsun,5.0,5.0],color='lightgray')
+            plt.text(7.0,8.75,'super-solar',color='gray',zorder=10)
         elif (str(linetype).lower == 'none') or (linetype is None) :
             pass
         else:
@@ -12496,15 +12501,38 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
         fCIII      = fdat['f_CIII'][ent_Z_Si3O3C3]
         fSiIII1    = fdat['f_SiIII1'][ent_Z_Si3O3C3]
 
-        OCC = np.log10( fOIII2  / (fCIII) )
-        SCC = np.log10( fSiIII1 / (fCIII) )
+        ferrOIII2     = fdat['ferr_OIII2'][ent_Z_Si3O3C3]
+        ferrCIII      = fdat['ferr_CIII'][ent_Z_Si3O3C3]
+        ferrSiIII1    = fdat['ferr_SiIII1'][ent_Z_Si3O3C3]
+
+        OCC = np.log10( fOIII2  / fCIII )
+        SCC = np.log10( fSiIII1 / fCIII )
 
         Z_Si3O3C3 = 3.09 + \
                     0.09  * OCC - 1.71  * OCC**2.0 - 0.73 * OCC**3.0 - \
                     16.51 * SCC - 19.84 * SCC**2.0 - 6.26 * SCC**3.0 + \
                     4.79  * OCC * SCC - 0.28 * OCC * SCC**2.0 + 1.67 * OCC**2.0 * SCC
 
-        Z_Si3O3C3_err = np.asarray(len(OCC)*[0.0])
+        # Z_Si3O3C3_err = np.asarray(len(OCC)*[0.0])
+        # -- error propagation see http://lectureonline.cl.msu.edu/~mmp/labs/error/e2.htm --
+        # -- dR(x,y) = sqrt( (dRdx * x_err)**2 + (dRdy * y_err)**2 )
+        FRerrOC  = np.abs(fOIII2/fCIII)  * np.sqrt( (ferrOIII2/fOIII2)**2   + (ferrCIII/fCIII)**2 )
+        FRerrSC  = np.abs(fSiIII1/fCIII) * np.sqrt( (ferrSiIII1/fSiIII1)**2 + (ferrCIII/fCIII)**2 )
+
+        OCCerr = np.abs( FRerrOC / (fOIII2/fCIII))   / np.log(10)
+        SCCerr = np.abs( FRerrSC / (fSiIII1/fCIII))  / np.log(10)
+
+        dRdOCC   =  0.09  - 2.0*1.71*OCC  - 3.0*0.73*OCC**2.0 + 4.79*SCC - 0.28*SCC**2.0    + 2.0*1.76*OCC*SCC
+        dRdSCC   = -16.51 - 2.0*19.84*SCC - 3.0*6.26*SCC**2.0 + 4.79*OCC - 2.0*0.28*OCC*SCC + 1.67*OCC**2.0
+
+        Z_Si3O3C3_err = np.sqrt( (dRdOCC * OCCerr)**2.0 + (dRdSCC * SCCerr)**2.0 )
+
+        # Z_Si3O3C3_err = np.sqrt( (0.09  * OCCerr)**2.0 + (1.71  * OCCerr*OCC * 2.0)**2.0 + (0.73 * OCCerr*OCC * 3.0)**2.0 + \
+        #                          (16.51 * SCCerr)**2.0 + (19.84 * SCCerr*SCC * 2.0)**2.0 + (6.26 * SCCerr*SCC * 3.0)**2.0 + \
+        #                          (4.79  * OCC * SCC      * np.sqrt(((OCCerr/OCC)**2.0 + (SCCerr/SCC)**2.0 )))**2.0 +
+        #                          (0.28  * OCC * SCC**2.0 * np.sqrt(((OCCerr/OCC)**2.0 + (SCCerr/SCC)**2.0 * 2.0 )))**2.0 +
+        #                          (1.67  * OCC**2.0 * SCC * np.sqrt(((OCCerr/OCC)**2.0 * 2.0 + (SCCerr/SCC)**2.0 )))**2.0   )
+
     else:
         print(' - No estimates of 12 + log([O/H]) for Si3-O3-C3 to return ')
         id_Si3O3C3    = np.nan
@@ -12520,8 +12548,12 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
         fCIII      = fdat['f_CIII'][ent_Z_He2O3C3]
         fHeII    = fdat['f_HeII'][ent_Z_He2O3C3]
 
-        OCC = np.log10( fOIII2  / (fCIII) )
-        HCC = np.log10( fHeII  / (fCIII) )
+        ferrOIII2     = fdat['ferr_OIII2'][ent_Z_He2O3C3]
+        ferrCIII      = fdat['ferr_CIII'][ent_Z_He2O3C3]
+        ferrHeII      = fdat['ferr_HeII'][ent_Z_He2O3C3]
+
+        OCC = np.log10( fOIII2  / fCIII )
+        HCC = np.log10( fHeII   / fCIII )
 
         Z_He2O3C3 = 6.88 - \
                     1.13  * OCC - 0.46  * OCC**2.0 - 0.03 * OCC**3.0 - \
@@ -12529,13 +12561,31 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
                     0.32  * OCC * HCC + 0.03 * OCC * HCC**2.0 - 0.21 * OCC**2.0 * HCC
 
         Z_He2O3C3_err = np.asarray(len(OCC)*[0.0])
+        # -- error propagation see http://lectureonline.cl.msu.edu/~mmp/labs/error/e2.htm --
+        # -- dR(x,y) = sqrt( (dRdx * x_err)**2 + (dRdy * y_err)**2 )
+        FRerrOC  = np.abs(fOIII2/fCIII)  * np.sqrt( (ferrOIII2/fOIII2)**2   + (ferrCIII/fCIII)**2 )
+        FRerrHC  = np.abs(fHeII/fCIII)   * np.sqrt( (ferrHeII/fHeII)**2 + (ferrCIII/fCIII)**2 )
+
+        OCCerr = np.abs( FRerrOC / (fOIII2/fCIII * np.log(10)) )
+        HCCerr = np.abs( FRerrHC / (fHeII/fCIII  * np.log(10))  )
+
+        dRdOCC   =  1.13 - 2.0*0.46*OCC  - 3.0*0.03*OCC**2.0 + 0.32*HCC + 0.03*HCC**2.0    - 2.0*0.21*OCC*HCC
+        dRdHCC   =  -0.61 - 2.0*0.02*HCC - 3.0*0.04*HCC**2.0 + 0.32*OCC + 2.0*0.28*OCC*HCC - 0.21*OCC**2.0
+
+        Z_He2O3C3_err = np.sqrt( (dRdOCC * OCCerr)**2.0 + (dRdHCC * HCCerr)**2.0 )
+
+        # Z_He2O3C3_err = np.sqrt( (1.13  * OCCerr)**2.0 + (0.46  * OCCerr/OCC *2.0)**2.0 + (0.03 * OCCerr/OCC * 3.0)**2.0 + \
+        #                          (0.61  * HCCerr)**2.0 + (0.02  * HCCerr/HCC *2.0)**2.0 + (0.04 * HCCerr/HCC * 3.0)**2.0 + \
+        #                          (0.32  * OCC * HCC       * np.sqrt(((OCCerr/OCC)**2.0 + (HCCerr/HCC)**2.0 )))**2.0 +
+        #                          (0.03  * OCC * HCC**2.0  * np.sqrt(((OCCerr/OCC)**2.0 + (HCCerr/HCC)**2.0 * 2.0 )))**2.0 +
+        #                          (0.21  * OCC**2.0 * HCC  * np.sqrt(((OCCerr/OCC)**2.0 * 2.0 + (HCCerr/HCC)**2.0 )))**2.0   )
     else:
         print(' - No estimates of 12 + log([O/H]) for He2-O3-C3 to return ')
         id_He2O3C3    = np.nan
         Z_He2O3C3     = np.nan
         Z_He2O3C3_err = np.nan
 
-
+    # pdb.set_trace()
     return id_Si3O3C3, Z_Si3O3C3, Z_Si3O3C3_err, id_He2O3C3, Z_He2O3C3, Z_He2O3C3_err
 
 
@@ -12553,6 +12603,7 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     kbswork      = '/Users/kschmidt/work/'
 
     # - - - - - - get entries for UVES results - - - - - -
+    if verbose: print('\n ----- Estimating abundances ----- ')
     if verbose: print(' - Estimate abundances for UVES detections ')
     linefluxfile_uves  = kbswork+'MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
     fdat_uves         = afits.open(linefluxfile_uves)[1].data
@@ -12625,6 +12676,13 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
 
     # - - - - - - - - - - - - - - - - Generate Plots of abundances - - - - - - - - - - - - - - - -
     if verbose: print('\n ----- Generating plots ----- ')
+    # - - - - - - Setting redshift log axes and Zrange - - - - - -
+    xlog = False
+    if xlog:
+        xrange = [0.01,10.0]
+    else:
+        xrange = [-0.3,7.5]
+    Zrange = [6.5,8.9]
 
     # - - - - - - Si3O3C3 vs He2O3C3     - - - - - -
     plotname   = outputdir+'Byler_abundanceplot_Si3O3C3vsHe2O3C3_uves.pdf'
@@ -12650,15 +12708,13 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
     colortype  = 'redshift'
     colorcode  = True
-    yrange     = [7.,9.]
-    xrange     = [7.,9.]
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
-                                                   'dummydat',linetype='onetoone',title=None,ids=IDsALL,
-                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   'dummydat',linetype='onetooneWZsun',title=None,ids=IDsALL,
+                                                   ylog=False,xlog=False,yrange=Zrange,xrange=Zrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=False,Nbins=None,
+                                                   histaxes=True,Nbins=20,
                                                    overwrite=overwrite,verbose=verbose)
 
     # - - - - - - Si3O3C3 vs redshift    - - - - - -
@@ -12685,13 +12741,10 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1883, OIII1666 and CIII1908}'
     colortype  = 'redshift' #'f(CIII) [1e-20 erg/s/cm$^2$]'
     colorcode  = True
-    yrange     = [7.,9.]
-    xrange     = [0.01,7.5]
-
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype=None,title=None,ids=IDsALL,
-                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
                                                    histaxes=False,Nbins=None,
@@ -12722,13 +12775,10 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
     colortype  = 'redshift' # 'f(CIII) [1e-20 erg/s/cm$^2$]'
     colorcode  = True
-    yrange     = [7.,9.]
-    xrange     = [0.01,7.5]
-
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype=None,title=None,ids=IDsALL,
-                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                   ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
                                                    histaxes=False,Nbins=None,
