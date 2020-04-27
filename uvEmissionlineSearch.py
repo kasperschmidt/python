@@ -41,6 +41,7 @@ import stacking
 from itertools import combinations
 import pickle
 import re
+import pyneb as pn
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
     """
@@ -12839,5 +12840,267 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     # - - - - - - Si3O3C3 vs EW(CIII)    - - - - - -
     # - - - - - - He2O3C3 vs EW(Lya)     - - - - - -
     # - - - - - - He2O3C3 vs EW(CIII)    - - - - - -
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_results.txt',Nsigma=1.0,
+                            curveresolution=0.1,generateExtraPlots=False,overwrite=False,verbose=True):
+    """
+    Main function to handle caluclations and diagostics using PyNeb
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uvesdir          = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    outfile          = uvesdir+'PyNebCalculations/pyneb_calculations_results.txt'
+    linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    uves.perform_PyNeb_calc_main(linefluxcatalog,outputfile=outfile,generateExtraPlots=True,overwrite=True,verbose=True,curveresolution=0.001)
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Setting up output:\n   '+outputfile)
+    if os.path.isfile(outputfile) and (overwrite == False):
+        sys.exit('The output file '+outputfile+' already exists and overwrite=False ')
+
+    fout = open(outputfile,'w')
+    fout.write('# This file contains the output from uves.perform_PyNeb_calc_main() generated on '+kbs.DandTstr2()+' \n')
+    fout.write('# based on the line flux catalog '+linefluxcatalog+' \n')
+    fout.write('# ')
+    fout.write('# id n_e T_e estimator \n') # n_crit
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Loading data in line flux catalog:\n   '+linefluxcatalog)
+    fluxdat = afits.open(linefluxcatalog)[1].data
+    fluxdat = fluxdat[fluxdat['duplicationID'] == 0]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    T_e_fix_vals = {'3k':1.e3, '4k':1.e4, '5k':1.e5}
+    if verbose: print('--- Estimating n_e from a single fluxratio ---')
+
+    FR    = 'FR_CIII1CIII2'
+    FRval = fluxdat[FR]
+    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
+    if verbose: print(' - using flux ratio '+FR)
+    C3 = pn.Atom('C', 3)
+    if verbose: print('   '+str(C3))
+
+    #------------------------------------------------------------------------------
+    if generateExtraPlots:
+        if verbose: print(' - Setting up and generating Grotrian diagram ')
+        plotname = outputfile.replace('.txt','_CIII_Grotrian.pdf')
+        fig = plt.figure(figsize=(7, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        C3.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
+
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+    #------------------------------------------------------------------------------
+    yvals_curve = np.arange(0.0,2.0,curveresolution)
+    n_e_Te3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1907, wave2=1909)
+    n_e_Te4 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1907, wave2=1909)
+    n_e_Te5 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1907, wave2=1909)
+
+    for TeKey in T_e_fix_vals:
+        T_e_fix = T_e_fix_vals[TeKey]
+        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
+        if len(goodent) == 0:
+            if verbose: print('   No good measurements found in line flux catalog for '+FR)
+        else:
+            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
+
+            n_e     = C3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1907, wave2=1909)
+            n_e_min = C3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1907, wave2=1909)
+            n_e_max = C3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1907, wave2=1909)
+
+            #------------------------------------------------------------------------------
+
+            if verbose: print(' - Setting up and generating plot of n_e estimates')
+            plotname = outputfile.replace('.txt','_CIII_ne_estimates_Te'+TeKey+'.pdf')
+            fig = plt.figure(figsize=(5, 4))
+
+            # fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
+            left, width = 0.15, 0.60
+            bottom, height = 0.15, 0.60
+            bottom_h = left_h = left + width + 0.01
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=0.99, bottom=bottom, top=bottom+height)
+            rect_histx = [left, bottom_h, 0.705, 0.2]
+
+            Fsize    = 12
+            lthick   = 1.0
+            marksize = 6
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            #plt.title(inforstr[:-2],fontsize=Fsize)
+
+            plt.plot(n_e_Te3,yvals_curve,color='salmon',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^3$K)')
+            plt.plot(n_e_Te4,yvals_curve,color='indianred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^4$K)')
+            plt.plot(n_e_Te5,yvals_curve,color='darkred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^5$K)')
+
+            #----------------------------
+            cmap    = plt.cm.viridis_r
+            cdatvec = fluxdat['redshift'][goodent]
+            clabel  = '$z$'
+            cmin    = 0.01 # 0.0, 1.4
+            cmax    = 7.5 # 10.2, 6.2
+            cextend = 'neither'
+
+            colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+            cmaparr = np.linspace(cmin, cmax, num=50)
+            m       = plt.cm.ScalarMappable(cmap=cmap)
+            m.set_array(cmaparr)
+
+            colvec   = []
+            for ii,xval in enumerate(n_e):
+                colvec.append(cmap(colnorm(cdatvec[ii])))
+
+            colshrink = 1.0
+            colaspect = 30
+            colanchor = (0.0,0.5)
+            cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+                                   pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+            cb.set_label(clabel)
+            #----------------------------
+            voffsets = [0.01, -0.01, 0.02, -0.02, 0.03, -0.03, 0.04, -0.04, 0.05, -0.05,
+                        0.06, -0.06, 0.07, -0.07, 0.08, -0.08, 0.09, -0.09]
+            FRvallist = np.unique(FRval[np.isfinite(FRval)])
+            voffsets_indices = {}
+            for FRvl in FRvallist:
+                voffsets_indices[str(FRvl)] = 0
+
+            plt.xscale('log')
+            plt.ylabel('CIII1907/CIII1909')
+            plt.xlabel('n$_\\textrm{e}$ [cm$^{-3}$]')
+            plt.xlim([1,1e8])
+
+            limsizefrac = 0.05
+            xvalues     = n_e
+            for nn, obj_ne in enumerate(xvalues):
+                mfc      = colvec[nn]#'navy'
+                xlolims  = False
+                xuplims  = False
+                xerr_min = n_e[nn]-n_e_min[nn]
+                xerr_max = n_e_max[nn]-n_e[nn]
+                xerrshow = [xerr_min,xerr_max]
+
+                xvalshow = n_e[nn]
+
+                if ~np.isfinite(n_e_min[nn]) & ~np.isfinite(n_e_max[nn]):
+                    continue
+                elif ~np.isfinite(n_e_min[nn]):
+                    n_e[nn]     = n_e_max[nn]
+                    n_e_min[nn] = +99
+                    n_e_max[nn] = +99
+
+                    xuplims     = True
+                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                    xvalshow = n_e[nn]#/Nsigma * 1.0
+                    xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+
+                elif ~np.isfinite(n_e_max[nn]):
+                    n_e[nn]     = n_e_min[nn]
+                    n_e_min[nn] = -99
+                    n_e_max[nn] = -99
+
+                    xlolims     = True
+                    xvalshow = n_e[nn]#/Nsigma / 1.0
+                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                    xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
+
+
+                yvalshow = FRval[goodent][nn] + voffsets_indices[str(FRval[goodent][nn])]
+                voffsets_indices[str(FRval[goodent][nn])] = voffsets_indices[str(FRval[goodent][nn])] + 0.03
+
+                # if yvalshow ==  1.5: pdb.set_trace()
+                plt.errorbar(xvalshow,yvalshow,
+                             xerr=[xerrshow],
+                             # yerr=FRerr[goodent][nn],
+                             uplims=False,lolims=False,
+                             xuplims=xuplims,xlolims=xlolims,
+                             marker='.',lw=lthick, markersize=marksize,alpha=1.0,
+                             markerfacecolor=mfc,ecolor=mfc,
+                             markeredgecolor=mfc,zorder=10)
+
+                fout.write(str(fluxdat['id'][goodent][nn])+'  '+
+                           str("%15.2f" % n_e[nn])+'  '+str("%15.2f" % n_e_min[nn])+'  '+str("%15.2f" % n_e_max[nn])+'  '+
+                           str("%15.2f" % T_e_fix)+'  pyneb.getTemDen('+FR+')  \n')
+
+            leg = plt.legend(fancybox=True, loc='lower left',prop={'size':Fsize/1.3},ncol=1,numpoints=1)#,
+                             # bbox_to_anchor=(0.5, 1.1),)  # add the legend
+            leg.get_frame().set_alpha(0.7)
+
+            # - - - - - - Histogram of n_e  - - - - - -
+            xminsys, xmaxsys = plt.xlim() # use to get automatically expanded axes if xmin = xmax
+            Nbins = 50
+            axHistx = plt.axes(rect_histx)
+            axHistx.xaxis.set_major_formatter(NullFormatter())
+
+            binwidth_x = np.diff([xminsys,xmaxsys])/Nbins
+            bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+            bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+            axHistx.set_xscale('log')
+
+            axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
+            axHistx.set_xticks([])
+            axHistx.set_xlim([xminsys,xmaxsys])
+            # - - - - - - - - - - - - - - - - - - - - -
+
+
+            if verbose: print('   Saving plot to '+plotname)
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+            #------------------------------------------------------------------------------
+
+    fout.close()
+
+    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # diags = pn.Diagnostics()
+    # if verbose: print('--- Estimating n_e and T_e from set of flux ratios ---')
+    #
+    # FR1   = 'FR_CIII1CIII2'
+    # FR2   = 'FR_SiIII1SiIII2'
+    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
+    # Te, Ne = diags.getCrossTemDen('[NII] 5755/6548', '[SII] 6731/6716', 0.02, 1.0)
+    #
+    #
+    # FR1   = 'FR_CIII1CIII2'
+    # FR2   = 'FR_OIII1OIII2'
+    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
+    # Te, Ne = diags.getCrossTemDen('[NII] 5755/6548', '[SII] 6731/6716', 0.02, 1.0)
+    #
+    #
+    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # # The complete list of the predefined diagnostics is stored in the pn.diags dictionary and can be listed with:
+    # for diag in sort(pn.diags_dict.keys()):
+    #     print('"{0}" : {1}'.format(diag, pn.diags_dict[diag]))
+    #
+    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # # EMission grids:
+    # O3_EG = pn.EmisGrid('O', 3, n_tem=30, n_den=30,
+    #                     tem_min=5000., tem_max=20000.,
+    #                     den_min=10., den_max=1.e8)
+    # O3_EG.save('plot/O3_30by30.pypic')
+    # # O3_EG = pn.EmisGrid(restore_file='plot/O3_30by30.pypic') # Restored from a previous computation
+    #
+    # O3_5007 = O3_EG.getGrid(wave=5007)
+    # O3_Te   = O3_EG.getGrid(to_eval = 'L(4363)/L(5007)')
+    # O3_EG.plotImage(to_eval = 'L(4363)/L(5007)')
+    # O3_EG.plotContours(to_eval = 'L(4363)/L(5007)')
+
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
