@@ -12864,7 +12864,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     fout.write('# This file contains the output from uves.perform_PyNeb_calc_main() generated on '+kbs.DandTstr2()+' \n')
     fout.write('# based on the line flux catalog '+linefluxcatalog+' \n')
     fout.write('# ')
-    fout.write('# id n_e T_e estimator \n') # n_crit
+    fout.write('# id n_e n_e_min n_e_max T_e estimator \n') # n_crit
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading data in line flux catalog:\n   '+linefluxcatalog)
     fluxdat = afits.open(linefluxcatalog)[1].data
@@ -12874,6 +12874,62 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     T_e_fix_vals = {'3k':1.e3, '4k':1.e4, '5k':1.e5}
     if verbose: print('--- Estimating n_e from a single fluxratio ---')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    FR = 'FR_SiIII1SiIII2'
+    if verbose: print(' - using flux ratio '+FR)
+    FRval = fluxdat[FR]
+    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
+    if verbose: print(' - using flux ratio '+FR)
+    Si3 = pn.Atom('Si', 3)
+    if verbose: print('   '+str(Si3))
+
+    #------------------------------------------------------------------------------
+    if generateExtraPlots:
+        if verbose: print(' - Setting up and generating Grotrian diagram ')
+        plotname = outputfile.replace('.txt','_SiIII_Grotrian.pdf')
+        fig = plt.figure(figsize=(7, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        Si3.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
+
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+    #------------------------------------------------------------------------------
+    yvals_curve = np.arange(0.0,2.0,curveresolution)
+    n_e_Te3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1883, wave2=1892)
+    n_e_Te4 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1883, wave2=1892)
+    n_e_Te5 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1883, wave2=1892)
+
+    for TeKey in T_e_fix_vals:
+        T_e_fix = T_e_fix_vals[TeKey]
+        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
+        if len(goodent) == 0:
+            if verbose: print('   No good measurements found in line flux catalog for '+FR)
+        else:
+            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
+
+            n_e      = Si3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1883, wave2=1892)
+            n_e_min  = Si3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1883, wave2=1892)
+            n_e_max  = Si3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1883, wave2=1892)
+            ylabel   = 'SiIII1883/SiIII1892'
+            plotname = outputfile.replace('.txt','_SiIII_ne_estimates_Te'+TeKey+'.pdf')
+
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
+                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     FR    = 'FR_CIII1CIII2'
     FRval = fluxdat[FR]
     FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
@@ -12921,151 +12977,16 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             n_e     = C3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1907, wave2=1909)
             n_e_min = C3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1907, wave2=1909)
             n_e_max = C3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1907, wave2=1909)
-
-            #------------------------------------------------------------------------------
-
-            if verbose: print(' - Setting up and generating plot of n_e estimates')
+            ylabel   = 'CIII1907/CIII1909'
             plotname = outputfile.replace('.txt','_CIII_ne_estimates_Te'+TeKey+'.pdf')
-            fig = plt.figure(figsize=(5, 4))
 
-            # fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
-            left, width = 0.15, 0.60
-            bottom, height = 0.15, 0.60
-            bottom_h = left_h = left + width + 0.01
-            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=0.99, bottom=bottom, top=bottom+height)
-            rect_histx = [left, bottom_h, 0.705, 0.2]
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
+                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
 
-            Fsize    = 12
-            lthick   = 1.0
-            marksize = 6
-            plt.rc('text', usetex=True)
-            plt.rc('font', family='serif',size=Fsize)
-            plt.rc('xtick', labelsize=Fsize)
-            plt.rc('ytick', labelsize=Fsize)
-            plt.clf()
-            plt.ioff()
-            #plt.title(inforstr[:-2],fontsize=Fsize)
-
-            plt.plot(n_e_Te3,yvals_curve,color='salmon',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^3$K)')
-            plt.plot(n_e_Te4,yvals_curve,color='indianred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^4$K)')
-            plt.plot(n_e_Te5,yvals_curve,color='darkred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^5$K)')
-
-            #----------------------------
-            cmap    = plt.cm.viridis_r
-            cdatvec = fluxdat['redshift'][goodent]
-            clabel  = '$z$'
-            cmin    = 0.01 # 0.0, 1.4
-            cmax    = 7.5 # 10.2, 6.2
-            cextend = 'neither'
-
-            colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
-            cmaparr = np.linspace(cmin, cmax, num=50)
-            m       = plt.cm.ScalarMappable(cmap=cmap)
-            m.set_array(cmaparr)
-
-            colvec   = []
-            for ii,xval in enumerate(n_e):
-                colvec.append(cmap(colnorm(cdatvec[ii])))
-
-            colshrink = 1.0
-            colaspect = 30
-            colanchor = (0.0,0.5)
-            cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
-                                   pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
-            cb.set_label(clabel)
-            #----------------------------
-            voffsets = [0.01, -0.01, 0.02, -0.02, 0.03, -0.03, 0.04, -0.04, 0.05, -0.05,
-                        0.06, -0.06, 0.07, -0.07, 0.08, -0.08, 0.09, -0.09]
-            FRvallist = np.unique(FRval[np.isfinite(FRval)])
-            voffsets_indices = {}
-            for FRvl in FRvallist:
-                voffsets_indices[str(FRvl)] = 0
-
-            plt.xscale('log')
-            plt.ylabel('CIII1907/CIII1909')
-            plt.xlabel('n$_\\textrm{e}$ [cm$^{-3}$]')
-            plt.xlim([1,1e8])
-
-            limsizefrac = 0.05
-            xvalues     = n_e
-            for nn, obj_ne in enumerate(xvalues):
-                mfc      = colvec[nn]#'navy'
-                xlolims  = False
-                xuplims  = False
-                xerr_min = n_e[nn]-n_e_min[nn]
-                xerr_max = n_e_max[nn]-n_e[nn]
-                xerrshow = [xerr_min,xerr_max]
-
-                xvalshow = n_e[nn]
-
-                if ~np.isfinite(n_e_min[nn]) & ~np.isfinite(n_e_max[nn]):
-                    continue
-                elif ~np.isfinite(n_e_min[nn]):
-                    n_e[nn]     = n_e_max[nn]
-                    n_e_min[nn] = +99
-                    n_e_max[nn] = +99
-
-                    xuplims     = True
-                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-                    xvalshow = n_e[nn]#/Nsigma * 1.0
-                    xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
-
-                elif ~np.isfinite(n_e_max[nn]):
-                    n_e[nn]     = n_e_min[nn]
-                    n_e_min[nn] = -99
-                    n_e_max[nn] = -99
-
-                    xlolims     = True
-                    xvalshow = n_e[nn]#/Nsigma / 1.0
-                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-                    xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
-
-
-                yvalshow = FRval[goodent][nn] + voffsets_indices[str(FRval[goodent][nn])]
-                voffsets_indices[str(FRval[goodent][nn])] = voffsets_indices[str(FRval[goodent][nn])] + 0.03
-
-                # if yvalshow ==  1.5: pdb.set_trace()
-                plt.errorbar(xvalshow,yvalshow,
-                             xerr=[xerrshow],
-                             # yerr=FRerr[goodent][nn],
-                             uplims=False,lolims=False,
-                             xuplims=xuplims,xlolims=xlolims,
-                             marker='.',lw=lthick, markersize=marksize,alpha=1.0,
-                             markerfacecolor=mfc,ecolor=mfc,
-                             markeredgecolor=mfc,zorder=10)
-
-                fout.write(str(fluxdat['id'][goodent][nn])+'  '+
-                           str("%15.2f" % n_e[nn])+'  '+str("%15.2f" % n_e_min[nn])+'  '+str("%15.2f" % n_e_max[nn])+'  '+
-                           str("%15.2f" % T_e_fix)+'  pyneb.getTemDen('+FR+')  \n')
-
-            leg = plt.legend(fancybox=True, loc='lower left',prop={'size':Fsize/1.3},ncol=1,numpoints=1)#,
-                             # bbox_to_anchor=(0.5, 1.1),)  # add the legend
-            leg.get_frame().set_alpha(0.7)
-
-            # - - - - - - Histogram of n_e  - - - - - -
-            xminsys, xmaxsys = plt.xlim() # use to get automatically expanded axes if xmin = xmax
-            Nbins = 50
-            axHistx = plt.axes(rect_histx)
-            axHistx.xaxis.set_major_formatter(NullFormatter())
-
-            binwidth_x = np.diff([xminsys,xmaxsys])/Nbins
-            bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
-            bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
-            axHistx.set_xscale('log')
-
-            axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
-            axHistx.set_xticks([])
-            axHistx.set_xlim([xminsys,xmaxsys])
-            # - - - - - - - - - - - - - - - - - - - - -
-
-
-            if verbose: print('   Saving plot to '+plotname)
-            plt.savefig(plotname)
-            plt.clf()
-            plt.close('all')
-            #------------------------------------------------------------------------------
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fout.close()
+
+    pdb.set_trace()
 
     # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # diags = pn.Diagnostics()
@@ -13102,5 +13023,150 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     # O3_EG.plotContours(to_eval = 'L(4363)/L(5007)')
 
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
+                 fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True):
+    """
+    Function to generate plots of n_e. Used in uves.perform_PyNeb_calc_main()
+
+    """
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Setting up and generating plot of n_e estimates')
+    fig = plt.figure(figsize=(5, 4))
+
+    # fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
+    left, width = 0.15, 0.60
+    bottom, height = 0.15, 0.60
+    bottom_h = left_h = left + width + 0.01
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=0.99, bottom=bottom, top=bottom+height)
+    rect_histx = [left, bottom_h, 0.705, 0.2]
+
+    Fsize    = 12
+    lthick   = 1.0
+    marksize = 6
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(inforstr[:-2],fontsize=Fsize)
+
+    plt.plot(n_e_Te5,yvals_curve,color='darkred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^5$K)')
+    plt.plot(n_e_Te4,yvals_curve,color='indianred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^4$K)')
+    plt.plot(n_e_Te3,yvals_curve,color='salmon',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^3$K)')
+
+    #----------------------------
+    cmap    = plt.cm.viridis_r
+    cdatvec = fluxdat['redshift'][goodent]
+    clabel  = '$z$'
+    cmin    = 0.01 # 0.0, 1.4
+    cmax    = 7.5 # 10.2, 6.2
+    cextend = 'neither'
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m       = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+
+    colvec   = []
+    for ii,xval in enumerate(n_e):
+        colvec.append(cmap(colnorm(cdatvec[ii])))
+
+    colshrink = 1.0
+    colaspect = 30
+    colanchor = (0.0,0.5)
+    cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+                           pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+    cb.set_label(clabel)
+    #----------------------------
+    FRvallist = np.unique(FRval[np.isfinite(FRval)])
+    voffsets_indices = {}
+    for FRvl in FRvallist:
+        voffsets_indices[str(FRvl)] = 0
+
+    plt.xscale('log')
+    plt.ylabel(ylabel)
+    plt.xlabel('n$_\\textrm{e}$ [cm$^{-3}$]')
+    plt.xlim([1,1e8])
+
+    limsizefrac = 0.05
+    xvalues     = n_e
+    for nn, obj_ne in enumerate(xvalues):
+        mfc      = colvec[nn]#'navy'
+        xlolims  = False
+        xuplims  = False
+        xerr_min = n_e[nn]-n_e_min[nn]
+        xerr_max = n_e_max[nn]-n_e[nn]
+        xerrshow = [xerr_min,xerr_max]
+
+        xvalshow = n_e[nn]
+
+        if ~np.isfinite(n_e_min[nn]) & ~np.isfinite(n_e_max[nn]):
+            continue
+        elif ~np.isfinite(n_e_min[nn]):
+            n_e[nn]     = n_e_max[nn]
+            n_e_min[nn] = +99
+            n_e_max[nn] = +99
+
+            xuplims     = True
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            xvalshow = n_e[nn]#/Nsigma * 1.0
+            xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+
+        elif ~np.isfinite(n_e_max[nn]):
+            n_e[nn]     = n_e_min[nn]
+            n_e_min[nn] = -99
+            n_e_max[nn] = -99
+
+            xlolims     = True
+            xvalshow = n_e[nn]#/Nsigma / 1.0
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
+
+
+        yvalshow = FRval[goodent][nn] + voffsets_indices[str(FRval[goodent][nn])]
+        voffsets_indices[str(FRval[goodent][nn])] = voffsets_indices[str(FRval[goodent][nn])] + 0.03
+
+        # if yvalshow ==  1.5: pdb.set_trace()
+        plt.errorbar(xvalshow,yvalshow,
+                     xerr=[xerrshow],
+                     # yerr=FRerr[goodent][nn],
+                     uplims=False,lolims=False,
+                     xuplims=xuplims,xlolims=xlolims,
+                     marker='.',lw=lthick, markersize=marksize,alpha=1.0,
+                     markerfacecolor=mfc,ecolor=mfc,
+                     markeredgecolor=mfc,zorder=10)
+
+        fout.write(str(fluxdat['id'][goodent][nn])+'  '+
+                   str("%15.2f" % n_e[nn])+'  '+str("%15.2f" % n_e_min[nn])+'  '+str("%15.2f" % n_e_max[nn])+'  '+
+                   str("%15.2f" % T_e_fix)+'  pyneb.getTemDen('+FR+')  \n')
+
+    leg = plt.legend(fancybox=True, loc='lower left',prop={'size':Fsize/1.3},ncol=1,numpoints=1)#,
+                     # bbox_to_anchor=(0.5, 1.1),)  # add the legend
+    leg.get_frame().set_alpha(0.7)
+
+    # - - - - - - Histogram of n_e  - - - - - -
+    xminsys, xmaxsys = plt.xlim() # use to get automatically expanded axes if xmin = xmax
+    Nbins = 50
+    axHistx = plt.axes(rect_histx)
+    axHistx.xaxis.set_major_formatter(NullFormatter())
+
+    binwidth_x = np.diff([xminsys,xmaxsys])/Nbins
+    bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+    bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+    axHistx.set_xscale('log')
+
+    axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
+    axHistx.set_xticks([])
+    axHistx.set_xlim([xminsys,xmaxsys])
+    # - - - - - - - - - - - - - - - - - - - - -
+
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+    #------------------------------------------------------------------------------
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
