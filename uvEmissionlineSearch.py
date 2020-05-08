@@ -12875,6 +12875,126 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     if verbose: print('--- Estimating n_e from a single fluxratio ---')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    FR    = 'FR_OIII1OIII2'
+    FRval = fluxdat[FR]
+    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
+    if verbose: print(' - using flux ratio '+FR)
+    pn.atomicData.setDataFile('o_iii_coll_AK99.dat')
+    O3 = pn.Atom('O', 3)
+    # O3.printIonic(tem=10000., den=1e3, printA=True, printPop=True, printCrit=True)
+    if verbose: print('   '+str(O3))
+
+    #------------------------------------------------------------------------------
+    if generateExtraPlots:
+        if verbose: print(' - Setting up and generating Grotrian diagram ')
+        plotname = outputfile.replace('.txt','_OIII_Grotrian.pdf')
+        fig = plt.figure(figsize=(7, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        O3.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
+
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+    #------------------------------------------------------------------------------
+
+    yvals_curve = np.arange(0.0,2.0,curveresolution)
+    n_e_Te3 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1661, wave2=1666)
+    n_e_Te4 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1661, wave2=1666)
+    n_e_Te5 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1661, wave2=1666)
+
+    for TeKey in T_e_fix_vals:
+        T_e_fix = T_e_fix_vals[TeKey]
+        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
+        if len(goodent) == 0:
+            if verbose: print('   No good measurements found in line flux catalog for '+FR)
+        else:
+            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
+
+            n_e     = O3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1661, wave2=1666)
+            n_e_min = O3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1661, wave2=1666)
+            n_e_max = O3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1661, wave2=1666)
+            ylabel   = 'OIII1661/OIII1666'
+            plotname = outputfile.replace('.txt','_OIII_ne_estimates_Te'+TeKey+'.pdf')
+
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
+                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    FR    = 'FR_CIV1CIV2'
+    FRval = fluxdat[FR]
+    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
+    if verbose: print(' - using flux ratio '+FR)
+    C4 = pn.Atom('C', 4)
+    if verbose: print('   '+str(C4))
+
+    #------------------------------------------------------------------------------
+    if generateExtraPlots:
+        if verbose: print(' - Setting up and generating Grotrian diagram ')
+        plotname = outputfile.replace('.txt','_CIV_Grotrian.pdf')
+        fig = plt.figure(figsize=(7, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+        Fsize    = 10
+        lthick   = 2
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        C4.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
+
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+    #------------------------------------------------------------------------------
+    yvals_curve = np.arange(0.0,2.0,curveresolution)
+    n_e_Te3 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1548, wave2=1551)
+    n_e_Te4 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1548, wave2=1551)
+    n_e_Te5 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1548, wave2=1551)
+
+    for TeKey in T_e_fix_vals:
+        T_e_fix = T_e_fix_vals[TeKey]
+        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
+        if len(goodent) == 0:
+            if verbose: print('   No good measurements found in line flux catalog for '+FR)
+        else:
+            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
+
+            n_e     = C4.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1548, wave2=1551)
+            n_e_min = C4.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1548, wave2=1551)
+            n_e_max = C4.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1548, wave2=1551)
+            ylabel   = 'CIV1548/CIV1551'
+            plotname = outputfile.replace('.txt','_CIV_ne_estimates_Te'+TeKey+'.pdf')
+
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
+                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    fout.close()
+
+    pdb.set_trace()
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     FR = 'FR_SiIII1SiIII2'
     if verbose: print(' - using flux ratio '+FR)
     FRval = fluxdat[FR]
@@ -12984,18 +13104,31 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
                               fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    fout.close()
-
-    pdb.set_trace()
-
-    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # diags = pn.Diagnostics()
-    # if verbose: print('--- Estimating n_e and T_e from set of flux ratios ---')
+    # EMission grids:
+    # emgridcalc = outputfile.replace('.txt','_CIII_emissiongrid.pypic')
+    # if os.path.isfile(emgridcalc):
+    #     C3_EG = pn.EmisGrid(restore_file=emgridcalc) # Restored from a previous computation
+    # else:
+    #     C3_EG = pn.EmisGrid('C', 3, n_tem=30, n_den=30,
+    #                         tem_min=5000., tem_max=20000.,
+    #                         den_min=10., den_max=1.e8)
+    #     C3_EG.save(emgridcalc)
     #
-    # FR1   = 'FR_CIII1CIII2'
-    # FR2   = 'FR_SiIII1SiIII2'
-    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
-    # Te, Ne = diags.getCrossTemDen('[NII] 5755/6548', '[SII] 6731/6716', 0.02, 1.0)
+    # # O3_5007 = O3_EG.getGrid(wave=5007)
+    # # O3_Te   = O3_EG.getGrid(to_eval = 'L(4363)/L(5007)')
+    # C3_EG.plotImage(to_eval = 'L(1907)/L(1909)')
+    # C3_EG.plotContours(to_eval = 'L(1907)/L(1909)')
+    #
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    diags = pn.Diagnostics()
+    if verbose: print('--- Estimating n_e and T_e from set of flux ratios ---')
+
+    FR1   =  XX # Temperature sensitive
+    FR2   = 'FR_CIII1CIII2' # 'FR_SiIII1SiIII2' # densitiy sensitive
+    if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
+
+    Te, Ne = diags.getCrossTemDen('CIII 1907/1909', 'SiII 1883/1892', 0.02, 1.0)
     #
     #
     # FR1   = 'FR_CIII1CIII2'
@@ -13006,21 +13139,9 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     #
     # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # # The complete list of the predefined diagnostics is stored in the pn.diags dictionary and can be listed with:
-    # for diag in sort(pn.diags_dict.keys()):
+    # for diag in np.sort(pn.diags_dict.keys()):
     #     print('"{0}" : {1}'.format(diag, pn.diags_dict[diag]))
     #
-    # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # # EMission grids:
-    # O3_EG = pn.EmisGrid('O', 3, n_tem=30, n_den=30,
-    #                     tem_min=5000., tem_max=20000.,
-    #                     den_min=10., den_max=1.e8)
-    # O3_EG.save('plot/O3_30by30.pypic')
-    # # O3_EG = pn.EmisGrid(restore_file='plot/O3_30by30.pypic') # Restored from a previous computation
-    #
-    # O3_5007 = O3_EG.getGrid(wave=5007)
-    # O3_Te   = O3_EG.getGrid(to_eval = 'L(4363)/L(5007)')
-    # O3_EG.plotImage(to_eval = 'L(4363)/L(5007)')
-    # O3_EG.plotContours(to_eval = 'L(4363)/L(5007)')
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
