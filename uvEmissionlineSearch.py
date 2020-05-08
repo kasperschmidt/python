@@ -11579,7 +11579,8 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
                             (masterdat['redshift'] >= 0.0) & (masterdat['duplicationID'] == 0.0) )[0]
 
     if verbose: print('   o LAEs ')
-    sel_LAEs = np.where( (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
+    # sel_LAEs = np.where( (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
+    sel_LAEs = np.where( (masterdat['redshift'] >= 2.9) )[0]
 
     if verbose: print('   o CIII emitters ')
     sel_CIII = np.where(((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) &
@@ -11598,10 +11599,11 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
                         (masterdat['duplicationID'] == 0.0) )[0]
 
     if verbose: print(' - Defining images and ranges')
-    fields  = ['GOODS-S','COSMOS','UDF']
+    fields  = ['GOODS-S','COSMOS','UDF','MXDFregion']
 
     imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det.fits',
                   '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits',
+                  '/Users/kschmidt/work/images_MAST/hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci.fits',
                   '/Users/kschmidt/work/images_MAST/hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci.fits']
 
     # imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
@@ -11611,11 +11613,12 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
 
     pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings.reg',
                        '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings.reg',
-                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg',]
+                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg',
+                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg']
 
     for ii, imagefile in enumerate(imagefiles):
-        # if ii != 2:
-        #     continue
+        if ii != 3:
+            continue
         plotname  = figbasename.replace('.pdf','_'+fields[ii]+'.pdf')
         if showobjects:
             plotname  = plotname.replace('.pdf','_withobj.pdf')
@@ -11662,6 +11665,15 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
         ax.coords[0].set_axislabel('Right Ascension (J2000)')
         ax.coords[1].set_axislabel('Declination (J2000)')
 
+        if 'MXDF' in fields[ii]:
+            regstr = 'circle(53.16467,-27.78537,44.0") # color=magenta width=2  font="times 10 bold roman" text={MXDF; r=44"} '
+            r2 = pyregion.parse(regstr).as_imagecoord(header=hdu.header)
+            patch_list, artist_list = r2.get_mpl_patches_texts()
+            for pp in patch_list:
+                ax.add_patch(pp)
+            for tt in artist_list:
+                ax.add_artist(tt)
+
         # overlay = ax.get_coords_overlay('fk5')
         # overlay.grid(color='white', ls='dotted')
         # overlay[0].set_axislabel('Right Ascension (J2000)')
@@ -11682,7 +11694,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
             ax.add_artist(tt)
 
         if showobjects:
-            for ii, objid in enumerate(masterdat['id']):
+            for oo, objid in enumerate(masterdat['id']):
                 if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
                     if (str(objid)[0] == '2') or (int(str(objid)[0]) >= 6):
                         continue
@@ -11722,6 +11734,9 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
                     plotmarker = '*'
                     symsize = 20
 
+                if 'MXDF' in fields[ii]:
+                    symsize = symsize*2.0
+
                 ax.scatter(infodat['ra'][infoent],infodat['dec'][infoent], transform=ax.get_transform('fk5'), marker=plotmarker,
                            s=symsize, edgecolor=edgecolor, facecolor=facecolor, alpha=0.5, zorder=1e10, lw=0.5)
 
@@ -11733,8 +11748,12 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
             plt.xlim([xmax*0.18,xmax*0.70])
             plt.ylim([ymax*0.23,ymax*0.48])
         elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
-            plt.xlim([xmax*0.10,xmax*0.95])
-            plt.ylim([ymax*0.15,ymax*0.95])
+            if 'MXDF' in fields[ii]:
+                plt.xlim([xmax*0.30,xmax*0.65])
+                plt.ylim([ymax*0.40,ymax*0.75])
+            else:
+                plt.xlim([xmax*0.10,xmax*0.95])
+                plt.ylim([ymax*0.15,ymax*0.95])
 
         # plt.xlabel('R.A.')
         # plt.ylabel('Dec.')
