@@ -4999,25 +4999,25 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             ms          = marksize
             limsizefrac = 0.05
 
-            if y_uplimarr[ii]:
+            if y_uplimarr[ii].all():
                 if ylog:
                     dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
                     yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])-dlog))
                 else:
                     yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
-            if y_lolimarr[ii]:
+            if y_lolimarr[ii].all():
                 if ylog:
                     dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
                     yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])+dlog))
                 else:
                     yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
-            if x_uplimarr[ii]:
+            if x_uplimarr[ii].all():
                 if xlog:
                     dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
                     xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])-dlog))
                 else:
                     xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
-            if x_lolimarr[ii]:
+            if x_lolimarr[ii].all():
                 if xlog:
                     dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
                     xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])+dlog))
@@ -5025,7 +5025,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
             # change color of limits
-            if y_uplimarr[ii] or y_lolimarr[ii] or x_uplimarr[ii] or x_lolimarr[ii]:
+            if y_uplimarr[ii].all() or y_lolimarr[ii].all() or x_uplimarr[ii].all() or x_lolimarr[ii].all():
                 ecol         = 'darkgray'
                 mecol        = 'darkgray'
                 fcol         = 'darkgray'
@@ -5041,19 +5041,29 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             else:
                 markerfacecolor = 'None'
 
-            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerr[ii],yerr=yerr[ii],capthick=0.5,
+            if len(xerr[ii]) == 2:
+                xerrshow = [xerr[ii]]
+            else:
+                xerrshow = xerr[ii]
+
+            if len(yerr[ii]) == 2:
+                yerrshow = [yerr[ii]]
+            else:
+                yerrshow = yerr[ii]
+
+            plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerrshow,yerr=yerrshow,capthick=0.5,
                          uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
                          marker=markersym,lw=lthick/2., markersize=ms,alpha=alphaval,
                          markerfacecolor=markerfacecolor,ecolor=ecol,
                          markeredgecolor=mecol,zorder=markerzorder)
 
         if linetype == 'horizontal':
-            plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'onetoone':
-            plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([-1,1e10],[-1,1e10],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'plus':
-            plt.plot([-1e5,1e5],[0,0],'--',color='black',lw=lthick,zorder=10)
-            plt.plot([0,0],[-1e5,1e5],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([0,0],[-1e10,1e10],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'onetooneWZsun':
             plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
             Zsun = 8.69
@@ -5065,6 +5075,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             sys.exit(' Unknown value of linetype = "'+linetype+'"')
 
         #--------- PHOTOIONIZATION GRIDS ---------
+        titleaddition = ''
         if photoionizationplotparam is not None:
             titleaddition = uves.add_photoionization_models_to_lineratioplot(photoionizationplotparam)
 
@@ -12891,134 +12902,127 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     T_e_fix_vals = {'3k':1.e3, '4k':1.e4, '5k':1.e5}
+    yvals_curve  = np.arange(0.0,2.0,curveresolution)
     if verbose: print('--- Estimating n_e from a single fluxratio ---')
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    FR    = 'FR_OIII1OIII2'
-    FRval = fluxdat[FR]
-    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
-    if verbose: print(' - using flux ratio '+FR)
-    pn.atomicData.setDataFile('o_iii_coll_AK99.dat')
-    O3 = pn.Atom('O', 3)
-    # O3.printIonic(tem=10000., den=1e3, printA=True, printPop=True, printCrit=True)
-    if verbose: print('   '+str(O3))
+    skipOIIIandCIV = True
+    if not skipOIIIandCIV:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        FR    = 'FR_OIII1OIII2'
+        FRval = fluxdat[FR]
+        FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
+        if verbose: print(' - using flux ratio '+FR)
+        pn.atomicData.setDataFile('o_iii_coll_AK99.dat')
+        O3 = pn.Atom('O', 3)
+        # O3.printIonic(tem=10000., den=1e3, printA=True, printPop=True, printCrit=True)
+        if verbose: print('   '+str(O3))
 
-    #------------------------------------------------------------------------------
-    if generateExtraPlots:
-        if verbose: print(' - Setting up and generating Grotrian diagram ')
-        plotname = outputfile.replace('.txt','_OIII_Grotrian.pdf')
-        fig = plt.figure(figsize=(7, 5))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
-        Fsize    = 10
-        lthick   = 2
-        marksize = 6
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif',size=Fsize)
-        plt.rc('xtick', labelsize=Fsize)
-        plt.rc('ytick', labelsize=Fsize)
-        plt.clf()
-        plt.ioff()
-        #plt.title(inforstr[:-2],fontsize=Fsize)
+        #------------------------------------------------------------------------------
+        if generateExtraPlots:
+            if verbose: print(' - Setting up and generating Grotrian diagram ')
+            plotname = outputfile.replace('.txt','_OIII_Grotrian.pdf')
+            fig = plt.figure(figsize=(7, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+            Fsize    = 10
+            lthick   = 2
+            marksize = 6
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            #plt.title(inforstr[:-2],fontsize=Fsize)
 
-        O3.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
+            O3.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
 
-        if verbose: print('   Saving plot to '+plotname)
-        plt.savefig(plotname)
-        plt.clf()
-        plt.close('all')
-    #------------------------------------------------------------------------------
+            if verbose: print('   Saving plot to '+plotname)
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+        #------------------------------------------------------------------------------
 
-    yvals_curve = np.arange(0.0,2.0,curveresolution)
-    n_e_Te3 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1661, wave2=1666)
-    n_e_Te4 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1661, wave2=1666)
-    n_e_Te5 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1661, wave2=1666)
+        n_e_Te3 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1661, wave2=1666)
+        n_e_Te4 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1661, wave2=1666)
+        n_e_Te5 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1661, wave2=1666)
 
-    for TeKey in T_e_fix_vals:
-        T_e_fix = T_e_fix_vals[TeKey]
-        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
-        if len(goodent) == 0:
-            if verbose: print('   No good measurements found in line flux catalog for '+FR)
-        else:
-            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
+        for TeKey in T_e_fix_vals:
+            T_e_fix = T_e_fix_vals[TeKey]
+            goodent_O3 = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
+            if len(goodent_O3) == 0:
+                if verbose: print('   No good measurements found in line flux catalog for '+FR)
+            else:
+                if verbose: print('   Found '+str(len(goodent_O3))+' measurements in line flux catalog for '+FR)
 
-            n_e     = O3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1661, wave2=1666)
-            n_e_min = O3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1661, wave2=1666)
-            n_e_max = O3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1661, wave2=1666)
-            ylabel   = 'OIII1661/OIII1666'
-            plotname = outputfile.replace('.txt','_OIII_ne_estimates_Te'+TeKey+'.pdf')
+                n_e_O3     = O3.getTemDen(FRval[goodent_O3], tem=T_e_fix, wave1=1661, wave2=1666)
+                n_e_min_O3 = O3.getTemDen(FRval[goodent_O3]+Nsigma*FRerr[goodent_O3], tem=1.e4, wave1=1661, wave2=1666)
+                n_e_max_O3 = O3.getTemDen(FRval[goodent_O3]-Nsigma*FRerr[goodent_O3], tem=1.e4, wave1=1661, wave2=1666)
+                ylabel     = 'OIII1661/OIII1666'
+                plotname   = outputfile.replace('.txt','_OIII_ne_estimates_Te'+TeKey+'.pdf')
 
-            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
-                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
-
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    FR    = 'FR_CIV1CIV2'
-    FRval = fluxdat[FR]
-    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
-    if verbose: print(' - using flux ratio '+FR)
-    C4 = pn.Atom('C', 4)
-    if verbose: print('   '+str(C4))
-
-    #------------------------------------------------------------------------------
-    if generateExtraPlots:
-        if verbose: print(' - Setting up and generating Grotrian diagram ')
-        plotname = outputfile.replace('.txt','_CIV_Grotrian.pdf')
-        fig = plt.figure(figsize=(7, 5))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
-        Fsize    = 10
-        lthick   = 2
-        marksize = 6
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif',size=Fsize)
-        plt.rc('xtick', labelsize=Fsize)
-        plt.rc('ytick', labelsize=Fsize)
-        plt.clf()
-        plt.ioff()
-        #plt.title(inforstr[:-2],fontsize=Fsize)
-
-        C4.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
-
-        if verbose: print('   Saving plot to '+plotname)
-        plt.savefig(plotname)
-        plt.clf()
-        plt.close('all')
-    #------------------------------------------------------------------------------
-    yvals_curve = np.arange(0.0,2.0,curveresolution)
-    n_e_Te3 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1548, wave2=1551)
-    n_e_Te4 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1548, wave2=1551)
-    n_e_Te5 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1548, wave2=1551)
-
-    for TeKey in T_e_fix_vals:
-        T_e_fix = T_e_fix_vals[TeKey]
-        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
-        if len(goodent) == 0:
-            if verbose: print('   No good measurements found in line flux catalog for '+FR)
-        else:
-            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
-
-            n_e     = C4.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1548, wave2=1551)
-            n_e_min = C4.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1548, wave2=1551)
-            n_e_max = C4.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1548, wave2=1551)
-            ylabel   = 'CIV1548/CIV1551'
-            plotname = outputfile.replace('.txt','_CIV_ne_estimates_Te'+TeKey+'.pdf')
-
-            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
-                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    fout.close()
-
-    pdb.set_trace()
+                uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e_O3,n_e_min_O3,n_e_max_O3,
+                                  fluxdat,goodent_O3,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
 
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        FR    = 'FR_CIV1CIV2'
+        FRval = fluxdat[FR]
+        FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
+        if verbose: print(' - using flux ratio '+FR)
+        C4 = pn.Atom('C', 4)
+        if verbose: print('   '+str(C4))
+
+        #------------------------------------------------------------------------------
+        if generateExtraPlots:
+            if verbose: print(' - Setting up and generating Grotrian diagram ')
+            plotname = outputfile.replace('.txt','_CIV_Grotrian.pdf')
+            fig = plt.figure(figsize=(7, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.1, right=0.97, bottom=0.40, top=0.97)
+            Fsize    = 10
+            lthick   = 2
+            marksize = 6
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+            #plt.title(inforstr[:-2],fontsize=Fsize)
+
+            C4.plotGrotrian(tem=1e4, den=1e2, thresh_int=1e-3, unit = 'eV', detailed=False)
+
+            if verbose: print('   Saving plot to '+plotname)
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+        #------------------------------------------------------------------------------
+        n_e_Te3 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1548, wave2=1551)
+        n_e_Te4 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1548, wave2=1551)
+        n_e_Te5 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1548, wave2=1551)
+
+        for TeKey in T_e_fix_vals:
+            T_e_fix = T_e_fix_vals[TeKey]
+            goodent_C4 = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
+            if len(goodent_C4) == 0:
+                if verbose: print('   No good measurements found in line flux catalog for '+FR)
+            else:
+                if verbose: print('   Found '+str(len(goodent_C4))+' measurements in line flux catalog for '+FR)
+
+                n_e_C4     = C4.getTemDen(FRval[goodent_C4], tem=T_e_fix, wave1=1548, wave2=1551)
+                n_e_min_C4 = C4.getTemDen(FRval[goodent_C4]+Nsigma*FRerr[goodent_C4], tem=1.e4, wave1=1548, wave2=1551)
+                n_e_max_C4 = C4.getTemDen(FRval[goodent_C4]-Nsigma*FRerr[goodent_C4], tem=1.e4, wave1=1548, wave2=1551)
+                ylabel   = 'CIV1548/CIV1551'
+                plotname = outputfile.replace('.txt','_CIV_ne_estimates_Te'+TeKey+'.pdf')
+
+                uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e_C4,n_e_min_C4,n_e_max_C4,
+                                  fluxdat,goodent_C4,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    FR = 'FR_SiIII1SiIII2'
-    if verbose: print(' - using flux ratio '+FR)
-    FRval = fluxdat[FR]
-    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
-    if verbose: print(' - using flux ratio '+FR)
+    FR_Si3 = 'FR_SiIII1SiIII2'
+    if verbose: print(' - using flux ratio '+FR_Si3)
+    FRval_Si3 = fluxdat[FR_Si3]
+    FRerr_Si3 = fluxdat[FR_Si3.replace('FR','FRerr')]*Nsigma
+    if verbose: print(' - using flux ratio '+FR_Si3)
     Si3 = pn.Atom('Si', 3)
     if verbose: print('   '+str(Si3))
 
@@ -13046,36 +13050,17 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
         plt.clf()
         plt.close('all')
     #------------------------------------------------------------------------------
-    yvals_curve = np.arange(0.0,2.0,curveresolution)
-    n_e_Te3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1883, wave2=1892)
-    n_e_Te4 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1883, wave2=1892)
-    n_e_Te5 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1883, wave2=1892)
-
-    for TeKey in T_e_fix_vals:
-        T_e_fix = T_e_fix_vals[TeKey]
-        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
-        if len(goodent) == 0:
-            if verbose: print('   No good measurements found in line flux catalog for '+FR)
-        else:
-            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
-
-            n_e      = Si3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1883, wave2=1892)
-            n_e_min  = Si3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1883, wave2=1892)
-            n_e_max  = Si3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1883, wave2=1892)
-            ylabel   = 'SiIII1883/SiIII1892'
-            plotname = outputfile.replace('.txt','_SiIII_ne_estimates_Te'+TeKey+'.pdf')
-
-            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
-                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
+    n_e_Te3_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1883, wave2=1892)
+    n_e_Te4_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1883, wave2=1892)
+    n_e_Te5_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1883, wave2=1892)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    FR    = 'FR_CIII1CIII2'
-    FRval = fluxdat[FR]
-    FRerr = fluxdat[FR.replace('FR','FRerr')]*Nsigma
-    if verbose: print(' - using flux ratio '+FR)
+    FR_C3 = 'FR_CIII1CIII2'
+    FRval_C3 = fluxdat[FR_C3]
+    FRerr_C3 = fluxdat[FR_C3.replace('FR','FRerr')]*Nsigma
+    if verbose: print(' - using flux ratio '+FR_C3)
     C3 = pn.Atom('C', 3)
     if verbose: print('   '+str(C3))
-
     #------------------------------------------------------------------------------
     if generateExtraPlots:
         if verbose: print(' - Setting up and generating Grotrian diagram ')
@@ -13100,27 +13085,75 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
         plt.clf()
         plt.close('all')
     #------------------------------------------------------------------------------
-    yvals_curve = np.arange(0.0,2.0,curveresolution)
-    n_e_Te3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1907, wave2=1909)
-    n_e_Te4 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1907, wave2=1909)
-    n_e_Te5 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1907, wave2=1909)
+    n_e_Te3_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1907, wave2=1909)
+    n_e_Te4_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1907, wave2=1909)
+    n_e_Te5_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1907, wave2=1909)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Calculating and plotting electron densitites')
     for TeKey in T_e_fix_vals:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # --- SiIII ----
         T_e_fix = T_e_fix_vals[TeKey]
-        goodent = np.where(np.isfinite(FRval) & (np.abs(FRerr) != 99))[0]
-        if len(goodent) == 0:
-            if verbose: print('   No good measurements found in line flux catalog for '+FR)
+        goodent_Si3 = np.where(np.isfinite(FRval_Si3) & (np.abs(FRerr_Si3) != 99))[0]
+        if len(goodent_Si3) == 0:
+            if verbose: print('   No good measurements found in line flux catalog for '+FR_Si3)
         else:
-            if verbose: print('   Found '+str(len(goodent))+' measurements in line flux catalog for '+FR)
+            if verbose: print('   Found '+str(len(goodent_Si3))+' measurements in line flux catalog for '+FR_Si3)
 
-            n_e     = C3.getTemDen(FRval[goodent], tem=T_e_fix, wave1=1907, wave2=1909)
-            n_e_min = C3.getTemDen(FRval[goodent]+Nsigma*FRerr[goodent], tem=1.e4, wave1=1907, wave2=1909)
-            n_e_max = C3.getTemDen(FRval[goodent]-Nsigma*FRerr[goodent], tem=1.e4, wave1=1907, wave2=1909)
+            n_e_Si3      = Si3.getTemDen(FRval_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
+            n_e_min_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]+Nsigma*FRerr_Si3[goodent_Si3], tem=1.e4, wave1=1883, wave2=1892)
+            n_e_max_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]-Nsigma*FRerr_Si3[goodent_Si3], tem=1.e4, wave1=1883, wave2=1892)
+            ylabel   = 'SiIII1883/SiIII1892'
+            plotname = outputfile.replace('.txt','_SiIII_ne_estimates_Te'+TeKey+'.pdf')
+
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR_Si3,ylabel,FRval_Si3,n_e_Si3,n_e_min_Si3,n_e_max_Si3,
+                              fluxdat,goodent_Si3,yvals_curve,n_e_Te3_Si3,n_e_Te4_Si3,n_e_Te5_Si3,verbose=True)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # --- CIII ----
+        T_e_fix = T_e_fix_vals[TeKey]
+        goodent_C3 = np.where(np.isfinite(FRval_C3) & (np.abs(FRerr_C3) != 99))[0]
+        if len(goodent_C3) == 0:
+            if verbose: print('   No good measurements found in line flux catalog for '+FR_C3)
+        else:
+            if verbose: print('   Found '+str(len(goodent_C3))+' measurements in line flux catalog for '+FR_C3)
+
+            n_e_C3     = C3.getTemDen(FRval_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
+            n_e_min_C3 = C3.getTemDen(FRval_C3[goodent_C3]+Nsigma*FRerr_C3[goodent_C3], tem=1.e4, wave1=1907, wave2=1909)
+            n_e_max_C3 = C3.getTemDen(FRval_C3[goodent_C3]-Nsigma*FRerr_C3[goodent_C3], tem=1.e4, wave1=1907, wave2=1909)
             ylabel   = 'CIII1907/CIII1909'
             plotname = outputfile.replace('.txt','_CIII_ne_estimates_Te'+TeKey+'.pdf')
 
-            uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
-                              fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR_C3,ylabel,FRval_C3,n_e_C3,n_e_min_C3,n_e_max_C3,
+                              fluxdat,goodent_C3,yvals_curve,n_e_Te3_C3,n_e_Te4_C3,n_e_Te5_C3,verbose=True)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # --- SiIII vs CIII ---
+        T_e_fix = T_e_fix_vals[TeKey]
+        plotname             = outputfile.replace('.txt','_CIIIvsSiIII_ne_estimates_Te'+TeKey+'.pdf')
+        xlabel               = 'n$_\\textrm{e}$(CIII) [cm$^{-3}$]'
+        ylabel               = 'n$_\\textrm{e}$(SiIII) [cm$^{-3}$]'
+        goodentC3Si3         = np.intersect1d(goodent_C3,goodent_Si3).astype(int)
+        n_e_goodentC3Si3_C3  = np.zeros(len(goodentC3Si3))-1
+        n_e_goodentC3Si3_Si3 = np.zeros(len(goodentC3Si3))-1
+        for gg, ge in enumerate(goodentC3Si3):
+            n_e_goodentC3Si3_C3[gg]  = np.where(goodent_C3  == ge)[0]
+            n_e_goodentC3Si3_Si3[gg] = np.where(goodent_Si3 == ge)[0]
+
+        uves.plot_neVSne(plotname,T_e_fix,
+                         n_e_C3[n_e_goodentC3Si3_C3.astype(int)],
+                         n_e_min_C3[n_e_goodentC3Si3_C3.astype(int)],
+                         n_e_max_C3[n_e_goodentC3Si3_C3.astype(int)],xlabel,
+                         n_e_Si3[n_e_goodentC3Si3_Si3.astype(int)],
+                         n_e_min_Si3[n_e_goodentC3Si3_Si3.astype(int)],
+                         n_e_max_Si3[n_e_goodentC3Si3_Si3.astype(int)],ylabel,
+                         fluxdat,goodentC3Si3,verbose=True,overwrite=overwrite)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    fout.close()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # EMission grids:
@@ -13140,14 +13173,14 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     #
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    diags = pn.Diagnostics()
-    if verbose: print('--- Estimating n_e and T_e from set of flux ratios ---')
-
-    FR1   =  XX # Temperature sensitive
-    FR2   = 'FR_CIII1CIII2' # 'FR_SiIII1SiIII2' # densitiy sensitive
-    if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
-
-    Te, Ne = diags.getCrossTemDen('CIII 1907/1909', 'SiII 1883/1892', 0.02, 1.0)
+    # diags = pn.Diagnostics()
+    # if verbose: print('--- Estimating n_e and T_e from set of flux ratios ---')
+    #
+    # FR1   =  XX # Temperature sensitive
+    # FR2   = 'FR_CIII1CIII2' # 'FR_SiIII1SiIII2' # densitiy sensitive
+    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
+    #
+    # Te, Ne = diags.getCrossTemDen('CIII 1907/1909', 'SiII 1883/1892', 0.02, 1.0)
     #
     #
     # FR1   = 'FR_CIII1CIII2'
@@ -13232,6 +13265,7 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
 
     limsizefrac = 0.05
     xvalues     = n_e
+    vallim      = np.zeros(len(xvalues))
     for nn, obj_ne in enumerate(xvalues):
         mfc      = colvec[nn]#'navy'
         xlolims  = False
@@ -13250,6 +13284,7 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
             n_e_max[nn] = +99
 
             xuplims     = True
+            vallim[nn]  = 1
             dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
             xvalshow = n_e[nn]#/Nsigma * 1.0
             xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
@@ -13260,6 +13295,7 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
             n_e_max[nn] = -99
 
             xlolims     = True
+            vallim[nn]  = 1
             xvalshow = n_e[nn]#/Nsigma / 1.0
             dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
             xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
@@ -13297,7 +13333,8 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
     axHistx.set_xscale('log')
 
-    axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
+    axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k',linestyle=':')
+    axHistx.hist(xvalues[np.isfinite(xvalues) & (vallim == 0)], bins=bindefs,histtype='step',color='k')
     axHistx.set_xticks([])
     axHistx.set_xlim([xminsys,xmaxsys])
     # - - - - - - - - - - - - - - - - - - - - -
@@ -13308,5 +13345,106 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     plt.clf()
     plt.close('all')
     #------------------------------------------------------------------------------
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_neVSne(plotname,T_e_fix,
+                n_e_1,n_e_min_1,n_e_max_1,xlabel,
+                n_e_2,n_e_min_2,n_e_max_2,ylabel,
+                fluxdat,goodent,verbose=True, overwrite=False):
+    """
+    Function to generate plots of two estimates of n_e. Used in uves.perform_PyNeb_calc_main()
+
+    """
+    Nhistbins    = 50
+    xrange       = [1e2,1e6]
+    yrange       = xrange
+    limsizefrac  = 0.05
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    xvalshow_all = []
+    xerrshow_all = []
+    for nn, obj_ne in enumerate(n_e_1):
+        xerr_min = n_e_1[nn]-n_e_min_1[nn]
+        xerr_max = n_e_max_1[nn]-n_e_1[nn]
+        xerrshow = [xerr_min,xerr_max]
+        xvalshow = n_e_1[nn]
+
+        if ~np.isfinite(n_e_min_1[nn]) & ~np.isfinite(n_e_max_1[nn]):
+            continue
+        elif ~np.isfinite(n_e_min_1[nn]):
+            n_e_1[nn]     = n_e_max_1[nn]
+            n_e_min_1[nn] = +99
+            n_e_max_1[nn] = +99
+
+            xvalshow = n_e_1[nn]
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            xerrshow = +99 #np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+        elif n_e_min_1[nn] == +99:
+            xvalshow  = n_e_1[nn]
+            xerrshow  = +99
+        elif ~np.isfinite(n_e_max_1[nn]):
+            n_e_1[nn]     = n_e_min_1[nn]
+            n_e_min_1[nn] = -99
+            n_e_max_1[nn] = -99
+
+            xvalshow = n_e_1[nn]
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            xerrshow = -99 #np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
+        elif n_e_max_1[nn] == -99:
+            xvalshow  = n_e_1[nn]
+            xerrshow  = -99
+
+        xvalshow_all.append(xvalshow)
+        xerrshow_all.append(xerrshow)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    yvalshow_all = []
+    yerrshow_all = []
+    for nn, obj_ne in enumerate(n_e_2):
+        yerr_min = n_e_2[nn]-n_e_min_2[nn]
+        yerr_max = n_e_max_2[nn]-n_e_2[nn]
+        yerrshow = [yerr_min,yerr_max]
+        yvalshow = n_e_2[nn]
+
+        if ~np.isfinite(n_e_min_2[nn]) & ~np.isfinite(n_e_max_2[nn]):
+            continue
+        elif ~np.isfinite(n_e_min_2[nn]):
+            n_e_2[nn]     = n_e_max_2[nn]
+            n_e_min_2[nn] = +99
+            n_e_max_2[nn] = +99
+
+            yvalshow = n_e_2[nn]
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            yerrshow = +99 #np.abs(yvalshow - 10.**(np.log10(yvalshow)-dlog))
+        elif n_e_min_2[nn] == +99:
+            yvalshow  = n_e_2[nn]
+            yerrshow  = +99
+        elif ~np.isfinite(n_e_max_2[nn]):
+            n_e_2[nn]     = n_e_min_2[nn]
+            n_e_min_2[nn] = -99
+            n_e_max_2[nn] = -99
+
+            yvalshow = n_e_2[nn]
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            yerrshow = -99 #np.abs(yvalshow - 10.**(np.log10(yvalshow)+dlog))
+            print(str(yerrshow)+'  '+str(nn))
+        elif n_e_max_2[nn] == -99:
+            yvalshow  = n_e_2[nn]
+            yerrshow  = -99
+
+        yvalshow_all.append(yvalshow)
+        yerrshow_all.append(yerrshow)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    xvalshow_all = np.asarray(xvalshow_all)
+    yvalshow_all = np.asarray(yvalshow_all)
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalshow_all,yvalshow_all,xerrshow_all,yerrshow_all,xlabel,ylabel,
+                                                   'dummydat',linetype='onetoone',title=None, #'this is title',
+                                                   ids=fluxdat['id'][goodent],
+                                                   ylog=True,xlog=True,yrange=yrange,xrange=xrange,
+                                                   colortype='redshift',colorcode=True,cdatvec=fluxdat['redshift'][goodent],
+                                                   point_text=None, #fluxdat['id'][goodent].astype(str),
+                                                   photoionizationplotparam=None,
+                                                   histaxes=True,Nbins=Nhistbins,
+                                                   overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
