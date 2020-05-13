@@ -13092,9 +13092,9 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Calculating and plotting electron densitites')
     for TeKey in T_e_fix_vals:
+        T_e_fix = T_e_fix_vals[TeKey]
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # --- SiIII ----
-        T_e_fix = T_e_fix_vals[TeKey]
         goodent_Si3 = np.where(np.isfinite(FRval_Si3) & (np.abs(FRerr_Si3) != 99))[0]
         if len(goodent_Si3) == 0:
             if verbose: print('   No good measurements found in line flux catalog for '+FR_Si3)
@@ -13112,7 +13112,6 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # --- CIII ----
-        T_e_fix = T_e_fix_vals[TeKey]
         goodent_C3 = np.where(np.isfinite(FRval_C3) & (np.abs(FRerr_C3) != 99))[0]
         if len(goodent_C3) == 0:
             if verbose: print('   No good measurements found in line flux catalog for '+FR_C3)
@@ -13130,7 +13129,6 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # --- SiIII vs CIII ---
-        T_e_fix = T_e_fix_vals[TeKey]
         plotname             = outputfile.replace('.txt','_CIIIvsSiIII_ne_estimates_Te'+TeKey+'.pdf')
         xlabel               = 'n$_\\textrm{e}$(CIII) [cm$^{-3}$]'
         ylabel               = 'n$_\\textrm{e}$(SiIII) [cm$^{-3}$]'
@@ -13437,6 +13435,10 @@ def plot_neVSne(plotname,T_e_fix,
     xvalshow_all = np.asarray(xvalshow_all)
     yvalshow_all = np.asarray(yvalshow_all)
 
+    if verbose:
+        print(' - Objectinfo (Nobj='+str(len(xvalshow_all))+') for plot:')
+        print('   IDs: '+str(fluxdat['id'][goodent]))
+
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalshow_all,yvalshow_all,xerrshow_all,yerrshow_all,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=None, #'this is title',
                                                    ids=fluxdat['id'][goodent],
@@ -13444,7 +13446,7 @@ def plot_neVSne(plotname,T_e_fix,
                                                    colortype='redshift',colorcode=True,cdatvec=fluxdat['redshift'][goodent],
                                                    point_text=None, #fluxdat['id'][goodent].astype(str),
                                                    photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=Nhistbins,
+                                                   histaxes=False,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
