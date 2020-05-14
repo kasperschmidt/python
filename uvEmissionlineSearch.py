@@ -4832,7 +4832,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
                                               colortype=None,colorcode=True,cdatvec=None,point_text=None,ids=None,
                                               overwrite=False,verbose=True,title=None,
-                                              photoionizationplotparam=None,
+                                              photoionizationplotparam=None, showgraylimits=True,
                                               histaxes=False,Nbins=50):
     """
 
@@ -5025,7 +5025,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
             # change color of limits
-            if y_uplimarr[ii].all() or y_lolimarr[ii].all() or x_uplimarr[ii].all() or x_lolimarr[ii].all():
+            if (y_uplimarr[ii].all() or y_lolimarr[ii].all() or x_uplimarr[ii].all() or x_lolimarr[ii].all()) & showgraylimits:
                 ecol         = 'darkgray'
                 mecol        = 'darkgray'
                 fcol         = 'darkgray'
@@ -5041,12 +5041,12 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             else:
                 markerfacecolor = 'None'
 
-            if len(xerr[ii]) == 2:
+            if len(np.atleast_1d(xerr[ii])) == 2:
                 xerrshow = [xerr[ii]]
             else:
                 xerrshow = xerr[ii]
 
-            if len(yerr[ii]) == 2:
+            if len(np.atleast_1d(yerr[ii])) == 2:
                 yerrshow = [yerr[ii]]
             else:
                 yerrshow = yerr[ii]
@@ -12955,8 +12955,8 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
                 if verbose: print('   Found '+str(len(goodent_O3))+' measurements in line flux catalog for '+FR)
 
                 n_e_O3     = O3.getTemDen(FRval[goodent_O3], tem=T_e_fix, wave1=1661, wave2=1666)
-                n_e_min_O3 = O3.getTemDen(FRval[goodent_O3]+Nsigma*FRerr[goodent_O3], tem=1.e4, wave1=1661, wave2=1666)
-                n_e_max_O3 = O3.getTemDen(FRval[goodent_O3]-Nsigma*FRerr[goodent_O3], tem=1.e4, wave1=1661, wave2=1666)
+                n_e_min_O3 = O3.getTemDen(FRval[goodent_O3]+Nsigma*FRerr[goodent_O3], tem=T_e_fix, wave1=1661, wave2=1666)
+                n_e_max_O3 = O3.getTemDen(FRval[goodent_O3]-Nsigma*FRerr[goodent_O3], tem=T_e_fix, wave1=1661, wave2=1666)
                 ylabel     = 'OIII1661/OIII1666'
                 plotname   = outputfile.replace('.txt','_OIII_ne_estimates_Te'+TeKey+'.pdf')
 
@@ -13009,8 +13009,8 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
                 if verbose: print('   Found '+str(len(goodent_C4))+' measurements in line flux catalog for '+FR)
 
                 n_e_C4     = C4.getTemDen(FRval[goodent_C4], tem=T_e_fix, wave1=1548, wave2=1551)
-                n_e_min_C4 = C4.getTemDen(FRval[goodent_C4]+Nsigma*FRerr[goodent_C4], tem=1.e4, wave1=1548, wave2=1551)
-                n_e_max_C4 = C4.getTemDen(FRval[goodent_C4]-Nsigma*FRerr[goodent_C4], tem=1.e4, wave1=1548, wave2=1551)
+                n_e_min_C4 = C4.getTemDen(FRval[goodent_C4]+Nsigma*FRerr[goodent_C4], tem=T_e_fix, wave1=1548, wave2=1551)
+                n_e_max_C4 = C4.getTemDen(FRval[goodent_C4]-Nsigma*FRerr[goodent_C4], tem=T_e_fix, wave1=1548, wave2=1551)
                 ylabel   = 'CIV1548/CIV1551'
                 plotname = outputfile.replace('.txt','_CIV_ne_estimates_Te'+TeKey+'.pdf')
 
@@ -13102,8 +13102,8 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             if verbose: print('   Found '+str(len(goodent_Si3))+' measurements in line flux catalog for '+FR_Si3)
 
             n_e_Si3      = Si3.getTemDen(FRval_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
-            n_e_min_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]+Nsigma*FRerr_Si3[goodent_Si3], tem=1.e4, wave1=1883, wave2=1892)
-            n_e_max_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]-Nsigma*FRerr_Si3[goodent_Si3], tem=1.e4, wave1=1883, wave2=1892)
+            n_e_min_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]+Nsigma*FRerr_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
+            n_e_max_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]-Nsigma*FRerr_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
             ylabel   = 'SiIII1883/SiIII1892'
             plotname = outputfile.replace('.txt','_SiIII_ne_estimates_Te'+TeKey+'.pdf')
 
@@ -13119,8 +13119,8 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             if verbose: print('   Found '+str(len(goodent_C3))+' measurements in line flux catalog for '+FR_C3)
 
             n_e_C3     = C3.getTemDen(FRval_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
-            n_e_min_C3 = C3.getTemDen(FRval_C3[goodent_C3]+Nsigma*FRerr_C3[goodent_C3], tem=1.e4, wave1=1907, wave2=1909)
-            n_e_max_C3 = C3.getTemDen(FRval_C3[goodent_C3]-Nsigma*FRerr_C3[goodent_C3], tem=1.e4, wave1=1907, wave2=1909)
+            n_e_min_C3 = C3.getTemDen(FRval_C3[goodent_C3]+Nsigma*FRerr_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
+            n_e_max_C3 = C3.getTemDen(FRval_C3[goodent_C3]-Nsigma*FRerr_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
             ylabel   = 'CIII1907/CIII1909'
             plotname = outputfile.replace('.txt','_CIII_ne_estimates_Te'+TeKey+'.pdf')
 
@@ -13259,7 +13259,7 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     plt.xscale('log')
     plt.ylabel(ylabel)
     plt.xlabel('n$_\\textrm{e}$ [cm$^{-3}$]')
-    plt.xlim([1,1e8])
+    plt.xlim([1e1,1e7])
 
     limsizefrac = 0.05
     xvalues     = n_e
@@ -13275,7 +13275,16 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
         xvalshow = n_e[nn]
 
         if ~np.isfinite(n_e_min[nn]) & ~np.isfinite(n_e_max[nn]):
-            continue
+            n_e[nn]     = 9e6
+            n_e_min[nn] = +99
+            n_e_max[nn] = +99
+            xuplims     = True
+
+            vallim[nn]  = 1
+            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+            xvalshow = n_e[nn]#/Nsigma * 1.0
+            xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+
         elif ~np.isfinite(n_e_min[nn]):
             n_e[nn]     = n_e_max[nn]
             n_e_min[nn] = +99
@@ -13354,7 +13363,7 @@ def plot_neVSne(plotname,T_e_fix,
 
     """
     Nhistbins    = 50
-    xrange       = [1e2,1e6]
+    xrange       = [1e1,1e7]
     yrange       = xrange
     limsizefrac  = 0.05
 
@@ -13368,15 +13377,15 @@ def plot_neVSne(plotname,T_e_fix,
         xvalshow = n_e_1[nn]
 
         if ~np.isfinite(n_e_min_1[nn]) & ~np.isfinite(n_e_max_1[nn]):
-            continue
+            print('WARNING - both entries for value 1 errors are not finite in uves.plot_neVSne()')
+            pdb.set_trace()
         elif ~np.isfinite(n_e_min_1[nn]):
             n_e_1[nn]     = n_e_max_1[nn]
             n_e_min_1[nn] = +99
             n_e_max_1[nn] = +99
 
             xvalshow = n_e_1[nn]
-            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-            xerrshow = +99 #np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+            xerrshow = +99
         elif n_e_min_1[nn] == +99:
             xvalshow  = n_e_1[nn]
             xerrshow  = +99
@@ -13386,8 +13395,7 @@ def plot_neVSne(plotname,T_e_fix,
             n_e_max_1[nn] = -99
 
             xvalshow = n_e_1[nn]
-            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-            xerrshow = -99 #np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
+            xerrshow = -99
         elif n_e_max_1[nn] == -99:
             xvalshow  = n_e_1[nn]
             xerrshow  = -99
@@ -13404,15 +13412,15 @@ def plot_neVSne(plotname,T_e_fix,
         yvalshow = n_e_2[nn]
 
         if ~np.isfinite(n_e_min_2[nn]) & ~np.isfinite(n_e_max_2[nn]):
-            continue
+            print('WARNING - both entries for value 2 errors are not finite in uves.plot_neVSne()')
+            pdb.set_trace()
         elif ~np.isfinite(n_e_min_2[nn]):
             n_e_2[nn]     = n_e_max_2[nn]
             n_e_min_2[nn] = +99
             n_e_max_2[nn] = +99
 
             yvalshow = n_e_2[nn]
-            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-            yerrshow = +99 #np.abs(yvalshow - 10.**(np.log10(yvalshow)-dlog))
+            yerrshow = +99
         elif n_e_min_2[nn] == +99:
             yvalshow  = n_e_2[nn]
             yerrshow  = +99
@@ -13422,8 +13430,7 @@ def plot_neVSne(plotname,T_e_fix,
             n_e_max_2[nn] = -99
 
             yvalshow = n_e_2[nn]
-            dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-            yerrshow = -99 #np.abs(yvalshow - 10.**(np.log10(yvalshow)+dlog))
+            yerrshow = -99
             print(str(yerrshow)+'  '+str(nn))
         elif n_e_max_2[nn] == -99:
             yvalshow  = n_e_2[nn]
@@ -13446,7 +13453,7 @@ def plot_neVSne(plotname,T_e_fix,
                                                    colortype='redshift',colorcode=True,cdatvec=fluxdat['redshift'][goodent],
                                                    point_text=None, #fluxdat['id'][goodent].astype(str),
                                                    photoionizationplotparam=None,
-                                                   histaxes=False,Nbins=Nhistbins,
+                                                   histaxes=False,Nbins=Nhistbins, showgraylimits=False,
                                                    overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
