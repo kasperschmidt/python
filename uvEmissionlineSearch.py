@@ -4974,10 +4974,20 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         yminsys, ymaxsys = plt.ylim() # use to get automatically expanded axes if xmin = xmax
 
         #--------- X and Y limits ---------
-        y_uplimarr = (np.asarray(yerr) == +99)  # .astype(int) # KBS removed on 200217
-        y_lolimarr = (np.asarray(yerr) == -99)  # .astype(int) # KBS removed on 200217
-        x_uplimarr = (np.asarray(xerr) == +99)  # .astype(int) # KBS removed on 200217
-        x_lolimarr = (np.asarray(xerr) == -99)  # .astype(int) # KBS removed on 200217
+        if yerr is not None:
+            y_uplimarr = (np.asarray(yerr) == +99)  # .astype(int) # KBS removed on 200217
+            y_lolimarr = (np.asarray(yerr) == -99)  # .astype(int) # KBS removed on 200217
+        else:
+            y_uplimarr = [False]*len(xvalues)
+            y_lolimarr = y_uplimarr
+
+        if xerr is not None:
+            x_uplimarr = (np.asarray(xerr) == +99)  # .astype(int) # KBS removed on 200217
+            x_lolimarr = (np.asarray(xerr) == -99)  # .astype(int) # KBS removed on 200217
+        else:
+            x_uplimarr = [False]*len(xvalues)
+            x_lolimarr = x_uplimarr
+
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
             # checking for upper/lower limits
             if ids is not None:
@@ -4999,57 +5009,75 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             ms          = marksize
             limsizefrac = 0.05
 
-            if y_uplimarr[ii].all():
-                if ylog:
-                    dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
-                    yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])-dlog))
-                else:
-                    yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
-            if y_lolimarr[ii].all():
-                if ylog:
-                    dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
-                    yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])+dlog))
-                else:
-                    yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
-            if x_uplimarr[ii].all():
-                if xlog:
-                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-                    xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])-dlog))
-                else:
-                    xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
-            if x_lolimarr[ii].all():
-                if xlog:
-                    dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
-                    xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])+dlog))
-                else:
-                    xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+            if yerr is not None:
+                if y_uplimarr[ii].all():
+                    if ylog:
+                        dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                        yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])-dlog))
+                    else:
+                        yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+                if y_lolimarr[ii].all():
+                    if ylog:
+                        dlog     = np.abs(np.diff(np.log10(plt.ylim()))) * limsizefrac
+                        yerr[ii] = np.abs(yvalues[ii] - 10.**(np.log10(yvalues[ii])+dlog))
+                    else:
+                        yerr[ii] = np.abs(np.diff(plt.ylim())) * limsizefrac
+
+            if xerr is not None:
+                if x_uplimarr[ii].all():
+                    if xlog:
+                        dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                        xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])-dlog))
+                    else:
+                        xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
+                if x_lolimarr[ii].all():
+                    if xlog:
+                        dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
+                        xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])+dlog))
+                    else:
+                        xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
 
             # change color of limits
-            if (y_uplimarr[ii].all() or y_lolimarr[ii].all() or x_uplimarr[ii].all() or x_lolimarr[ii].all()) & showgraylimits:
-                ecol         = 'darkgray'
-                mecol        = 'darkgray'
-                fcol         = 'darkgray'
-                markerzorder = 18
+            ecol         = colvec[ii]
+            mecol        = colvec[ii]
+            fcol         = facecol[ii]
+            markerzorder = 20
+
+            if (xerr is not None) & showgraylimits:
+                if x_uplimarr[ii].all() or x_lolimarr[ii].all():
+                    ecol         = 'darkgray'
+                    mecol        = 'darkgray'
+                    fcol         = 'darkgray'
+                    markerzorder = 18
+
+            if (xerr is not None):
+                if len(np.atleast_1d(xerr[ii])) == 2:
+                    xerrshow = [xerr[ii]]
+                else:
+                    xerrshow = xerr[ii]
             else:
-                ecol         = colvec[ii]
-                mecol        = colvec[ii]
-                fcol         = facecol[ii]
-                markerzorder = 20
+                xerrshow = xerr
+
+            if (yerr is not None) & showgraylimits:
+                if y_uplimarr[ii].all() or y_lolimarr[ii].all():
+                    ecol         = 'darkgray'
+                    mecol        = 'darkgray'
+                    fcol         = 'darkgray'
+                    markerzorder = 18
+
+            if (yerr is not None):
+                if len(np.atleast_1d(yerr[ii])) == 2:
+                    yerrshow = [yerr[ii]]
+                else:
+                    yerrshow = yerr[ii]
+            else:
+                yerrshow = yerr
+
 
             if mfc:
                 markerfacecolor = fcol
             else:
                 markerfacecolor = 'None'
-
-            if len(np.atleast_1d(xerr[ii])) == 2:
-                xerrshow = [xerr[ii]]
-            else:
-                xerrshow = xerr[ii]
-
-            if len(np.atleast_1d(yerr[ii])) == 2:
-                yerrshow = [yerr[ii]]
-            else:
-                yerrshow = yerr[ii]
 
             plt.errorbar(xvalues[ii],yvalues[ii],xerr=xerrshow,yerr=yerrshow,capthick=0.5,
                          uplims=y_uplimarr[ii],lolims=y_lolimarr[ii],xuplims=x_uplimarr[ii],xlolims=x_lolimarr[ii],
@@ -7202,19 +7230,7 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
     if line2 is not None:
         sys.exit(' Expects line2 to be None for uves.plot_lineratios_fromsummaryfiles_vsInfofile() linelist input; it was "'+line2+'"')
 
-
-    infocols  = {}
-    infocols['lyaew_b2']      = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
-    infocols['lyaew_many']    = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
-    infocols['lyafwhm_a']     = ['fwhm_a_jk','fwhm_a_std_jk',                           'FWHM(Ly$\\alpha$) [\AA]']
-    infocols['lyafwhm_kms']   = ['fwhm_kms_jk','fwhm_kms_std_jk',                       'FWHM(Ly$\\alpha$) [km/s]']
-    infocols['beta_many']     = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
-    infocols['beta_beta2']    = ['beta_beta2','beta_beta2_error',                       '$\\beta$ (fixed)']
-    infocols['absmagUV_fix']  = ['abs_mag_UV_cont_beta2',None,                          'M(UV) ($\\beta = -2$)']
-    infocols['absmagUV_many'] = ['abs_mag_UV_cont_linear_many',None,                    'M(UV) ($\\beta$ linear multiband fit)']
-    infocols['magUV_fix']     = ['mag_UV_cont_beta2',None,                              'm(UV) ($\\beta = -2$)']
-    infocols['magUV_many']    = ['mag_UV_cont_linear_many',None,                        'm(UV) ($\\beta$ linear multiband fit)']
-    infocols['redshift']      = ['redshift',None,                                       '$z$']
+    infocols = uves.get_infodat_plotcols()
 
     xlabel    = infocols[line1][2]
 
@@ -7482,6 +7498,26 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                                                    point_text=point_textALL,photoionizationplotparam=None,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_infodat_plotcols():
+    """
+    Function returning columns from info file to plot
+    """
+    infocols  = {}
+    infocols['lyaew_b2']      = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
+    infocols['lyaew_many']    = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
+    infocols['lyafwhm_a']     = ['fwhm_a_jk','fwhm_a_std_jk',                           'FWHM(Ly$\\alpha$) [\AA]']
+    infocols['lyafwhm_kms']   = ['fwhm_kms_jk','fwhm_kms_std_jk',                       'FWHM(Ly$\\alpha$) [km/s]']
+    infocols['beta_many']     = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
+    infocols['beta_beta2']    = ['beta_beta2','beta_beta2_error',                       '$\\beta$ (fixed)']
+    infocols['absmagUV_fix']  = ['abs_mag_UV_cont_beta2',None,                          'M(UV) ($\\beta = -2$)']
+    infocols['absmagUV_many'] = ['abs_mag_UV_cont_linear_many',None,                    'M(UV) ($\\beta$ linear multiband fit)']
+    infocols['magUV_fix']     = ['mag_UV_cont_beta2',None,                              'm(UV) ($\\beta = -2$)']
+    infocols['magUV_many']    = ['mag_UV_cont_linear_many',None,                        'm(UV) ($\\beta$ linear multiband fit)']
+    infocols['redshift']      = ['redshift',None,                                       '$z$']
+
+    return infocols
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=None, fixbeta=False, overwrite=False, s2nlimit=3.0,
                  fcontverbose=False, verbose=True):
@@ -13455,5 +13491,83 @@ def plot_neVSne(plotname,T_e_fix,
                                                    photoionizationplotparam=None,
                                                    histaxes=False,Nbins=Nhistbins, showgraylimits=False,
                                                    overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffsetFigures/',
+                             overwrite=False,verbose=True):
+    """
+    Main function to handle caluclations and diagostics using PyNeb
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uvesdir          = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    outdir           = uvesdir+'velocityoffsetFigures/'
+    linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,overwrite=True,verbose=True)
+
+    """
+    dat_uves = afits.open(linefluxcatalog)[1].data
+    infodat  = afits.open(infofile)[1].data
+    infodat  = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    for ii, id in enumerate(dat_uves['id']): # double checking that order of objects is the same
+        if infodat['id'][ii] != id:
+            sys.exit('There was a mismatch in ids for entry '+str(ii))
+
+    dv_CIV_ent = np.where((dat_uves['vshift_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['vshift_CIV']))[0]
+    dv_CIV   = dat_uves['vshift_CIV'][dv_CIV_ent]
+
+    dv_HeII_ent = np.where((dat_uves['vshift_HeII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_HeII']))[0]
+    dv_HeII   = dat_uves['vshift_HeII'][dv_HeII_ent]
+
+    dv_OIII_ent = np.where((dat_uves['vshift_OIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_OIII']))[0]
+    dv_OIII   = dat_uves['vshift_OIII'][dv_OIII_ent]
+
+    dv_SiIII_ent = np.where((dat_uves['vshift_SiIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                            np.isfinite(dat_uves['vshift_SiIII']))[0]
+    dv_SiIII   = dat_uves['vshift_SiIII'][dv_SiIII_ent]
+
+    dv_CIII_ent = np.where((dat_uves['vshift_CIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_CIII']))[0]
+    dv_CIII   = dat_uves['vshift_CIII'][dv_CIII_ent]
+
+    linename   = ['CIV','HeII','OIII','SiIII','CIII']
+    dvs_ent    = [dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent]
+    dvs        = [dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII]
+    for vv, dv in enumerate(dvs):
+        histaxes  = True
+        Nhistbins = 50
+        yrange    = [-1000,1000]
+        ylabel    = '$\Delta v$(lead line wrt. '+linename[vv]+') [km/s]'
+
+        #---- vs redshift ---
+        plotname = outputdir+'evaluate_voffsets_'+linename[vv]+'VSredshift.pdf'
+        xrange   = [1.5,5.0]
+        xlabel   = '$z$(lead line)'
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,dat_uves['redshift'][dvs_ent[vv]],dv,None,None,xlabel,ylabel,
+                                                       'dummydat',linetype='horizontal',title=None, #'this is title',
+                                                       ids=dat_uves['id'][dvs_ent[vv]],
+                                                       ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                       colortype='s2nfelis',colorcode=True,
+                                                       cdatvec=dat_uves['s2n_'+linename[vv]][dvs_ent[vv]],
+                                                       point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                       photoionizationplotparam=None,
+                                                       histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                       overwrite=overwrite,verbose=verbose)
+
+        infocols = uves.get_infodat_plotcols()
+        #---- vs M_UV ---
+
+        #---- vs m_UV ---
+
+        #---- vs EW(Lya) ---
+
+        #---- vs FWHM(Lya) ---
+
+        #---- vs beta ---
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
