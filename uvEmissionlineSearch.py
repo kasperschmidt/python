@@ -13762,12 +13762,15 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         pdb.set_trace()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_AGN_ids():
+def get_AGN_ids(infofile=None):
     """
     Returning list of IDs of secure and likely AGN
 
     --- EXAMPLE OF USE ---
-    agn, agncand = uves.get_AGN_ids()
+    import uvEmissionlineSearch as uves
+    uvesdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    infofile   = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    agn, agncand = uves.get_AGN_ids(infofile=infofile)
 
     """
     ### From TU on 171020
@@ -13778,39 +13781,106 @@ def get_AGN_ids():
     #
     # AGN candidates:
     # 123048186 (X-ray probably too far away)
-    # 123501191 (X-ray probably too far away)
+    # 123051191 (X-ray probably too far away)
     # 121033078 (because of CIV so strong, but don't know)
     agn     = [104014050,115003085,214002011]
-    agncand = [123048186,123501191,121033078]
+    agncand = [123048186,123051191,121033078]
 
     # AGN from TUs 171020 Xray counterpart list
-    # 10207068  0.338   304  0.20  2.982e-16  0.340     zSpec  AGN
-    # 10208071  0.338   312  0.86  6.491e-17  0.336     zSpec  AGN
-    # 10231144  0.665   290  0.20  3.498e-16  0.664     zSpec  AGN
-    # 10237154  1.412   287  0.51  5.925e-17  1.413     zSpec  AGN
-    # 10322086  0.670   322  0.24  1.510e-16  0.671     zSpec  AGN
-    # 10414050  3.662   337  0.17  1.269e-15  3.660     zSpec  AGN
-    # 10636089  0.904   344  0.82  6.638e-17  0.956     S14    AGN
-    # 10648103  0.665   340  0.15  2.406e-15  0.666     zSpec  AGN
-    # 10825145  0.736   407  0.49  7.387e-17  0.736     zSpec  AGN
-    # 10930090  1.044   447  0.17  5.737e-16  1.043     zSpec  AGN
-    # 11104005  0.604   367  0.28  4.594e-15  0.604     zSpec  AGN
-    # 11301007  0.232   508  0.94  2.411e-17  0.220     S14    AGN
-    # 11310038  0.577   460  0.35  2.778e-16  0.577     zSpec  AGN
-    # 11424110  1.035   443  0.26  8.709e-16  1.036     zSpec  AGN
-    # 11428115  1.098   509  0.30  1.525e-16  1.097     zSpec  AGN
-    # 11503085  3.710   551  0.11  2.158e-15  3.700     zSpec  AGN
-    # 11603060  1.364   634  0.14  3.899e-17  1.363     H14    AGN
-    # 11734085  0.228   693  1.13  6.435e-17  2.302     zSpec  AGN
-    # 11934073  1.015   814  0.15  4.348e-15  1.016     zSpec  AGN
-    # 12023032  1.118   861  0.25  1.744e-16  1.120     zSpec  AGN
-    # 12305089  0.544   640  0.51  4.219e-17  0.552     H14    AGN
-    # 12351191  4.510   625  1.33  2.102e-17  2.616     H14    AGN
+    # 102007068  0.338   304  0.20  2.982e-16  0.340     zSpec  AGN
+    # 102008071  0.338   312  0.86  6.491e-17  0.336     zSpec  AGN
+    # 102031144  0.665   290  0.20  3.498e-16  0.664     zSpec  AGN
+    # 102037154  1.412   287  0.51  5.925e-17  1.413     zSpec  AGN
+    # 103022086  0.670   322  0.24  1.510e-16  0.671     zSpec  AGN
+    # 104014050  3.662   337  0.17  1.269e-15  3.660     zSpec  AGN
+    # 106036089  0.904   344  0.82  6.638e-17  0.956     S14    AGN
+    # 106048103  0.665   340  0.15  2.406e-15  0.666     zSpec  AGN
+    # 108025145  0.736   407  0.49  7.387e-17  0.736     zSpec  AGN
+    # 109030090  1.044   447  0.17  5.737e-16  1.043     zSpec  AGN
+    # 111004005  0.604   367  0.28  4.594e-15  0.604     zSpec  AGN
+    # 113001007  0.232   508  0.94  2.411e-17  0.220     S14    AGN
+    # 113010038  0.577   460  0.35  2.778e-16  0.577     zSpec  AGN
+    # 114024110  1.035   443  0.26  8.709e-16  1.036     zSpec  AGN
+    # 114028115  1.098   509  0.30  1.525e-16  1.097     zSpec  AGN
+    # 115003085  3.710   551  0.11  2.158e-15  3.700     zSpec  AGN
+    # 116003060  1.364   634  0.14  3.899e-17  1.363     H14    AGN
+    # 117034085  0.228   693  1.13  6.435e-17  2.302     zSpec  AGN
+    # 119034073  1.015   814  0.15  4.348e-15  1.016     zSpec  AGN
+    # 120023032  1.118   861  0.25  1.744e-16  1.120     zSpec  AGN
+    # 123005089  0.544   640  0.51  4.219e-17  0.552     H14    AGN
+    # 123051191  4.510   625  1.33  2.102e-17  2.616     H14    AGN
+    agn     = agn+[102007068,102008071,102031144,102037154,103022086,104014050,106036089,106048103,
+                   108025145,109030090,111004005,113001007,113010038,114024110,114028115,115003085,
+                   116003060,117034085,119034073,120023032,123005089,123051191]
 
+    # Table 5 Urrutia+18
+    # 102028132
+    # 105027078
+    # 106036089
+    # 113001007
+    # 113022070
+    # 116003060
+    # 117034085
+    # 118011046
+    # 123005089
+    # 123048186
+    # 123051191
+    # 124037072
+    # 137003006
+    # 139073330
+    # 143041126
+    # 146002220
+
+    agn     = agn+[102028132,105027078,106036089,113001007,113022070,116003060,
+                   117034085,118011046,123005089,123048186,123051191,124037072,
+                   137003006,139073330,143041126,146002220]
 
     ### From FELIS UV search
     agn     = agn+[157001017,221004004,601381485]
     agncand = agncand+[136003119,600691153]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - -
+    agn     = np.unique(np.asarray(agn))
+    agncand = np.unique(np.asarray(agncand))
+
+    ignoreids = []#[123048186,123051191]
+    for iobj in ignoreids:
+        ent_agn = np.where(agn == iobj)[0]
+        if len(ent_agn) > 0:
+            agn[ent_agn] = -99
+
+        ent_agncand = np.where(agncand == iobj)[0]
+        if len(ent_agncand) > 0:
+            agn[ent_agncand] = -99
+
+    agn     = agn[agn != -99]
+    agncand = agncand[agncand != -99]
+    # - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    if infofile is not None:
+        infodat    = afits.open(infofile)[1].data
+        print('# id ra dec redshift duplicationID ')
+        print('#------ AGN ------ ')
+        for ii, objid in enumerate(agn):
+            objent = np.where(infodat['id'] == objid)[0]
+            if len(objent) == 1:
+                print(str(objid)+' '+str(infodat['ra'][objent][0])+' '+str(infodat['dec'][objent][0])+' '+
+                      str(infodat['redshift'][objent][0])+' '+str(infodat['duplicationID'][objent][0]))
+            elif len(objent) == 0:
+                print(str(objid)+' notUVESobj notUVESobj notUVESobj notUVESobj')
+            else:
+                sys.exit('Weird - more than 1 match to id'+str(objid))
+
+        print('#------ AGN candidates ------ ')
+        for ii, objid in enumerate(agncand):
+            objent = np.where(infodat['id'] == objid)[0]
+            if len(objent) == 1:
+                print(str(objid)+' '+str(infodat['ra'][objent][0])+' '+str(infodat['dec'][objent][0])+' '+
+                      str(infodat['redshift'][objent][0])+' '+str(infodat['duplicationID'][objent][0]))
+            elif len(objent) == 0:
+                print(str(objid)+' noinfo noinfo noinfo noinfo')
+            else:
+                sys.exit('Weird - more than 1 match to id'+str(objid))
 
     return agn, agncand
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
