@@ -13493,7 +13493,7 @@ def plot_neVSne(plotname,T_e_fix,
                                                    overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffsetFigures/',
+def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffsetFigures/',addDvErr=False,
                              overwrite=False,verbose=True):
     """
     Main function to handle caluclations and diagostics using PyNeb
@@ -13515,40 +13515,91 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         if infodat['id'][ii] != id:
             sys.exit('There was a mismatch in ids for entry '+str(ii))
 
-    dv_CIV_ent = np.where((dat_uves['vshift_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
+    # - - - - - - - ALL lead lines - - - - - - -
+    dv_CIV_ent   = np.where((dat_uves['vshift_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
                           np.isfinite(dat_uves['vshift_CIV']))[0]
-    dv_CIV   = dat_uves['vshift_CIV'][dv_CIV_ent]
+    dv_CIV       = dat_uves['vshift_CIV'][dv_CIV_ent]
 
-    dv_HeII_ent = np.where((dat_uves['vshift_HeII'] != 99) & (dat_uves['duplicationID'] == 0) &
+    dv_HeII_ent  = np.where((dat_uves['vshift_HeII'] != 99) & (dat_uves['duplicationID'] == 0) &
                            np.isfinite(dat_uves['vshift_HeII']))[0]
-    dv_HeII   = dat_uves['vshift_HeII'][dv_HeII_ent]
+    dv_HeII      = dat_uves['vshift_HeII'][dv_HeII_ent]
 
-    dv_OIII_ent = np.where((dat_uves['vshift_OIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+    dv_OIII_ent  = np.where((dat_uves['vshift_OIII'] != 99) & (dat_uves['duplicationID'] == 0) &
                            np.isfinite(dat_uves['vshift_OIII']))[0]
-    dv_OIII   = dat_uves['vshift_OIII'][dv_OIII_ent]
+    dv_OIII      = dat_uves['vshift_OIII'][dv_OIII_ent]
 
     dv_SiIII_ent = np.where((dat_uves['vshift_SiIII'] != 99) & (dat_uves['duplicationID'] == 0) &
                             np.isfinite(dat_uves['vshift_SiIII']))[0]
-    dv_SiIII   = dat_uves['vshift_SiIII'][dv_SiIII_ent]
+    dv_SiIII     = dat_uves['vshift_SiIII'][dv_SiIII_ent]
 
-    dv_CIII_ent = np.where((dat_uves['vshift_CIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+    dv_CIII_ent  = np.where((dat_uves['vshift_CIII'] != 99) & (dat_uves['duplicationID'] == 0) &
                            np.isfinite(dat_uves['vshift_CIII']))[0]
-    dv_CIII   = dat_uves['vshift_CIII'][dv_CIII_ent]
+    dv_CIII      = dat_uves['vshift_CIII'][dv_CIII_ent]
 
-    linename   = ['CIV','HeII','OIII','SiIII','CIII']
-    dvs_ent    = [dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent]
-    dvs        = [dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII]
+    dv_MgII_ent  = np.where((dat_uves['vshift_MgII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_MgII']))[0]
+    dv_MgII      = dat_uves['vshift_MgII'][dv_MgII_ent]
+
+    # - - - - - - - Only Lya as lead line - - - - - - -
+
+    dv_CIV_ent_LAE   = np.where((dat_uves['vshift_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['vshift_CIV']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_CIV_LAE       = dat_uves['vshift_CIV'][dv_CIV_ent_LAE]
+
+    dv_HeII_ent_LAE  = np.where((dat_uves['vshift_HeII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_HeII']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_HeII_LAE      = dat_uves['vshift_HeII'][dv_HeII_ent_LAE]
+
+    dv_OIII_ent_LAE  = np.where((dat_uves['vshift_OIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_OIII']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_OIII_LAE      = dat_uves['vshift_OIII'][dv_OIII_ent_LAE]
+
+    dv_SiIII_ent_LAE = np.where((dat_uves['vshift_SiIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                            np.isfinite(dat_uves['vshift_SiIII']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_SiIII_LAE     = dat_uves['vshift_SiIII'][dv_SiIII_ent_LAE]
+
+    dv_CIII_ent_LAE  = np.where((dat_uves['vshift_CIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_CIII']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_CIII_LAE      = dat_uves['vshift_CIII'][dv_CIII_ent_LAE]
+
+    dv_MgII_ent_LAE  = np.where((dat_uves['vshift_MgII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['vshift_MgII']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_MgII_LAE      = dat_uves['vshift_MgII'][dv_MgII_ent_LAE]
+
+    # - - - - - - - Plotting - - - - - - -
+    linename   = ['CIV','HeII','OIII','SiIII','CIII','MgII']+\
+                 ['CIV','HeII','OIII','SiIII','CIII','MgII']
+    leadline   = ['lead line']*6 + ['Lya']*6
+    dvs_ent    = [dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]+\
+                 [dv_CIV_ent_LAE,dv_HeII_ent_LAE,dv_OIII_ent_LAE,dv_SiIII_ent_LAE,dv_CIII_ent_LAE,dv_MgII_ent_LAE]
+    dvs        = [dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]+\
+                 [dv_CIV_LAE,dv_HeII_LAE,dv_OIII_LAE,dv_SiIII_LAE,dv_CIII_LAE,dv_MgII_LAE]
+
     for vv, dv in enumerate(dvs):
         histaxes  = True
         Nhistbins = 50
-        yrange    = [-1000,1000]
-        ylabel    = '$\Delta v$(lead line wrt. '+linename[vv]+') [km/s]'
+        yrange    = [-990,990]
+
+        if leadline[vv] == 'Lya':
+            llstring = 'Ly$\\alpha$'
+        else:
+            llstring = leadline[vv]
+        ylabel    = '$\Delta v$('+llstring+' - '+linename[vv]+') [km/s]'
 
         #---- vs redshift ---
-        plotname = outputdir+'evaluate_voffsets_'+linename[vv]+'VSredshift.pdf'
-        xrange   = [1.5,5.0]
-        xlabel   = '$z$(lead line)'
-        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,dat_uves['redshift'][dvs_ent[vv]],dv,None,None,xlabel,ylabel,
+        plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSredshift.pdf'
+        if leadline[vv] == 'Lya':
+            xrange   = [2.8,5.0]
+        else:
+            xrange   = [1.5,5.0]
+
+        xlabel   = '$z$('+llstring+')'
+        xerr     = None
+        if addDvErr:
+            yerr = [100.0] * len(dvs_ent[vv])
+        else:
+            yerr = None
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,dat_uves['redshift'][dvs_ent[vv]],dv,xerr,yerr,xlabel,ylabel,
                                                        'dummydat',linetype='horizontal',title=None, #'this is title',
                                                        ids=dat_uves['id'][dvs_ent[vv]],
                                                        ylog=False,xlog=False,yrange=yrange,xrange=xrange,
@@ -13559,15 +13610,46 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                        histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                        overwrite=overwrite,verbose=verbose)
 
-        infocols = uves.get_infodat_plotcols()
-        #---- vs M_UV ---
+        #---- vs LAE parameters ---
+        if leadline[vv] == 'Lya':
+            infocols = uves.get_infodat_plotcols()
 
-        #---- vs m_UV ---
+            for cc, colname in enumerate(infocols.keys()):
+                if colname == 'redshift':
+                    continue
+                xlabel   = infocols[colname][2]
+                xrange   = None
+                plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VS'+colname+'.pdf'
 
-        #---- vs EW(Lya) ---
+                if addDvErr:
+                    yerr = [100.0] * len(dvs_ent[vv])
+                else:
+                    yerr = None
 
-        #---- vs FWHM(Lya) ---
+                xvalues  = infodat[infocols[colname][0]][dvs_ent[vv]]
+                if len(xvalues[np.isfinite(xvalues)]) > 0:
+                    if infocols[colname][1] is None:
+                        xerr     = np.asarray([np.nan]*len(dvs_ent[vv]))
+                    else:
+                        xerr     = infodat[infocols[colname][1]][dvs_ent[vv]]
 
-        #---- vs beta ---
+                    try:
+                        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
+                                                                       'dummydat',linetype='horizontal',title=None, #'this is title',
+                                                                       ids=dat_uves['id'][dvs_ent[vv]],
+                                                                       ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                                       colortype='redshift',colorcode=True,
+                                                                       cdatvec=dat_uves['redshift'][dvs_ent[vv]],
+                                                                       point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                                       photoionizationplotparam=None,
+                                                                       histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                                       overwrite=overwrite,verbose=verbose)
+                    except:
+                        pdb.set_trace()
+
+
+    #---- Lya offsets object evolve ---
+    # for oo, objid in dat_uves['id'][dvs_ent[vv]]:
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
