@@ -2085,8 +2085,9 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
                          markeredgecolor='k',zorder=10)
 
         #marking AGN:
-        AGN     = ['104014050','115003085','214002011']
-        AGNcand = ['123048186','123501191','121033078']
+        AGN, AGNcand = uves.get_AGN_ids()
+        # AGN     = ['104014050','115003085','214002011']
+        # AGNcand = ['123048186','123501191','121033078']
         for ii,id in enumerate(ids):
             if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGN):
                 plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
@@ -2217,8 +2218,9 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
                          markeredgecolor='k',zorder=10)
 
         #marking AGN:
-        AGN     = ['104014050','115003085','214002011']
-        AGNcand = ['123048186','123501191','121033078']
+        AGN, AGNcand = uves.get_AGN_ids()
+        # AGN     = ['104014050','115003085','214002011']
+        # AGNcand = ['123048186','123501191','121033078']
         for ii,id in enumerate(ids):
             if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGN):
                 plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
@@ -2342,8 +2344,9 @@ def plot_limits(sourcecatalog, namebase, limits_dictionary, colorcode=True, colo
         #                  markeredgecolor='k',zorder=10)
         #
         # #marking AGN:
-        # AGN     = ['104014050','115003085','214002011']
-        # AGNcand = ['123048186','123501191','121033078']
+        # AGN, AGNcand = uves.get_AGN_ids()
+        # #AGN     = ['104014050','115003085','214002011']
+        # #AGNcand = ['123048186','123501191','121033078']
         # for ii,id in enumerate(ids):
         #     if np.isfinite(xvalues[ii]) & np.isfinite(yvalues[ii]) & (id in AGN):
         #         plt.errorbar(xvalues[ii],yvalues[ii],xerr=None,yerr=None,
@@ -11604,13 +11607,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
     uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
 
     """
-    ### From TU on 171020
-    agn     = [104014050,115003085,214002011]
-    agncand = [123048186,123501191,121033078]
-
-    ### From TU on 180115
-    # agn     = [104014050,115003085,214002011]
-    # agncand = [123048186,123501191,121033078]
+    agn, agncand = uves.get_AGN_ids()
 
     if verbose: print(' - Loading master cat and defining sub-samples')
     masterdat = afits.open(mastercat)[1].data
@@ -13504,9 +13501,14 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     outdir           = uvesdir+'velocityoffsetFigures/'
     linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
     infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
-    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,10],overwrite=True,verbose=True)
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,10],overwrite=True)
+
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,3],overwrite=True,addDvErr=True)
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[3,4],overwrite=True,addDvErr=True)
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[4,9],overwrite=True,addDvErr=True)
 
     """
+    agn, agncand = uves.get_AGN_ids()
     dat_uves = afits.open(linefluxcatalog)[1].data
     infodat  = afits.open(infofile)[1].data
     infodat  = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
@@ -13631,8 +13633,19 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                 yerr = 100.0
             else:
                 yerr = None
+
+            if objid in agn:
+                objmarker = '*'
+                objmarkersize = marksize+2
+            elif objid in agncand:
+                objmarker = 'D'
+                objmarkersize = marksize
+            else:
+                objmarker = 'o'
+                objmarkersize = marksize
+
             plt.errorbar(xvals,yvals,xerr=None,yerr=yerr,color=objcol,
-                         marker='o',lw=lthick+1, markersize=marksize,alpha=1.0,
+                         marker=objmarker,lw=lthick+1, markersize=objmarkersize,alpha=1.0,
                          markerfacecolor=objcol,ecolor=objcol,
                          markeredgecolor=objcol,zorder=10)
 
@@ -13664,8 +13677,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
-    #------------------------------------------------------------------------------
 
+    #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plots of lead line offsets ')
 
     linename   = ['CIV','HeII','OIII','SiIII','CIII','MgII']+\
@@ -13748,7 +13761,56 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     except:
                         pdb.set_trace()
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_AGN_ids():
+    """
+    Returning list of IDs of secure and likely AGN
+
+    --- EXAMPLE OF USE ---
+    agn, agncand = uves.get_AGN_ids()
+
+    """
+    ### From TU on 171020
+    # First 24 fields bona fide high-z AGN:
+    # 104014050
+    # 115003085
+    # 214002011
+    #
+    # AGN candidates:
+    # 123048186 (X-ray probably too far away)
+    # 123501191 (X-ray probably too far away)
+    # 121033078 (because of CIV so strong, but don't know)
+    agn     = [104014050,115003085,214002011]
+    agncand = [123048186,123501191,121033078]
+
+    # AGN from TUs 171020 Xray counterpart list
+    # 10207068  0.338   304  0.20  2.982e-16  0.340     zSpec  AGN
+    # 10208071  0.338   312  0.86  6.491e-17  0.336     zSpec  AGN
+    # 10231144  0.665   290  0.20  3.498e-16  0.664     zSpec  AGN
+    # 10237154  1.412   287  0.51  5.925e-17  1.413     zSpec  AGN
+    # 10322086  0.670   322  0.24  1.510e-16  0.671     zSpec  AGN
+    # 10414050  3.662   337  0.17  1.269e-15  3.660     zSpec  AGN
+    # 10636089  0.904   344  0.82  6.638e-17  0.956     S14    AGN
+    # 10648103  0.665   340  0.15  2.406e-15  0.666     zSpec  AGN
+    # 10825145  0.736   407  0.49  7.387e-17  0.736     zSpec  AGN
+    # 10930090  1.044   447  0.17  5.737e-16  1.043     zSpec  AGN
+    # 11104005  0.604   367  0.28  4.594e-15  0.604     zSpec  AGN
+    # 11301007  0.232   508  0.94  2.411e-17  0.220     S14    AGN
+    # 11310038  0.577   460  0.35  2.778e-16  0.577     zSpec  AGN
+    # 11424110  1.035   443  0.26  8.709e-16  1.036     zSpec  AGN
+    # 11428115  1.098   509  0.30  1.525e-16  1.097     zSpec  AGN
+    # 11503085  3.710   551  0.11  2.158e-15  3.700     zSpec  AGN
+    # 11603060  1.364   634  0.14  3.899e-17  1.363     H14    AGN
+    # 11734085  0.228   693  1.13  6.435e-17  2.302     zSpec  AGN
+    # 11934073  1.015   814  0.15  4.348e-15  1.016     zSpec  AGN
+    # 12023032  1.118   861  0.25  1.744e-16  1.120     zSpec  AGN
+    # 12305089  0.544   640  0.51  4.219e-17  0.552     H14    AGN
+    # 12351191  4.510   625  1.33  2.102e-17  2.616     H14    AGN
 
 
+    ### From FELIS UV search
+    agn     = agn+[157001017,221004004,601381485]
+    agncand = agncand+[136003119,600691153]
 
+    return agn, agncand
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
