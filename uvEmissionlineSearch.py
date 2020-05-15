@@ -13494,7 +13494,7 @@ def plot_neVSne(plotname,T_e_fix,
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffsetFigures/',addDvErr=False,
-                             overwrite=False,verbose=True):
+                             Nlinedetections=[2,10],overwrite=False,verbose=True):
     """
     Main function to handle caluclations and diagostics using PyNeb
 
@@ -13504,7 +13504,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     outdir           = uvesdir+'velocityoffsetFigures/'
     linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
     infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
-    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,overwrite=True,verbose=True)
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,10],overwrite=True,verbose=True)
 
     """
     dat_uves = afits.open(linefluxcatalog)[1].data
@@ -13566,7 +13566,108 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                            np.isfinite(dat_uves['vshift_MgII']) & (infodat['leadline'] == 'Lya'))[0]
     dv_MgII_LAE      = dat_uves['vshift_MgII'][dv_MgII_ent_LAE]
 
-    # - - - - - - - Plotting - - - - - - -
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Setting up and generating plot of lead line offsets intra-object comparison')
+    plotname = outputdir+'evaluate_voffsets_intraobject_comparison_all.pdf'
+    fig      = plt.figure(figsize=(6, 4))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.99, bottom=0.1, top=0.97)
+    Fsize    = 12
+    lthick   = 1.0
+    marksize = 6
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(inforstr[:-2],fontsize=Fsize)
+
+    #----------------------------
+    cmap    = plt.cm.viridis_r
+
+    clabel  = '$z$(lead line)'
+    cmin    = 1.5
+    cmax    = 5.0
+    cextend = 'neither'
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m       = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+
+    # cdatvec = dat_uves['redshift']
+    # colvec   = []
+    # for ii,xval in enumerate(n_e):
+    #     colvec.append(cmap(colnorm(cdatvec[ii])))
+
+    colshrink = 1.0
+    colaspect = 30
+    colanchor = (0.0,0.5)
+    cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+                           pad=0.02,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+    cb.set_label(clabel)
+    #----------------------------
+
+    xvals      = np.arange(6)+1.0
+    xticklabel = ['CIV','HeII','OIII','SiIII','CIII','MgII']
+    dvs_ent    = [dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]
+    dvs        = [dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]
+
+    ymin, ymax = [-1,1]
+    for objent, objid in enumerate(dat_uves['id']):
+        yvals = np.asarray([np.nan]*6)
+
+        detectiontracker = [0.0]*6
+        for ee, entlist in enumerate(dvs_ent):
+            if objent in entlist:
+                detectiontracker[ee] = 1.0
+                obj_dvs_ent          = np.where(entlist == objent)[0]
+                yvals[ee]            = dvs[ee][obj_dvs_ent][0]
+
+        if (np.sum(detectiontracker) >= Nlinedetections[0]) & (np.sum(detectiontracker) < Nlinedetections[1]):
+            objcol = cmap(colnorm(dat_uves['redshift'][objent]))
+
+            if addDvErr:
+                yerr = 100.0
+            else:
+                yerr = None
+            plt.errorbar(xvals,yvals,xerr=None,yerr=yerr,color=objcol,
+                         marker='o',lw=lthick+1, markersize=marksize,alpha=1.0,
+                         markerfacecolor=objcol,ecolor=objcol,
+                         markeredgecolor=objcol,zorder=10)
+
+            if ~np.isfinite(yvals[0]):
+                yvals[0] = yvals[np.isfinite(yvals)][0]
+            if ~np.isfinite(yvals[-1]):
+                yvals[-1] = yvals[np.isfinite(yvals)][-1]
+            plt.plot(xvals[np.isfinite(yvals)],yvals[np.isfinite(yvals)],':',color=objcol,#'lightgray',
+                     zorder=4,lw=lthick)
+
+            plt.text(0,yvals[0],str(objid),color=objcol,fontsize=Fsize,rotation=0,
+                     horizontalalignment='center',verticalalignment='center',zorder=10)
+
+            ymin = np.min([ymin,np.min(yvals[np.isfinite(yvals)]-110.)])
+            ymax = np.max([ymax,np.max(yvals[np.isfinite(yvals)]+110.)])
+
+    plt.ylabel('$\Delta v$(lead line)')
+    plt.xlabel(' ')
+    plt.xlim([-1,6.3])
+    plt.ylim([ymin,ymax])
+
+    plt.xticks(xvals, xticklabel, rotation='horizontal')
+
+    # leg = plt.legend(fancybox=True, loc='lower left',prop={'size':Fsize/1.3},ncol=1,numpoints=1)#,
+    #                  # bbox_to_anchor=(0.5, 1.1),)  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+    #------------------------------------------------------------------------------
+
+    if verbose: print(' - Setting up and generating plots of lead line offsets ')
+
     linename   = ['CIV','HeII','OIII','SiIII','CIII','MgII']+\
                  ['CIV','HeII','OIII','SiIII','CIII','MgII']
     leadline   = ['lead line']*6 + ['Lya']*6
@@ -13648,8 +13749,6 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         pdb.set_trace()
 
 
-    #---- Lya offsets object evolve ---
-    # for oo, objid in dat_uves['id'][dvs_ent[vv]]:
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
