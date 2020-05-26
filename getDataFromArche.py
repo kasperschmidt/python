@@ -188,7 +188,7 @@ def summarize_QtClassifyOutput(qtclassifyoutputfile,idcol='ID',wavecol='LAMBDA_P
     fout.write('# Condensed Summary of '+qtclassifyoutputfile+'\n')
     fout.write('# Showing results for strongest line. \n')
     fout.write('# identification: Cres = Continuum residual; Rev = revisit \n')
-    fout.write("# id SN_strongestline wavelength Nlines identification redshift quality confidence association #LW# all line wavelengths #C# comments \n")
+    fout.write("# id SN_strongestline wavelength Nlines identification redshift quality confidence association #O# all line wavelengths #C# comments \n")
 
     IDs  = np.sort(np.unique(classdat[idcol]))
     Nobj = len(IDs)
@@ -216,11 +216,13 @@ def summarize_QtClassifyOutput(qtclassifyoutputfile,idcol='ID',wavecol='LAMBDA_P
 
         lineSN   = objdat[SNcol][maxSNent]
         linewave = objdat[wavecol][maxSNent]
+        if wavecol == 'Z_PEAK_SN':
+            linewave = 4700. + linewave * 1.25
+            linelams = ','.join([str("%.f" % (4700. + lw * 1.25)) for lw in objdat[wavecol]])
+        else:
+            linelams = ','.join([str("%.f" % lw) for lw in objdat[wavecol]])
 
         objz     = objdat['Redshift'][maxSNent]
-
-
-        linelams = ','.join([str("%.f" % lw) for lw in objdat[wavecol]])
 
         objstring = str("%.4d" % objid)+'  '+str("%7.2f" % lineSN)+'  '+str("%.f" % linewave)+'  '+str("%.4d" % Nlines)+\
                     ' '+str("%6s" % short)+'   '+str("%.5f" % objz)+'   '+str(objQ)+' '+' '+str(objC)+'   '+\
