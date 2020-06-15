@@ -1394,6 +1394,7 @@ def gen_GALFITmodelcubes(GALFITmodels,outputdir,PSFmodels=None,PSFmodelext=2,sou
             if verbose: print(' - Wrote component info to: '+compinfofile)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_JKgalfitmodels/',
+                         LAEinfofile='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits',
                          imgdir='/Volumes/DATABCKUP2/MUSE-Wide/hst_cutouts/',modelstart=1,showPhotRegions=True,
                          objids=None,verbose=True):
     """
@@ -1414,7 +1415,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
 
     """
     import commands # only works on Python2.7; has to convert to subprocess.Popen() for Python3
-    LAEinfo = afits.open('/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo.fits')[1].data
+    LAEinfo = afits.open(LAEinfofile)[1].data
 
     if objids is None:
         GALFITmodels = glob.glob(modeldir+'model*arcsec.fits')
@@ -1432,7 +1433,7 @@ def inspect_GALFITmodels(modeldir='/Volumes/DATABCKUP2/TDOSEextractions/MW_LAEs_
 
     if verbose: print(' - Will look through '+str(len(loopmodels))+' of the models starting with model number '+str(modelstart))
 
-    ds9cmd       = "ds9 -view layout vertical -lock frame wcs -height 650 -width 650 -tile grid layout 4 4 "
+    ds9cmd       = "ds9 -view layout horizontal -lock frame wcs -height 650 -width 800 -tile grid layout 4 4 "
     pds9         = subprocess.Popen(ds9cmd,shell=True,executable=os.environ["SHELL"])
     time.sleep(1.1)# sleep to make sure ds9 appear in PIDlist
     for ii in np.arange(1,13):
