@@ -5417,8 +5417,8 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
         if len(obj_ent) != 1:
             sys.exit('ERROR - There are '+str(len(obj_ent))+' matches in the UVES info file to object '+str(obj_id))
 
-        obj_zLya      = uvesobjinfo['redshift'][obj_ent]
-        MUSEwaves_rf  = MUSEwaves / (1.0 + obj_zLya)
+        obj_z         = uvesobjinfo['redshift'][obj_ent]
+        MUSEwaves_rf  = MUSEwaves / (1.0 + obj_z)
 
         for templine in lines2find:
             Nmatch      = len(spectra)*len(lines2find)
@@ -5437,8 +5437,8 @@ def match_tdosespectra_to_templates(spectra,outputdir,outkeystr='FELISmatch_RENA
                     picklefile = outputdir+spectrum.split('/')[-1].replace('.fits','_CCresults_template'+
                                                                            templine+'_'+outkeystr+'.pkl')
 
-                    wavewindow = CCwavewindow * (1+obj_zLya) # turn CCwavewindow into observed frame
-                    ccdic      = felis.match_templates2specs(templates,[spectrum],[obj_zLya],
+                    wavewindow = CCwavewindow * (1+obj_z) # turn CCwavewindow into observed frame
+                    ccdic      = felis.match_templates2specs(templates,[spectrum],[obj_z],
                                                              picklefile,wavewindow=[wavewindow],
                                                              plotdir=outputdir,
                                                              wavecen_restframe=[linewave_rf],
