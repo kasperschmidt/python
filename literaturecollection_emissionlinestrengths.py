@@ -52,76 +52,77 @@ def generate_literature_fitscatalog(verbose=True):
     if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
     fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
     fout.write('# id                                  name   reference'+
-               ' '.join([str("%20s" % colname) for colname in fluxratiodic.keys()[3:]])+'  \n')
+               ' '.join([str("%20s" % colname) for colname in list(fluxratiodic.keys())[3:]])+'  \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Collecting literature data arrays and appending them')
     refdic                 = lce.referencedictionary()
 
     dataref, dataarray     = lce.data_nan19(verbose=True)
     outputdataarray        = dataarray
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_sch17(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_sen17(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_rig14(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_rig15(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_erb10(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_sta14(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_sta15(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_mai18(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_sha03(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_bay14(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_sch16(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_lef19(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_amo17(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     dataref, dataarray     = lce.data_ber19(verbose=True)
     outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0]][1])
+    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Writing output data array to ascii file \n   '+outputfile)
     for oo, id in enumerate(outputdataarray['id']):
-        outstr = str(int(id))+' '+str("%30s" % outputdataarray['name'][oo])+'   '+outputdataarray['reference'][oo]+' '+\
+        outstr = str(int(id))+' '+str("%30s" % outputdataarray['name'][oo].decode('UTF-8'))+'   '+\
+                 outputdataarray['reference'][oo].decode('UTF-8')+' '+\
                  str("%20.10f" % outputdataarray['ra'][oo])+' '+str("%20.10f" % outputdataarray['dec'][oo])+\
                  ' '.join([str("%20.4f" % ff) for ff in outputdataarray[oo].tolist()[5:]])
         fout.write(outstr+' \n')
@@ -238,6 +239,8 @@ def referencedictionary():
     #  *    AGN
     #  o    MUSE data
 
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Ravindranath et al. (2020) Green pea CIII + OIII + Lya emitters
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Senchyna et al. (2019); Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -855,6 +858,8 @@ def plot_literature_fitscatalog_cmd(plotname,
         else:
             fig = plt.figure(2, figsize=(6, 5))
             fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
+            if photoionizationplotparam:
+                fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.10, right=1.2, bottom=0.10, top=0.95)
 
         Fsize         = 14.0
         lthick        = 2.0
@@ -919,7 +924,7 @@ def plot_literature_fitscatalog_cmd(plotname,
                     colanchor = (0.0,0.5)
                 else:
                     colbarscale = 2.1
-                    colanchor   = (-1.1,0.0)
+                    colanchor   = (-1.8,0.0)
                     colshrink   = colshrink/colbarscale
                     colaspect   = colaspect/colbarscale
 
@@ -1451,12 +1456,15 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
 
     if varyparam == 'Zgas':
         # colortickvals   = [1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 0.003048, 4e-3, 6e-3, 8e-3, 0.01, 0.01524, 0.02, 0.03, 0.04, 0.07] # 0.014, 0.017,
-        colortickvals   = [1e-4, 3e-4, 7e-4, 1e-4, 0.003048, 0.007, 0.01524, 0.03, 0.07]
-        colorlabels     = [ str(ct) for ct in colortickvals]
-        colorlabels[4]  =  '0.2Z$_\odot$' # = 0.003048
-        colorlabels[6] =  'Z$_\odot$'     # = 0.01524
+        Zsolar          = 0.01524
+        colortickvals   = np.array([0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 4.0])*Zsolar
+        #colortickvals   = [1e-4, 3e-4, 7e-4, 1e-4, 0.003048, 0.007, 0.01524, 0.03, 0.07]
+        # colorlabels     = [ str(ct) for ct in colortickvals]
+        # colorlabels[4]  =  '0.2Z$_\odot$' # = 0.003048
+        # colorlabels[6] =  'Z$_\odot$'     # = 0.01524
+        colorlabels     = ['0.01', '0.02', '0.05', '0.1', '0.2', '0.5', '1.0', '2.0', '4.0']
         colortickvals   = np.log10(np.asarray(colortickvals))
-        cbarlegend      = legenddic[varyparam]
+        cbarlegend      = r'Z$_\textrm{gas}$/Z$_\odot$' # legenddic[varyparam]
     elif varyparam == 'logUs':
         colortickvals = [-5.0,-4.5,-4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0]
         colorlabels   = [ str(ct) for ct in colortickvals]
@@ -1474,16 +1482,20 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
     colshrink   = 1.0
     colaspect   = 30
     colbarscale = 2.1
-    colanchor   = (0.0,1.0)
+    colanchor   = (-0.9,1.0)
     colshrink   = colshrink/colbarscale
     colaspect   = colaspect/colbarscale
     cextend     = 'neither'
 
-    # cb1      = plt.colorbar(mmAGN,extend=cextend,orientation='vertical',ticks=colortickvals,
-    cb1      = plt.colorbar(mm,extend=cextend,orientation='vertical',ticks=colortickvals,
-                            pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
-    cb1.ax.set_yticklabels(colorlabels,rotation=0)
-    cb1.set_label(cbarlegend)     #Zgas is unitless as it is a mass ratio (see Gutkin et al. 2016 Eq. 10)
+    cbSF      = plt.colorbar(mm,extend=cextend,orientation='vertical',ticks=colortickvals,
+                             pad=0.01,aspect=colaspect,shrink=colshrink,anchor=colanchor,use_gridspec=False)
+    cbSF.ax.set_yticklabels(len(colorlabels)*[''],rotation=0)
+    cbSF.set_label('')     #Zgas is unitless as it is a mass ratio (see Gutkin et al. 2016 Eq. 10)
+
+    cbAGN      = plt.colorbar(mmAGN,extend=cextend,orientation='vertical',ticks=colortickvals,
+                              pad=0.01,aspect=colaspect,shrink=colshrink,anchor=(0.7,1.0),use_gridspec=False)
+    cbAGN.ax.set_yticklabels(colorlabels,rotation=0)
+    cbAGN.set_label(cbarlegend)
 
     for vdSF in np.unique(varydatSF):
         SFcol    = cmap(colnorm(vdSF))
@@ -1493,7 +1505,7 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
                     marker=SFmarker,lw=0.2, facecolor='None',edgecolor=SFcol, zorder=5)
 
     for vdAGN in np.unique(varydatAGN):
-        AGNcol    = cmapAGN(colnorm(vdAGN)) # 'gray'
+        AGNcol    = cmapAGN(colnormAGN(vdAGN)) # 'gray'
         AGNcolent = np.where(varydatAGN == vdAGN)
 
         plt.scatter(xval_AGN[AGNcolent],yval_AGN[AGNcolent],s=markersize,
