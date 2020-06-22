@@ -4859,6 +4859,8 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         else:
             fig = plt.figure(2, figsize=(6, 5))
             fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.16, right=0.97, bottom=0.15, top=0.95)
+            if photoionizationplotparam:
+                fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=1.2, bottom=0.15, top=0.93)
 
         Fsize    = 14
         lthick   = 2
@@ -4942,7 +4944,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     colanchor = (0.0,0.5)
                 else:
                     colbarscale = 2.1
-                    colanchor   = (-1.1,0.0)
+                    colanchor   = (-1.78,0.0)
                     colshrink   = colshrink/colbarscale
                     colaspect   = colaspect/colbarscale
 
@@ -5109,7 +5111,8 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         #--------- PHOTOIONIZATION GRIDS ---------
         titleaddition = ''
         if photoionizationplotparam is not None:
-            titleaddition = uves.add_photoionization_models_to_lineratioplot(photoionizationplotparam)
+            # titleaddition = uves.add_photoionization_models_to_lineratioplot(photoionizationplotparam)
+            titleaddition = lce.add_photoionization_models_to_plot(photoionizationplotparam)
 
         if (title is not None) & (histaxes == False):
             plt.title(title+titleaddition,fontsize=Fsize-4)
@@ -5193,6 +5196,9 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
     plotting based on rxj2248_BooneBalestraSource.plot_feltregutkinmodels()
     which is based on NEOGALmodels.plot_lineratios()
 
+    NB! as of 200622 use literaturecollection_emissionlinestrengths.add_photoionization_models_to_plot() instead.
+
+
     --- INPUT ---
     piplotparam            The photoionization plot parameters.
 
@@ -5202,7 +5208,7 @@ def add_photoionization_models_to_lineratioplot(piplotparam,verbose=True):
     modeldataSF  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
     modeldataAGN = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/AGN_NLR_nebular_feltre16/')
 
-    varyparam, cutSFmodels, markersize, SFmarker, AGNmarker, linestrings, doubletratios, histaxes = piplotparam
+    linestrings, doubletratios, varyparam, cutSFmodels, markersize, SFmarker, AGNmarker = piplotparam
     # varyparam options: 'Zgas','logUs','xid','nh','COratio','Mcutoff'
     logcolors = ['Zgas']
 
@@ -6980,11 +6986,17 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         # elif 'NV' in lineset:                # No columns with NV in Maseda line ratio summaryfile
         #     continue
         else:
-            #varyparam, cutSFmodels, markersize, SFmarker, AGNmarker, linestrings, doubletratios, histaxes = piplotparam
-            photoionizationplotparam = colorvar_pi, False, 1.5, 's', 'D', \
-                                       [uves.linenameUVES2NEOGAL(lineset[0]),uves.linenameUVES2NEOGAL(lineset[1]),
-                                        uves.linenameUVES2NEOGAL(lineset[2]),uves.linenameUVES2NEOGAL(lineset[3])], \
-                                       [None,None,None,None], True
+            #varyparam, cutSFmodels, markersize, SFmarker, AGNmarker, linestrings, doubletratios = piplotparam # for uves. version of add-function
+            # photoionizationplotparam = colorvar_pi, False, 1.5, 's', 'D', \
+            #                            [uves.linenameUVES2NEOGAL(lineset[0]),uves.linenameUVES2NEOGAL(lineset[1]),
+            #                             uves.linenameUVES2NEOGAL(lineset[2]),uves.linenameUVES2NEOGAL(lineset[3])], \
+            #                            [None,None,None,None]
+
+            # x2plot, y2plot, varyparam, cutSFmodels, markersize, SFmarker, AGNmarker = piplotparam  # for lce. version of add-function
+            photoionizationplotparam = uves.linenameUVES2NEOGAL(lineset[0])+'/'+uves.linenameUVES2NEOGAL(lineset[1]),\
+                                       uves.linenameUVES2NEOGAL(lineset[2])+'/'+uves.linenameUVES2NEOGAL(lineset[3]), \
+                                       colorvar_pi, False, 1.5, 's', 'D'
+
 
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
