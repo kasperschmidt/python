@@ -859,7 +859,7 @@ def plot_literature_fitscatalog_cmd(plotname,
             fig = plt.figure(2, figsize=(6, 5))
             fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
             if photoionizationplotparam:
-                fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.10, right=1.2, bottom=0.10, top=0.95)
+                fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.10, right=1.2, bottom=0.10, top=0.93)
 
         Fsize         = 14.0
         lthick        = 2.0
@@ -1492,10 +1492,14 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
     cbSF.ax.set_yticklabels(len(colorlabels)*[''],rotation=0)
     cbSF.set_label('')     #Zgas is unitless as it is a mass ratio (see Gutkin et al. 2016 Eq. 10)
 
+    cbSF.ax.text(0.5,1.01,'SF',fontsize=10,rotation=90,horizontalalignment='center',verticalalignment='bottom')
+
     cbAGN      = plt.colorbar(mmAGN,extend=cextend,orientation='vertical',ticks=colortickvals,
                               pad=0.01,aspect=colaspect,shrink=colshrink,anchor=(0.7,1.0),use_gridspec=False)
     cbAGN.ax.set_yticklabels(colorlabels,rotation=0)
     cbAGN.set_label(cbarlegend)
+
+    cbAGN.ax.text(0.5,1.01,'AGN',fontsize=10,rotation=90,horizontalalignment='center',verticalalignment='bottom')
 
     for vdSF in np.unique(varydatSF):
         SFcol    = cmap(colnorm(vdSF))
