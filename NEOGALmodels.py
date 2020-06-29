@@ -4,7 +4,7 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import numpy as np
 import glob
-import pyfits
+import astropy.io.fits as afits
 import sys
 import pdb
 from astropy.cosmology import FlatLambdaCDM
@@ -98,7 +98,7 @@ def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRO
 
     """
     if verbose: print(' - Loading redshift catalog: \n   '+redshiftcat)
-    z_data       = pyfits.open(redshiftcat)[1].data
+    z_data       = afits.open(redshiftcat)[1].data
     linenamesdic = nm.linenames()
     if verbose: print(' - Grabbing files with flux measurements in data directory: \n   '+datadir)
     fluxfiles = glob.glob(datadir+'*_linelist_fluxes.fits')
@@ -109,7 +109,7 @@ def load_fluxes_LSDCatForcedRun(line1='CIV1548',line2='CIII1908',fluxcol='F_3KRO
     outputarray = np.ones([Nfiles,11])*-99
 
     for ff, ffile in enumerate(fluxfiles):
-        f_data   = pyfits.open(ffile)[1].data
+        f_data   = afits.open(ffile)[1].data
         objid    = ffile.split('/')[-1][:8]
         objent   = np.where(z_data['UNIQUE_ID'] == objid)[0]
         if len(objent) != 1:
@@ -791,7 +791,7 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
                      marker='o',lw=0, markersize=marksize*3,
                      markerfacecolor=p1col,ecolor=p1col,markeredgecolor = 'k',zorder=10)
 
-        if modeldata2 != 'None':
+        if modeldata2 is not 'None':
             p1ent   = np.where(param2_1 == p1)
 
             plt.plot(ratio2_1[p1ent],ratio2_2[p1ent],'-',lw=lthick, color='k',zorder=1)
@@ -827,7 +827,7 @@ def plot_lineratios(modeldata,modeldata2='None',line1='CIV1551',line2='CIII1908'
                      marker='o',lw=0, markersize=marksize*1.5,
                      markerfacecolor=p2col,ecolor=p2col,markeredgecolor = 'k',zorder=20)
 
-        if modeldata2 != 'None':
+        if modeldata2 is not 'None':
             p2ent   = np.where(param2_2 == p2)
 
             plt.plot(ratio2_1[p2ent],ratio2_2[p2ent],'-',lw=lthick, color='gray',zorder=2)
