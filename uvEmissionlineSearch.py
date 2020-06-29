@@ -11608,13 +11608,13 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
+def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
-    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV.pdf'
+    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV'
     mastercat   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
     infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
@@ -11658,10 +11658,16 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
     if verbose: print(' - Defining images and ranges')
     fields  = ['GOODS-S','COSMOS','UDF','MXDFregion']
 
-    imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det.fits',
-                  '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits',
-                  '/Users/kschmidt/work/images_MAST/hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci.fits',
-                  '/Users/kschmidt/work/images_MAST/hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci.fits']
+    if showobjects:
+        imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det.fits',
+                      '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits',
+                      '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci.fits',
+                      '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci.fits']
+    else:
+        imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det_lowres.fits',
+                      '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det_lowres.fits',
+                      '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci_lowres.fits',
+                      '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci_lowres.fits']
 
     # imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
     #               '/Users/kschmidt/work/images_MAST/cosmos_mosaic_Shrink50.fits']
@@ -11673,12 +11679,14 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
                        '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg',
                        '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg']
 
+    titletexts = ['HUDF Parallels and GOODS-S','COSMOS','The UDF mosaic and UDF10','MXDF']
+
     for ii, imagefile in enumerate(imagefiles):
-        if ii != 3:
-            continue
-        plotname  = figbasename.replace('.pdf','_'+fields[ii]+'.pdf')
+        # if ii != 3:
+        #     continue
+        plotname  = figbasename+'_'+fields[ii]+figext
         if showobjects:
-            plotname  = plotname.replace('.pdf','_withobj.pdf')
+            plotname  = plotname.replace(figext,'_withobj'+figext)
         if verbose: print(' - Generating '+plotname)
         pointings = pointingregions[ii]
         hdu       = afits.open(imagefile)[0]
@@ -11686,23 +11694,31 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
 
         if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
             fig = plt.figure(figsize=(5, 5))
-            vmin = 0.5
+            vmin = 1.5
             vmax = 40.
         elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
-            fig = plt.figure(figsize=(4, 5))
-            vmin = 0.5
+            fig = plt.figure(figsize=(5, 5))
+            vmin = 1.5
             vmax = 40.
         elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
             fig = plt.figure(figsize=(5, 5))
             vmin = 0.001
+            vmax = 1.
+        elif 'hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci' in imagefile:
+            fig = plt.figure(figsize=(5, 5))
+            vmin = 0.0001
             vmax = 1.
         else:
             fig = plt.figure(figsize=(5, 5))
             vmin = 0.0001
             vmax = 0.5
 
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.10, top=0.97)
-        Fsize    = 10
+        if ('COSMOS' in fields[ii]):
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.25, right=0.97, bottom=0.15, top=0.90)
+        else:
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.25, right=0.97, bottom=0.15, top=0.97)
+
+        Fsize    = 14
         lthick   = 2
         marksize = 4
         plt.rc('text', usetex=True)
@@ -11711,9 +11727,10 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
         plt.rc('ytick', labelsize=Fsize)
         plt.clf()
         plt.ioff()
-        #plt.title(inforstr[:-2],fontsize=Fsize)
+        # plt.title(titletexts[ii],fontsize=Fsize)
 
         ax = plt.subplot(projection=hud_wcs, label='overlays')
+        ax.set_title(titletexts[ii],fontsize=Fsize)
 
         #ax.imshow(hdu.data, origin='lower', cmap='Greys', vmin=-0.001, vmax=0.05) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
         ax.imshow(hdu.data, origin='lower', cmap='Greys', vmin=vmin, vmax=vmax, norm=LogNorm()) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
@@ -11739,16 +11756,16 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
         ds9regs = pyregion.open(pointings).as_imagecoord(header=hdu.header)
         patch_list, artist_list = ds9regs.get_mpl_patches_texts()
 
+        for pp in patch_list:
+            ax.add_patch(pp)
+        for tt in artist_list:
+            ax.add_artist(tt)
+
         # regstr = 'box(53.1243740333,-27.8516127209,0.01666667,0.01666667,340.0) # color=blue width=3 font="times 10 bold roman" text={Testing box}'
         # text 53.11950302d -27.85599899d {15} # color=blue
         # regstr = 'circle(53.1243740333,-27.8516127209,0.5") # color=magenta width=3  font="times 10 bold roman" text={115003085} '
         # r2 = pyregion.parse(regstr).as_imagecoord(header=hdu.header)
         # patch_list, artist_list = r2.get_mpl_patches_texts()
-
-        for pp in patch_list:
-            ax.add_patch(pp)
-        for tt in artist_list:
-            ax.add_artist(tt)
 
         if showobjects:
             for oo, objid in enumerate(masterdat['id']):
@@ -11757,6 +11774,9 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
                         continue
                 elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
                     if str(objid)[0] != '2':
+                        continue
+                elif 'hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci' in imagefile:
+                    if (int(str(objid)[0]) < 6):
                         continue
                 elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
                     if (int(str(objid)[0]) < 6):
@@ -11804,6 +11824,13 @@ def plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,verbose=True):
         elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
             plt.xlim([xmax*0.18,xmax*0.70])
             plt.ylim([ymax*0.23,ymax*0.48])
+        elif 'hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci' in imagefile:
+            if 'MXDF' in fields[ii]:
+                plt.xlim([xmax*0.38,xmax*0.445])
+                plt.ylim([ymax*0.51,ymax*0.58])
+            else:
+                plt.xlim([xmax*0.33,xmax*0.51])
+                plt.ylim([ymax*0.45,ymax*0.64])
         elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
             if 'MXDF' in fields[ii]:
                 plt.xlim([xmax*0.30,xmax*0.65])
