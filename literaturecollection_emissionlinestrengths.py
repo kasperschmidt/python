@@ -240,6 +240,8 @@ def referencedictionary():
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Du et al. (2020) - Lya and CIII EWs
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Ravindranath et al. (2020) Green pea CIII + OIII + Lya emitters
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Senchyna et al. (2019); Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
@@ -1267,7 +1269,7 @@ def colname2NEOGAL(colname):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def add_photoionization_models_to_plot(piplotparam,verbose=True):
     """
-    Wrapper to add NEOGAL photoionization model grids to flux ratio plots
+    Wrapper to add NEOGAL photoionization model points to flux ratio plots
 
     --- INPUT ---
     piplotparam            The photoionization plot parameters.
@@ -1282,6 +1284,8 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
     x2plot, y2plot, varyparam, cutSFmodels, markersize, SFmarker, AGNmarker = piplotparam
     # varyparam options: 'Zgas','logUs','xid','nh','COratio','Mcutoff'
     logcolors = ['Zgas']
+
+    lce.add_hirschmann19_lines(x2plot,y2plot,loglog=True,linecolor='gray',linewidth=2,verbose=verbose)
 
     CIIIdoubletratio = 1.5
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1517,6 +1521,142 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
 
     titleaddition = infostrSFcut
     return titleaddition
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewidth=2,verbose=True):
+    """
+    Function adding the demarcations (regions of SF, composite, and AGN) from Hirschmann et al. (2019)
+
+    Note - all demarcations assume log-log plotting.
+
+    """
+    # Translating the input axes quantities
+    if '/' in xquantity:
+        xnum = xquantity.split('/')[0]
+        xden = xquantity.split('/')[1]
+    else:
+        xnum = xquantity
+        xden = '1'
+
+    if '/' in yquantity:
+        ynum = yquantity.split('/')[0]
+        yden = yquantity.split('/')[1]
+    else:
+        ynum = yquantity
+        yden = '1'
+
+
+    # defining the acronomy to return demarcations for
+    xminsys, xmaxsys = np.log10(plt.xlim())
+    yminsys, ymaxsys = np.log10(plt.ylim())
+
+    # 'NV1240'
+    # 'CIV1549'
+    # 'CIV1550'#
+    # 'CIV1551'
+    # 'CIII1908'
+    # 'CIII1907'
+    # 'CIII1910'
+    # 'HeII1640'
+    # 'OIII1661'
+    # 'OIII1663'
+    # 'OIII1666'
+    # 'SiIII1883'
+    # 'SiIII1888'
+    # 'SiIII1892'
+    if (ynum == 'CIII1908') & (yden == '1') & (xnum == 'CIII1908') & (xden == 'HeII1640'):
+        acronym = 'EWC3-C3He2'
+        x = np.array([xminsys,xmaxsys])
+        y = 2*x - 1.5
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([yminsys,1])
+        x = (y -0.8) / 0.5
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+
+        y = np.array([1,ymaxsys])
+        x = np.array([0.4,0.4])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+
+    # acronym = 'EWC4-C4He2'
+    # acronym = 'EWO3-O3He2'
+    # acronym = 'EWSi3-Si3He2'
+    # acronym = 'EWN3-N3He2'
+    #
+    elif (ynum == 'CIII1908') & (yden == 'HeII1640') & (xnum == 'CIV1550') & (xden == 'CIII1908'):
+        acronym = 'C3He2-C43'
+        x = np.array([xminsys,-0.2])
+        y = np.array([1.0,1.0])
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        x = np.array([-0.2,xmaxsys])
+        y = -0.9*x + 0.8
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        x = np.array([xminsys,1.0])
+        y = np.array([-0.1,-0.1])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+    elif (ynum == 'CIV1550') & (yden == 'CIII1908') & (xnum == 'CIII1908') & (xden == 'HeII1640'):
+        acronym = 'C43-C3He2'
+        y = np.array([yminsys,-0.2])
+        x = -0.9*y + 0.8
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([-0.2,ymaxsys])
+        x = -0.9*y + 0.8
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([yminsys,ymaxsys])
+        x = np.array([-0.1,-0.1])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+
+    # acronym = 'C3He2-N5He2'
+    elif (ynum == 'CIII1908') & (yden == 'HeII1640') & (xnum == 'OIII1663') & (xden == 'HeII1640'):
+        acronym = 'C3He2-O3He2'
+        y = np.array([1.0,1.0])
+        x = np.array([xminsys,0.8])
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([yminsys,1.0])
+        x = np.array([0.8,0.8])
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([-0.1,-0.1])
+        x = np.array([xminsys,0.0])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+
+        y = np.array([yminsys,-0.1])
+        x = np.array([0.0,0.0])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+    elif (ynum == 'CIII1908') & (yden == 'HeII1640') & (xnum == 'SiIII1888') & (xden == 'HeII1640'):
+        acronym = 'C3He2-Si3He2'
+        y = np.array([1.0,1.0])
+        x = np.array([xminsys,0.5])
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([yminsys,1.0])
+        x = np.array([0.5,0.5])
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+
+        y = np.array([-0.1,-0.1])
+        x = np.array([xminsys,-0.5])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+
+        y = np.array([yminsys,-0.1])
+        x = np.array([-0.5,-0.5])
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+    # acronym = 'C3He2-N3He2'
+    #
+    # acronym = 'C43-C32'
+    # acronym = 'C43-OIHa'
+    # acronym = 'N43-C32'
+    # acronym = 'N43-OIHa'
+
+    else:
+        print('WARNING: lce.add_hirschmann19_lines: No demarcations for the input:\n'
+              '                                     x_numerator   ='+xnum+', \n'
+              '                                     x_denominator ='+xden+', \n'
+              '                                     y_numerator   ='+ynum+', \n'
+              '                                     y_denominator ='+yden)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_TEMPLATE(fluxscale=1.0,verbose=True):
