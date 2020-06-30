@@ -1523,7 +1523,7 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
     titleaddition = infostrSFcut
     return titleaddition
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewidth=2,verbose=True):
+def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewidth=2,verbose=True,zorder=10):
     """
     Function adding the demarcations (regions of SF, composite, and AGN) from Hirschmann et al. (2019)
 
@@ -1568,15 +1568,15 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
         acronym = 'EWC3-C3He2'
         x = np.array([xminsys,xmaxsys])
         y = 2*x - 1.5
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([yminsys,1])
         x = (y -0.8) / 0.5
-        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([1,ymaxsys])
         x = np.array([0.4,0.4])
-        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor, zorder=zorder)
 
     # acronym = 'EWC4-C4He2'
     # acronym = 'EWO3-O3He2'
@@ -1587,11 +1587,11 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
         acronym = 'C3He2-C43'
         x = np.array([xminsys,-0.2])
         y = np.array([1.0,1.0])
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         x = np.array([-0.2,xmaxsys])
         y = -0.9*x + 0.8
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         x = np.array([xminsys,1.0])
         y = np.array([-0.1,-0.1])
@@ -1600,30 +1600,30 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
         acronym = 'C43-C3He2'
         y = np.array([yminsys,-0.2])
         x = -0.9*y + 0.8
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([-0.2,ymaxsys])
         x = -0.9*y + 0.8
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([yminsys,ymaxsys])
         x = np.array([-0.1,-0.1])
-        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor, zorder=zorder)
 
     # acronym = 'C3He2-N5He2'
     elif (ynum == 'CIII1908') & (yden == 'HeII1640') & (xnum == 'OIII1663') & (xden == 'HeII1640'):
         acronym = 'C3He2-O3He2'
         y = np.array([1.0,1.0])
         x = np.array([xminsys,0.8])
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([yminsys,1.0])
         x = np.array([0.8,0.8])
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([-0.1,-0.1])
         x = np.array([xminsys,0.0])
-        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([yminsys,-0.1])
         x = np.array([0.0,0.0])
@@ -1632,19 +1632,19 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
         acronym = 'C3He2-Si3He2'
         y = np.array([1.0,1.0])
         x = np.array([xminsys,0.5])
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([yminsys,1.0])
         x = np.array([0.5,0.5])
-        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,'--',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([-0.1,-0.1])
         x = np.array([xminsys,-0.5])
-        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor, zorder=zorder)
 
         y = np.array([yminsys,-0.1])
         x = np.array([-0.5,-0.5])
-        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor)
+        plt.plot(10**x,10**y,':',lw=linewidth,color=linecolor, zorder=zorder)
     # acronym = 'C3He2-N3He2'
     #
     # acronym = 'C43-C32'
@@ -1659,7 +1659,7 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
               '                                     y_numerator   ='+ynum+', \n'
               '                                     y_denominator ='+yden)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def add_nakajuma17_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewidth=2,verbose=True):
+def add_nakajuma17_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewidth=2,verbose=True,zorder=10):
     """
     Function adding the demarcations (regions of SF and AGN) from Nakajima et al. (2017)
 
@@ -1687,27 +1687,27 @@ def add_nakajuma17_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewi
         acronym = 'EWC3-C3He2'
         x = np.array([xminsys,5.0])
         y = 4.0*x
-        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor, zorder=zorder)
 
         x = np.array([5.0,xmaxsys])
         y = np.array([20,20])
-        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor, zorder=zorder)
 
     elif (ynum == 'EW_CIII1908') & (yden == '1') & (xnum == 'CIII1908') & (xden == 'HeII1640'):
         acronym = 'EWC4-C4He2'
         x = np.array([xminsys,4.0])
         y = 3.0*x
-        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor, zorder=zorder)
 
         x = np.array([4.0,xmaxsys])
         y = np.array([12,12])
         plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
 
     elif (ynum == 'CIV1550') & (yden == 'CIII1908') & (xnum == 'CIII1908+CIV1550') & (xden == 'HeII1640'):
-        acronym = 'C4C3–C34He2'
+        acronym = 'C4C3-C34He2'
         x = np.array([xminsys,xmaxsys])
         y = 10**(2.5*np.log10(x) - 1.8)
-        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor, zorder=zorder)
 
     else:
         print('WARNING: lce.add_nakajuma17_lines: No demarcations for the input:\n'
