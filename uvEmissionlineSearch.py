@@ -6969,6 +6969,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
     # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
     linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    linesetlist.append(['OIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
+    linesetlist.append(['SiIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
     #
     linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
     linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
