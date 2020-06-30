@@ -1286,6 +1286,7 @@ def add_photoionization_models_to_plot(piplotparam,verbose=True):
     logcolors = ['Zgas']
 
     lce.add_hirschmann19_lines(x2plot,y2plot,loglog=True,linecolor='gray',linewidth=2,verbose=verbose)
+    lce.add_nakajuma17_lines(x2plot,y2plot,loglog=True,linecolor='gray',linewidth=2,verbose=verbose)
 
     CIIIdoubletratio = 1.5
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1647,9 +1648,9 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
     # acronym = 'C3He2-N3He2'
     #
     # acronym = 'C43-C32'
-    # acronym = 'C43-OIHa'
+    # acronym = 'C43-O1Ha'
     # acronym = 'N43-C32'
-    # acronym = 'N43-OIHa'
+    # acronym = 'N43-O1Ha'
 
     else:
         print('WARNING: lce.add_hirschmann19_lines: No demarcations for the input:\n'
@@ -1657,6 +1658,63 @@ def add_hirschmann19_lines(xquantity,yquantity,loglog=True,linecolor='gray',line
               '                                     x_denominator ='+xden+', \n'
               '                                     y_numerator   ='+ynum+', \n'
               '                                     y_denominator ='+yden)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def add_nakajuma17_lines(xquantity,yquantity,loglog=True,linecolor='gray',linewidth=2,verbose=True):
+    """
+    Function adding the demarcations (regions of SF and AGN) from Nakajima et al. (2017)
+
+    """
+    # Translating the input axes quantities
+    if '/' in xquantity:
+        xnum = xquantity.split('/')[0]
+        xden = xquantity.split('/')[1]
+    else:
+        xnum = xquantity
+        xden = '1'
+
+    if '/' in yquantity:
+        ynum = yquantity.split('/')[0]
+        yden = yquantity.split('/')[1]
+    else:
+        ynum = yquantity
+        yden = '1'
+
+    # defining the acronomy to return demarcations for
+    xminsys, xmaxsys = plt.xlim()
+    yminsys, ymaxsys = plt.ylim()
+
+    if (ynum == 'EW_CIII1908') & (yden == '1') & (xnum == 'CIII1908') & (xden == 'HeII1640'):
+        acronym = 'EWC3-C3He2'
+        x = np.array([xminsys,5.0])
+        y = 4.0*x
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+
+        x = np.array([5.0,xmaxsys])
+        y = np.array([20,20])
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+
+    elif (ynum == 'EW_CIII1908') & (yden == '1') & (xnum == 'CIII1908') & (xden == 'HeII1640'):
+        acronym = 'EWC4-C4He2'
+        x = np.array([xminsys,4.0])
+        y = 3.0*x
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+
+        x = np.array([4.0,xmaxsys])
+        y = np.array([12,12])
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+
+    elif (ynum == 'CIV1550') & (yden == 'CIII1908') & (xnum == 'CIII1908+CIV1550') & (xden == 'HeII1640'):
+        acronym = 'C4C3–C34He2'
+        x = np.array([xminsys,xmaxsys])
+        y = 10**(2.5*np.log10(x) - 1.8)
+        plt.plot(x,y,'-.',lw=linewidth,color=linecolor)
+
+    else:
+        print('WARNING: lce.add_nakajuma17_lines: No demarcations for the input:\n'
+              '                                   x_numerator   ='+xnum+', \n'
+              '                                   x_denominator ='+xden+', \n'
+              '                                   y_numerator   ='+ynum+', \n'
+              '                                   y_denominator ='+yden)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_TEMPLATE(fluxscale=1.0,verbose=True):
