@@ -5103,6 +5103,26 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             Zsun = 8.69
             plt.fill_between([5.0,Zsun,Zsun,10],[10.0,10.0,10.0,10.0],[Zsun,Zsun,5.0,5.0],color='lightgray')
             plt.text(7.0,8.75,'super-solar',color='gray',zorder=10)
+        elif linetype == 'horizontal_and_nakajima18EWvsDv':
+            plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
+
+            # Nakajima+2018 Eq.1
+            x = np.array([70,xmaxsys])
+            y = np.array([150,150])
+            plt.plot(x,y,'-.',color='gray',lw=lthick,zorder=10)
+
+            x = np.array([20,70])
+            y = 360-3.0*x
+            plt.plot(x,y,'-.',color='gray',lw=lthick,zorder=10)
+
+            x = np.array([xminsys,20])
+            y = 600-15.0*x
+            plt.plot(x,y,'-.',color='gray',lw=lthick,zorder=10)
+
+            # Adelberger+2003 Eq.2
+            x = np.array([0,xmaxsys])
+            y = 670.0 - 8.9 * x
+            plt.plot(x,y,':',color='gray',lw=lthick,zorder=10)
         elif (str(linetype).lower == 'none') or (linetype is None) :
             pass
         else:
@@ -13543,7 +13563,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     outdir           = uvesdir+'velocityoffsetFigures/'
     linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
     infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
-    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,10],overwrite=True)
+    uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,10],overwrite=True,addDvErr=True)
 
     uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,3],overwrite=True,addDvErr=True)
     uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[3,4],overwrite=True,addDvErr=True)
@@ -13789,19 +13809,20 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     else:
                         xerr     = infodat[infocols[colname][1]][dvs_ent[vv]]
 
-                    try:
-                        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
-                                                                       'dummydat',linetype='horizontal',title=None, #'this is title',
-                                                                       ids=dat_uves['id'][dvs_ent[vv]],
-                                                                       ylog=False,xlog=False,yrange=yrange,xrange=xrange,
-                                                                       colortype='redshift',colorcode=True,
-                                                                       cdatvec=dat_uves['redshift'][dvs_ent[vv]],
-                                                                       point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
-                                                                       photoionizationplotparam=None,
-                                                                       histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
-                                                                       overwrite=overwrite,verbose=verbose)
-                    except:
-                        pdb.set_trace()
+                    if 'EW' in xlabel:
+                        linetype='horizontal_and_nakajima18EWvsDv'
+                    else:
+                        linetype='horizontal'
+                    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
+                                                                   'dummydat',linetype=linetype,title=None, #'this is title',
+                                                                   ids=dat_uves['id'][dvs_ent[vv]],
+                                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                                   colortype='redshift',colorcode=True,
+                                                                   cdatvec=dat_uves['redshift'][dvs_ent[vv]],
+                                                                   point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                                   photoionizationplotparam=None,
+                                                                   histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                                   overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_AGN_ids(infofile=None):
