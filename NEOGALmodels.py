@@ -974,10 +974,12 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
 
     --- EXAMPLE OF USE ---
     import NEOGALmodels as nm
-    FRdic = [{'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}]
+    FRdic = [{'id':111111, 'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}]
     parametercollection_SF, parametercollection_AGN = nm.estimate_object_PDFs(FRdic)
 
     """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Loading NEOGAL models ')
     SF_models  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
 
     # dtype=[('Zgas', '<f8'), ('logUs', '<f8'), ('xid', '<f8'), ('nh', '<i8'), ('COCOsol', '<f8'), ('mup', '<i8'), ('OII3727', '<f8'), ('Hb', '<f8'), ('OIII4959', '<f8'), ('OIII5007', '<f8'), ('NII6548', '<f8'), ('Ha', '<f8'), ('NII6584', '<f8'), ('SII6717', '<f8'), ('SII6731', '<f8'), ('NV1240', '<f8'), ('CIV1548', '<f8'), ('CIV1551', '<f8'), ('HeII1640', '<f8'), ('OIII1661', '<f8'), ('OIII1666', '<f8'), ('SiIII1883', '<f8'), ('SiIII1888', '<f8'), ('CIII1908', '<f8')])
@@ -986,7 +988,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
 
     #  dtype=[('Zgas', '<f8'), ('logUs', '<f8'), ('xid', '<f8'), ('nh', '<f8'), ('alpha', '<f8'), ('OII3727', '<f8'), ('Hbeta', '<f8'), ('OIII4959', '<f8'), ('OIII5007', '<f8'), ('OI6300', '<f8'), ('NII6548', '<f8'), ('Halpha', '<f8'), ('NII6584', '<f8'), ('SII6717', '<f8'), ('SII6731', '<f8'), ('NV1240', '<f8'), ('CIV1548', '<f8'), ('CIV1551', '<f8'), ('HeII1640', '<f8'), ('OIII1661', '<f8'), ('OIII1666', '<f8'), ('SiIII1883', '<f8'), ('SiIII1888', '<f8'), ('CIII1907', '<f8'), ('CIII1910', '<f8')])
 
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Define all possible line ratios from the lines:\n    '
                       'NV1240, CIV1550, CIII1908, HeII1640, OIII1663, and SiIII1888')
     fluxratiodic = {}                   # [[SF range], [AGN range]]
@@ -1026,6 +1028,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
     fluxratiodic['SiIII1888/HeII1640']  = [[-999,-999],[-999,-999]]
     fluxratiodic['SiIII1888/OIII1663']  = [[-999,-999],[-999,-999]]
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Set up mode line flux vectors')
     fluxdic = {}         # [[SF flxu],                                   [AGN flux]]
     fluxdic['NV1240']    = [SF_models['NV1240'],                           AGN_models['NV1240']]
@@ -1035,6 +1038,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
     fluxdic['OIII1663']  = [SF_models['OIII1661']+SF_models['OIII1666'],  AGN_models['OIII1661']+AGN_models['OIII1666']]
     fluxdic['SiIII1888'] = [SF_models['SiIII1888'],  AGN_models['SiIII1888']]
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Get ranges of model flux ratios')
     for FR in fluxratiodic.keys():
         numerator   = FR.split('/')[0]
@@ -1049,14 +1053,16 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
     if verbose: print(' - Get model selection given flux ratio ranges according to '+
                       str(Nobj)+" object's data provided ")
 
-    parametercollection_SF  = [{'Zgas':[],'logUs':[],'xid':[],'nh':[],'COCOsol':[],'mup':[]}]*Nobj
-    parametercollection_AGN = [{'Zgas':[],'logUs':[],'xid':[],'nh':[],'alpha':[]}]*Nobj
+    parametercollection_SF  = [{'id':0, 'Zgas':[],'logUs':[],'xid':[],'nh':[],'COCOsol':[],'mup':[]}]*Nobj
+    parametercollection_AGN = [{'id':0, 'Zgas':[],'logUs':[],'xid':[],'nh':[],'alpha':[]}]*Nobj
 
     for oo, FRdic_input in enumerate(fluxratiodictionarylist):
         fluxratiodic_obj = fluxratiodic    # resetting flux ratio dictionary for object
         for FR in FRdic_input.keys():
             if FR in fluxratiodic.keys():
                 fluxratiodic_obj[FR] = [FRdic_input[FR],FRdic_input[FR]]
+            elif FR == 'id':
+                pass
             else:
                 print(' WARNING nm.estimate_object_PDFs(): The flux ratio entry '+FR+' is not availble in the \n'
                       '                                    dictionary from the NEOGAL models. Define that flux \n'
@@ -1077,20 +1083,75 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
             goodent_AGN    = np.intersect1d(goodent_AGN,goodent_FR_AGN)
 
 
-        parametercollection_SF[oo]  = {'Zgas'   : SF_models['Zgas'][goodent_SF],
+        parametercollection_SF[oo]  = {'id'     : FRdic_input['id'],
+                                       'Zgas'   : SF_models['Zgas'][goodent_SF],
                                        'logUs'  : SF_models['logUs'][goodent_SF],
                                        'xid'    : SF_models['xid'][goodent_SF],
                                        'nh'     : SF_models['nh'][goodent_SF],
                                        'COCOsol': SF_models['COCOsol'][goodent_SF],
                                        'mup'    : SF_models['mup'][goodent_SF]}
 
-        parametercollection_AGN[oo] = {'Zgas'   : AGN_models['Zgas'][goodent_AGN],
+        parametercollection_AGN[oo] = {'id'     : FRdic_input['id'],
+                                       'Zgas'   : AGN_models['Zgas'][goodent_AGN],
                                        'logUs'  : AGN_models['logUs'][goodent_AGN],
                                        'xid'    : AGN_models['xid'][goodent_AGN],
                                        'nh'     : AGN_models['nh'][goodent_AGN],
                                        'alpha'  : AGN_models['alpha'][goodent_AGN]}
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Getting distribution ranges (percentiles) for parameter collections ')
+    stat_SF   = []
+    stat_AGN  = []
 
-    return parametercollection_SF, parametercollection_AGN
+    for oo in np.arange(Nobj):
+        stat_SF.append({'id':parametercollection_SF[oo]['id'], 'Zgas':[],'logUs':[],'xid':[],'nh':[],'COCOsol':[],'mup':[]})
+        for key in stat_SF[oo].keys():
+            if key == 'id': continue
+
+            if len(parametercollection_SF[oo][key]) > 0:
+
+                meanval_SF   = np.mean(parametercollection_SF[oo][key])
+                std_SF       = np.std(parametercollection_SF[oo][key])
+                medianval_SF = np.median(parametercollection_SF[oo][key])
+                perc2p5_SF   = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.025)]
+                perc16_SF    = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.16)]
+                perc25_SF    = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.25)]
+                perc50_SF    = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.50)]
+                perc75_SF    = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.75)]
+                perc84_SF    = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.84)]
+                perc97p5_SF  = np.sort(parametercollection_SF[oo][key])[int(len(parametercollection_SF[oo][key])*0.975)]
+
+                stat_SF[oo][key] = [meanval_SF,std_SF,medianval_SF,perc2p5_SF,perc16_SF,perc25_SF,
+                                    perc50_SF,perc75_SF,perc84_SF,perc97p5_SF]
+            else:
+                stat_SF[oo][key] = [np.nan]*10
+
+        stat_AGN.append({'id':parametercollection_AGN[oo]['id'], 'Zgas':[],'logUs':[],'xid':[],'nh':[],'alpha':[]})
+        for key in stat_AGN[oo].keys():
+            if key == 'id': continue
+
+            if len(parametercollection_AGN[oo][key]) > 0:
+                print('here')
+                meanval_AGN   = np.mean(parametercollection_AGN[oo][key])
+                std_AGN       = np.std(parametercollection_AGN[oo][key])
+                medianval_AGN = np.median(parametercollection_AGN[oo][key])
+                perc2p5_AGN   = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.025)]
+                perc16_AGN    = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.16)]
+                perc25_AGN    = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.25)]
+                perc50_AGN    = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.50)]
+                perc75_AGN    = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.75)]
+                perc84_AGN    = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.84)]
+                perc97p5_AGN  = np.sort(parametercollection_AGN[oo][key])[int(len(parametercollection_AGN[oo][key])*0.975)]
+
+                stat_AGN[oo][key] = [meanval_AGN,std_AGN,medianval_AGN,perc2p5_AGN,perc16_AGN,perc25_AGN,
+                                     perc50_AGN,perc75_AGN,perc84_AGN,perc97p5_AGN]
+            else:
+                stat_AGN[oo][key] = [np.nan]*10
+
+    stat_idlist =  [stat_AGN[oo]['id'] for oo in np.arange(len(stat_AGN))]
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    return parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
