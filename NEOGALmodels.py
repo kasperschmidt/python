@@ -959,5 +959,138 @@ def convert_Lbol2Fline(Lbol,redshift,verbose=True):
     """
     Converting bolometric luminoisity [erg/s] to integrated line flux [erg/s/cm2]
     """
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue',SFcol='red',verbose=True):
+    """
+    Function to estimate "PDFs" from the SF and AGN NEOGAL models given a set of flux ratio measurements.
+
+    --- INPUT ---
+    fluxratiodictionarylist   List of flux ratio dictionaris to get "PDFs" for.
+                              Length of list corresponds to objects with measurements to get "PDFs" for.
+    AGNcol                    Color of AGN model related data in plots
+    SFcol                     Color of SF model related data in plots
+    verbose                   Toggle verbosity
+
+
+    --- EXAMPLE OF USE ---
+    import NEOGALmodels as nm
+    FRdic = [{'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}]
+    parametercollection_SF, parametercollection_AGN = nm.estimate_object_PDFs(FRdic)
+
+    """
+    SF_models  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
+
+    # dtype=[('Zgas', '<f8'), ('logUs', '<f8'), ('xid', '<f8'), ('nh', '<i8'), ('COCOsol', '<f8'), ('mup', '<i8'), ('OII3727', '<f8'), ('Hb', '<f8'), ('OIII4959', '<f8'), ('OIII5007', '<f8'), ('NII6548', '<f8'), ('Ha', '<f8'), ('NII6584', '<f8'), ('SII6717', '<f8'), ('SII6731', '<f8'), ('NV1240', '<f8'), ('CIV1548', '<f8'), ('CIV1551', '<f8'), ('HeII1640', '<f8'), ('OIII1661', '<f8'), ('OIII1666', '<f8'), ('SiIII1883', '<f8'), ('SiIII1888', '<f8'), ('CIII1908', '<f8')])
+
+    AGN_models = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/AGN_NLR_nebular_feltre16/')
+
+    #  dtype=[('Zgas', '<f8'), ('logUs', '<f8'), ('xid', '<f8'), ('nh', '<f8'), ('alpha', '<f8'), ('OII3727', '<f8'), ('Hbeta', '<f8'), ('OIII4959', '<f8'), ('OIII5007', '<f8'), ('OI6300', '<f8'), ('NII6548', '<f8'), ('Halpha', '<f8'), ('NII6584', '<f8'), ('SII6717', '<f8'), ('SII6731', '<f8'), ('NV1240', '<f8'), ('CIV1548', '<f8'), ('CIV1551', '<f8'), ('HeII1640', '<f8'), ('OIII1661', '<f8'), ('OIII1666', '<f8'), ('SiIII1883', '<f8'), ('SiIII1888', '<f8'), ('CIII1907', '<f8'), ('CIII1910', '<f8')])
+
+
+    if verbose: print(' - Define all possible line ratios from the lines:\n    '
+                      'NV1240, CIV1550, CIII1908, HeII1640, OIII1663, and SiIII1888')
+    fluxratiodic = {}                   # [[SF range], [AGN range]]
+    fluxratiodic['NV1240/CIV1550']     = [[-999,-999],[-999,-999]]
+    fluxratiodic['NV1240/CIII1908']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['NV1240/HeII1640']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['NV1240/OIII1663']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['NV1240/SiIII1888']   = [[-999,-999],[-999,-999]]
+
+    fluxratiodic['CIV1550/NV1240']     = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIV1550/CIII1908']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIV1550/HeII1640']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIV1550/OIII1663']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIV1550/SiIII1888']  = [[-999,-999],[-999,-999]]
+
+    fluxratiodic['CIII1908/NV1240']     = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIII1908/CIV1550']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIII1908/HeII1640']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIII1908/OIII1663']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIII1908/SiIII1888']  = [[-999,-999],[-999,-999]]
+
+    fluxratiodic['HeII1640/NV1240']     = [[-999,-999],[-999,-999]]
+    fluxratiodic['HeII1640/CIV1550']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['HeII1640/CIII1908']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['HeII1640/OIII1663']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['HeII1640/SiIII1888']  = [[-999,-999],[-999,-999]]
+
+    fluxratiodic['OIII1663/NV1240']     = [[-999,-999],[-999,-999]]
+    fluxratiodic['OIII1663/CIV1550']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['OIII1663/CIII1908']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['OIII1663/HeII1640']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['OIII1663/SiIII1888']  = [[-999,-999],[-999,-999]]
+
+    fluxratiodic['SiIII1888/NV1240']    = [[-999,-999],[-999,-999]]
+    fluxratiodic['SiIII1888/CIV1550']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['SiIII1888/CIII1908']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['SiIII1888/HeII1640']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['SiIII1888/OIII1663']  = [[-999,-999],[-999,-999]]
+
+    if verbose: print(' - Set up mode line flux vectors')
+    fluxdic = {}         # [[SF flxu],                                   [AGN flux]]
+    fluxdic['NV1240']    = [SF_models['NV1240'],                           AGN_models['NV1240']]
+    fluxdic['CIV1550']   = [SF_models['CIV1548']+SF_models['CIV1551'],     AGN_models['CIV1548']+AGN_models['CIV1551']]
+    fluxdic['CIII1908']  = [SF_models['CIII1908'],                         AGN_models['CIII1907']+AGN_models['CIII1910']]
+    fluxdic['HeII1640']  = [SF_models['HeII1640'],                         AGN_models['HeII1640']]
+    fluxdic['OIII1663']  = [SF_models['OIII1661']+SF_models['OIII1666'],  AGN_models['OIII1661']+AGN_models['OIII1666']]
+    fluxdic['SiIII1888'] = [SF_models['SiIII1888'],  AGN_models['SiIII1888']]
+
+    if verbose: print(' - Get ranges of model flux ratios')
+    for FR in fluxratiodic.keys():
+        numerator   = FR.split('/')[0]
+        denominator = FR.split('/')[1]
+        fluxratiodic[FR][0] = [np.min(fluxdic[numerator][0]/fluxdic[denominator][0]),
+                               np.max(fluxdic[numerator][0]/fluxdic[denominator][0])]
+        fluxratiodic[FR][1] = [np.min(fluxdic[numerator][1]/fluxdic[denominator][1]),
+                               np.max(fluxdic[numerator][1]/fluxdic[denominator][1])]
+
+
+    Nobj = len(fluxratiodictionarylist)
+    if verbose: print(' - Get model selection given flux ratio ranges according to '+
+                      str(Nobj)+" object's data provided ")
+
+    parametercollection_SF  = [{'Zgas':[],'logUs':[],'xid':[],'nh':[],'COCOsol':[],'mup':[]}]*Nobj
+    parametercollection_AGN = [{'Zgas':[],'logUs':[],'xid':[],'nh':[],'alpha':[]}]*Nobj
+
+    for oo, FRdic_input in enumerate(fluxratiodictionarylist):
+        fluxratiodic_obj = fluxratiodic    # resetting flux ratio dictionary for object
+        for FR in FRdic_input.keys():
+            if FR in fluxratiodic.keys():
+                fluxratiodic_obj[FR] = [FRdic_input[FR],FRdic_input[FR]]
+            else:
+                print(' WARNING nm.estimate_object_PDFs(): The flux ratio entry '+FR+' is not availble in the \n'
+                      '                                    dictionary from the NEOGAL models. Define that flux \n'
+                      '                                    ratio or correct input data.')
+
+        goodent_SF   = np.arange(len(SF_models))
+        goodent_AGN  = np.arange(len(AGN_models))
+        for FR in fluxratiodic.keys():
+            numerator   = FR.split('/')[0]
+            denominator = FR.split('/')[1]
+
+            goodent_FR_SF  = np.where( (fluxdic[numerator][0]/fluxdic[denominator][0] >= fluxratiodic_obj[FR][0][0]) &
+                                       (fluxdic[numerator][0]/fluxdic[denominator][0] <= fluxratiodic_obj[FR][0][1]))[0]
+            goodent_SF = np.intersect1d(goodent_SF,goodent_FR_SF)
+
+            goodent_FR_AGN = np.where( (fluxdic[numerator][1]/fluxdic[denominator][1] >= fluxratiodic_obj[FR][1][0]) &
+                                       (fluxdic[numerator][1]/fluxdic[denominator][1] <= fluxratiodic_obj[FR][1][1]))[0]
+            goodent_AGN    = np.intersect1d(goodent_AGN,goodent_FR_AGN)
+
+
+        parametercollection_SF[oo]  = {'Zgas'   : SF_models['Zgas'][goodent_SF],
+                                       'logUs'  : SF_models['logUs'][goodent_SF],
+                                       'xid'    : SF_models['xid'][goodent_SF],
+                                       'nh'     : SF_models['nh'][goodent_SF],
+                                       'COCOsol': SF_models['COCOsol'][goodent_SF],
+                                       'mup'    : SF_models['mup'][goodent_SF]}
+
+        parametercollection_AGN[oo] = {'Zgas'   : AGN_models['Zgas'][goodent_AGN],
+                                       'logUs'  : AGN_models['logUs'][goodent_AGN],
+                                       'xid'    : AGN_models['xid'][goodent_AGN],
+                                       'nh'     : AGN_models['nh'][goodent_AGN],
+                                       'alpha'  : AGN_models['alpha'][goodent_AGN]}
+
+
+    return parametercollection_SF, parametercollection_AGN
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
