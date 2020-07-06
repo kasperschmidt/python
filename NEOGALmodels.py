@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib
 import NEOGALmodels as nm
 import itertools
+import literaturecollection_emissionlinestrengths as lce
+from matplotlib.colors import LogNorm
+from matplotlib.ticker import NullFormatter
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def load_model(Zgas,filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/',verbose=True):
     """
@@ -1151,18 +1154,253 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,AGNcol='
                  '                                      the parameter collection ('+str(parametercollection_idlist)+') and \n'
                  '                                      the stats ('+str(stat_idlist)+')')
 
+    plotname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobjectStats.pdf'
+    nm.plot_stat(plotname,stat_SF,stat_AGN,SFcol=SFcol,AGNcol=AGNcol,verbose=verbose)
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if generatePDFplots:
         if verbose: print(' - Plotting the extracted model parameter collections')
         plotname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobjectPDF.pdf'
-        nm.plot_modelparaemtercollections(plotname, parametercollection_SF, parametercollection_AGN,
+        nm.plot_modelparametercollections(plotname, parametercollection_SF, parametercollection_AGN,
                                           stat_SF, stat_AGN, AGNcol=AGNcol,SFcol=SFcol,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_modelparaemtercollections(plotname, parametercollection_SF, parametercollection_AGN,
+def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=True):
+    """
+
+    """
+    if verbose: print(' - Plot stats of parameter selection')
+
+    xkey   = 'Zgas'
+    xlabel = 'Z'
+    ykey   = 'logUs'
+    ylabel = 'log(U)'
+
+    xrange = [0.00001,0.2]
+    yrange = [-5.2,-0.4]
+
+    plotname_obj = plotname.replace('.pdf','_meanANDstd_ZgasVSlogUs.pdf')
+    nm.plot_stat_diagram(plotname_obj,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
+                         xlog=True,ylog=False,datsetup='meanstd',verbose=verbose)
+
+
+    plotname_obj = plotname.replace('.pdf','_median68percent_ZgasVSlogUs.pdf')
+    nm.plot_stat_diagram(plotname_obj,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
+                         xlog=True,ylog=False,datsetup='med68',verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
+                      xlog=False,ylog=False,datsetup='med68',verbose=True):
+
+    if datsetup == 'med68':
+        cen_ent     = 2
+        errlow_ent  = 4
+        errhigh_ent = 8
+    elif datsetup == 'medqart':
+        cen_ent     = 2
+        errlow_ent  = 5
+        errhigh_ent = 7
+    elif datsetup == 'med95':
+        cen_ent     = 2
+        errlow_ent  = 3
+        errhigh_ent = 9
+    elif datsetup == 'meanstd':
+        cen_ent     = 0
+        errlow_ent  = 1
+        errhigh_ent = 1
+
+    xvalues_SF  = []
+    xerrlow_SF  = []
+    xerrhigh_SF = []
+
+    yvalues_SF  = []
+    yerrlow_SF  = []
+    yerrhigh_SF = []
+
+    xvalues_AGN  = []
+    xerrlow_AGN  = []
+    xerrhigh_AGN = []
+
+    yvalues_AGN  = []
+    yerrlow_AGN  = []
+    yerrhigh_AGN = []
+
+    for oo in np.arange(len(stat_SF)):
+        xvalues_SF.append(stat_SF[oo][xkey][cen_ent])
+        xerrlow_SF.append(stat_SF[oo][xkey][errlow_ent])
+        xerrhigh_SF.append(stat_SF[oo][xkey][errhigh_ent])
+
+        yvalues_SF.append(stat_SF[oo][ykey][cen_ent])
+        yerrlow_SF.append(stat_SF[oo][ykey][errlow_ent])
+        yerrhigh_SF.append(stat_SF[oo][ykey][errhigh_ent])
+
+        xvalues_AGN.append(stat_AGN[oo][xkey][cen_ent])
+        xerrlow_AGN.append(stat_AGN[oo][xkey][errlow_ent])
+        xerrhigh_AGN.append(stat_AGN[oo][xkey][errhigh_ent])
+
+        yvalues_AGN.append(stat_AGN[oo][ykey][cen_ent])
+        yerrlow_AGN.append(stat_AGN[oo][ykey][errlow_ent])
+        yerrhigh_AGN.append(stat_AGN[oo][ykey][errhigh_ent])
+
+    xvalues_SF  = np.asarray(xvalues_SF )
+    xvalues_AGN = np.asarray(xvalues_AGN)
+    yvalues_SF  = np.asarray(yvalues_SF )
+    yvalues_AGN = np.asarray(yvalues_AGN)
+
+    fig = plt.figure(1, figsize=(6, 6))
+    # definitions for the axes
+    left, width = 0.15, 0.60
+    bottom, height = 0.15, 0.60
+    bottom_h = left_h = left + width + 0.01
+
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=left+width, bottom=bottom, top=bottom+height)
+    rect_histx = [left, bottom_h, width, 0.2]
+    rect_histy = [left_h, bottom, 0.2, height]
+
+    Fsize    = 14
+    lthick   = 2
+    marksize = 6
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    plt.xlim(xrange)
+    xminsys, xmaxsys = plt.xlim()
+
+    plt.ylim(yrange)
+    yminsys, ymaxsys = plt.ylim()
+
+    for oo in np.arange(len(stat_SF)): # loop necessary for coloring and markers
+        objid = stat_SF[oo]['id']
+        mfc   = True
+        if (objid < 6e8): # CDFS and COSMOS
+            markersym   = 'o'
+        elif (objid < 7e8) & (objid > 6e8): # UDF
+            markersym   = 'D'
+        elif (objid < 9e8) & (objid > 7e8): # UDF10
+            markersym   = 'X'
+        elif (objid > 1e9): # Literature objects
+            markersym   = lce.get_reference_fromID(objid,verbose=False)[4]
+            mfc         = False
+        else:
+            print(' WARNING - stopped as could not assing a marker symbol to the id '+str(objid))
+            pdb.set_trace()
+
+        ms          = marksize
+        limsizefrac = 0.05
+
+
+        # change color of limits
+        markerzorder = 20
+
+        if mfc:
+            markerfacecolor = SFcol
+        else:
+            markerfacecolor = 'None'
+
+        if datsetup == 'meanstd':
+            plt.errorbar(xvalues_SF[oo],yvalues_SF[oo],xerr=xerrlow_SF[oo],yerr=yerrlow_SF[oo],capthick=0.5,
+                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                         markerfacecolor=SFcol,ecolor=SFcol,
+                         markeredgecolor=SFcol,zorder=markerzorder)
+        else:
+            plt.errorbar(xvalues_SF[oo],yvalues_SF[oo],
+                         xerr=[[xvalues_SF[oo]-xerrlow_SF[oo],xerrhigh_SF[oo]-xvalues_SF[oo]]],
+                         yerr=[[yvalues_SF[oo]-yerrlow_SF[oo],yerrhigh_SF[oo]-yvalues_SF[oo]]],capthick=0.5,
+                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                         markerfacecolor=SFcol,ecolor=SFcol,
+                         markeredgecolor=SFcol,zorder=markerzorder)
+
+
+        if mfc:
+            markerfacecolor = AGNcol
+        else:
+            markerfacecolor = 'None'
+
+        if datsetup == 'meanstd':
+            plt.errorbar(xvalues_AGN[oo],yvalues_AGN[oo],xerr=xerrlow_AGN[oo],yerr=yerrlow_AGN[oo],capthick=0.5,
+                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                         markerfacecolor=AGNcol,ecolor=AGNcol,
+                         markeredgecolor=AGNcol,zorder=markerzorder)
+        else:
+            plt.errorbar(xvalues_AGN[oo],yvalues_AGN[oo],
+                         xerr=[[xvalues_AGN[oo]-xerrlow_AGN[oo],xerrhigh_AGN[oo]-xvalues_AGN[oo]]],
+                         yerr=[[yvalues_AGN[oo]-yerrlow_AGN[oo],yerrhigh_AGN[oo]-yvalues_AGN[oo]]],capthick=0.5,
+                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                         markerfacecolor=AGNcol,ecolor=AGNcol,
+                         markeredgecolor=AGNcol,zorder=markerzorder)
+
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    if ylog:
+        plt.yscale('log')
+    if xlog:
+        plt.xscale('log')
+
+    # --------- HISTOGRAMS ---------
+    Nbins   = 50
+    axHistx = plt.axes(rect_histx)
+    axHisty = plt.axes(rect_histy)
+
+    axHistx.xaxis.set_major_formatter(NullFormatter())
+    axHisty.yaxis.set_major_formatter(NullFormatter())
+
+    binwidth_x = np.diff([xminsys,xmaxsys])/Nbins
+    bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+    if xlog:
+        bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+        axHistx.set_xscale('log')
+
+    axHistx.hist(xvalues_SF[np.isfinite(xvalues_SF)],  bins=bindefs,histtype='step',color=SFcol)
+    axHistx.hist(xvalues_AGN[np.isfinite(xvalues_AGN)], bins=bindefs,histtype='step',color=AGNcol)
+    axHistx.set_xticks([])
+    axHistx.set_xlim([xminsys,xmaxsys])
+
+    binwidth_y = np.diff([yminsys,ymaxsys])/Nbins
+    bindefs    = np.arange(yminsys, ymaxsys+binwidth_y, binwidth_y)
+    if ylog:
+        bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+        axHisty.set_yscale('log')
+
+    axHisty.hist(yvalues_SF[np.isfinite(yvalues_SF)],  bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
+    axHisty.hist(yvalues_AGN[np.isfinite(yvalues_AGN)], bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+    axHisty.set_yticks([])
+    axHisty.set_ylim([yminsys,ymaxsys])
+
+    # if colorcode:
+    #     cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
+    #                            pad=0.01,aspect=10,shrink=0.35,anchor=(-15.0,1.58),use_gridspec=False)
+    #     cb.set_label(clabel)
+
+    #--------- LEGEND ---------
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
+    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
+    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
+    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
+    #
+    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
+    #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
+    # leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_modelparametercollections(plotname, parametercollection_SF, parametercollection_AGN,
                                    stat_SF, stat_AGN, AGNcol='blue',SFcol='red',verbose=True):
     """
 
@@ -1230,7 +1468,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
                             0.017, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07])-0.00001
 
         plotkey = 'Zgas'
-        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
@@ -1245,7 +1483,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.arange(-4.75, -0.25, 0.5)
 
         plotkey = 'logUs'
-        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
@@ -1259,7 +1497,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.array([0.0, 0.2, 0.4, 0.6])
 
         plotkey = 'xid'
-        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
@@ -1274,7 +1512,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
         bindefs = 10**np.array([1.5, 2.5, 3.5, 4.5])
 
         plotkey = 'nh'
-        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
         plt.xscale('log')
@@ -1289,7 +1527,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.arange(0.05,1.5,0.06)
 
         plotkey = 'COCOsol'
-        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],None,
+        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],None,
                                                   stat_SF[oo][plotkey],None,
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
@@ -1303,7 +1541,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.array([0,200,400])
 
         plotkey = 'mup'
-        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],None,
+        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],None,
                                                   stat_SF[oo][plotkey],None,
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
@@ -1318,7 +1556,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
 
         plotkey = 'alpha'
         Nbins   = 10
-        nm.plot_modelparaemtercollections_addhist(None,parametercollection_AGN[oo][plotkey],
+        nm.plot_modelparametercollections_addhist(None,parametercollection_AGN[oo][plotkey],
                                                   None,stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=None,Nbins=Nbins)
 
@@ -1331,7 +1569,7 @@ def plot_modelparaemtercollections(plotname, parametercollection_SF, parameterco
         plt.close('all')
         if verbose: print(' - Successfully saved figure to file')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_modelparaemtercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat_AGN,
+def plot_modelparametercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat_AGN,
                                            SFcol,AGNcol,LW,bindefs=None,Nbins=10):
     """
 
@@ -1347,7 +1585,7 @@ def plot_modelparaemtercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat
     Nbins
 
     --- EXAMPLE OF USE ---
-    see nm.plot_modelparaemtercollections() above
+    see nm.plot_modelparametercollections() above
 
     """
     if (paramcol_SF is None) & (paramcol_AGN is not None):
