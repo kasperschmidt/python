@@ -960,7 +960,7 @@ def convert_Lbol2Fline(Lbol,redshift,verbose=True):
     Converting bolometric luminoisity [erg/s] to integrated line flux [erg/s/cm2]
     """
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue',SFcol='red',verbose=True):
+def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,AGNcol='blue',SFcol='red',verbose=True):
     """
     Function to estimate "PDFs" from the SF and AGN NEOGAL models given a set of flux ratio measurements.
 
@@ -974,19 +974,15 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
 
     --- EXAMPLE OF USE ---
     import NEOGALmodels as nm
-    FRdic = [{'id':111111, 'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}]
-    parametercollection_SF, parametercollection_AGN = nm.estimate_object_PDFs(FRdic)
+    FRdic = [{'id':111111, 'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}]
+    parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = nm.estimate_object_PDFs(FRdic)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading NEOGAL models ')
     SF_models  = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/nebular_emission/')
 
-    # dtype=[('Zgas', '<f8'), ('logUs', '<f8'), ('xid', '<f8'), ('nh', '<i8'), ('COCOsol', '<f8'), ('mup', '<i8'), ('OII3727', '<f8'), ('Hb', '<f8'), ('OIII4959', '<f8'), ('OIII5007', '<f8'), ('NII6548', '<f8'), ('Ha', '<f8'), ('NII6584', '<f8'), ('SII6717', '<f8'), ('SII6731', '<f8'), ('NV1240', '<f8'), ('CIV1548', '<f8'), ('CIV1551', '<f8'), ('HeII1640', '<f8'), ('OIII1661', '<f8'), ('OIII1666', '<f8'), ('SiIII1883', '<f8'), ('SiIII1888', '<f8'), ('CIII1908', '<f8')])
-
     AGN_models = nm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/NEOGALlines/AGN_NLR_nebular_feltre16/')
-
-    #  dtype=[('Zgas', '<f8'), ('logUs', '<f8'), ('xid', '<f8'), ('nh', '<f8'), ('alpha', '<f8'), ('OII3727', '<f8'), ('Hbeta', '<f8'), ('OIII4959', '<f8'), ('OIII5007', '<f8'), ('OI6300', '<f8'), ('NII6548', '<f8'), ('Halpha', '<f8'), ('NII6584', '<f8'), ('SII6717', '<f8'), ('SII6731', '<f8'), ('NV1240', '<f8'), ('CIV1548', '<f8'), ('CIV1551', '<f8'), ('HeII1640', '<f8'), ('OIII1661', '<f8'), ('OIII1666', '<f8'), ('SiIII1883', '<f8'), ('SiIII1888', '<f8'), ('CIII1907', '<f8'), ('CIII1910', '<f8')])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Define all possible line ratios from the lines:\n    '
@@ -1131,7 +1127,6 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
             if key == 'id': continue
 
             if len(parametercollection_AGN[oo][key]) > 0:
-                print('here')
                 meanval_AGN   = np.mean(parametercollection_AGN[oo][key])
                 std_AGN       = np.std(parametercollection_AGN[oo][key])
                 medianval_AGN = np.median(parametercollection_AGN[oo][key])
@@ -1148,10 +1143,277 @@ def estimate_object_PDFs(fluxratiodictionarylist,generateplots=True,AGNcol='blue
             else:
                 stat_AGN[oo][key] = [np.nan]*10
 
-    stat_idlist =  [stat_AGN[oo]['id'] for oo in np.arange(len(stat_AGN))]
+    stat_idlist                =  [stat_AGN[oo]['id'] for oo in np.arange(len(stat_AGN))]
+    parametercollection_idlist =  [parametercollection_AGN[oo]['id'] for oo in np.arange(len(parametercollection_AGN))]
 
+    if stat_idlist != parametercollection_idlist:
+        sys.exit(' NEOGALmodels.estimate_object_PDFs(): Wait a minute... the ID lists are not identical between \n'
+                 '                                      the parameter collection ('+str(parametercollection_idlist)+') and \n'
+                 '                                      the stats ('+str(stat_idlist)+')')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if generatePDFplots:
+        if verbose: print(' - Plotting the extracted model parameter collections')
+        plotname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobjectPDF.pdf'
+        nm.plot_modelparaemtercollections(plotname, parametercollection_SF, parametercollection_AGN,
+                                          stat_SF, stat_AGN, AGNcol=AGNcol,SFcol=SFcol,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_modelparaemtercollections(plotname, parametercollection_SF, parametercollection_AGN,
+                                   stat_SF, stat_AGN, AGNcol='blue',SFcol='red',verbose=True):
+    """
+
+    --- INPUT ---
+    plotname
+    parametercollection_SF
+    parametercollection_AGN
+    stat_SF
+    stat_AGN
+    AGNcol
+    SFcol
+    verbose
+
+    --- EXAMPLE OF USE ---
+
+    """
+
+    Nobj = len(parametercollection_SF)
+    if verbose: print(' - Will generate plots of NEOGAL "PDFs" for all '+str(Nobj)+' objects in parameter collections')
+    for oo in np.arange(len(parametercollection_SF)):
+        objid        = parametercollection_SF[oo]['id']
+        plotname_obj = plotname.replace('.pdf','_id'+str(objid)+'.pdf')
+        if verbose: print(' - Generating the figure '+plotname_obj)
+        figuresize_x = 6
+        figuresize_y = 5
+        fig          = plt.figure(figsize=(figuresize_x,figuresize_y))
+        Fsize        = 9
+        LW           = 2
+        plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+        plt.rc('font', family='serif',size=Fsize)           # setting text font
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+
+        left   = 0.10   # the left side of the subplots of the figure
+        right  = 0.95   # the right side of the subplots of the figure
+        bottom = 0.10   # the bottom of the subplots of the figure
+        top    = 0.93   # the top of the subplots of the figure
+        wspace = 1.50   # the amount of width reserved for blank space between subplots
+        hspace = 0.50   # the amount of height reserved for white space between subplots
+        plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+        Nrows, Ncols      = 3, 6
+        ylabel            = 'Number of NEOGAL SF ('+str(SFcol)+') and AGN ('+str(AGNcol)+') models'
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        Nmodels_SF  = float(len(parametercollection_SF[oo]['Zgas']))
+        Nmodels_AGN = float(len(parametercollection_AGN[oo]['Zgas']))
+
+        titlestr = 'Models satisfying ID='+str(objid)+' cuts: SF='+str(Nmodels_SF)+'; AGN='+str(Nmodels_AGN)
+        if (Nmodels_AGN > 0) & (Nmodels_SF > 0):
+            Nmodels_ratio = Nmodels_SF/Nmodels_AGN
+            titlestr_addition = '; SF/AGN='+str("%.4f" % Nmodels_ratio)
+        else:
+            titlestr_addition = ' '
+            Nmodels_ratio = np.nan
+        fig.suptitle(titlestr+titlestr_addition)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Zgas
+        plt.subplot(Nrows, Ncols, (1,3))
+
+        bindefs = np.array([0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.004, 0.006, 0.008, 0.014,
+                            0.017, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07])-0.00001
+
+        plotkey = 'Zgas'
+        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+                                                  stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
+                                                  SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
+
+        plt.xscale('log')
+        plt.xlabel('Z')
+        plt.xlim([0.00001,0.1])
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # logUs
+        plt.subplot(Nrows, Ncols, (4,6))
+
+        bindefs = np.arange(-4.75, -0.25, 0.5)
+
+        plotkey = 'logUs'
+        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+                                                  stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
+                                                  SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
+
+        plt.xlabel('log(U)')
+        plt.xlim([-5,-0.5])
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # xid
+        plt.subplot(Nrows, Ncols, (7,9))
+
+        bindefs = np.array([0.0, 0.2, 0.4, 0.6])
+
+        plotkey = 'xid'
+        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+                                                  stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
+                                                  SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
+
+        plt.xlabel('$\\xi_\\textrm{d}$')
+        plt.xlim([-0.05,0.65])
+        plt.ylabel(ylabel)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # nh
+        plt.subplot(Nrows, Ncols, (10,12))
+
+        bindefs = 10**np.array([1.5, 2.5, 3.5, 4.5])
+
+        plotkey = 'nh'
+        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+                                                  stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
+                                                  SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
+        plt.xscale('log')
+        plt.xlabel('$n_\\textrm{H}$ [cm$^{-3}$]')
+        plt.xlim([10,1e5])
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # COCOsol
+        plt.subplot(Nrows, Ncols, (13,14))
+
+        #bindefs = np.array([0.10, 0.14, 0.20, 0.27, 0.38, 0.52, 0.72, 1.00, 1.40])
+        bindefs = np.arange(0.05,1.5,0.06)
+
+        plotkey = 'COCOsol'
+        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],None,
+                                                  stat_SF[oo][plotkey],None,
+                                                  SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
+
+        plt.xlabel('C/O [(C/O)$_\\textrm{sun}$]')
+        plt.xlim([0.00,1.55])
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # mup
+        plt.subplot(Nrows, Ncols, (15,16))
+
+        bindefs = np.array([0,200,400])
+
+        plotkey = 'mup'
+        nm.plot_modelparaemtercollections_addhist(parametercollection_SF[oo][plotkey],None,
+                                                  stat_SF[oo][plotkey],None,
+                                                  SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
+
+        plt.xlabel('m$_\\textrm{up}$ [M$_\\textrm{sun}$]')
+        plt.xlim([-10,410])
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # alpha
+        plt.subplot(Nrows, Ncols, (17,18))
+
+        bindefs = np.array([-2.15,-1.85,-1.55,-1.25,-0.95])
+
+        plotkey = 'alpha'
+        Nbins   = 10
+        nm.plot_modelparaemtercollections_addhist(None,parametercollection_AGN[oo][plotkey],
+                                                  None,stat_AGN[oo][plotkey],
+                                                  SFcol,AGNcol,LW,bindefs=None,Nbins=Nbins)
+
+        plt.xlabel('$\\alpha$')
+        plt.xlim([-2.2,-0.9])
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plt.savefig(plotname_obj)
+        plt.clf()
+        plt.close('all')
+        if verbose: print(' - Successfully saved figure to file')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_modelparaemtercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat_AGN,
+                                           SFcol,AGNcol,LW,bindefs=None,Nbins=10):
+    """
+
+    --- INPUT ---
+    parametercollection_SF
+    parametercollection_AGN
+    stat_SF
+    stat_AGN
+    SFcol
+    AGNcol
+    LW
+    bindefs
+    Nbins
+
+    --- EXAMPLE OF USE ---
+    see nm.plot_modelparaemtercollections() above
+
+    """
+    if (paramcol_SF is None) & (paramcol_AGN is not None):
+        if len(paramcol_AGN) > 0:
+            if bindefs is None:
+                xmin       = np.min(paramcol_AGN)*0.95
+                xmax       = np.max(paramcol_AGN)*1.05
+                binwidth_x = np.diff([xmin,xmax])/Nbins
+                bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
+
+            plt.hist(paramcol_AGN, bins=bindefs,histtype='step',color=AGNcol)
+
+            yminsys, ymaxsys = plt.ylim()
+
+            plt.plot([stat_AGN[0]]*2, [yminsys, ymaxsys], '--',lw=LW,alpha=0.5,color=AGNcol)  # mean
+            plt.plot([stat_AGN[2]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # median
+            plt.plot([stat_AGN[4]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # 68% confidence interval lower
+            plt.plot([stat_AGN[8]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # 68% confidence interval lower
+
+    elif (paramcol_SF is not None) & (paramcol_AGN is None):
+        if len(paramcol_SF) > 0:
+
+            if bindefs is None:
+                xmin       = np.min(paramcol_SF)*0.95
+                xmax       = np.max(paramcol_SF)*1.05
+                binwidth_x = np.diff([xmin,xmax])/Nbins
+                bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
+
+            plt.hist(paramcol_SF,  bins=bindefs,histtype='step',color=SFcol)
+
+            yminsys, ymaxsys = plt.ylim()
+
+            plt.plot([stat_SF[0]]*2,  [yminsys, ymaxsys], '--',lw=LW,alpha=0.5,color=SFcol)  # mean
+            plt.plot([stat_SF[2]]*2,  [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=SFcol)  # median
+            plt.plot([stat_SF[4]]*2,  [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=SFcol)  # 68% confidence interval lower
+            plt.plot([stat_SF[8]]*2,  [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=SFcol)  # 68% confidence interval lower
+
+    else:
+
+        if (len(paramcol_SF) == 0) & (len(paramcol_AGN) == 0):
+            pass
+        else:
+            if bindefs is None:
+                xmin       = np.min(np.append(paramcol_SF,paramcol_AGN))*0.95
+                xmax       = np.max(np.append(paramcol_SF,paramcol_AGN))*1.05
+                binwidth_x = np.diff([xmin,xmax])/Nbins
+                bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
+                # if xlog:
+                #     bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+                #     axHistax.set_xscale('log')
+
+            plt.hist(paramcol_SF,  bins=bindefs,histtype='step',color=SFcol)
+            plt.hist(paramcol_AGN, bins=bindefs,histtype='step',color=AGNcol)
+
+            yminsys, ymaxsys = plt.ylim()
+
+            if len(paramcol_SF) > 0:
+                plt.plot([stat_SF[0]]*2,  [yminsys, ymaxsys], '--',lw=LW,alpha=0.5,color=SFcol)  # mean
+                plt.plot([stat_SF[2]]*2,  [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=SFcol)  # median
+                plt.plot([stat_SF[4]]*2,  [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=SFcol)  # 68% confidence interval lower
+                plt.plot([stat_SF[8]]*2,  [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=SFcol)  # 68% confidence interval lower
+
+            if len(paramcol_AGN) > 0:
+                plt.plot([stat_AGN[0]]*2, [yminsys, ymaxsys], '--',lw=LW,alpha=0.5,color=AGNcol)  # mean
+                plt.plot([stat_AGN[2]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # median
+                plt.plot([stat_AGN[4]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # 68% confidence interval lower
+                plt.plot([stat_AGN[8]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # 68% confidence interval lower
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
