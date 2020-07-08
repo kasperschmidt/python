@@ -1173,14 +1173,157 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
 
     """
     if verbose: print(' - Plot stats of parameter selection')
+    Nobj = len(stat_SF)
+
+    xranges = {}
+    xranges['Zgas']    =  [0.00001,0.2]
+    xranges['logUs']   =  [-5.2,-0.4]
+    xranges['xid']     =  [-0.1,6.1]
+    xranges['nh']      =  [1e1,1e5]
+    xranges['COCOsol'] =  [0,1.5]
+    xranges['mup']     =  [50,350]
+    xranges['alpha']   =  [-2.2,-0.9]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for key in np.unique(stat_SF[0].keys()+stat_AGN[0].keys()):
+        if key == 'id': continue
+
+        meanval_SF  = np.array([])
+        stdval_SF   = np.array([])
+        range50_SF  = np.array([])
+        meanval_AGN = np.array([])
+        stdval_AGN  = np.array([])
+        range50_AGN = np.array([])
+
+        for oo in np.arange(Nobj):
+            if key in stat_SF[0].keys():
+                meanval_SF = np.append(meanval_SF,stat_SF[oo][key][0])
+                stdval_SF = np.append(stdval_SF,stat_SF[oo][key][1])
+                range50_SF = np.append(range50_SF,stat_SF[oo][key][7]-stat_SF[oo][key][7])
+
+            if key in stat_AGN[0].keys():
+                meanval_AGN = np.append(meanval_AGN,stat_AGN[oo][key][0])
+                stdval_AGN = np.append(stdval_AGN,stat_AGN[oo][key][1])
+                range50_AGN = np.append(range50_AGN,stat_AGN[oo][key][7]-stat_AGN[oo][key][7])
+
+        #-------- PLOT 'EM --------
+        plotname_stat = plotname.replace('.pdf','_meanVSerr_'+key+'.pdf')
+
+        fig = plt.figure(1, figsize=(6, 6))
+        # definitions for the axes
+        left, width = 0.15, 0.60
+        bottom, height = 0.15, 0.60
+        bottom_h = left_h = left + width + 0.01
+
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=left+width, bottom=bottom, top=bottom+height)
+        rect_histx = [left, bottom_h, width, 0.2]
+        rect_histy = [left_h, bottom, 0.2, height]
+
+        Fsize    = 14
+        lthick   = 2
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+
+        for oo in np.arange(Nobj): # loop necessary for coloring and markers
+            objid = stat_SF[oo]['id']
+            mfc   = True
+            if (objid < 6e8): # CDFS and COSMOS
+                markersym   = 'o'
+            elif (objid < 7e8) & (objid > 6e8): # UDF
+                markersym   = 'D'
+            elif (objid < 9e8) & (objid > 7e8): # UDF10
+                markersym   = 'X'
+            elif (objid > 1e9): # Literature objects
+                markersym   = lce.get_reference_fromID(objid,verbose=False)[4]
+                mfc         = False
+            else:
+                print(' WARNING - stopped as could not assing a marker symbol to the id '+str(objid))
+                pdb.set_trace()
+
+            ms          = marksize
+            limsizefrac = 0.05
+
+            # change color of limits
+            markerzorder = 20
+
+            if len(meanval_SF) > 0:
+                plt.errorbar(meanval_SF[oo],stdval_SF[oo],xerr=None,yerr=None,capthick=0.5,
+                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                             markerfacecolor=SFcol,ecolor=SFcol,
+                             markeredgecolor=SFcol,zorder=markerzorder)
+            if len(meanval_AGN) > 0:
+                plt.errorbar(meanval_AGN[oo],stdval_AGN[oo],xerr=None,yerr=None,capthick=0.5,
+                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                             markerfacecolor=AGNcol,ecolor=AGNcol,
+                             markeredgecolor=AGNcol,zorder=markerzorder)
+
+        plt.xlim(xranges[key])
+        xminsys, xmaxsys = plt.xlim()
+
+        # plt.ylim(yranges[key])
+        yminsys, ymaxsys = plt.ylim()
+
+        plt.xlabel(nm.keylabels(key))
+        plt.ylabel('Standard deviation of parameter distribution')
+
+        if (key == 'Zgas') or (key == 'nh'):
+            xlog = True
+            plt.xscale('log')
+        else:
+            xlog = False
+
+        # --------- HISTOGRAMS ---------
+        Nbins   = 50
+        axHistx = plt.axes(rect_histx)
+        axHisty = plt.axes(rect_histy)
+
+        axHistx.xaxis.set_major_formatter(NullFormatter())
+        axHisty.yaxis.set_major_formatter(NullFormatter())
+
+        binwidth_x = np.diff([xminsys,xmaxsys])/Nbins
+        bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+        if xlog:
+            bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+            axHistx.set_xscale('log')
+
+        if len(meanval_SF) > 0:
+            axHistx.hist(meanval_SF[np.isfinite(meanval_SF)],  bins=bindefs,histtype='step',color=SFcol)
+        if len(meanval_AGN) > 0:
+            axHistx.hist(meanval_AGN[np.isfinite(meanval_AGN)], bins=bindefs,histtype='step',color=AGNcol)
+        axHistx.set_xticks([])
+        axHistx.set_xlim([xminsys,xmaxsys])
+
+        binwidth_y = np.diff([yminsys,ymaxsys])/Nbins
+        bindefs    = np.arange(yminsys, ymaxsys+binwidth_y, binwidth_y)
+        # if ylog:
+        #     bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+        #     axHisty.set_yscale('log')
+        if len(meanval_SF) > 0:
+            axHisty.hist(stdval_SF[np.isfinite(stdval_SF)],  bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
+        if len(meanval_AGN) > 0:
+            axHisty.hist(stdval_AGN[np.isfinite(stdval_AGN)], bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+        axHisty.set_yticks([])
+        axHisty.set_ylim([yminsys,ymaxsys])
+
+        if verbose: print('   Saving plot to '+plotname_stat)
+        plt.savefig(plotname_stat)
+        plt.clf()
+        plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
     xkey   = 'Zgas'
     xlabel = 'Z'
     ykey   = 'logUs'
     ylabel = 'log(U)'
 
-    xrange = [0.00001,0.2]
-    yrange = [-5.2,-0.4]
+    xrange = xranges[xkey]
+    yrange = xranges[ykey]
 
     plotname_obj = plotname.replace('.pdf','_meanANDstd_ZgasVSlogUs.pdf')
     nm.plot_stat_diagram(plotname_obj,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
@@ -1473,7 +1616,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
         plt.xscale('log')
-        plt.xlabel('Z')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([0.00001,0.1])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1487,7 +1630,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel('log(U)')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([-5,-0.5])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1501,7 +1644,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel('$\\xi_\\textrm{d}$')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([-0.05,0.65])
         plt.ylabel(ylabel)
 
@@ -1516,7 +1659,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
         plt.xscale('log')
-        plt.xlabel('$n_\\textrm{H}$ [cm$^{-3}$]')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([10,1e5])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1531,7 +1674,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   stat_SF[oo][plotkey],None,
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel('C/O [(C/O)$_\\textrm{sun}$]')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([0.00,1.55])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1545,7 +1688,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   stat_SF[oo][plotkey],None,
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel('m$_\\textrm{up}$ [M$_\\textrm{sun}$]')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([-10,410])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1560,7 +1703,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                                                   None,stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=None,Nbins=Nbins)
 
-        plt.xlabel('$\\alpha$')
+        plt.xlabel(nm.keylabels(plotkey))
         plt.xlim([-2.2,-0.9])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1653,5 +1796,19 @@ def plot_modelparametercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat
                 plt.plot([stat_AGN[2]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # median
                 plt.plot([stat_AGN[4]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # 68% confidence interval lower
                 plt.plot([stat_AGN[8]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,color=AGNcol)  # 68% confidence interval lower
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def keylabels(keyinput):
+    """
+    Function returning LaTeX label for photionisation keyword
 
+    """
+    labeldic = {}
+    labeldic['Zgas']    =  'Z'
+    labeldic['logUs']   =  'log(U)'
+    labeldic['xid']     =  '$\\xi_\\textrm{d}$'
+    labeldic['nh']      =  '$n_\\textrm{H}$ [cm$^{-3}$]'
+    labeldic['COCOsol'] =  'C/O [(C/O)$_\\textrm{sun}$]'
+    labeldic['mup']     =  'm$_\\textrm{up}$ [M$_\\textrm{sun}$]'
+    labeldic['alpha']   =  '$\\alpha$'
+    return labeldic[keyinput]
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
