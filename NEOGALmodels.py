@@ -963,7 +963,7 @@ def convert_Lbol2Fline(Lbol,redshift,verbose=True):
     Converting bolometric luminoisity [erg/s] to integrated line flux [erg/s/cm2]
     """
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,AGNcol='blue',SFcol='red',verbose=True):
+def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename='NEOGALobject',AGNcol='blue',SFcol='red',verbose=True):
     """
     Function to estimate "PDFs" from the SF and AGN NEOGAL models given a set of flux ratio measurements.
 
@@ -977,8 +977,9 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,AGNcol='
 
     --- EXAMPLE OF USE ---
     import NEOGALmodels as nm
-    FRdic = [{'id':111111, 'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}]
-    parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = nm.estimate_object_PDFs(FRdic)
+    basename= '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobject'
+    FRdic = [{'id':111111, 'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e10],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[1e-2,1e10], 'OIII1663/CIV1550':[1e-2,1e10], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e10], 'CIV1550/SiIII1888':[1e-2,1e10]}]
+    parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = nm.estimate_object_PDFs(FRdic, basename=basename)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1154,15 +1155,17 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,AGNcol='
                  '                                      the parameter collection ('+str(parametercollection_idlist)+') and \n'
                  '                                      the stats ('+str(stat_idlist)+')')
 
-    plotname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobjectStats.pdf'
+    plotname = basename+'_Stats.pdf'
     nm.plot_stat(plotname,stat_SF,stat_AGN,SFcol=SFcol,AGNcol=AGNcol,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if generatePDFplots:
         if verbose: print(' - Plotting the extracted model parameter collections')
-        plotname = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobjectPDF.pdf'
+        plotname = basename+'_PDFs.pdf'
         nm.plot_modelparametercollections(plotname, parametercollection_SF, parametercollection_AGN,
-                                          stat_SF, stat_AGN, AGNcol=AGNcol,SFcol=SFcol,verbose=verbose)
+                                          stat_SF, stat_AGN, AGNcol=AGNcol,SFcol=SFcol,
+                                          fluxratiodictionarylist=fluxratiodictionarylist,
+                                          verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN
@@ -1178,7 +1181,7 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
     xranges = {}
     xranges['Zgas']    =  [0.00001,0.2]
     xranges['logUs']   =  [-5.2,-0.4]
-    xranges['xid']     =  [-0.1,6.1]
+    xranges['xid']     =  [0.02,0.58]
     xranges['nh']      =  [1e1,1e5]
     xranges['COCOsol'] =  [0,1.5]
     xranges['mup']     =  [50,350]
@@ -1251,15 +1254,26 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
             # change color of limits
             markerzorder = 20
 
+            if mfc:
+                markerfacecolor = SFcol
+            else:
+                markerfacecolor = 'None'
+
             if len(meanval_SF) > 0:
                 plt.errorbar(meanval_SF[oo],stdval_SF[oo],xerr=None,yerr=None,capthick=0.5,
                              marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                             markerfacecolor=SFcol,ecolor=SFcol,
+                             markerfacecolor=markerfacecolor,ecolor=SFcol,
                              markeredgecolor=SFcol,zorder=markerzorder)
+
+            if mfc:
+                markerfacecolor = AGNcol
+            else:
+                markerfacecolor = 'None'
+
             if len(meanval_AGN) > 0:
                 plt.errorbar(meanval_AGN[oo],stdval_AGN[oo],xerr=None,yerr=None,capthick=0.5,
                              marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                             markerfacecolor=AGNcol,ecolor=AGNcol,
+                             markerfacecolor=markerfacecolor,ecolor=AGNcol,
                              markeredgecolor=AGNcol,zorder=markerzorder)
 
         plt.xlim(xranges[key])
@@ -1438,7 +1452,6 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         ms          = marksize
         limsizefrac = 0.05
 
-
         # change color of limits
         markerzorder = 20
 
@@ -1450,14 +1463,14 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         if datsetup == 'meanstd':
             plt.errorbar(xvalues_SF[oo],yvalues_SF[oo],xerr=xerrlow_SF[oo],yerr=yerrlow_SF[oo],capthick=0.5,
                          marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=SFcol,ecolor=SFcol,
+                         markerfacecolor=markerfacecolor,ecolor=SFcol,
                          markeredgecolor=SFcol,zorder=markerzorder)
         else:
             plt.errorbar(xvalues_SF[oo],yvalues_SF[oo],
                          xerr=[[xvalues_SF[oo]-xerrlow_SF[oo],xerrhigh_SF[oo]-xvalues_SF[oo]]],
                          yerr=[[yvalues_SF[oo]-yerrlow_SF[oo],yerrhigh_SF[oo]-yvalues_SF[oo]]],capthick=0.5,
                          marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=SFcol,ecolor=SFcol,
+                         markerfacecolor=markerfacecolor,ecolor=SFcol,
                          markeredgecolor=SFcol,zorder=markerzorder)
 
 
@@ -1469,14 +1482,14 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         if datsetup == 'meanstd':
             plt.errorbar(xvalues_AGN[oo],yvalues_AGN[oo],xerr=xerrlow_AGN[oo],yerr=yerrlow_AGN[oo],capthick=0.5,
                          marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=AGNcol,ecolor=AGNcol,
+                         markerfacecolor=markerfacecolor,ecolor=AGNcol,
                          markeredgecolor=AGNcol,zorder=markerzorder)
         else:
             plt.errorbar(xvalues_AGN[oo],yvalues_AGN[oo],
                          xerr=[[xvalues_AGN[oo]-xerrlow_AGN[oo],xerrhigh_AGN[oo]-xvalues_AGN[oo]]],
                          yerr=[[yvalues_AGN[oo]-yerrlow_AGN[oo],yerrhigh_AGN[oo]-yvalues_AGN[oo]]],capthick=0.5,
                          marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=AGNcol,ecolor=AGNcol,
+                         markerfacecolor=markerfacecolor,ecolor=AGNcol,
                          markeredgecolor=AGNcol,zorder=markerzorder)
 
 
@@ -1544,7 +1557,8 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_modelparametercollections(plotname, parametercollection_SF, parametercollection_AGN,
-                                   stat_SF, stat_AGN, AGNcol='blue',SFcol='red',verbose=True):
+                                   stat_SF, stat_AGN, AGNcol='blue',SFcol='red', constraintsstr=None,
+                                   fluxratiodictionarylist=None, verbose=True):
     """
 
     --- INPUT ---
@@ -1563,10 +1577,14 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
 
     Nobj = len(parametercollection_SF)
     if verbose: print(' - Will generate plots of NEOGAL "PDFs" for all '+str(Nobj)+' objects in parameter collections')
-    for oo in np.arange(len(parametercollection_SF)):
+    for oo in np.arange(Nobj):
         objid        = parametercollection_SF[oo]['id']
+        if verbose:
+            infostr = '   plotting info for '+str(objid)+' ('+str("%.5d" % (oo+1))+' / '+str("%.5d" % Nobj)+')        '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
         plotname_obj = plotname.replace('.pdf','_id'+str(objid)+'.pdf')
-        if verbose: print(' - Generating the figure '+plotname_obj)
+        # if verbose: print(' - Generating the figure '+plotname_obj)
         figuresize_x = 6
         figuresize_y = 5
         fig          = plt.figure(figsize=(figuresize_x,figuresize_y))
@@ -1582,7 +1600,7 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         left   = 0.10   # the left side of the subplots of the figure
         right  = 0.95   # the right side of the subplots of the figure
         bottom = 0.10   # the bottom of the subplots of the figure
-        top    = 0.93   # the top of the subplots of the figure
+        top    = 0.90   # the top of the subplots of the figure
         wspace = 1.50   # the amount of width reserved for blank space between subplots
         hspace = 0.50   # the amount of height reserved for white space between subplots
         plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
@@ -1596,12 +1614,35 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
 
         titlestr = 'Models satisfying ID='+str(objid)+' cuts: SF='+str(Nmodels_SF)+'; AGN='+str(Nmodels_AGN)
         if (Nmodels_AGN > 0) & (Nmodels_SF > 0):
-            Nmodels_ratio = Nmodels_SF/Nmodels_AGN
+            Nmodels_ratio     = Nmodels_SF/Nmodels_AGN
             titlestr_addition = '; SF/AGN='+str("%.4f" % Nmodels_ratio)
-        else:
-            titlestr_addition = ' '
-            Nmodels_ratio = np.nan
-        fig.suptitle(titlestr+titlestr_addition)
+            titlestr          = titlestr+titlestr_addition
+
+        if fluxratiodictionarylist is not None:
+            constraints     = fluxratiodictionarylist[oo]
+            constraintslist = [key+':['+str("%.2f" % constraints[key][0])+','+str("%.2f" % constraints[key][1])+']'
+                               for key in constraints.keys() if key not in ['id']]
+
+            if len(constraintslist) < 4:
+                constraintsstr = '; '.join(constraintslist)
+            elif (len(constraintslist) > 3) & (len(constraintslist) < 7):
+                constraintsstr = '; '.join(constraintslist[:3])+'\n'+'; '.join(constraintslist[3:6])
+            elif (len(constraintslist) > 6) & (len(constraintslist) < 10):
+                constraintsstr = '; '.join(constraintslist[:3])+'\n'+'; '.join(constraintslist[3:6])+\
+                                 '\n'+'; '.join(constraintslist[6:])
+            else:
+                constraintsstr = '; '.join(constraintslist[:3])+'\n'+'; '.join(constraintslist[3:6])+\
+                                 '\n'+'; '.join(constraintslist[6:9])+'\n'+'; '.join(constraintslist[9:])
+
+            constraintsstr = constraintsstr.replace('10000000000.00','1e10')
+
+            titlestr = titlestr+'\n'+constraintsstr
+            # titlestr = r'{\fontsize{'+str(Fsize)+'pt}{3em}\selectfont{}{'+titlestr+'\r}{\fontsize{'+str((Fsize-2.))+'pt}{3em}\selectfont{}('+constraintsstr+'}'
+
+        # plt.text(x=0.5, y=0.94, s=titlestr, fontsize=Fsize, ha="center", transform=fig.transFigure)
+        # plt.text(x=0.5, y=0.88, s=constraintsstr, fontsize=Fsize-2, ha="center", transform=fig.transFigure)
+        # fig.title(titlestr,fontsize=Fsize)
+        fig.suptitle(titlestr,fontsize=Fsize-2)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Zgas
@@ -1710,7 +1751,8 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         plt.savefig(plotname_obj)
         plt.clf()
         plt.close('all')
-        if verbose: print(' - Successfully saved figure to file')
+        # if verbose: print(' - Successfully saved figure to file')
+    if verbose: print('\n   done...')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_modelparametercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat_AGN,
                                            SFcol,AGNcol,LW,bindefs=None,Nbins=10):
@@ -1734,8 +1776,8 @@ def plot_modelparametercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat
     if (paramcol_SF is None) & (paramcol_AGN is not None):
         if len(paramcol_AGN) > 0:
             if bindefs is None:
-                xmin       = np.min(paramcol_AGN)*0.95
-                xmax       = np.max(paramcol_AGN)*1.05
+                xmin       = np.min(paramcol_AGN)-np.abs(np.min(paramcol_AGN))*0.05
+                xmax       = np.max(paramcol_AGN)+np.abs(np.min(paramcol_AGN))*0.05
                 binwidth_x = np.diff([xmin,xmax])/Nbins
                 bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
 
@@ -1752,8 +1794,8 @@ def plot_modelparametercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat
         if len(paramcol_SF) > 0:
 
             if bindefs is None:
-                xmin       = np.min(paramcol_SF)*0.95
-                xmax       = np.max(paramcol_SF)*1.05
+                xmin       = np.min(paramcol_SF)-np.abs(np.min(paramcol_SF))*0.05
+                xmax       = np.max(paramcol_SF)+np.abs(np.min(paramcol_SF))*0.05
                 binwidth_x = np.diff([xmin,xmax])/Nbins
                 bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
 
