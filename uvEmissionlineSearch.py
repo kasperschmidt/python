@@ -5091,6 +5091,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                          markerfacecolor=markerfacecolor,ecolor=ecol,
                          markeredgecolor=mecol,zorder=markerzorder)
 
+        Zsun = 8.69
         if linetype == 'horizontal':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'onetoone':
@@ -5100,9 +5101,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             plt.plot([0,0],[-1e10,1e10],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'onetooneWZsun':
             plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
-            Zsun = 8.69
             plt.fill_between([5.0,Zsun,Zsun,10],[10.0,10.0,10.0,10.0],[Zsun,Zsun,5.0,5.0],color='lightgray')
             plt.text(7.0,8.75,'super-solar',color='gray',zorder=10)
+        elif linetype == 'yZsun':
+            plt.fill_between([-1.0,10],[10.0,10.0],[Zsun,Zsun],color='lightgray')
+            plt.text(1.0,8.75,'super-solar',color='gray',zorder=10)
         elif linetype == 'horizontal_and_nakajima18EWvsDv':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
 
@@ -5167,7 +5170,13 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
                 axHistx.set_xscale('log')
 
-            axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
+            if ids is not None:
+                axHistx.hist(xvalues[ids.astype(int) < 1e9][np.isfinite(xvalues[ids.astype(int) < 1e9])],linestyle='-',
+                             bins=bindefs,histtype='step',color='k')
+                axHistx.hist(xvalues[np.isfinite(xvalues)],linestyle=':',
+                             bins=bindefs,histtype='step',color='k')
+            else:
+                axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
             axHistx.set_xticks([])
             axHistx.set_xlim([xminsys,xmaxsys])
 
@@ -5177,7 +5186,13 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
                 axHisty.set_yscale('log')
 
-            axHisty.hist(yvalues[np.isfinite(yvalues)], bins=bindefs,histtype='step',color='k', orientation='horizontal')
+            if ids is not None:
+                axHisty.hist(yvalues[ids.astype(int) < 1e9][np.isfinite(yvalues[ids.astype(int) < 1e9])],linestyle='-',
+                             bins=bindefs,histtype='step',color='k', orientation='horizontal')
+                axHisty.hist(yvalues[np.isfinite(yvalues)],linestyle=':',
+                             bins=bindefs,histtype='step',color='k', orientation='horizontal')
+            else:
+                axHisty.hist(yvalues[np.isfinite(yvalues)], bins=bindefs,histtype='step',color='k', orientation='horizontal')
             axHisty.set_yticks([])
             axHisty.set_ylim([yminsys,ymaxsys])
 
@@ -12920,11 +12935,11 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     colorcode  = True
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
-                                                   'dummydat',linetype=None,title=None,ids=IDsALL,
+                                                   'dummydat',linetype='yZsun',title=None,ids=IDsALL,
                                                    ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=False,Nbins=None,
+                                                   histaxes=True,Nbins=20,
                                                    overwrite=overwrite,verbose=verbose)
 
 
@@ -12954,11 +12969,11 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
     colorcode  = True
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
-                                                   'dummydat',linetype=None,title=None,ids=IDsALL,
+                                                   'dummydat',linetype='yZsun',title=None,ids=IDsALL,
                                                    ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=False,Nbins=None,
+                                                   histaxes=True,Nbins=20,
                                                    overwrite=overwrite,verbose=verbose)
 
     # - - - - - - Si3O3C3 vs EW(Lya)     - - - - - -
