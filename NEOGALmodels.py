@@ -978,7 +978,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
     --- EXAMPLE OF USE ---
     import NEOGALmodels as nm
     basename= '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/NEOGALpdffigures/NEOGALobject'
-    FRdic = [{'id':111111, 'OIII1663/HeII1640':[1e-3,1e-2],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e10],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[1e-2,1e10], 'OIII1663/CIV1550':[1e-2,1e10], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e10], 'CIV1550/SiIII1888':[1e-2,1e10]}]
+    FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.04,0.45],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e10],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[1e-2,1e10], 'OIII1663/CIV1550':[1e-2,1e10], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e10], 'CIV1550/SiIII1888':[1e-2,1e10]}]
     parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = nm.estimate_object_PDFs(FRdic, basename=basename)
 
     """
@@ -992,41 +992,41 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
     if verbose: print(' - Define all possible line ratios from the lines:\n    '
                       'NV1240, CIV1550, CIII1908, HeII1640, OIII1663, and SiIII1888')
     fluxratiodic = {}                   # [[SF range], [AGN range]]
-    fluxratiodic['NV1240/CIV1550']     = [[-999,-999],[-999,-999]]
-    fluxratiodic['NV1240/CIII1908']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['NV1240/HeII1640']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['NV1240/OIII1663']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['NV1240/SiIII1888']   = [[-999,-999],[-999,-999]]
+    fluxratiodic['NV1240/CIV1550']     =  [[0,1e10],[0,1e10]]
+    fluxratiodic['NV1240/CIII1908']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['NV1240/HeII1640']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['NV1240/OIII1663']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['NV1240/SiIII1888']   =  [[0,1e10],[0,1e10]]
 
-    fluxratiodic['CIV1550/NV1240']     = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIV1550/CIII1908']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIV1550/HeII1640']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIV1550/OIII1663']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIV1550/SiIII1888']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIV1550/NV1240']     =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIV1550/CIII1908']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIV1550/HeII1640']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIV1550/OIII1663']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIV1550/SiIII1888']  =  [[0,1e10],[0,1e10]]
 
-    fluxratiodic['CIII1908/NV1240']     = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIII1908/CIV1550']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIII1908/HeII1640']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIII1908/OIII1663']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['CIII1908/SiIII1888']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['CIII1908/NV1240']     =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIII1908/CIV1550']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIII1908/HeII1640']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIII1908/OIII1663']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['CIII1908/SiIII1888']  =  [[0,1e10],[0,1e10]]
 
-    fluxratiodic['HeII1640/NV1240']     = [[-999,-999],[-999,-999]]
-    fluxratiodic['HeII1640/CIV1550']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['HeII1640/CIII1908']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['HeII1640/OIII1663']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['HeII1640/SiIII1888']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['HeII1640/NV1240']     =  [[0,1e10],[0,1e10]]
+    fluxratiodic['HeII1640/CIV1550']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['HeII1640/CIII1908']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['HeII1640/OIII1663']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['HeII1640/SiIII1888']  =  [[0,1e10],[0,1e10]]
 
-    fluxratiodic['OIII1663/NV1240']     = [[-999,-999],[-999,-999]]
-    fluxratiodic['OIII1663/CIV1550']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['OIII1663/CIII1908']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['OIII1663/HeII1640']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['OIII1663/SiIII1888']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['OIII1663/NV1240']     =  [[0,1e10],[0,1e10]]
+    fluxratiodic['OIII1663/CIV1550']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['OIII1663/CIII1908']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['OIII1663/HeII1640']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['OIII1663/SiIII1888']  =  [[0,1e10],[0,1e10]]
 
-    fluxratiodic['SiIII1888/NV1240']    = [[-999,-999],[-999,-999]]
-    fluxratiodic['SiIII1888/CIV1550']   = [[-999,-999],[-999,-999]]
-    fluxratiodic['SiIII1888/CIII1908']  = [[-999,-999],[-999,-999]]
-    fluxratiodic['SiIII1888/HeII1640']  = [[-999,-999],[-999,-999]]
-    fluxratiodic['SiIII1888/OIII1663']  = [[-999,-999],[-999,-999]]
+    fluxratiodic['SiIII1888/NV1240']    =  [[0,1e10],[0,1e10]]
+    fluxratiodic['SiIII1888/CIV1550']   =  [[0,1e10],[0,1e10]]
+    fluxratiodic['SiIII1888/CIII1908']  =  [[0,1e10],[0,1e10]]
+    fluxratiodic['SiIII1888/HeII1640']  =  [[0,1e10],[0,1e10]]
+    fluxratiodic['SiIII1888/OIII1663']  =  [[0,1e10],[0,1e10]]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Set up mode line flux vectors')
@@ -1040,13 +1040,13 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Get ranges of model flux ratios')
-    for FR in fluxratiodic.keys():
-        numerator   = FR.split('/')[0]
-        denominator = FR.split('/')[1]
-        fluxratiodic[FR][0] = [np.min(fluxdic[numerator][0]/fluxdic[denominator][0]),
-                               np.max(fluxdic[numerator][0]/fluxdic[denominator][0])]
-        fluxratiodic[FR][1] = [np.min(fluxdic[numerator][1]/fluxdic[denominator][1]),
-                               np.max(fluxdic[numerator][1]/fluxdic[denominator][1])]
+    # for FR in fluxratiodic.keys():
+    #     numerator   = FR.split('/')[0]
+    #     denominator = FR.split('/')[1]
+    #     fluxratiodic[FR][0] = [np.min(fluxdic[numerator][0]/fluxdic[denominator][0]),
+    #                            np.max(fluxdic[numerator][0]/fluxdic[denominator][0])]
+    #     fluxratiodic[FR][1] = [np.min(fluxdic[numerator][1]/fluxdic[denominator][1]),
+    #                            np.max(fluxdic[numerator][1]/fluxdic[denominator][1])]
 
 
     Nobj = len(fluxratiodictionarylist)
@@ -1057,10 +1057,18 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
     parametercollection_AGN = [{'id':0, 'Zgas':[],'logUs':[],'xid':[],'nh':[],'alpha':[]}]*Nobj
 
     for oo, FRdic_input in enumerate(fluxratiodictionarylist):
-        fluxratiodic_obj = fluxratiodic    # resetting flux ratio dictionary for object
+        objid = FRdic_input['id']
+
+        # ------ resetting flux ratio dictionary for object ------
+        fluxratiodic_obj = {}
+        for key in fluxratiodic.keys():
+            fluxratiodic_obj[key] = fluxratiodic[key]
+        # --------------------------------------------------------
+
         for FR in FRdic_input.keys():
             if FR in fluxratiodic.keys():
                 fluxratiodic_obj[FR] = [FRdic_input[FR],FRdic_input[FR]]
+                # print(str(objid)+':'+FR+'  -->'+str(fluxratiodic_obj[FR]))
             elif FR == 'id':
                 pass
             else:
@@ -1176,7 +1184,8 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
 
     """
     if verbose: print(' - Plot stats of parameter selection')
-    Nobj = len(stat_SF)
+    Nobj     = len(stat_SF)
+    objidall = np.array([statobj['id'] for statobj in stat_SF])
 
     xranges = {}
     xranges['Zgas']    =  [0.00001,0.2]
@@ -1306,9 +1315,17 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
             axHistx.set_xscale('log')
 
         if len(meanval_SF) > 0:
-            axHistx.hist(meanval_SF[np.isfinite(meanval_SF)],  bins=bindefs,histtype='step',color=SFcol)
+            axHistx.hist(meanval_SF[objidall < 1e9][np.isfinite(meanval_SF[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=SFcol)
+            axHistx.hist(meanval_SF[np.isfinite(meanval_SF)],linestyle=':',
+                         bins=bindefs,histtype='step',color=SFcol)
+
         if len(meanval_AGN) > 0:
-            axHistx.hist(meanval_AGN[np.isfinite(meanval_AGN)], bins=bindefs,histtype='step',color=AGNcol)
+            axHistx.hist(meanval_AGN[objidall < 1e9][np.isfinite(meanval_AGN[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=AGNcol)
+            axHistx.hist(meanval_AGN[np.isfinite(meanval_AGN)],linestyle=':',
+                         bins=bindefs,histtype='step',color=AGNcol)
+
         axHistx.set_xticks([])
         axHistx.set_xlim([xminsys,xmaxsys])
 
@@ -1318,9 +1335,16 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
         #     bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
         #     axHisty.set_yscale('log')
         if len(meanval_SF) > 0:
-            axHisty.hist(stdval_SF[np.isfinite(stdval_SF)],  bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
+            axHisty.hist(stdval_SF[objidall < 1e9][np.isfinite(stdval_SF[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
+            axHisty.hist(stdval_SF[np.isfinite(stdval_SF)],linestyle=':',
+                         bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
         if len(meanval_AGN) > 0:
-            axHisty.hist(stdval_AGN[np.isfinite(stdval_AGN)], bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+            axHisty.hist(stdval_AGN[objidall < 1e9][np.isfinite(stdval_AGN[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+            axHisty.hist(stdval_AGN[np.isfinite(stdval_AGN)],linestyle=':',
+                         bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+
         axHisty.set_yticks([])
         axHisty.set_ylim([yminsys,ymaxsys])
 
@@ -1351,6 +1375,8 @@ def plot_stat(plotname, stat_SF, stat_AGN, SFcol='red', AGNcol='blue', verbose=T
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
                       xlog=False,ylog=False,datsetup='med68',verbose=True):
+
+    objidall = np.array([statobj['id'] for statobj in stat_SF])
 
     if datsetup == 'med68':
         cen_ent     = 2
@@ -1515,8 +1541,18 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
         axHistx.set_xscale('log')
 
-    axHistx.hist(xvalues_SF[np.isfinite(xvalues_SF)],  bins=bindefs,histtype='step',color=SFcol)
-    axHistx.hist(xvalues_AGN[np.isfinite(xvalues_AGN)], bins=bindefs,histtype='step',color=AGNcol)
+    if len(xvalues_SF) > 0:
+        axHistx.hist(xvalues_SF[objidall < 1e9][np.isfinite(xvalues_SF[objidall < 1e9])],linestyle='-',
+                     bins=bindefs,histtype='step',color=SFcol)
+        axHistx.hist(xvalues_SF[np.isfinite(xvalues_SF)],linestyle=':',
+                     bins=bindefs,histtype='step',color=SFcol)
+
+    if len(xvalues_AGN) > 0:
+        axHistx.hist(xvalues_AGN[objidall < 1e9][np.isfinite(xvalues_AGN[objidall < 1e9])],linestyle='-',
+                     bins=bindefs,histtype='step',color=AGNcol)
+        axHistx.hist(xvalues_AGN[np.isfinite(xvalues_AGN)],linestyle=':',
+                     bins=bindefs,histtype='step',color=AGNcol)
+
     axHistx.set_xticks([])
     axHistx.set_xlim([xminsys,xmaxsys])
 
@@ -1526,8 +1562,17 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
         axHisty.set_yscale('log')
 
-    axHisty.hist(yvalues_SF[np.isfinite(yvalues_SF)],  bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
-    axHisty.hist(yvalues_AGN[np.isfinite(yvalues_AGN)], bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+    if len(yvalues_SF) > 0:
+        axHisty.hist(yvalues_SF[objidall < 1e9][np.isfinite(yvalues_SF[objidall < 1e9])],linestyle='-',
+                     bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
+        axHisty.hist(yvalues_SF[np.isfinite(yvalues_SF)],linestyle=':',
+                     bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
+    if len(yvalues_AGN) > 0:
+        axHisty.hist(yvalues_AGN[objidall < 1e9][np.isfinite(yvalues_AGN[objidall < 1e9])],linestyle='-',
+                     bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+        axHisty.hist(yvalues_AGN[np.isfinite(yvalues_AGN)],linestyle=':',
+                     bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+
     axHisty.set_yticks([])
     axHisty.set_ylim([yminsys,ymaxsys])
 
