@@ -13825,6 +13825,137 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                                    overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile=None,generatePDFplots=False,
+                                        addinputobj=True,addliteratureobj=False,verbose=True):
+    """
+    Function assembling and generating photoionization model "PDFs" of UVES objects
+
+    --- Example of use ---
+    import uvEmissionlineSearch as uves
+    uvesdir          = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    outdir           = uvesdir+'NEOGALpdffigures/'
+    linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    uves.get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile=None,generatePDFplots=False,addliteratureobj=False,verbose=True)
+
+    """
+    FRdiclist = []
+
+    coldic = {}
+    coldic['CIVHeII']   = 'CIV1550/HeII1640'
+    coldic['CIVOIII']   = 'CIV1550/OIII1663'
+    coldic['CIVSiIII']  = 'CIV1550/SiIII1888'
+    coldic['CIVCIII']   = 'CIV1550/CIII1908'
+    # coldic['CIVMgII']   = 'CIV1550/'] # MgII not in NEOGAL models
+    coldic['HeIIOIII']  = 'HeII1640/OIII1663'
+    coldic['HeIISiIII'] = 'HeII1640/SiIII1888'
+    coldic['HeIICIII']  = 'HeII1640/CIII1908'
+    # coldic['HeIIMgII']  = 'HeII1640/' # not in NEOGAL models
+    coldic['OIIISiIII'] = 'OIII1663/SiIII1888'
+    coldic['OIIICIII']  = 'OIII1663/CIII1908'
+    # coldic['OIIIMgII']  = 'OIII1663/' # not in NEOGAL models
+    coldic['SiIIICIII'] = 'SiIII1888/CIII1908'
+    # coldic['SiIIIMgII'] = 'SiIII1888/' # not in NEOGAL models
+    # coldic['CIIIMgII']  = 'CIII1908/' # not in NEOGAL models
+
+    coldic['HeIICIV']   = 'HeII1640/CIV1550'
+    coldic['OIIICIV']   = 'OIII1663/CIV1550'
+    coldic['SiIIICIV']  = 'SiIII1888/CIV1550'
+    coldic['CIIICIV']   = 'CIII1908/CIV1550'
+    coldic['OIIIHeII']  = 'OIII1663/HeII1640'
+    coldic['SiIIIHeII'] = 'SiIII1888/HeII1640'
+    coldic['CIIIHeII']  = 'CIII1908/HeII1640'
+    coldic['SiIIIOIII'] = 'SiIII1888/OIII1663'
+    coldic['CIIIOIII']  = 'CIII1908/OIII1663'
+    coldic['CIIISiIII'] = 'CIII1908/SiIII1888'
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if addinputobj:
+        obsdat    = afits.open(linefluxcatalog)[1].data
+        Ndatobj   = len(obsdat['id'])
+        if verbose: print(' - Defining parameter ranges for '+str(Ndatobj)+' objects in input ')
+        for ii, objid in enumerate(obsdat['id']):
+            if verbose:
+                infostr = '   Getting info for '+str(objid)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % Ndatobj)+')        '
+                sys.stdout.write("%s\r" % infostr)
+                sys.stdout.flush()
+
+            FRdic = {}
+            FRdic['id'] = int(objid)
+
+            for colname in obsdat.dtype.names:
+                if colname in ['FR_'+key for key in coldic.keys()]:
+                    frval  = obsdat[colname][ii]
+                    errval = obsdat[colname.replace('FR_','FRerr_')][ii]
+
+                    if np.isfinite(frval):
+                        if errval == 99:
+                            valrange = [0,frval]
+                        elif errval == -99:
+                            valrange = [frval,1e10]
+                        else:
+                            valrange = [frval-errval*Nsigma,frval+errval*Nsigma]
+                    else:
+                        valrange = None
+
+                    if valrange is not None:
+                        FRdic[coldic[colname.split('R_')[-1]]] = valrange
+
+            if len(FRdic.keys()) > 1: # only add objects where there are constraints on line ratios from data
+                FRdiclist.append(FRdic)
+        if verbose: print('\n   done')
+        Nobjdatadded = len(FRdiclist)
+        if verbose: print(' - Found '+str(Nobjdatadded)+' objects with constraints from data ')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if addliteratureobj:
+        litdir   = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
+        litcat   = litdir+'literaturecollection_emissionlinestrengths.fits'
+        litdat   = afits.open(litcat)[1].data
+        Nlitobj  = len(litdat['id'])
+        if verbose: print(' - Defining parameter ranges for '+str(Nlitobj)+' objects in input ')
+        for ii, objid in enumerate(litdat['id']):
+            if verbose:
+                infostr = '   Getting info for '+str(objid)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % Nlitobj)+')        '
+                sys.stdout.write("%s\r" % infostr)
+                sys.stdout.flush()
+
+            FRdic = {}
+            FRdic['id'] = int(objid)
+
+            for colname in litdat.dtype.names:
+                if colname in ['FR_'+key for key in coldic.keys()]:
+                    frval  = litdat[colname][ii]
+                    errval = litdat[colname.replace('FR_','FRerr_')][ii]
+
+                    if np.isfinite(frval):
+                        if errval == 99:
+                            valrange = [0,frval]
+                        elif errval == -99:
+                            valrange = [frval,1e10]
+                        else:
+                            valrange = [frval-errval*Nsigma,frval+errval*Nsigma]
+                    else:
+                        valrange = None
+
+                    if valrange is not None:
+                        FRdic[coldic[colname.split('R_')[-1]]] = valrange
+
+            if len(FRdic.keys()) > 1: # only add objects where there are constraints on line ratios from data
+                FRdiclist.append(FRdic)
+
+        if verbose: print('\n   done')
+        Nobjlitadded = len(FRdiclist)
+        if addinputobj:
+             Nobjlitadded = Nobjlitadded - Nobjdatadded
+        if verbose: print(' - Found '+str(Nobjlitadded)+' objects with constraints from literature ')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    basename = outdir+'UVESvsNEOGALmodelparams'
+    parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = \
+        nm.estimate_object_PDFs(FRdiclist,generatePDFplots=generatePDFplots,AGNcol='blue',SFcol='red',
+                                basename=basename,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_AGN_ids(infofile=None):
     """
     Returning list of IDs of secure and likely AGN
