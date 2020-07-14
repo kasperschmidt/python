@@ -117,7 +117,9 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
     objinfofile = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats.fits'
     uves.build_LAEfitstable(fitsname=objinfofile,clobber=False)
 
-    uves.append_JKthesisCat2maininfofile(objinfofile=objinfofile, objrmatch=0.20, overwrite=False)
+    uves.append_JK100fieldinfocat(objinfofile=objinfofile, overwrite=False)
+    #uves.append_JK100fieldinfocatBAD(objinfofile=objinfofile, matchthresh=0.20, overwrite=False)
+    #uves.append_JKthesisCat2maininfofile(objinfofile=objinfofile, objrmatch=0.20, overwrite=False)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -883,6 +885,202 @@ def build_LAEfitstable(fitsname='./LAEinfoRENAME.fits',genDS9region=False,clobbe
         if verbose: print(' - Generating DS9 region file')
         regionname = fitsname.replace('.fits','.reg')
         kbs.create_DS9region(regionname,ras,decs,color='magenta',circlesize=0.5,textlist=objids.astype(str),clobber=clobber)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def append_JK100fieldinfocat(objinfofile, overwrite=False, verbose=True):
+    """
+    Script appending the LAE parameter information from Joesie Kerutt's thesis to the objecet infofile generated with
+    uves.build_LAEfitstable().
+
+    Doing this through a direct ID match
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    See header of uves.build_LAEfitstable()
+
+    """
+    out_file = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
+    if os.path.isfile(out_file) and (overwrite == False):
+        sys.exit('The output file '+out_file+' already exists and overwrite=False ')
+
+    if verbose: print(' - Loading data ')
+    cat_jk     = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits'
+    hdu_jk     = afits.open(cat_jk)
+    dat_jk     = hdu_jk[1].data
+    col_jk     = hdu_jk[1].columns
+
+    hdu_info   = afits.open(objinfofile)
+    dat_info   = hdu_info[1].data
+    col_info   = hdu_info[1].columns
+
+    for cc, colname in enumerate(hdu_jk[1].columns.names):
+        if colname.lower() in [cn.lower() for cn in hdu_info[1].columns.names]:
+            hdu_jk[1].columns[cc].name = colname.lower()+'_jk'
+
+    col_out     = col_info + col_jk
+    hdu_out     = afits.BinTableHDU.from_columns(col_out,fill=True) # filling with zeros or blanks to start from empty table
+
+    if verbose: print(' - Fill the columns in the new table looping through info file objects')
+    JKids = hdu_jk[1].data['id_jk']
+    JKids_uvesformat = []
+    for jkid in JKids:
+        if (jkid < 2e7): # MOSAIC ID
+            JKids_uvesformat.append(int(jkid + 6e8))
+        elif (jkid < 1e8) * (jkid > 2e7): # UDF10 ID
+            JKids_uvesformat.append(int(jkid + 7e8))
+        else:
+            JKids_uvesformat.append(jkid)
+
+    for ii, id in enumerate(dat_info['id']):
+        if verbose:
+            infostr = '   Matching data for id='+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(dat_info['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        for colname in col_info.names:
+            hdu_out.data[colname][ii] = hdu_info[1].data[colname][ii]
+
+        if not str(id).startswith('5'): # ignore UDF mosaic shallow
+            jkent   = np.where(JKids_uvesformat == id)[0]
+            objz    = hdu_info[1].data['redshift'][ii]
+
+            if len(jkent) == 0:
+                if objz > 2.9:
+                    print('\n WARNING: No match to infofile LAE (z>2.9) id for '+str(id))
+            elif len(jkent) == 1:
+                for colname in col_jk.names:
+                    hdu_out.data[colname][ii] = hdu_jk[1].data[colname][jkent][0]
+            elif len(jkent) > 1:
+                print('\n WARNING: More than 1 match to '+str(id)+', namely '+str(JKids_uvesformat[jkent])+'arcsec')
+
+    hdu_out.writeto(out_file, overwrite=overwrite)
+    if verbose: print(' - Output written to:\n   '+out_file)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def append_JK100fieldinfocatBAD(objinfofile, matchthresh=0.2, overwrite=False, verbose=True):
+    """
+    Script appending the LAE parameter information from Joesie Kerutt's thesis to the objecet infofile generated with
+    uves.build_LAEfitstable()
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+    See header of uves.build_LAEfitstable()
+
+    """
+
+    out_file = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
+    if os.path.isfile(out_file) and (overwrite == False):
+        sys.exit('The output file '+out_file+' already exists and overwrite=False ')
+
+    if verbose: print(' - Loading data ')
+    cat_jk     = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits'
+    hdu_jk     = afits.open(cat_jk)
+    dat_jk     = hdu_jk[1].data
+    col_jk     = hdu_jk[1].columns
+    Ncol_jk    = len(dat_jk.dtype.names)
+
+    hdu_info   = afits.open(objinfofile)
+    dat_info   = hdu_info[1].data
+    col_info   = hdu_info[1].columns
+    Ncol_info  = len(dat_info.dtype.names)
+
+    for cc, colname in enumerate(hdu_jk[1].columns.names):
+        if colname.lower() in [cn.lower() for cn in hdu_info[1].columns.names]:
+            hdu_jk[1].columns[cc].name = colname.lower()+'_jk'
+
+    xtracol     = afits.ColDefs([afits.Column(name='sep_infoVSjk', format='D',array=np.zeros(len(dat_info))*np.nan)])
+
+    col_out     = col_info + col_jk + xtracol
+    hdu_out     = afits.BinTableHDU.from_columns(col_out)
+
+    if verbose: print(' - Fill the columns in the new table looping through info file objects')
+    JKids_all = hdu_jk[1].data['id_jk']
+    for ii, id in enumerate(dat_info['id']):
+        objz                   = hdu_info[1].data['redshift'][ii]
+        objra                  = hdu_info[1].data['ra'][ii]
+        objdec                 = hdu_info[1].data['dec'][ii]
+        matchcoord             = SkyCoord(ra=objra, dec=objdec, unit='deg')
+        catalogcoord           = SkyCoord(ra=hdu_jk[1].data['RA_Lya'], dec=hdu_jk[1].data['DEC_Lya'], unit='deg')
+        threshcheck            = catalogcoord.separation(matchcoord) < matchthresh*u.arcsec
+        goodent                = np.where(threshcheck == True)[0]
+
+        if verbose:
+            infostr = '   Matching data for id='+str(id)+' ('+str("%.5d" % (ii+1))+' / '+str("%.5d" % len(dat_info['id']))+')     '
+            sys.stdout.write("%s\r" % infostr)
+            sys.stdout.flush()
+
+        #--------------------------------------------------------------------------
+        if len(goodent) == 0:
+            if objz > 2.9:
+                print('\n WARNING: No match to infofile LAE (z>2.9) coordinates for '+str(id)+'=('+str(objra)+','+str(objdec)+') below '+
+                      str(matchthresh)+'arcsec')
+                bestent, bestsep, d3dq = astropy.coordinates.match_coordinates_sky(matchcoord, catalogcoord, nthneighbor=1)
+                print('          Best match is ID_JK='+str(JKids_all[bestent])+' at seperation '+str(bestsep.arcsec[0])+' arcsec')
+                if JKids_all[bestent] == id:
+                    print('          But IDs match (ID_JK='+str(JKids_all[bestent])+' = ID_info='+str(id)+') so keeping best match')
+                    goodent = np.atleast_1d(bestent)
+                    rsep    = bestsep.arcsec[0]
+                else:
+                    continue
+        else:
+            rsep = catalogcoord.separation(matchcoord)[goodent].arcsec
+        #--------------------------------------------------------------------------
+        if (len(goodent) == 1):
+            if objz > 2.9:
+                # print('           Redshift = '+str(objz)+', i.e. beyond 2.9 so keeping match in catalog ')
+                for colname in col_info.names:
+                    hdu_out.data[colname][ii] = hdu_info[1].data[colname][ii]
+                for colname in col_jk.names:
+                    hdu_out.data[colname][ii] = hdu_jk[1].data[colname][goodent][0]
+                hdu_out.data['sep_infoVSjk'][ii] = rsep
+            else:
+                print('\n WARNING Redshift = '+str(objz)+', i.e. below 2.9 so non-LAE and moving on')
+        #--------------------------------------------------------------------------
+        elif len(goodent) > 1:
+            print('\n WARNING: '+str(len(goodent))+' matches to coordinates for '+str(id)+'=('+str(objra)+','+str(objdec)+'). \n'
+                  '          Matches are with entries '+str(goodent)+', i.e. IDs='+str(hdu_jk[1].data['id_jk'][goodent])+' of the JK catalog.')
+
+            if objz > 2.9:
+                print('           Redshift = '+str(objz)+', i.e. beyond 2.9 so keep match in catalog... ')
+                JKids = JKids_all[goodent]
+                goodent_use = None
+                for jj, jkid in enumerate(JKids):
+                    if (jkid < 2e7): # MOSAIC ID
+                        if goodent_use is None:
+                            goodent_use = goodent[jj]
+                        elif (hdu_jk[1].data['id_jk'][goodent_use] < 1e8): # UDF10 ID
+                            pass
+                        elif (hdu_jk[1].data['id_jk'][goodent_use] > 1e8): # MUSE-Wide
+                            goodent_use = goodent[jj]
+                        else:
+                            print('\n WARNING: There was already a MOSAIC ID kept as goodent_use...')
+
+                    if (jkid < 1e8) * (jkid > 2e7): # UDF10 ID
+                        if goodent_use is None:
+                            goodent_use = goodent[jj]
+                        elif (hdu_jk[1].data['id_jk'][goodent_use] < 2e7): # mosaic
+                            goodent_use = goodent[jj]
+                        elif (hdu_jk[1].data['id_jk'][goodent_use] > 1e8): # MUSE-Wide
+                            goodent_use = goodent[jj]
+                        else:
+                            print('\n WARNING: There was already a UDF10 ID kept as goodent_use...')
+
+                if goodent_use is None: # No MOSAIC or UDF10 ids in satisfying object; simply using closest match
+                    print('           WARNING2: No MOSAIC or UDF10 id in list of objects - keeping best MUSE-Wide match')
+                    goodent_use = goodent[np.where(rsep == np.min(rsep))[0]][0]
+
+                for colname in col_info.names:
+                    hdu_out.data[colname][ii] = hdu_info[1].data[colname][ii]
+                for colname in col_jk.names:
+                    hdu_out.data[colname][ii] = hdu_jk[1].data[colname][goodent_use]
+                hdu_out.data['sep_infoVSjk'][ii] = rsep[np.where(goodent == goodent_use)[0]]
+                print('           Kept match for ID = '+str(id)+' and matched it with '+
+                      str(hdu_jk[1].data['id_jk'][goodent_use])+' at rsep='+str(hdu_out.data['sep_infoVSjk'][ii])+'arcsec')
+            else:
+                print('           Redshift = '+str(objz)+', i.e. below 2.9 so non-LAE and moving on')
+        #--------------------------------------------------------------------------
+    hdu_out.writeto(out_file, overwrite=overwrite)
+    if verbose: print(' - Output written to:\n   '+out_file)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def append_JKthesisCat2maininfofile(objinfofile='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits', objrmatch=0.2, overwrite=False, verbose=True):
     """
