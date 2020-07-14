@@ -5039,6 +5039,19 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
     """
 
     """
+    if summarydat == 'dummydat':
+        finitevalues_ent = np.where(np.isfinite(xvalues) & np.isfinite(yvalues))[0]
+        xvalues = xvalues[finitevalues_ent]
+        yvalues = yvalues[finitevalues_ent]
+        xerr    = xerr[finitevalues_ent]
+        yerr    = yerr[finitevalues_ent]
+        if point_text is not None:
+            point_text = point_text[finitevalues_ent]
+        if ids is not None:
+            ids = ids[finitevalues_ent]
+        if cdatvec is not None:
+            cdatvec = cdatvec[finitevalues_ent]
+
     if verbose: print(' - Setting up and generating plot')
     if os.path.isfile(plotname) & (not overwrite):
         if verbose: print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
@@ -7093,19 +7106,28 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # NOTE: See uves.get_infodat_plotcols() for column definitions and plot labels
     linesetlist_lya = []
     infocols        = ['lyaew_b2',
-                       'lyafwhm_a','lyafwhm_kms',
-                       'beta_beta2',
-                       'absmagUV_fix',
-                       'magUV_fix',
+                       'lyafwhm_a',
+                       'lyafwhm_kms',
+                       # 'beta_beta2',
+                       'absmagUV_-2',
+                       'magUV_-2',
+                       'absmagUV_median',
+                       'magUV_median',
+                       'lyaflux',
                        'redshift']
 
     info_ranges     = [[-100,600],
-                       [-5,30],[-100,1000],
-                       [-4,3],
+                       [-5,30],
+                       [-100,1000],
+                       # [-4,3],
                        [-25,-10],
                        [20,35],
+                       [-25,-10],
+                       [20,35],
+                       [1e-19,1e-15],
                        [0.0,8.0]]
 
     addvaryingbetavalues = False
@@ -7122,7 +7144,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     fluxes_range    = [10,1e4]
     ratios_range    = [1e-4,1e3]
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     for ll, infocol in enumerate(infocols):
         linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
@@ -7473,7 +7495,8 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
     Wrapper to define input data and excecute plot command
 
     """
-    infofile         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infofiledat      = afits.open(infofile)[1].data
     infofiledat      = infofiledat[np.where((infofiledat['id']<4.9e8) | (infofiledat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
 
@@ -7484,7 +7507,6 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
     infocols = uves.get_infodat_plotcols()
 
     xlabel    = infocols[line1][2]
-
 
     if (line4 is None):
         plotname = plotbasename+'_linefluxes_'+line1+'vs'+line3+\
@@ -7755,20 +7777,36 @@ def get_infodat_plotcols():
     """
     Function returning columns from info file to plot
     """
-    infocols  = {}
-    infocols['lyaew_b2']      = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
-    infocols['lyaew_many']    = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
-    infocols['lyafwhm_a']     = ['fwhm_a_jk','fwhm_a_std_jk',                           'FWHM(Ly$\\alpha$) [\AA]']
-    infocols['lyafwhm_kms']   = ['fwhm_kms_jk','fwhm_kms_std_jk',                       'FWHM(Ly$\\alpha$) [km/s]']
-    infocols['beta_many']     = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
-    infocols['beta_beta2']    = ['beta_beta2','beta_beta2_error',                       '$\\beta$ (fixed)']
-    infocols['absmagUV_fix']  = ['abs_mag_UV_cont_beta2',None,                          'M(UV) ($\\beta = -2$)']
-    infocols['absmagUV_many'] = ['abs_mag_UV_cont_linear_many',None,                    'M(UV) ($\\beta$ linear multiband fit)']
-    infocols['magUV_fix']     = ['mag_UV_cont_beta2',None,                              'm(UV) ($\\beta = -2$)']
-    infocols['magUV_many']    = ['mag_UV_cont_linear_many',None,                        'm(UV) ($\\beta$ linear multiband fit)']
-    infocols['redshift']      = ['redshift',None,                                       '$z$']
+    colinfo  = {}
+    # from JK's thesis catalog: /Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters190926_EWs_0_clumps_ratio_line_props.fits
+    # colinfo['lyaew_b2']      = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
+    # colinfo['lyaew_many']    = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
+    # colinfo['lyafwhm_a']     = ['fwhm_a_jk','fwhm_a_std_jk',                           'FWHM(Ly$\\alpha$) [\AA]']
+    # colinfo['lyafwhm_kms']   = ['fwhm_kms_jk','fwhm_kms_std_jk',                       'FWHM(Ly$\\alpha$) [km/s]']
+    # colinfo['beta_many']     = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
+    # colinfo['beta_beta2']    = ['beta_beta2','beta_beta2_error',                       '$\\beta$ (fixed)']
+    # colinfo['absmagUV_fix']  = ['abs_mag_UV_cont_beta2',None,                          'M(UV) ($\\beta = -2$)']
+    # colinfo['absmagUV_many'] = ['abs_mag_UV_cont_linear_many',None,                    'M(UV) ($\\beta$ linear multiband fit)']
+    # colinfo['magUV_fix']     = ['mag_UV_cont_beta2',None,                              'm(UV) ($\\beta = -2$)']
+    # colinfo['magUV_many']    = ['mag_UV_cont_linear_many',None,                        'm(UV) ($\\beta$ linear multiband fit)']
+    # colinfo['redshift']      = ['redshift',None,                                       '$z$']
 
-    return infocols
+    # from JK's 100 field catalog: /Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits
+    colinfo['lyaew_b2']        = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
+    colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
+    colinfo['lyafwhm_a']       = ['fwhm_a_jk','fwhm_A_err',                              'FWHM(Ly$\\alpha$) [\AA]']
+    colinfo['lyafwhm_kms']     = ['fwhm_kms_jk','fwhm_kms_err',                          'FWHM(Ly$\\alpha$) [km/s]']
+    colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
+    colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2',None,                          'M(UV,1500) ($\\beta = -2$)']
+    colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many',None,                    'M(UV,1500) ($\\beta$ linear multiband fit)']
+    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median',None,                     'M(UV,1500) ($\\beta = -1.97$)']
+    colinfo['magUV_-2']        = ['mag_UV_cont_beta2',None,                              'm(UV,1500) ($\\beta = -2$)']
+    colinfo['magUV_many']      = ['mag_UV_cont_linear_many',None,                        'm(UV,1500) ($\\beta$ linear multiband fit)']
+    colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.97$)']
+    colinfo['redshift']        = ['red_vac','red_vac_err',                               '$z$']
+    colinfo['lyaflux']         = ['line_flux','line_flux_error',                         'F(Ly$\\alpha$) [erg/s/cm$^2$]']
+
+    return colinfo
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=None, fixbeta=False, overwrite=False, s2nlimit=3.0,
                  fcontverbose=False, verbose=True):
@@ -7872,7 +7910,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
                     if infofiledat['beta_linear_many'][obj_infoent] != 0.0:
                         beta  = infofiledat['beta_linear_many'][obj_infoent]
                     else:
-                        beta  = -1.92 # beta_own_median from Josie's Cat
+                        beta  = -1.97 # beta_own_median from Josie's Cat
 
                 f_conts      = uves.estimate_fcont(infofiledat,obj_infoent,line_wave,fixbeta=beta,
                                                    datSkeltonGS=datSkeltonGS, datSkeltonCOS=datSkeltonCOS, datRafelski=datRafelski,
@@ -9484,7 +9522,7 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
     point_text = (summarydat['id'][sortindex_S].astype(int)).astype(str)
 
 
-    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'dummydat',
                                                    histaxes=True,Nbins=30,
                                                    colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
                                                    linetype='onetoone',point_text=point_text,
@@ -9508,7 +9546,7 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
     point_text = (summarydat['id'][sortindex_S].astype(int)).astype(str)
 
 
-    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'dummydat',
                                                    histaxes=True,Nbins=30,
                                                    colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
                                                    linetype='horizontal',point_text=point_text,
@@ -9532,7 +9570,7 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
     point_text = (summarydat['id'][sortindex_S].astype(int)).astype(str)
 
 
-    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'DUMMY-summarydat',
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,'dummydat',
                                                    histaxes=True,Nbins=30,
                                                    colortype='s2nfelis',cdatvec=summarydat['FELIS_S2Nmax'][sortindex_S],
                                                    linetype='horizontal',point_text=point_text,
@@ -10325,7 +10363,8 @@ def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
     outputfits = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/results_master_catalog_testversion2002XX.fits'
-    file_info        = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # file_info        = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    file_info        = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     file_fluxratio   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/fluxratios_FELISmatch2all_200213_preFELISvetting.txt'
     file_EWestimates = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/fluxratios_FELISmatch2all_200213_preFELISvetting_EW0estimates.txt'
 
@@ -10484,7 +10523,8 @@ def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True
     if verbose: print(' --- Building the master catalog for the UVES study --- ')
     dir_main         = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
 
-    file_info        = dir_main+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # file_info        = dir_main+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    file_info        = dir_main+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     file_fluxratio   = dir_main+'FELIStemplatematch2uvesobjects/all_gauss190926/fluxratios/' \
                                 'fluxratios_FELISmatch2uves190926_gauss_wpointings.txt'
     file_EWestimates = file_fluxratio.replace('.txt','_EW0estimates_191028run.txt')
@@ -10875,7 +10915,8 @@ def print_specs(outputfile, overwrite=True, verbose=True):
 
     if verbose:
         print('\n - The following IDs were not found among the vetting results and hence, do not exist in output list')
-        infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+        # infofile     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+        infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
         infodat       = afits.open(infofile)[1].data
         for infoid in infodat['id']:
             if (infoid not in np.unique(np.sort(outdat['id']))) & (~str(infoid).startswith('5')):
@@ -10983,7 +11024,8 @@ def stack_IndividualObjectsWithMultiSpec(plotstackoverview=True,verbose=True):
             ll = ll+1
 
     if verbose: print(' - Stacking spectra in observed frame and saving output to:\n   '+outdir)
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
 
     for oo, objid in enumerate(stackids.keys()):
@@ -11046,7 +11088,8 @@ def stack_composites_generate_setup(outputfile,equalsizebins=False,overwrite=Fal
         sys.exit(' Overwrite was set to "False" and found existing copy of the file \n '+outputfile)
 
     if verbose: print(' - Loading infofile to enable cutting composites ')
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
 
@@ -11253,7 +11296,8 @@ def stack_composites(compositesetup,plotstackoverview=True,inloopload=False,verb
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/'
     outdir        = parentdir+compositesetup.split('/')[-1].split('.tx')[0]+'/'
     specdir       = parentdir+'MWuves-full-v1p0_spectra_paperselection200213/'
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
 
@@ -11494,7 +11538,8 @@ def stack_composite_plotNxNspecs(param1,param2,param1range,param2range,spectra,o
     col_matrix_ranges=[param1range,param2range]
 
     transdic      = uves.stack_composite_col_translator(ztype)
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF_MWmock
 
@@ -11652,7 +11697,8 @@ def get_vector_intervals(vector,Nsamples,equalsizebins=False,verbose=True):
     --- Example of use ---
     import uvEmissionlineSearch as uves, astropy.io.fits as afits, numpy as np
 
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]]
 
@@ -11715,7 +11761,8 @@ def get_object_duplication_list(matchtol=0.1,verbose=True):
     ids_ignore, duplicate_dictionary = uves.get_object_duplication_list(matchtol=0.2)
 
     """
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
     Nobj          = len(infodat['id'])
@@ -11784,7 +11831,8 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
 
     """
     matchtol      = 0.2
-    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile      = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat       = afits.open(infofile)[1].data
     infodat       = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
 
@@ -11851,7 +11899,8 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
     import uvEmissionlineSearch as uves
     figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV'
     mastercat   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
-    infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
 
     """
@@ -12096,7 +12145,8 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     --- Example of use ---
     import uvEmissionlineSearch as uves
     mastercat = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
-    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     detectiondic = uves.mastercat_latextable_wrappers(mastercat,infofile,verbose=True,overwrite=True,sortcol='redshift')
 
     """
@@ -12611,7 +12661,8 @@ def literaturecat_latextable_wrapper(sortcol='id',overwrite=False,verbose=True):
     uves.literaturecat_latextable_wrapper(verbose=True,overwrite=True,sortcol='id')
 
     """
-    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile  = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     infodat   = afits.open(infofile)[1].data
     workdir   = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
     litcat    = workdir+'literaturecollection_emissionlinestrengths.fits'
@@ -13775,7 +13826,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     uvesdir          = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
     outdir           = uvesdir+'velocityoffsetFigures/'
     linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
-    infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,10],overwrite=True,addDvErr=True)
 
     uves.evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir=outdir,Nlinedetections=[2,3],overwrite=True,addDvErr=True)
@@ -14048,7 +14100,8 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
     uvesdir          = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
     outdir           = uvesdir+'NEOGALpdffigures/'
     linefluxcatalog  = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
-    infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile         = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     uves.get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile=None,generatePDFplots=False,addliteratureobj=False,verbose=True)
 
     """
@@ -14176,7 +14229,8 @@ def get_AGN_ids(infofile=None):
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
     uvesdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
-    infofile   = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    # infofile   = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
+    infofile   = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     agn, agncand = uves.get_AGN_ids(infofile=infofile)
 
     """
