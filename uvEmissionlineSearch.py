@@ -7805,6 +7805,7 @@ def get_infodat_plotcols():
     colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.97$)']
     colinfo['redshift']        = ['red_vac','red_vac_err',                               '$z$']
     colinfo['lyaflux']         = ['line_flux','line_flux_error',                         'F(Ly$\\alpha$) [erg/s/cm$^2$]']
+    colinfo['peaksep_kms']     = ['peak_sep_kms_jk','peak_sep_kms_err',                  'Peak separation [km/s]']
 
     return colinfo
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -8104,7 +8105,7 @@ def band_waveeff(bandname):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_obj='EW_0', point_text=None, showlimits=True,
                       addliteraturevalues=True, ErrNsigma=1.0, vshiftmax=1e5, obj2show='all', xlog=True, ylog=True,
-                      lyaEWtype='EW_0_beta_beta2', overwrite=False, verbose=True):
+                      lyaEWtype='lyaew_b2', overwrite=False, verbose=True):
     """
     Function to plot the output containing EW0 estimates generated with uves.estimate_EW0()
 
@@ -8171,14 +8172,15 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     LyaPeaksep    = np.zeros(len(fluxratiodat['id']))*np.nan
     LyaPeakseperr = np.zeros(len(fluxratiodat['id']))*np.nan
 
+    colinfo = uves.get_infodat_plotcols()
     for ii, id in enumerate(fluxratiodat['id']):
         infoent            = np.where(infofiledat['id'] == int(id))
-        LyaEW[ii]          = infofiledat[lyaEWtype+''][infoent]
-        LyaEWerr[ii]       = infofiledat[lyaEWtype+'_error'][infoent]
-        LyaFWHM[ii]        = infofiledat['fwhm_kms_jk'][infoent]
-        LyaFWHMerr[ii]     = infofiledat['fwhm_kms_std_jk'][infoent]
-        LyaPeaksep[ii]     = infofiledat['peak_sep_rest_kms'][infoent]
-        LyaPeakseperr[ii]  = infofiledat['peak_sep_rest_kms_std'][infoent]
+        LyaEW[ii]          = infofiledat[colinfo['lyaew_b2'][0]][infoent]
+        LyaEWerr[ii]       = infofiledat[colinfo['lyaew_b2'][1]][infoent]
+        LyaFWHM[ii]        = infofiledat[colinfo['lyafwhm_kms'][0]][infoent]
+        LyaFWHMerr[ii]     = infofiledat[colinfo['lyafwhm_kms'][1]][infoent]
+        LyaPeaksep[ii]     = infofiledat[colinfo['peaksep_kms'][0]][infoent]
+        LyaPeakseperr[ii]  = infofiledat[colinfo['peaksep_kms'][1]][infoent]
 
     if colorvar_obj in fluxratiodat.dtype.names:
         cdatvec   = fluxratiodat[colorvar_obj]
