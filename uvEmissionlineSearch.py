@@ -5041,16 +5041,16 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
     """
     if summarydat == 'dummydat':
         finitevalues_ent = np.where(np.isfinite(xvalues) & np.isfinite(yvalues))[0]
-        xvalues = xvalues[finitevalues_ent]
-        yvalues = yvalues[finitevalues_ent]
-        xerr    = xerr[finitevalues_ent]
-        yerr    = yerr[finitevalues_ent]
+        xvalues = np.asarray(xvalues)[finitevalues_ent]
+        yvalues = np.asarray(yvalues)[finitevalues_ent]
+        xerr    = np.asarray(xerr)[finitevalues_ent]
+        yerr    = np.asarray(yerr)[finitevalues_ent]
         if point_text is not None:
-            point_text = point_text[finitevalues_ent]
+            point_text = np.asarray(point_text)[finitevalues_ent]
         if ids is not None:
-            ids = ids[finitevalues_ent]
+            ids = np.asarray(ids)[finitevalues_ent]
         if cdatvec is not None:
-            cdatvec = cdatvec[finitevalues_ent]
+            cdatvec = np.asarray(cdatvec)[finitevalues_ent]
 
     if verbose: print(' - Setting up and generating plot')
     if os.path.isfile(plotname) & (not overwrite):
