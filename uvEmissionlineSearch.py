@@ -5043,8 +5043,10 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         finitevalues_ent = np.where(np.isfinite(xvalues) & np.isfinite(yvalues))[0]
         xvalues = np.asarray(xvalues)[finitevalues_ent]
         yvalues = np.asarray(yvalues)[finitevalues_ent]
-        xerr    = np.asarray(xerr)[finitevalues_ent]
-        yerr    = np.asarray(yerr)[finitevalues_ent]
+        if xerr is not None:
+            xerr    = np.asarray(xerr)[finitevalues_ent]
+        if yerr is not None:
+            yerr    = np.asarray(yerr)[finitevalues_ent]
         if point_text is not None:
             point_text = np.asarray(point_text)[finitevalues_ent]
         if ids is not None:
@@ -5306,7 +5308,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         if linetype == 'horizontal':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'onetoone':
-            plt.plot([-1,1e10],[-1,1e10],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([-1e10,1e10],[-1e10,1e10],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'plus':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
             plt.plot([0,0],[-1e10,1e10],'--',color='black',lw=lthick,zorder=10)
@@ -7803,7 +7805,7 @@ def get_infodat_plotcols():
     colinfo['magUV_-2']        = ['mag_UV_cont_beta2',None,                              'm(UV,1500) ($\\beta = -2$)']
     colinfo['magUV_many']      = ['mag_UV_cont_linear_many',None,                        'm(UV,1500) ($\\beta$ linear multiband fit)']
     colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.97$)']
-    colinfo['redshift']        = ['red_vac','red_vac_err',                               '$z$']
+    colinfo['redshift']        = ['red_vac','red_vac_err',                '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
     colinfo['lyaflux']         = ['line_flux','line_flux_error',                         'F(Ly$\\alpha$) [erg/s/cm$^2$]']
     colinfo['peaksep_kms']     = ['peak_sep_kms_jk','peak_sep_kms_err',                  'Peak separation [km/s]']
 
@@ -14030,7 +14032,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         ylabel    = '$\Delta v$('+llstring+' - '+linename[vv]+') [km/s]'
 
         #---- vs redshift ---
-        plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSredshift.pdf'
+        plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSredshiftLeadLine.pdf'
         if leadline[vv] == 'Lya':
             xrange   = [2.8,5.0]
         else:
@@ -14057,9 +14059,36 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         if leadline[vv] == 'Lya':
             infocols = uves.get_infodat_plotcols()
 
+            #------ Plot as a function of the estiamted Voffset from Verhamme+18 (JK estimates) ------
+            if addDvErr:
+                yerr = [100.0] * len(dvs_ent[vv])
+            else:
+                yerr = None
+
+            xlabel   = '$\Delta v_\\textrm{Ly$\\alpha$}$ (Verhamme et al. (2018) approx.)'
+            xrange   = [-100,650]
+            plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSvoffsetVerhammeJK.pdf'
+
+            zleadline = dat_uves['redshift'][dvs_ent[vv]]
+            zsys      = infodat[infocols['redshift'][0]][dvs_ent[vv]]
+            zsys_err  = infodat[infocols['redshift'][1]][dvs_ent[vv]]
+            xvalues   = 299792.458 * (zleadline-zsys)/(1.0+zsys) # cf. Erb+2014
+            xerr      = np.abs(xvalues) * np.sqrt(2*(zsys_err/zsys)**2)
+
+            linetype='onetoone'
+            uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
+                                                           'dummydat',linetype=linetype,title=None, #'this is title',
+                                                           ids=dat_uves['id'][dvs_ent[vv]],
+                                                           ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                           colortype='redshift',colorcode=True,
+                                                           cdatvec=dat_uves['redshift'][dvs_ent[vv]],
+                                                           point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                           photoionizationplotparam=None,
+                                                           histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                           overwrite=overwrite,verbose=verbose)
+            #-----------------------------------------------------------------------------------------
+
             for cc, colname in enumerate(infocols.keys()):
-                if colname == 'redshift':
-                    continue
                 xlabel   = infocols[colname][2]
                 xrange   = None
                 plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VS'+colname+'.pdf'
