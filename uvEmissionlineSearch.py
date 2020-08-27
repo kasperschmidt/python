@@ -13703,8 +13703,8 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
     axHistx.set_xscale('log')
 
-    axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k',linestyle=':')
-    axHistx.hist(xvalues[np.isfinite(xvalues) & (vallim == 0)], bins=bindefs,histtype='step',color='k')
+    axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k',linestyle='-')
+    axHistx.hist(xvalues[np.isfinite(xvalues) & (vallim == 0)], bins=bindefs,histtype='stepfilled',color='k',linestyle='-')
     axHistx.set_xticks([])
     axHistx.set_xlim([xminsys,xmaxsys])
     # - - - - - - - - - - - - - - - - - - - - -
