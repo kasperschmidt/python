@@ -13462,14 +13462,20 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
         if len(goodent_Si3) == 0:
             if verbose: print('   No good measurements found in line flux catalog for '+FR_Si3)
         else:
-            if verbose: print('   Found '+str(len(goodent_Si3))+' measurements in line flux catalog for '+FR_Si3)
+            if verbose: print(' - Found '+str(len(goodent_Si3))+' measurements in line flux catalog for '+FR_Si3+' which are:')
 
             n_e_Si3      = Si3.getTemDen(FRval_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
             n_e_min_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]+Nsigma*FRerr_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
             n_e_max_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]-Nsigma*FRerr_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
+
+            if verbose:
+                for gg, gent in enumerate(goodent_Si3):
+                    print('   Te='+str(TeKey)+' goodent='+str(gent)+'='+str(fluxdat['id'][gent])+
+                          '  '+str(FRval_Si3[gent])+' +/- '+str(Nsigma*FRerr_Si3[gent])+
+                          '   ->  n_e(SiIII) = '+str(n_e_Si3[gg])+'-'+str(n_e_min_Si3[gg])+'+'+str(n_e_max_Si3[gg]))
+
             ylabel   = 'SiIII1883/SiIII1892'
             plotname = outputfile.replace('.txt','_SiIII_ne_estimates_Te'+TeKey+'.pdf')
-
             uves.plot_neForFR(plotname,fout,T_e_fix,FR_Si3,ylabel,FRval_Si3,n_e_Si3,n_e_min_Si3,n_e_max_Si3,
                               fluxdat,goodent_Si3,yvals_curve,n_e_Te3_Si3,n_e_Te4_Si3,n_e_Te5_Si3,verbose=True)
 
@@ -13479,14 +13485,20 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
         if len(goodent_C3) == 0:
             if verbose: print('   No good measurements found in line flux catalog for '+FR_C3)
         else:
-            if verbose: print('   Found '+str(len(goodent_C3))+' measurements in line flux catalog for '+FR_C3)
+            if verbose: print(' - Found '+str(len(goodent_C3))+' measurements in line flux catalog for '+FR_C3+' which are:')
 
             n_e_C3     = C3.getTemDen(FRval_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
             n_e_min_C3 = C3.getTemDen(FRval_C3[goodent_C3]+Nsigma*FRerr_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
             n_e_max_C3 = C3.getTemDen(FRval_C3[goodent_C3]-Nsigma*FRerr_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
+
+            if verbose:
+                for gg, gent in enumerate(goodent_C3):
+                    print('   Te='+str(TeKey)+' goodent='+str(gent)+'='+str(fluxdat['id'][gent])+
+                          '  '+str(FRval_C3[gent])+' +/- '+str(Nsigma*FRerr_C3[gent])+
+                          '   ->  n_e(CIII) = '+str(n_e_C3[gg])+'-'+str(n_e_min_C3[gg])+'+'+str(n_e_max_C3[gg]))
+
             ylabel   = 'CIII1907/CIII1909'
             plotname = outputfile.replace('.txt','_CIII_ne_estimates_Te'+TeKey+'.pdf')
-
             uves.plot_neForFR(plotname,fout,T_e_fix,FR_C3,ylabel,FRval_C3,n_e_C3,n_e_min_C3,n_e_max_C3,
                               fluxdat,goodent_C3,yvals_curve,n_e_Te3_C3,n_e_Te4_C3,n_e_Te5_C3,verbose=True)
 
