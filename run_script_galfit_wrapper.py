@@ -226,22 +226,35 @@ if 'unique_id' in cols_names:
 else:
     col_name_id   = cols.names[np.where(cols_names == 'id')[0][0]]
 
-col_name_conf = cols.names[np.where(cols_names == 'confidence')[0][0]]
+if 'confidence' in cols_names:
+    col_name_conf = cols.names[np.where(cols_names == 'confidence')[0][0]]
+elif 'z_bpz' in cols_names:
+    col_name_conf = cols.names[np.where(cols_names == 'odds_bpz')[0][0]] # z_bpz available in Rafelski catalog
+else:
+    sys.exit('No redshift confidence column found in input catalog')
 
 if 'short' in cols_names:
     col_name_class = cols.names[np.where(cols_names == 'short')[0][0]] # column name of the identification of the object
+elif 'lead_line' in cols_names:
+    col_name_class = cols.names[np.where(cols_names == 'lead_line')[0][0]]
 else:
-    col_name_class = cols.names[np.where(cols_names == 'lead_line')[0][0]] # column name of the identification of the object
+    col_name_class = cols.names[np.where(cols_names == 'coe_id')[0][0]] # when using Rafelski catalog
 
 if 'redshift' in cols_names:
     col_name_red = cols.names[np.where(cols_names == 'redshift')[0][0]]
-else:
+elif 'z' in cols_names:
     col_name_red = cols.names[np.where(cols_names == 'z')[0][0]]
+elif 'z_bpz' in cols_names:
+    col_name_red = cols.names[np.where(cols_names == 'z_bpz')[0][0]] # when using Rafelski catalog
+else:
+    sys.exit('No redshift column found in input catalog')
 
 if 'lambda_sn' in cols_names:
     col_name_lam = cols.names[np.where(cols_names == 'lambda_sn')[0][0]]
-else:
+elif 'sn' in cols_names:
     col_name_lam = cols.names[np.where(cols_names == 'sn')[0][0]]
+else:
+    col_name_lam = 'notfound'
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 try:
@@ -259,6 +272,8 @@ elif 'udf' in field:
     here_field = np.where(int(field[-1]) == field_numbers)[0]
 elif 'califa' in field:
     here_field = np.arange(len(data[col_name_ra]))
+elif 'mxdf' in field and 'mxdf' in area :
+    here_field = np.arange(len(data[col_name_ra]))
 elif 'manga' in field and 'manga' in area :
     here_field = np.arange(len(data[col_name_ra]))
 elif 'candels' in area and 'cosmos' in field:
@@ -268,7 +283,7 @@ elif 'candels' in area and 'cosmos' in field:
 elif 'cosmos' in area and 'group' in field:
     here_field = np.arange(len(data[col_name_ra]))
 else:
-    sys.exit(' ERROR: The field name and area combinatio provided (field,area) = ('+field+','+area+') has not "here_field" definitions assigned to them in /Users/kschmidt/work/GitHub/python/run_script_galfit_wrapper.py - add one or change setup file ')
+    sys.exit(' ERROR: The field name and area combinatio provided (field,area) = ('+field+','+area+') has no "here_field" definitions assigned to them in /Users/kschmidt/work/GitHub/python/run_script_galfit_wrapper.py - add one or change setup file ')
 
 ra_sn = data[col_name_ra][here_field][from_1:to_1]
 dec_sn = data[col_name_dec][here_field][from_1:to_1]
