@@ -1326,7 +1326,7 @@ def plot_linecoverage(lines,filters,outname='testfigure__RENAME__.pdf', figuresi
     outname = '/Users/kschmidt/work/linecoverageplot.pdf'
     kbs.plot_linecoverage(lines,filters,outname=outname,verbose=True)
 
-    lines   = ['lya','oii2','hb','oiii2','ha','paa','brg']
+    lines   = ['lya','ciii1','civ1','oii2','hb','oiii2','ha','pab','paa','brg']
     filters = ['muse','wfc3_g102','wfc3_g141','niriss_f115w','niriss_f150w','niriss_f200w','nircam_f277w','nircam_f356w','nircam_f444w']
     markfilter = ['nircam_f277w','nircam_f356w','nircam_f444w']
     kbs.plot_linecoverage(lines,filters,outname=outname,verbose=True,verticalmarker=[[0.308,'$z$(A2744) = 0.308','black'],[4.5,'$z$(MUSE LAE) = 4.5','gray'],[8.38,'$z$(YD4) = 8.38','lightgray']],markfilter=markfilter,redshiftrange=[0.0,13.0],figuresize_x=12,Fsize=15)
