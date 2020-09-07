@@ -981,6 +981,11 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
     FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.04,0.45],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e10],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[1e-2,1e10], 'OIII1663/CIV1550':[1e-2,1e10], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e10], 'CIV1550/SiIII1888':[1e-2,1e10]}]
     parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = nm.estimate_object_PDFs(FRdic, basename=basename)
 
+    import NEOGALmodels as nm
+    FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.0,1e10]}] # run for a single objects with no constraints to get instrinsic distribution
+    basename= '/Users/kschmidt/Desktop/tmp/NEOGALobjectALLmodels'
+    parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = nm.estimate_object_PDFs(FRdic, basename=basename, generatePDFplots=True)
+
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading NEOGAL models ')
@@ -1052,6 +1057,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
     Nobj = len(fluxratiodictionarylist)
     if verbose: print(' - Get model selection given flux ratio ranges according to '+
                       str(Nobj)+" object's data provided ")
+    if verbose: print('   Selection based on the total number of NEOGAL models: SF='+str(len(SF_models))+' and AGN='+str(len(AGN_models )))
 
     parametercollection_SF  = [{'id':0, 'Zgas':[],'logUs':[],'xid':[],'nh':[],'COCOsol':[],'mup':[]}]*Nobj
     parametercollection_AGN = [{'id':0, 'Zgas':[],'logUs':[],'xid':[],'nh':[],'alpha':[]}]*Nobj
