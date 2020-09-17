@@ -3,20 +3,14 @@
 # https://bpass.auckland.ac.nz/4.html (Xiao, Stanway and Eldridge 2018)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 import numpy as np
-import glob
-import astropy.io.fits as afits
 import astropy.io.ascii as aascii
 from astropy.table import Table, vstack
 import sys
 import pdb
-from astropy.cosmology import FlatLambdaCDM
 import matplotlib.pyplot as plt
 import matplotlib
 import BPASSmodels as bm
-import itertools
-import literaturecollection_emissionlinestrengths as lce
 from matplotlib.colors import LogNorm
-from matplotlib.ticker import NullFormatter
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def load_model(Zgas,filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/UV/',binaries=True,verbose=True):
     """
@@ -35,8 +29,8 @@ def load_model(Zgas,filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmi
     models_bin_uv, filename = bm.load_model(0.001,filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/UV/',binaries=True)
     models_bin_op, filename = bm.load_model(0.001,filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/Optical/',binaries=True)
 
-    models_bin_uv, filename = bm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/UV/',binaries=True)
-    models_bin_op, filename = bm.load_model('combined',filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/optical/',binaries=True)
+    models_bin, filename = bm.load_model('combined',filepath='dummy',binaries=True)
+    models_sin, filename = bm.load_model('combined',filepath='dummy',binaries=False)
 
     """
     if binaries:
@@ -45,28 +39,39 @@ def load_model(Zgas,filepath='/Users/kschmidt/work/catalogs/BPASSbasedNebularEmi
         typestr = 'sin'
 
     if Zgas == 'combined':
-        Zgasstring = Zgas
-    elif (Zgas == 0.0001):
-        Zgasstring = 'em4'
-    elif (Zgas == 0.00001):
-        Zgasstring = 'em5'
+        if binaries:
+            filename   = '/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/nebular_emission_BPASS_binaries_Zcombined.txt'
+        else:
+            filename   = '/Users/kschmidt/work/catalogs/BPASSbasedNebularEmission/nebular_emission_BPASS_singles_Zcombined.txt'
+
+        colnames = ['Zgas','No','logU','lognH','logAge','HeII1640','EW_HeII1640','CIII1907','EW_CIII1907',
+                    'CIII1910','EW_CIII1910','CIV1548','EW_CIV1548','CIV1551','EW_CIV1551','OI1357','EW_OI1357',
+                    'OIII1661','EW_OIII1661','OIII1666','EW_OIII1666','SiII1263','EW_SiII1263','SiII1308','EW_SiII1308',
+                    'SiII1531','EW_SiII1531','NII6548','EW_NII6548','NII6584','EW_NII6584','SII6716','EW_SII6716',
+                    'SII6731','EW_SII6731','OI6300','EW_OI6300','OIII4959','EW_OIII4959','OIII5007','EW_OIII5007',
+                    'Ha6563','EW_Ha6563','Hb4861','EW_Hb4861','HeII4686','EW_HeII4686']
     else:
-        Zgasstring = str("%.3f" % Zgas).split('.')[-1]
-    if 'UV' in filepath:
-        colnames   = ['No','logU','lognH','logAge','HeII1640','EW_HeII1640','CIII1907','EW_CIII1907','CIII1910','EW_CIII1910',
-                      'CIV1548','EW_CIV1548','CIV1551','EW_CIV1551','OI1357','EW_OI1357','OIII1661','EW_OIII1661',
-                      'OIII1666','EW_OIII1666','SiII1263','EW_SiII1263','SiII1308','EW_SiII1308','SiII1531','EW_SiII1531']
+        if (Zgas == 0.0001):
+            Zgasstring = 'em4'
+        elif (Zgas == 0.00001):
+            Zgasstring = 'em5'
+        else:
+            Zgasstring = str("%.3f" % Zgas).split('.')[-1]
+        if 'UV' in filepath:
+            colnames   = ['No','logU','lognH','logAge','HeII1640','EW_HeII1640','CIII1907','EW_CIII1907','CIII1910','EW_CIII1910',
+                          'CIV1548','EW_CIV1548','CIV1551','EW_CIV1551','OI1357','EW_OI1357','OIII1661','EW_OIII1661',
+                          'OIII1666','EW_OIII1666','SiII1263','EW_SiII1263','SiII1308','EW_SiII1308','SiII1531','EW_SiII1531']
 
-        filename   = filepath+typestr+'/UV_data_'+typestr+'_z'+Zgasstring+'.dat'
+            filename   = filepath+typestr+'/UV_data_'+typestr+'_z'+Zgasstring+'.dat'
 
-    elif 'Optical' in filepath:
-        colnames   =  ['No','logU','lognH','logAge','NII6548','EW_NII6548','NII6584','EW_NII6584','SII6716','EW_SII6716',
-                       'SII6731','EW_SII6731','OI6300','EW_OI6300','OIII4959','EW_OIII4959','OIII5007','EW_OIII5007',
-                       'Ha6563','EW_Ha6563','Hb4861','EW_Hb4861','HeII4686','EW_HeII4686']
-        filename   = filepath+typestr+'/Optical_data_'+typestr+'_z'+Zgasstring+'.dat'
+        elif 'Optical' in filepath:
+            colnames   =  ['No','logU','lognH','logAge','NII6548','EW_NII6548','NII6584','EW_NII6584','SII6716','EW_SII6716',
+                           'SII6731','EW_SII6731','OI6300','EW_OI6300','OIII4959','EW_OIII4959','OIII5007','EW_OIII5007',
+                           'Ha6563','EW_Ha6563','Hb4861','EW_Hb4861','HeII4686','EW_HeII4686']
+            filename   = filepath+typestr+'/Optical_data_'+typestr+'_z'+Zgasstring+'.dat'
 
-    else:
-        sys.exit('Did not find "UV" or "Optical" in file path so cannot figure out what format to use')
+        else:
+            sys.exit('Did not find "UV" or "Optical" in file path so cannot figure out what format to use')
 
     if verbose: print(' - Attempting to load data from:\n   '+filename)
     modeldata  = aascii.read(filename,names=colnames)
