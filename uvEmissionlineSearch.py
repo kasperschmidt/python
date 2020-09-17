@@ -11895,17 +11895,23 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,verbose=True):
+def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,objectsAsDots=False,pointingswithnumbers=True,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
-    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV'
     mastercat   = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
     # infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JKthesisInfo.fits'
     infofile    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
-    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,verbose=True)
+
+    # with object details
+    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV'
+    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,objectsAsDots=False,pointingswithnumbers=True,verbose=True)
+
+    # more publication friendly:
+    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV_pubfriendly'
+    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,objectsAsDots=True,pointingswithnumbers=False,verbose=True)
 
     """
     agn, agncand = uves.get_AGN_ids()
@@ -11957,15 +11963,22 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
                       '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci_lowres.fits',
                       '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci_lowres.fits']
 
+
     # imagefiles = ['/Users/kschmidt/work/images_MAST/MUSEWidePointings/wfc3_160w_candels-cdfs-15_cut_v1.0.fits',
     #               '/Users/kschmidt/work/images_MAST/cosmos_mosaic_Shrink50.fits']
     # vmin=0.0001
     # vmax=0.5
 
-    pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings.reg',
-                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings.reg',
-                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg',
-                       '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg']
+    if pointingswithnumbers:
+        pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings.reg',
+                           '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings.reg',
+                           '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg',
+                           '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings.reg']
+    else:
+        pointingregions = ['/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cdfs_pointings_nonumbers.reg',
+                           '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_cosmos_pointings_nonumbers.reg',
+                           '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings_nonumbers.reg',
+                           '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings_nonumbers.reg']
 
     titletexts = ['HUDF Parallels and GOODS-S','COSMOS','The UDF mosaic and UDF10','MXDF']
 
@@ -11982,12 +11995,12 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
 
         if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
             fig = plt.figure(figsize=(5, 5))
-            vmin = 1.5
-            vmax = 40.
+            vmin = 0.1
+            vmax = 10.
         elif 'cosmos_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
             fig = plt.figure(figsize=(5, 5))
-            vmin = 1.5
-            vmax = 40.
+            vmin = 0.5
+            vmax = 10.
         elif 'hlsp_xdf_hst_acswfc-60mas_hudf_f814w_v1_sci' in imagefile:
             fig = plt.figure(figsize=(5, 5))
             vmin = 0.001
@@ -11995,7 +12008,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
         elif 'hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci' in imagefile:
             fig = plt.figure(figsize=(5, 5))
             vmin = 0.0001
-            vmax = 1.
+            vmax = 5.0
         else:
             fig = plt.figure(figsize=(5, 5))
             vmin = 0.0001
@@ -12072,32 +12085,39 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
 
                 infoent = np.where(infodat['id'] == objid)[0]
 
-                if objid in masterdat['id'][sel_LAEs]:
-                    plotmarker = 's'
-                else:
+                if objectsAsDots:
                     plotmarker = 'o'
-
-                if (objid in masterdat['id'][sel_CIII]) & (objid not in masterdat['id'][sel_CIV]):
-                    pointcolor = 'green'
-                elif (objid in masterdat['id'][sel_CIV]) & (objid not in masterdat['id'][sel_CIII]):
-                    pointcolor = 'blue'
-                elif (objid in masterdat['id'][sel_CIV]) & (objid in masterdat['id'][sel_CIII]):
-                    pointcolor = 'orange'
-                else:
-                    pointcolor = 'red'
-
-                if objid in masterdat['id'][sel_UVdet]:
-                    facecolor  = pointcolor
-                    edgecolor  = 'None'
-                    symsize    = 10
-                else:
-                    facecolor  = 'None'
-                    edgecolor  = pointcolor
+                    facecolor = 'forestgreen'
+                    edgecolor = 'forestgreen'
                     symsize    = 7
+                else:
 
-                if (objid in agn) or (objid in agncand):
-                    plotmarker = '*'
-                    symsize = 20
+                    if objid in masterdat['id'][sel_LAEs]:
+                        plotmarker = 's'
+                    else:
+                        plotmarker = 'o'
+
+                    if (objid in masterdat['id'][sel_CIII]) & (objid not in masterdat['id'][sel_CIV]):
+                        pointcolor = 'green'
+                    elif (objid in masterdat['id'][sel_CIV]) & (objid not in masterdat['id'][sel_CIII]):
+                        pointcolor = 'blue'
+                    elif (objid in masterdat['id'][sel_CIV]) & (objid in masterdat['id'][sel_CIII]):
+                        pointcolor = 'orange'
+                    else:
+                        pointcolor = 'red'
+
+                    if objid in masterdat['id'][sel_UVdet]:
+                        facecolor  = pointcolor
+                        edgecolor  = 'None'
+                        symsize    = 10
+                    else:
+                        facecolor  = 'None'
+                        edgecolor  = pointcolor
+                        symsize    = 7
+
+                    if (objid in agn) or (objid in agncand):
+                        plotmarker = '*'
+                        symsize = 20
 
                 if 'MXDF' in fields[ii]:
                     symsize = symsize*2.0
