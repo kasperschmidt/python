@@ -36,7 +36,7 @@ import datetime
 import time
 import numpy as np
 import subprocess
-import pyfits
+import astropy.io.fits as afits
 import scipy.ndimage
 import MiGs
 import collections
@@ -177,7 +177,7 @@ def get_objinfo(infofile,objid,idcol):
     if infofile == None:
         returndat = None
     else:
-        infodat = pyfits.open(infofile)[1].data
+        infodat = afits.open(infofile)[1].data
         objent  = np.where(infodat[idcol].astype(int) == int(objid))[0]
 
         if len(objent) == 0:
@@ -415,7 +415,7 @@ class Application_1D(Frame):
             self.ds9windowopen = False
 
         if skyspectrum:
-            self.skydat = pyfits.open(skyspectrum)[1].data
+            self.skydat = afits.open(skyspectrum)[1].data
 
         if os.path.exists(self.dir):
             self.twodfits = glob.glob(self.dir)
@@ -889,7 +889,7 @@ class Application_1D(Frame):
         self.DP_fluxerr_all  = []
         self.DP_contam_all   = []
         for f1D in self.fits1Dfound:
-            dat1D   = pyfits.open(f1D)[1].data
+            dat1D   = afits.open(f1D)[1].data
             self.DP_wave_all.append(dat1D[self.col_wave])
             self.DP_flux_all.append(dat1D[self.col_flux])
             self.DP_fluxerr_all.append(dat1D[self.col_fluxerr])
@@ -990,7 +990,7 @@ class Application_1D(Frame):
                     if (np.max(wave1D) < 1.0) & (len(objinfo) == 1):
                         fieldno          = objinfo['FIELD_ID']
                         skyMUSEfilename  = glob.glob(self.MUSEskydatdir+'SKY*cdfs*-'+str("%.2d" % fieldno)+'*av.fits')
-                        skyMUSE          = pyfits.open(skyMUSEfilename[0])[1].data
+                        skyMUSE          = afits.open(skyMUSEfilename[0])[1].data
                         skywave = skyMUSE['lambda']/self.DPxscale
                         skyent  = np.where((skywave > np.min(wave1D)) & (skywave < np.max(wave1D)))[0]
                         skywave = skywave[skyent]
