@@ -333,15 +333,29 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         range50_sin = np.array([])
 
         for oo in np.arange(Nobj):
-            if key in keylist_SF:
-                meanval_SF = np.append(meanval_SF,stat_SF[oo][key][0])
-                stdval_SF = np.append(stdval_SF,stat_SF[oo][key][1])
-                range50_SF = np.append(range50_SF,stat_SF[oo][key][7]-stat_SF[oo][key][7])
+            listent = 0 # NEOGAL SF
+            if key in keylists[listent]:
+                meanval_SF = np.append(meanval_SF,collectionstats[listent][oo][key][0])
+                stdval_SF = np.append(stdval_SF,collectionstats[listent][oo][key][1])
+                range50_SF = np.append(range50_SF,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
 
-            if key in keylist_AGN:
-                meanval_AGN = np.append(meanval_AGN,stat_AGN[oo][key][0])
-                stdval_AGN = np.append(stdval_AGN,stat_AGN[oo][key][1])
-                range50_AGN = np.append(range50_AGN,stat_AGN[oo][key][7]-stat_AGN[oo][key][7])
+            listent = 1 # NEOGAL AGN
+            if key in keylists[listent]:
+                meanval_AGN = np.append(meanval_AGN,collectionstats[listent][oo][key][0])
+                stdval_AGN = np.append(stdval_AGN,collectionstats[listent][oo][key][1])
+                range50_AGN = np.append(range50_AGN,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
+
+            listent = 2 # BPASS binaries
+            if key in keylists[listent]:
+                meanval_bin = np.append(meanval_bin,collectionstats[listent][oo][key][0])
+                stdval_bin = np.append(stdval_bin,collectionstats[listent][oo][key][1])
+                range50_bin = np.append(range50_bin,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
+
+            listent = 3 # BPASS singles
+            if key in keylists[listent]:
+                meanval_sin = np.append(meanval_sin,collectionstats[listent][oo][key][0])
+                stdval_sin = np.append(stdval_sin,collectionstats[listent][oo][key][1])
+                range50_sin = np.append(range50_sin,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
 
         #-------- PLOT 'EM --------
         plotname_stat = plotname.replace('.pdf','_meanVSerr_'+key+'.pdf')
@@ -389,7 +403,7 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
             markerzorder = 20
 
 
-
+            SFcol = collectionscolors[0]
             if mfc:
                 markerfacecolor = SFcol
             else:
@@ -401,6 +415,7 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
                              markerfacecolor=markerfacecolor,ecolor=SFcol,
                              markeredgecolor=SFcol,zorder=markerzorder)
 
+            AGNcol = collectionscolors[1]
             if mfc:
                 markerfacecolor = AGNcol
             else:
@@ -412,13 +427,37 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
                              markerfacecolor=markerfacecolor,ecolor=AGNcol,
                              markeredgecolor=AGNcol,zorder=markerzorder)
 
+            bincol = collectionscolors[2]
+            if mfc:
+                markerfacecolor = bincol
+            else:
+                markerfacecolor = 'None'
+
+            if len(meanval_bin) > 0:
+                plt.errorbar(meanval_bin[oo],stdval_bin[oo],xerr=None,yerr=None,capthick=0.5,
+                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                             markerfacecolor=markerfacecolor,ecolor=bincol,
+                             markeredgecolor=bincol,zorder=markerzorder)
+
+            sincol = collectionscolors[3]
+            if mfc:
+                markerfacecolor = sincol
+            else:
+                markerfacecolor = 'None'
+
+            if len(meanval_sin) > 0:
+                plt.errorbar(meanval_sin[oo],stdval_sin[oo],xerr=None,yerr=None,capthick=0.5,
+                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                             markerfacecolor=markerfacecolor,ecolor=sincol,
+                             markeredgecolor=sincol,zorder=markerzorder)
+
         plt.xlim(xranges[key])
         xminsys, xmaxsys = plt.xlim()
 
         # plt.ylim(yranges[key])
         yminsys, ymaxsys = plt.ylim()
 
-        plt.xlabel(nm.keylabels(key))
+        plt.xlabel(pp.keylabels(key))
         plt.ylabel('Standard deviation of parameter distribution')
 
         if (key == 'Zgas') or (key == 'nh'):
@@ -453,6 +492,19 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
             axHistx.hist(meanval_AGN[np.isfinite(meanval_AGN)],linestyle=':',
                          bins=bindefs,histtype='step',color=AGNcol)
 
+        if len(meanval_bin) > 0:
+            axHistx.hist(meanval_bin[objidall < 1e9][np.isfinite(meanval_bin[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=bincol)
+            axHistx.hist(meanval_bin[np.isfinite(meanval_bin)],linestyle=':',
+                         bins=bindefs,histtype='step',color=bincol)
+
+        if len(meanval_sin) > 0:
+            axHistx.hist(meanval_sin[objidall < 1e9][np.isfinite(meanval_sin[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=sincol)
+            axHistx.hist(meanval_sin[np.isfinite(meanval_sin)],linestyle=':',
+                         bins=bindefs,histtype='step',color=sincol)
+
+
         axHistx.set_xticks([])
         axHistx.set_xlim([xminsys,xmaxsys])
 
@@ -471,6 +523,17 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
                          bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
             axHisty.hist(stdval_AGN[np.isfinite(stdval_AGN)],linestyle=':',
                          bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+        if len(meanval_bin) > 0:
+            axHisty.hist(stdval_bin[objidall < 1e9][np.isfinite(stdval_bin[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=bincol, orientation='horizontal')
+            axHisty.hist(stdval_bin[np.isfinite(stdval_bin)],linestyle=':',
+                         bins=bindefs,histtype='step',color=bincol, orientation='horizontal')
+        if len(meanval_sin) > 0:
+            axHisty.hist(stdval_sin[objidall < 1e9][np.isfinite(stdval_sin[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=sincol, orientation='horizontal')
+            axHisty.hist(stdval_sin[np.isfinite(stdval_sin)],linestyle=':',
+                         bins=bindefs,histtype='step',color=sincol, orientation='horizontal')
+
 
         axHisty.set_yticks([])
         axHisty.set_ylim([yminsys,ymaxsys])
@@ -481,7 +544,6 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         plt.close('all')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
     xkey   = 'Zgas'
     xlabel = 'Z'
     ykey   = 'logUs'
@@ -491,19 +553,18 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
     yrange = xranges[ykey]
 
     plotname_obj = plotname.replace('.pdf','_meanANDstd_ZgasVSlogUs.pdf')
-    nm.plot_stat_diagram(plotname_obj,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
+    pp.plot_stat_diagram(plotname_obj,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
                          xlog=True,ylog=False,datsetup='meanstd',verbose=verbose)
 
 
     plotname_obj = plotname.replace('.pdf','_median68percent_ZgasVSlogUs.pdf')
-    nm.plot_stat_diagram(plotname_obj,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
+    pp.plot_stat_diagram(plotname_obj,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
                          xlog=True,ylog=False,datsetup='med68',verbose=verbose)
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AGNcol,xrange,yrange,
+def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
                       xlog=False,ylog=False,datsetup='med68',verbose=True):
 
-    objidall = np.array([statobj['id'] for statobj in stat_SF])
+    objidall = np.array([statobj['id'] for statobj in collectionstats[0]])
 
     if datsetup == 'med68':
         cen_ent     = 2
@@ -522,43 +583,22 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         errlow_ent  = 1
         errhigh_ent = 1
 
-    xvalues_SF  = []
-    xerrlow_SF  = []
-    xerrhigh_SF = []
+    xvalues  = [[],[],[],[]]
+    xerrlow  = [[],[],[],[]]
+    xerrhigh = [[],[],[],[]]
+    yvalues  = [[],[],[],[]]
+    yerrlow  = [[],[],[],[]]
+    yerrhigh = [[],[],[],[]]
 
-    yvalues_SF  = []
-    yerrlow_SF  = []
-    yerrhigh_SF = []
+    for oo in np.arange(len(collectionstats[0])):
+        for cc, colstat in enumerate(collectionstats):
+            xvalues[cc].append(colstat[oo][xkey][cen_ent])
+            xerrlow[cc].append(colstat[oo][xkey][errlow_ent])
+            xerrhigh[cc].append(colstat[oo][xkey][errhigh_ent])
 
-    xvalues_AGN  = []
-    xerrlow_AGN  = []
-    xerrhigh_AGN = []
-
-    yvalues_AGN  = []
-    yerrlow_AGN  = []
-    yerrhigh_AGN = []
-
-    for oo in np.arange(len(stat_SF)):
-        xvalues_SF.append(stat_SF[oo][xkey][cen_ent])
-        xerrlow_SF.append(stat_SF[oo][xkey][errlow_ent])
-        xerrhigh_SF.append(stat_SF[oo][xkey][errhigh_ent])
-
-        yvalues_SF.append(stat_SF[oo][ykey][cen_ent])
-        yerrlow_SF.append(stat_SF[oo][ykey][errlow_ent])
-        yerrhigh_SF.append(stat_SF[oo][ykey][errhigh_ent])
-
-        xvalues_AGN.append(stat_AGN[oo][xkey][cen_ent])
-        xerrlow_AGN.append(stat_AGN[oo][xkey][errlow_ent])
-        xerrhigh_AGN.append(stat_AGN[oo][xkey][errhigh_ent])
-
-        yvalues_AGN.append(stat_AGN[oo][ykey][cen_ent])
-        yerrlow_AGN.append(stat_AGN[oo][ykey][errlow_ent])
-        yerrhigh_AGN.append(stat_AGN[oo][ykey][errhigh_ent])
-
-    xvalues_SF  = np.asarray(xvalues_SF )
-    xvalues_AGN = np.asarray(xvalues_AGN)
-    yvalues_SF  = np.asarray(yvalues_SF )
-    yvalues_AGN = np.asarray(yvalues_AGN)
+            yvalues[cc].append(colstat[oo][ykey][cen_ent])
+            yerrlow[cc].append(colstat[oo][ykey][errlow_ent])
+            yerrhigh[cc].append(colstat[oo][ykey][errhigh_ent])
 
     fig = plt.figure(1, figsize=(6, 6))
     # definitions for the axes
@@ -586,8 +626,8 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
     plt.ylim(yrange)
     yminsys, ymaxsys = plt.ylim()
 
-    for oo in np.arange(len(stat_SF)): # loop necessary for coloring and markers
-        objid = stat_SF[oo]['id']
+    for oo in np.arange(len(collectionstats[0])): # loop necessary for coloring and markers
+        objid = collectionstats[0][oo]['id']
         mfc   = True
         if (objid < 6e8): # CDFS and COSMOS
             markersym   = 'o'
@@ -608,43 +648,27 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         # change color of limits
         markerzorder = 20
 
-        if mfc:
-            markerfacecolor = SFcol
-        else:
-            markerfacecolor = 'None'
+        for cc, colcol in enumerate(collectionscolors):
+            if mfc:
+                markerfacecolor = colcol
+            else:
+                markerfacecolor = 'None'
 
-        if datsetup == 'meanstd':
-            plt.errorbar(xvalues_SF[oo],yvalues_SF[oo],xerr=xerrlow_SF[oo],yerr=yerrlow_SF[oo],capthick=0.5,
-                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=markerfacecolor,ecolor=SFcol,
-                         markeredgecolor=SFcol,zorder=markerzorder)
-        else:
-            plt.errorbar(xvalues_SF[oo],yvalues_SF[oo],
-                         xerr=[[xvalues_SF[oo]-xerrlow_SF[oo],xerrhigh_SF[oo]-xvalues_SF[oo]]],
-                         yerr=[[yvalues_SF[oo]-yerrlow_SF[oo],yerrhigh_SF[oo]-yvalues_SF[oo]]],capthick=0.5,
-                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=markerfacecolor,ecolor=SFcol,
-                         markeredgecolor=SFcol,zorder=markerzorder)
-
-
-        if mfc:
-            markerfacecolor = AGNcol
-        else:
-            markerfacecolor = 'None'
-
-        if datsetup == 'meanstd':
-            plt.errorbar(xvalues_AGN[oo],yvalues_AGN[oo],xerr=xerrlow_AGN[oo],yerr=yerrlow_AGN[oo],capthick=0.5,
-                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=markerfacecolor,ecolor=AGNcol,
-                         markeredgecolor=AGNcol,zorder=markerzorder)
-        else:
-            plt.errorbar(xvalues_AGN[oo],yvalues_AGN[oo],
-                         xerr=[[xvalues_AGN[oo]-xerrlow_AGN[oo],xerrhigh_AGN[oo]-xvalues_AGN[oo]]],
-                         yerr=[[yvalues_AGN[oo]-yerrlow_AGN[oo],yerrhigh_AGN[oo]-yvalues_AGN[oo]]],capthick=0.5,
-                         marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                         markerfacecolor=markerfacecolor,ecolor=AGNcol,
-                         markeredgecolor=AGNcol,zorder=markerzorder)
-
+            if datsetup == 'meanstd':
+                plt.errorbar(np.asarray(xvalues[cc])[oo],np.asarray(yvalues[cc])[oo],
+                             xerr=np.asarray(xerrlow[cc])[oo],yerr=np.asarray(yerrlow[cc])[oo],capthick=0.5,
+                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                             markerfacecolor=markerfacecolor,ecolor=colcol,
+                             markeredgecolor=colcol,zorder=markerzorder)
+            else:
+                plt.errorbar(np.asarray(xvalues[cc])[oo],np.asarray(yvalues[cc])[oo],
+                             xerr=[[np.asarray(xvalues[cc])[oo]-np.asarray(xerrlow[cc])[oo],
+                                    np.asarray(xerrhigh[cc])[oo]-np.asarray(xvalues[cc])[oo]]],
+                             yerr=[[np.asarray(yvalues[cc])[oo]-np.asarray(yerrlow[cc])[oo],
+                                    np.asarray(yerrhigh[cc])[oo]-np.asarray(yvalues[cc])[oo]]],capthick=0.5,
+                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                             markerfacecolor=markerfacecolor,ecolor=colcol,
+                             markeredgecolor=colcol,zorder=markerzorder)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -668,17 +692,12 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
         axHistx.set_xscale('log')
 
-    if len(xvalues_SF) > 0:
-        axHistx.hist(xvalues_SF[objidall < 1e9][np.isfinite(xvalues_SF[objidall < 1e9])],linestyle='-',
-                     bins=bindefs,histtype='step',color=SFcol)
-        axHistx.hist(xvalues_SF[np.isfinite(xvalues_SF)],linestyle=':',
-                     bins=bindefs,histtype='step',color=SFcol)
-
-    if len(xvalues_AGN) > 0:
-        axHistx.hist(xvalues_AGN[objidall < 1e9][np.isfinite(xvalues_AGN[objidall < 1e9])],linestyle='-',
-                     bins=bindefs,histtype='step',color=AGNcol)
-        axHistx.hist(xvalues_AGN[np.isfinite(xvalues_AGN)],linestyle=':',
-                     bins=bindefs,histtype='step',color=AGNcol)
+    for cc, colcol in enumerate(collectionscolors):
+        if len(xvalues[cc]) > 0:
+            axHistx.hist(np.asarray(xvalues[cc])[objidall < 1e9][np.isfinite(np.asarray(xvalues[cc])[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=colcol)
+            axHistx.hist(np.asarray(xvalues[cc])[np.isfinite(np.asarray(xvalues[cc]))],linestyle=':',
+                         bins=bindefs,histtype='step',color=colcol)
 
     axHistx.set_xticks([])
     axHistx.set_xlim([xminsys,xmaxsys])
@@ -689,37 +708,16 @@ def plot_stat_diagram(plotname,stat_SF,stat_AGN,xkey,ykey,xlabel,ylabel,SFcol,AG
         bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
         axHisty.set_yscale('log')
 
-    if len(yvalues_SF) > 0:
-        axHisty.hist(yvalues_SF[objidall < 1e9][np.isfinite(yvalues_SF[objidall < 1e9])],linestyle='-',
-                     bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
-        axHisty.hist(yvalues_SF[np.isfinite(yvalues_SF)],linestyle=':',
-                     bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
-    if len(yvalues_AGN) > 0:
-        axHisty.hist(yvalues_AGN[objidall < 1e9][np.isfinite(yvalues_AGN[objidall < 1e9])],linestyle='-',
-                     bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
-        axHisty.hist(yvalues_AGN[np.isfinite(yvalues_AGN)],linestyle=':',
-                     bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
+    for cc, colcol in enumerate(collectionscolors):
+
+        if len(yvalues[cc]) > 0:
+            axHisty.hist(np.asarray(yvalues[cc])[objidall < 1e9][np.isfinite(np.asarray(yvalues[cc])[objidall < 1e9])],linestyle='-',
+                         bins=bindefs,histtype='step',color=colcol, orientation='horizontal')
+            axHisty.hist(np.asarray(yvalues[cc])[np.isfinite(np.asarray(yvalues[cc]))],linestyle=':',
+                         bins=bindefs,histtype='step',color=colcol, orientation='horizontal')
 
     axHisty.set_yticks([])
     axHisty.set_ylim([yminsys,ymaxsys])
-
-    # if colorcode:
-    #     cb      = plt.colorbar(m,extend=cextend,orientation='vertical',
-    #                            pad=0.01,aspect=10,shrink=0.35,anchor=(-15.0,1.58),use_gridspec=False)
-    #     cb.set_label(clabel)
-
-    #--------- LEGEND ---------
-    # plt.errorbar(-5000,-5000,xerr=None,yerr=1,marker='o',lw=0, markersize=marksize,alpha=1.0,
-    #              markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label='MUSE-Wide LAE')
-    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='*',lw=0, markersize=marksize*2,alpha=1.0,
-    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN')
-    # plt.errorbar(-5000,-5000,xerr=None,yerr=None,marker='D',lw=0, markersize=marksize,alpha=1.0,
-    #              markerfacecolor='None',ecolor='None',markeredgecolor='black',zorder=1,label='AGN candidate')
-    #
-    # leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=5,numpoints=1,
-    #                  bbox_to_anchor=(0.5, 1.1),)  # add the legend
-    # leg.get_frame().set_alpha(0.7)
-    #--------------------------
 
     if verbose: print('   Saving plot to '+plotname)
     plt.savefig(plotname)
@@ -824,12 +822,12 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
                             0.017, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07])-0.00001
 
         plotkey = 'Zgas'
-        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        pp.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
         plt.xscale('log')
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([0.00001,0.1])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -839,11 +837,11 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.arange(-4.75, -0.25, 0.5)
 
         plotkey = 'logUs'
-        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        pp.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-5,-0.5])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -853,11 +851,11 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.array([0.0, 0.2, 0.4, 0.6])
 
         plotkey = 'xid'
-        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        pp.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-0.05,0.65])
         plt.ylabel(ylabel)
 
@@ -868,11 +866,11 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         bindefs = 10**np.array([1.5, 2.5, 3.5, 4.5])
 
         plotkey = 'nh'
-        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
+        pp.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],parametercollection_AGN[oo][plotkey],
                                                   stat_SF[oo][plotkey],stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
         plt.xscale('log')
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([10,1e5])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -883,11 +881,11 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.arange(0.05,1.5,0.06)
 
         plotkey = 'COCOsol'
-        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],None,
+        pp.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],None,
                                                   stat_SF[oo][plotkey],None,
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([0.00,1.55])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -897,11 +895,11 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
         bindefs = np.array([0,200,400])
 
         plotkey = 'mup'
-        nm.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],None,
+        pp.plot_modelparametercollections_addhist(parametercollection_SF[oo][plotkey],None,
                                                   stat_SF[oo][plotkey],None,
                                                   SFcol,AGNcol,LW,bindefs=bindefs,Nbins=None)
 
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-10,410])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -912,11 +910,11 @@ def plot_modelparametercollections(plotname, parametercollection_SF, parameterco
 
         plotkey = 'alpha'
         Nbins   = 10
-        nm.plot_modelparametercollections_addhist(None,parametercollection_AGN[oo][plotkey],
+        pp.plot_modelparametercollections_addhist(None,parametercollection_AGN[oo][plotkey],
                                                   None,stat_AGN[oo][plotkey],
                                                   SFcol,AGNcol,LW,bindefs=None,Nbins=Nbins)
 
-        plt.xlabel(nm.keylabels(plotkey))
+        plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-2.2,-0.9])
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -942,7 +940,7 @@ def plot_modelparametercollections_addhist(paramcol_SF,paramcol_AGN,stat_SF,stat
     Nbins
 
     --- EXAMPLE OF USE ---
-    see nm.plot_modelparametercollections() above
+    see pp.plot_modelparametercollections() above
 
     """
     if (paramcol_SF is None) & (paramcol_AGN is not None):
@@ -1016,6 +1014,12 @@ def keylabels(keyinput):
     Function returning LaTeX label for photionisation keyword
 
     """
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def keylabels(keyinput):
+    """
+    Function returning LaTeX label for photoionization keywords
+
+    """
     labeldic = {}
     labeldic['Zgas']    =  'Z'
     labeldic['logUs']   =  'log(U)'
@@ -1024,5 +1028,6 @@ def keylabels(keyinput):
     labeldic['COCOsol'] =  'C/O [(C/O)$_\\textrm{sun}$]'
     labeldic['mup']     =  'm$_\\textrm{up}$ [M$_\\textrm{sun}$]'
     labeldic['alpha']   =  '$\\alpha$'
+    labeldic['logAge']  =  'log(Age) [yr]'
     return labeldic[keyinput]
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
