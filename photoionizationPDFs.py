@@ -186,7 +186,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
                 goodent_bin    = np.intersect1d(goodent_bin,goodent_FR_bin)
 
             else:
-                if verbose: print(' WARNING: No constraints on flux ratio '+FR+' for BPASS binary models')
+                if verbose & (Nobj < 10): print(' WARNING: No constraints on flux ratio '+FR+' for BPASS binary models')
 
             if (fluxdic[numerator][2] is not None) & (fluxdic[denominator][2] is not None):
                 zerovals = np.where(fluxdic[denominator][3] == 0.0)[0]
@@ -204,7 +204,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
 
                 goodent_sin    = np.intersect1d(goodent_sin,goodent_FR_sin)
             else:
-                if verbose: print(' WARNING: No constraints on flux ratio '+FR+' for BPASS singular models')
+                if verbose & (Nobj < 10): print(' WARNING: No constraints on flux ratio '+FR+' for BPASS singular models')
 
         parametercollection_SF[oo]  = {'id'     : FRdic_input['id'],
                                        'Zgas'   : NEOGAL_SF['Zgas'][goodent_SF],
