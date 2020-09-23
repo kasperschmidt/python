@@ -129,7 +129,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
     Nobj = len(fluxratiodictionarylist)
     if verbose: print(' - Get model selection given flux ratio ranges according to '+
                       str(Nobj)+" object's data provided ")
-    if verbose: print('   Selection based on the total number of photoionization models: \n'
+    if verbose: print('   Selection based on the total number of photoionization models: \n '
                       '   NEOGAL SF      = '+str(len(NEOGAL_SF))+'\n '+
                       '   NEOGAL AGN     = '+str(len(NEOGAL_AGN))+'\n '+
                       '   BPASS binaries = '+str(len(BPASS_bin))+'\n '+
