@@ -19,7 +19,7 @@ import NEOGALmodels as nm
 import BPASSmodels as bm
 import photoionizationPDFs as pp
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename='photoionizationmodelPDFs',
+def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFyscale=False,basename='photoionizationmodelPDFs',
                          col_NEOGAL_AGN='blue',col_NEOGAL_SF='red',col_BPASS_bin='green',col_BPASS_sin='orange',verbose=True):
     """
     Function to estimate "PDFs" from the SF and AGN NEOGAL models given a set of flux ratio measurements.
@@ -33,14 +33,14 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
 
 
     --- EXAMPLE OF USE ---
-    FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.04,0.45],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e35],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[0.,10.0], 'OIII1663/CIV1550':[1e-2,1e35], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e35], 'CIV1550/SiIII1888':[1e-2,1e35]}]
-
     import photoionizationPDFs as pp
-    basename= '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/photoionizationPDFs/photoionizationmodelPDFs'
-    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdic, basename=basename, generatePDFplots=True)
+    basename= '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/photoionizationPDFs/testing/photoionizationmodelPDFs'
+
+    FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.04,0.45],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e35],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[0.,10.0], 'OIII1663/CIV1550':[1e-2,1e35], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e35], 'CIV1550/SiIII1888':[1e-2,1e35]}]
+    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdic, basename=basename, generatePDFplots=True, maxPDFyscale=True)
 
     FRdicNC = [{'id':99}] # run for a single objects with no constraints to get instrinsic distribution
-    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True)
+    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True, maxPDFyscale=True)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -274,7 +274,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
         if verbose: print(' - Plotting the extracted model parameter collections')
         plotname = basename+'_PDFs.pdf'
         pp.plot_modelparametercollections(plotname, paramcollections, collectionstats, collectionscolors,
-                                          fluxratiodictionarylist=fluxratiodictionarylist,
+                                          fluxratiodictionarylist=fluxratiodictionarylist, maxPDFyscale=maxPDFyscale,
                                           verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -756,7 +756,7 @@ def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectio
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_modelparametercollections(plotname, paramcollections, collectionstats, collectionscolors,
+def plot_modelparametercollections(plotname, paramcollections, collectionstats, collectionscolors, maxPDFyscale=False,
                                    constraintsstr=None, fluxratiodictionarylist=None, verbose=True):
     """
 
@@ -875,9 +875,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         #                     0.017, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08])
         bindefs = 10**np.arange(-6,-0.8,0.1)
 
+        if maxPDFyscale:
+            yrange = [0,3500]
+
         plotkey = 'Zgas'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
 
         plt.xscale('log')
         plt.xlabel(pp.keylabels(plotkey))
@@ -889,9 +892,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         bindefs = np.arange(-5.5, -0.0, 0.05)-0.025
 
+        if maxPDFyscale:
+            yrange = [0,2200]
+
         plotkey = 'logUs'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
 
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([np.min(bindefs),np.max(bindefs)])
@@ -902,9 +908,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         bindefs = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])-0.05
 
+        if maxPDFyscale:
+            yrange = [0,4000]
+
         plotkey = 'xid'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
 
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-0.05,0.65])
@@ -916,9 +925,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         bindefs = 10**(np.arange(0.0, 5.0, 0.25)-0.125)
 
+        if maxPDFyscale:
+            yrange = [0,6300]
+
         plotkey = 'nh'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
         plt.xscale('log')
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([0.5,1e5])
@@ -930,9 +942,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         #bindefs = np.array([0.10, 0.14, 0.20, 0.27, 0.38, 0.52, 0.72, 1.00, 1.40])
         bindefs = 10**np.arange(-1.075,1.0,0.05) #np.arange(0.05,1.5,0.06)
 
+        if maxPDFyscale:
+            yrange = [0,1500]
+
         plotkey = 'COCOsol'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
         plt.xscale('log')
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([0.07,2.0])
@@ -943,9 +958,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         bindefs = np.arange(0,400,50)-25
 
+        if maxPDFyscale:
+            yrange = [0,6500]
+
         plotkey = 'mup'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
 
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-10,410])
@@ -956,9 +974,12 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         bindefs = np.arange(-2.05,-1.0,0.1)
 
+        if maxPDFyscale:
+            yrange = [0,1500]
+
         plotkey = 'alpha'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
 
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([-2.2,-0.9])
@@ -969,13 +990,17 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         bindefs = np.arange(5.8,8.2,0.05)-0.025
 
+        if maxPDFyscale:
+            yrange = [0,2200]
+
         plotkey = 'logAge'
         pp.plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,oo,plotkey,
-                                                  LW,bindefs=bindefs,Nbins=None)
+                                                  LW,bindefs=bindefs,Nbins=None,yrange=yrange)
 
         plt.xlabel(pp.keylabels(plotkey))
         plt.xlim([5.8,8.2])
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         #--------- LEGEND ---------
         plt.plot([-1,-1],[0,0],color=collectionscolors[0],linestyle='-',lw=LW,
                  label='NEOGAL SF (Gutkin+16)\n'
@@ -1003,7 +1028,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
     if verbose: print('\n   done...')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_modelparametercollections_addhist(paramcollections,collectionstats,collectionscolors,objindex,plotkey,LW,
-                                           bindefs=None,Nbins=None):
+                                           bindefs=None,Nbins=None,yrange=None):
     """
 
     --- INPUT ---
@@ -1037,7 +1062,10 @@ def plot_modelparametercollections_addhist(paramcollections,collectionstats,coll
             for colindex in colindices:
                 plt.hist(paramcol[colindex], bins=bindefs,histtype='step',color=collectionscolors[colindex])
 
-            yminsys, ymaxsys = plt.ylim()
+            if yrange is None:
+                yminsys, ymaxsys = plt.ylim()
+            else:
+                yminsys, ymaxsys = yrange[0], yrange[1]
 
             for colindex in colindices:
                 plt.plot([colstat[colindex][0]]*2, [yminsys, ymaxsys], '--',lw=LW,alpha=0.5,
@@ -1066,7 +1094,10 @@ def plot_modelparametercollections_addhist(paramcollections,collectionstats,coll
 
             plt.hist(paramcol[colindex], bins=bindefs,histtype='step',color=collectionscolors[colindex])
 
-            yminsys, ymaxsys = plt.ylim()
+            if yrange is None:
+                yminsys, ymaxsys = plt.ylim()
+            else:
+                yminsys, ymaxsys = yrange[0], yrange[1]
 
             plt.plot([colstat[colindex][0]]*2, [yminsys, ymaxsys], '--',lw=LW,alpha=0.5,
                      color=collectionscolors[colindex])  # mean
@@ -1102,7 +1133,10 @@ def plot_modelparametercollections_addhist(paramcollections,collectionstats,coll
                 if paramcol[colindex] is not None:
                     plt.hist(paramcol[colindex], bins=bindefs,histtype='step',color=collectionscolors[colindex])
 
-            yminsys, ymaxsys = plt.ylim()
+            if yrange is None:
+                yminsys, ymaxsys = plt.ylim()
+            else:
+                yminsys, ymaxsys = yrange[0], yrange[1]
 
             for colindex in colindices:
                 if paramcol[colindex] is not None:
