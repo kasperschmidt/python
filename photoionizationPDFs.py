@@ -766,7 +766,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
     --- EXAMPLE OF USE ---
 
     """
-
+    yrange = None # defualt until changed with maxPDFyscale.
     Nobj = len(paramcollections[0])
     if verbose: print(' - Will generate plots of photoionization "PDFs" for all '+str(Nobj)+' objects in parameter collections')
     for oo in np.arange(Nobj):
