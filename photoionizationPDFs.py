@@ -270,16 +270,16 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
     collectionscolors = [col_NEOGAL_SF,col_NEOGAL_AGN,col_BPASS_bin,col_BPASS_sin]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = basename+'_Stats.pdf'
+    pp.plot_stat(plotname,collectionstats,collectionscolors,verbose=verbose)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if generatePDFplots:
         if verbose: print(' - Plotting the extracted model parameter collections')
         plotname = basename+'_PDFs.pdf'
         pp.plot_modelparametercollections(plotname, paramcollections, collectionstats, collectionscolors,
                                           fluxratiodictionarylist=fluxratiodictionarylist, maxPDFyscale=maxPDFyscale,
                                           verbose=verbose)
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plotname = basename+'_Stats.pdf'
-    pp.plot_stat(plotname,collectionstats,collectionscolors,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return paramcollections, collectionstats
