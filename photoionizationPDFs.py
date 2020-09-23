@@ -33,13 +33,13 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
 
 
     --- EXAMPLE OF USE ---
-    FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.04,0.45],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e10],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[0.,10.0], 'OIII1663/CIV1550':[1e-2,1e10], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e10], 'CIV1550/SiIII1888':[1e-2,1e10]}]
+    FRdic = [{'id':111111111111, 'HeII1640/OIII1663':[0.04,0.45],'CIII1908/CIV1550':[1.0,10.0]}, {'id':222222222222, 'OIII1663/HeII1640':[1e-1,1.0],'CIII1908/CIV1550':[0.1,10.0]}, {'id':333333, 'OIII1663/HeII1640':[1e2,1e3],'CIII1908/CIV1550':[1e-3,1e-2]}, {'id':444444, 'OIII1663/HeII1640':[1e-2,1e-1],'CIII1908/CIV1550':[5e-1,1e-0]}, {'id':555555, 'OIII1663/HeII1640':[1e-2,1e35],'CIII1908/CIV1550':[5e-1,1e-0], 'OIII1663/CIII1908':[0.,10.0], 'OIII1663/CIV1550':[1e-2,1e35], 'OIII1663/SiIII1888':[1e-2,1e1], 'CIII1908/SiIII1888':[1e-2,1e35], 'CIV1550/SiIII1888':[1e-2,1e35]}]
 
     import photoionizationPDFs as pp
     basename= '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/photoionizationPDFs/photoionizationmodelPDFs'
     paramcollections, collectionstats = pp.estimate_object_PDFs(FRdic, basename=basename, generatePDFplots=True)
 
-    FRdicNC = [{'id':99, 'HeII1640/OIII1663':[0.0,1e10]}] # run for a single objects with no constraints to get instrinsic distribution
+    FRdicNC = [{'id':99}] # run for a single objects with no constraints to get instrinsic distribution
     paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True)
 
     """
@@ -54,44 +54,45 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
     if verbose: print(' - Define all possible line ratios from the lines:\n    '
                       'NV1240, CIV1550, CIII1908, HeII1640, OIII1663, and SiIII1888')
     fluxratiodic = {}
-    fluxratiodic['NV1240/CIV1550']     =   [0,1e10]
-    fluxratiodic['NV1240/CIII1908']    =   [0,1e10]
-    fluxratiodic['NV1240/HeII1640']    =   [0,1e10]
-    fluxratiodic['NV1240/OIII1663']    =   [0,1e10]
-    fluxratiodic['NV1240/SiIII1888']   =   [0,1e10]
+    fluxratiodic['NV1240/CIV1550']     =   [0,1e35]
+    fluxratiodic['NV1240/CIII1908']    =   [0,1e35]
+    fluxratiodic['NV1240/HeII1640']    =   [0,1e35]
+    fluxratiodic['NV1240/OIII1663']    =   [0,1e35]
+    fluxratiodic['NV1240/SiIII1888']   =   [0,1e35]
 
-    fluxratiodic['CIV1550/NV1240']     =   [0,1e10]
-    fluxratiodic['CIV1550/CIII1908']   =   [0,1e10]
-    fluxratiodic['CIV1550/HeII1640']   =   [0,1e10]
-    fluxratiodic['CIV1550/OIII1663']   =   [0,1e10]
-    fluxratiodic['CIV1550/SiIII1888']  =   [0,1e10]
+    fluxratiodic['CIV1550/NV1240']     =   [0,1e35]
+    fluxratiodic['CIV1550/CIII1908']   =   [0,1e35]
+    fluxratiodic['CIV1550/HeII1640']   =   [0,1e35]
+    fluxratiodic['CIV1550/OIII1663']   =   [0,1e35]
+    fluxratiodic['CIV1550/SiIII1888']  =   [0,1e35]
 
-    fluxratiodic['CIII1908/NV1240']     =  [0,1e10]
-    fluxratiodic['CIII1908/CIV1550']    =  [0,1e10]
-    fluxratiodic['CIII1908/HeII1640']   =  [0,1e10]
-    fluxratiodic['CIII1908/OIII1663']   =  [0,1e10]
-    fluxratiodic['CIII1908/SiIII1888']  =  [0,1e10]
+    fluxratiodic['CIII1908/NV1240']     =  [0,1e35]
+    fluxratiodic['CIII1908/CIV1550']    =  [0,1e35]
+    fluxratiodic['CIII1908/HeII1640']   =  [0,1e35]
+    fluxratiodic['CIII1908/OIII1663']   =  [0,1e35]
+    fluxratiodic['CIII1908/SiIII1888']  =  [0,1e35]
 
-    fluxratiodic['HeII1640/NV1240']     =  [0,1e10]
-    fluxratiodic['HeII1640/CIV1550']    =  [0,1e10]
-    fluxratiodic['HeII1640/CIII1908']   =  [0,1e10]
-    fluxratiodic['HeII1640/OIII1663']   =  [0,1e10]
-    fluxratiodic['HeII1640/SiIII1888']  =  [0,1e10]
+    fluxratiodic['HeII1640/NV1240']     =  [0,1e35]
+    fluxratiodic['HeII1640/CIV1550']    =  [0,1e35]
+    fluxratiodic['HeII1640/CIII1908']   =  [0,1e35]
+    fluxratiodic['HeII1640/OIII1663']   =  [0,1e35]
+    fluxratiodic['HeII1640/SiIII1888']  =  [0,1e35]
 
-    fluxratiodic['OIII1663/NV1240']     =  [0,1e10]
-    fluxratiodic['OIII1663/CIV1550']    =  [0,1e10]
-    fluxratiodic['OIII1663/CIII1908']   =  [0,1e10]
-    fluxratiodic['OIII1663/HeII1640']   =  [0,1e10]
-    fluxratiodic['OIII1663/SiIII1888']  =  [0,1e10]
+    fluxratiodic['OIII1663/NV1240']     =  [0,1e35]
+    fluxratiodic['OIII1663/CIV1550']    =  [0,1e35]
+    fluxratiodic['OIII1663/CIII1908']   =  [0,1e35]
+    fluxratiodic['OIII1663/HeII1640']   =  [0,1e35]
+    fluxratiodic['OIII1663/SiIII1888']  =  [0,1e35]
 
-    fluxratiodic['SiIII1888/NV1240']    =  [0,1e10]
-    fluxratiodic['SiIII1888/CIV1550']   =  [0,1e10]
-    fluxratiodic['SiIII1888/CIII1908']  =  [0,1e10]
-    fluxratiodic['SiIII1888/HeII1640']  =  [0,1e10]
-    fluxratiodic['SiIII1888/OIII1663']  =  [0,1e10]
+    fluxratiodic['SiIII1888/NV1240']    =  [0,1e35]
+    fluxratiodic['SiIII1888/CIV1550']   =  [0,1e35]
+    fluxratiodic['SiIII1888/CIII1908']  =  [0,1e35]
+    fluxratiodic['SiIII1888/HeII1640']  =  [0,1e35]
+    fluxratiodic['SiIII1888/OIII1663']  =  [0,1e35]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Set up mode line flux vectors')
+    BPASSconversion = 1e-45 # Factor to convert BPASS to 1e45 erg/s like the NEOGAL models fluxes
     fluxdic = {}
     fluxdic['NV1240']    = [NEOGAL_SF['NV1240'],
                             NEOGAL_AGN['NV1240'],
@@ -100,23 +101,23 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
 
     fluxdic['CIV1550']   = [NEOGAL_SF['CIV1548']+NEOGAL_SF['CIV1551'],
                             NEOGAL_AGN['CIV1548']+NEOGAL_AGN['CIV1551'],
-                            BPASS_bin['CIV1548']+BPASS_bin['CIV1551'],
-                            BPASS_sin['CIV1548']+BPASS_sin['CIV1551']]
+                            BPASS_bin['CIV1548']*BPASSconversion+BPASS_bin['CIV1551']*BPASSconversion,
+                            BPASS_sin['CIV1548']*BPASSconversion+BPASS_sin['CIV1551']*BPASSconversion]
 
     fluxdic['CIII1908']  = [NEOGAL_SF['CIII1908'],
                             NEOGAL_AGN['CIII1907']+NEOGAL_AGN['CIII1910'],
-                            BPASS_bin['CIII1907']+BPASS_bin['CIII1910'],
-                            BPASS_sin['CIII1907']+BPASS_sin['CIII1910']]
+                            BPASS_bin['CIII1907']*BPASSconversion+BPASS_bin['CIII1910']*BPASSconversion,
+                            BPASS_sin['CIII1907']*BPASSconversion+BPASS_sin['CIII1910']*BPASSconversion]
 
     fluxdic['HeII1640']  = [NEOGAL_SF['HeII1640'],
                             NEOGAL_AGN['HeII1640'],
-                            BPASS_bin['HeII1640'],
-                            BPASS_sin['HeII1640']]
+                            BPASS_bin['HeII1640']*BPASSconversion,
+                            BPASS_sin['HeII1640']*BPASSconversion]
 
     fluxdic['OIII1663']  = [NEOGAL_SF['OIII1661']+NEOGAL_SF['OIII1666'],
                             NEOGAL_AGN['OIII1661']+NEOGAL_AGN['OIII1666'],
-                            BPASS_bin['OIII1661']+BPASS_bin['OIII1666'],
-                            BPASS_sin['OIII1661']+BPASS_sin['OIII1666']]
+                            BPASS_bin['OIII1661']*BPASSconversion+BPASS_bin['OIII1666']*BPASSconversion,
+                            BPASS_sin['OIII1661']*BPASSconversion+BPASS_sin['OIII1666']*BPASSconversion]
 
     fluxdic['SiIII1888'] = [NEOGAL_SF['SiIII1888'],
                             NEOGAL_AGN['SiIII1888'],
@@ -177,19 +178,33 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,basename
 
 
             if (fluxdic[numerator][2] is not None) & (fluxdic[denominator][2] is not None):
+                zerovals = np.where(fluxdic[denominator][2] == 0.0)[0]
+                fluxdic[denominator][2][zerovals] = 1e-25
+
                 goodent_FR_bin = np.where( (fluxdic[numerator][2]/fluxdic[denominator][2] >= fluxratioconstrains_obj[FR][0]) &
                                            (fluxdic[numerator][2]/fluxdic[denominator][2] <= fluxratioconstrains_obj[FR][1]))[0]
                 goodent_bin    = np.intersect1d(goodent_bin,goodent_FR_bin)
+
             else:
                 if verbose: print(' WARNING: No constraints on flux ratio '+FR+' for BPASS binary models')
 
             if (fluxdic[numerator][2] is not None) & (fluxdic[denominator][2] is not None):
+                zerovals = np.where(fluxdic[denominator][3] == 0.0)[0]
+                fluxdic[denominator][3][zerovals] = 1e-25
+
                 goodent_FR_sin = np.where( (fluxdic[numerator][3]/fluxdic[denominator][3] >= fluxratioconstrains_obj[FR][0]) &
                                            (fluxdic[numerator][3]/fluxdic[denominator][3] <= fluxratioconstrains_obj[FR][1]))[0]
+
+                # if len(goodent_FR_sin) < 40131:
+                #     setdiff         = np.setdiff1d(goodent_sin,goodent_FR_sin)
+                #     print(setdiff)
+                #     setdiff_ratios  = fluxdic[numerator][3][setdiff]/fluxdic[denominator][3][setdiff]
+                #     print(setdiff_ratios)
+                #     pdb.set_trace()
+
                 goodent_sin    = np.intersect1d(goodent_sin,goodent_FR_sin)
             else:
                 if verbose: print(' WARNING: No constraints on flux ratio '+FR+' for BPASS singular models')
-
 
         parametercollection_SF[oo]  = {'id'     : FRdic_input['id'],
                                        'Zgas'   : NEOGAL_SF['Zgas'][goodent_SF],
@@ -794,8 +809,8 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         N_SFtot  = 10621.
         N_AGNtot = 5184.
-        N_bintot = 39229.
-        N_sintot = 34624.
+        N_bintot = 40131.
+        N_sintot = 40131.
 
         titlestr = 'Observational contraints for ID='+str(objid)+': '
 
@@ -808,12 +823,27 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         if fluxratiodictionarylist is not None:
             constraints     = fluxratiodictionarylist[oo]
-            constraintslist = [key+':['+str("%.2f" % constraints[key][0])+','+str("%.2f" % constraints[key][1])+']'
-                               for key in constraints.keys() if key not in ['id']]
+
+            constraintslist = []
+            for key in constraints.keys():
+                if key not in ['id']:
+                    lowstr = str("%.2f" % constraints[key][0])
+
+                    if constraints[key][1] == 1e35:
+                        highstr = '1e35'
+                    else:
+                        highstr = str("%.2f" % constraints[key][1])
+
+                    constraintslist.append(key+':['+lowstr+','+highstr+']')
+            # constraintslist = [key+':['+str("%.2e" % constraints[key][0])+','+str("%.2f" % constraints[key][1])+']'
+            #                    for key in constraints.keys() if key not in ['id']]
+            #
+            # if 'OIII1663/HeII1640' in constraints.keys():
+            #     if constraints['OIII1663/HeII1640'][1] > 1e30: pdb.set_trace()
 
         Ncons = 0
         for constraint in constraintslist:
-            if '[0.00,10000000000.00]' not in constraint:
+            if '[0.00,1e35]' not in constraint:
                 if (Ncons == 3) & ~titlestr.endswith('\n '):
                     titlestr = titlestr+'\n '
 
@@ -823,8 +853,8 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
                 if (Ncons == 11) & ~titlestr.endswith('\n '):
                     titlestr = titlestr+'\n '
 
-                if constraint.endswith(',10000000000.00]'):
-                    titlestr = titlestr+constraint.replace(',10000000000.00]','').replace('[',' $>$ ').replace(':','')+'; '
+                if constraint.endswith(',1e35]'):
+                    titlestr = titlestr+constraint.replace(',1e35]','').replace('[',' $>$ ').replace(':','')+'; '
                 elif constraint.split(':')[-1].startswith('[0.00,'):
                     titlestr = titlestr+constraint.replace('[0.00,',' $<$ ').replace(']','').replace(':','')+'; '
                 else:
@@ -834,7 +864,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         if Ncons == 0:
             titlestr = titlestr+' None'
 
-        titlestr = titlestr.replace('10000000000.00','1e10')
+        # titlestr = titlestr.replace('10000000000.00','1e10')
         fig.suptitle(titlestr,fontsize=Fsize)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
