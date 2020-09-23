@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import NullFormatter
 import NEOGALmodels as nm
+import photoionizationPDFs as pp
 #import rxj2248_BooneBalestraSource as bbs
 import felis_build_template as fbt
 import felis
@@ -14279,10 +14280,10 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
              Nobjlitadded = Nobjlitadded - Nobjdatadded
         if verbose: print(' - Found '+str(Nobjlitadded)+' objects with constraints from literature ')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    basename = outdir+'UVESvsNEOGALmodelparams'
-    parametercollection_SF, parametercollection_AGN, stat_SF, stat_AGN = \
-        nm.estimate_object_PDFs(FRdiclist,generatePDFplots=generatePDFplots,AGNcol='blue',SFcol='red',
-                                basename=basename,verbose=verbose)
+    basename = outdir+'UVESvsPhotoionizationModelParams'
+
+    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdiclist, basename=basename, generatePDFplots=True,
+                                                                maxPDFyscale=False,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_AGN_ids(infofile=None):
