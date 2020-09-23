@@ -348,47 +348,60 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for key in uniquekeys:
         if key == 'id': continue
+        showmedian = False
+        if showmedian:
+            xval_ent    = 2 # median
+            xstr        = 'median'
+        else:
+            xval_ent    = 0 # mean
+            xstr        = 'mean'
 
-        meanval_SF  = np.array([])
-        stdval_SF   = np.array([])
+        errval_ent  = 1 # std
+
+        xval_SF     = np.array([])
+        errval_SF   = np.array([])
+        xval_AGN = np.array([])
+        errval_AGN  = np.array([])
+        xval_bin = np.array([])
+        errval_bin  = np.array([])
+        xval_sin = np.array([])
+        errval_sin  = np.array([])
+
         range50_SF  = np.array([])
-        meanval_AGN = np.array([])
-        stdval_AGN  = np.array([])
         range50_AGN = np.array([])
-        meanval_bin = np.array([])
-        stdval_bin  = np.array([])
         range50_bin = np.array([])
-        meanval_sin = np.array([])
-        stdval_sin  = np.array([])
         range50_sin = np.array([])
 
         for oo in np.arange(Nobj):
             listent = 0 # NEOGAL SF
             if key in keylists[listent]:
-                meanval_SF = np.append(meanval_SF,collectionstats[listent][oo][key][0])
-                stdval_SF = np.append(stdval_SF,collectionstats[listent][oo][key][1])
+                xval_SF = np.append(xval_SF,collectionstats[listent][oo][key][xval_ent])
+                errval_SF = np.append(errval_SF,collectionstats[listent][oo][key][1])
                 range50_SF = np.append(range50_SF,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
 
             listent = 1 # NEOGAL AGN
             if key in keylists[listent]:
-                meanval_AGN = np.append(meanval_AGN,collectionstats[listent][oo][key][0])
-                stdval_AGN = np.append(stdval_AGN,collectionstats[listent][oo][key][1])
+                xval_AGN = np.append(xval_AGN,collectionstats[listent][oo][key][xval_ent])
+                errval_AGN = np.append(errval_AGN,collectionstats[listent][oo][key][1])
                 range50_AGN = np.append(range50_AGN,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
 
             listent = 2 # BPASS binaries
             if key in keylists[listent]:
-                meanval_bin = np.append(meanval_bin,collectionstats[listent][oo][key][0])
-                stdval_bin = np.append(stdval_bin,collectionstats[listent][oo][key][1])
+                xval_bin = np.append(xval_bin,collectionstats[listent][oo][key][xval_ent])
+                errval_bin = np.append(errval_bin,collectionstats[listent][oo][key][1])
                 range50_bin = np.append(range50_bin,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
 
             listent = 3 # BPASS singles
             if key in keylists[listent]:
-                meanval_sin = np.append(meanval_sin,collectionstats[listent][oo][key][0])
-                stdval_sin = np.append(stdval_sin,collectionstats[listent][oo][key][1])
+                xval_sin = np.append(xval_sin,collectionstats[listent][oo][key][xval_ent])
+                errval_sin = np.append(errval_sin,collectionstats[listent][oo][key][1])
                 range50_sin = np.append(range50_sin,collectionstats[listent][oo][key][7]-collectionstats[listent][oo][key][7])
 
+        xvalues   = [xval_SF,xval_AGN,xval_bin,xval_sin]
+        errvalues = [errval_SF,errval_AGN,errval_bin,errval_sin]
+
         #-------- PLOT 'EM --------
-        plotname_stat = plotname.replace('.pdf','_meanVSerr_'+key+'.pdf')
+        plotname_stat = plotname.replace('.pdf','_'+xstr+'VSerr_'+key+'.pdf')
 
         fig = plt.figure(1, figsize=(6, 6))
         # definitions for the axes
@@ -431,55 +444,18 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
 
             # change color of limits
             markerzorder = 20
+            #--------------------------- Plot scatter plot ---------------------------
+            for xx, xvalue in enumerate(xvalues):
+                if mfc:
+                    markerfacecolor = collectionscolors[xx]
+                else:
+                    markerfacecolor = 'None'
 
-
-            SFcol = collectionscolors[0]
-            if mfc:
-                markerfacecolor = SFcol
-            else:
-                markerfacecolor = 'None'
-
-            if len(meanval_SF) > 0:
-                plt.errorbar(meanval_SF[oo],stdval_SF[oo],xerr=None,yerr=None,capthick=0.5,
-                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                             markerfacecolor=markerfacecolor,ecolor=SFcol,
-                             markeredgecolor=SFcol,zorder=markerzorder)
-
-            AGNcol = collectionscolors[1]
-            if mfc:
-                markerfacecolor = AGNcol
-            else:
-                markerfacecolor = 'None'
-
-            if len(meanval_AGN) > 0:
-                plt.errorbar(meanval_AGN[oo],stdval_AGN[oo],xerr=None,yerr=None,capthick=0.5,
-                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                             markerfacecolor=markerfacecolor,ecolor=AGNcol,
-                             markeredgecolor=AGNcol,zorder=markerzorder)
-
-            bincol = collectionscolors[2]
-            if mfc:
-                markerfacecolor = bincol
-            else:
-                markerfacecolor = 'None'
-
-            if len(meanval_bin) > 0:
-                plt.errorbar(meanval_bin[oo],stdval_bin[oo],xerr=None,yerr=None,capthick=0.5,
-                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                             markerfacecolor=markerfacecolor,ecolor=bincol,
-                             markeredgecolor=bincol,zorder=markerzorder)
-
-            sincol = collectionscolors[3]
-            if mfc:
-                markerfacecolor = sincol
-            else:
-                markerfacecolor = 'None'
-
-            if len(meanval_sin) > 0:
-                plt.errorbar(meanval_sin[oo],stdval_sin[oo],xerr=None,yerr=None,capthick=0.5,
-                             marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
-                             markerfacecolor=markerfacecolor,ecolor=sincol,
-                             markeredgecolor=sincol,zorder=markerzorder)
+                if len(xvalue) > 0:
+                    plt.errorbar(xvalue[oo],errvalues[xx][oo]/np.abs(xvalue[oo]),xerr=None,yerr=None,capthick=0.5,
+                                 marker=markersym,lw=lthick/2., markersize=ms, alpha=0.5,
+                                 markerfacecolor=markerfacecolor,ecolor=collectionscolors[xx],
+                                 markeredgecolor=collectionscolors[xx],zorder=markerzorder)
 
         plt.xlim(xranges[key])
         xminsys, xmaxsys = plt.xlim()
@@ -487,8 +463,8 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         # plt.ylim(yranges[key])
         yminsys, ymaxsys = plt.ylim()
 
-        plt.xlabel(pp.keylabels(key))
-        plt.ylabel('Standard deviation of parameter distribution')
+        plt.xlabel(xstr+'( '+pp.keylabels(key)+' )')
+        plt.ylabel('Normalized standard deviation of parameter PDF')
 
         if (key == 'Zgas') or (key == 'nh'):
             xlog = True
@@ -496,7 +472,7 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         else:
             xlog = False
 
-        # --------- HISTOGRAMS ---------
+        #--------------------------- Plot X-axis Histograms ---------------------------
         Nbins   = 50
         axHistx = plt.axes(rect_histx)
         axHisty = plt.axes(rect_histy)
@@ -510,60 +486,31 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
             bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
             axHistx.set_xscale('log')
 
-        if len(meanval_SF) > 0:
-            axHistx.hist(meanval_SF[objidall < 1e9][np.isfinite(meanval_SF[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=SFcol)
-            axHistx.hist(meanval_SF[np.isfinite(meanval_SF)],linestyle=':',
-                         bins=bindefs,histtype='step',color=SFcol)
-
-        if len(meanval_AGN) > 0:
-            axHistx.hist(meanval_AGN[objidall < 1e9][np.isfinite(meanval_AGN[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=AGNcol)
-            axHistx.hist(meanval_AGN[np.isfinite(meanval_AGN)],linestyle=':',
-                         bins=bindefs,histtype='step',color=AGNcol)
-
-        if len(meanval_bin) > 0:
-            axHistx.hist(meanval_bin[objidall < 1e9][np.isfinite(meanval_bin[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=bincol)
-            axHistx.hist(meanval_bin[np.isfinite(meanval_bin)],linestyle=':',
-                         bins=bindefs,histtype='step',color=bincol)
-
-        if len(meanval_sin) > 0:
-            axHistx.hist(meanval_sin[objidall < 1e9][np.isfinite(meanval_sin[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=sincol)
-            axHistx.hist(meanval_sin[np.isfinite(meanval_sin)],linestyle=':',
-                         bins=bindefs,histtype='step',color=sincol)
+        for xx, xvalue in enumerate(xvalues):
+            if len(xvalue) > 0:
+                axHistx.hist(xvalue[objidall < 1e9][np.isfinite(xvalue[objidall < 1e9])],linestyle='-',
+                             bins=bindefs,histtype='step',color=collectionscolors[xx])
+                axHistx.hist(xvalue[np.isfinite(xvalue)],linestyle=':',
+                             bins=bindefs,histtype='step',color=collectionscolors[xx])
 
 
+        #--------------------------- Plot Y-axis Histograms ---------------------------
         axHistx.set_xticks([])
         axHistx.set_xlim([xminsys,xmaxsys])
 
         binwidth_y = np.diff([yminsys,ymaxsys])/Nbins
         bindefs    = np.arange(yminsys, ymaxsys+binwidth_y, binwidth_y)
-        # if ylog:
-        #     bindefs = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
-        #     axHisty.set_yscale('log')
-        if len(meanval_SF) > 0:
-            axHisty.hist(stdval_SF[objidall < 1e9][np.isfinite(stdval_SF[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
-            axHisty.hist(stdval_SF[np.isfinite(stdval_SF)],linestyle=':',
-                         bins=bindefs,histtype='step',color=SFcol, orientation='horizontal')
-        if len(meanval_AGN) > 0:
-            axHisty.hist(stdval_AGN[objidall < 1e9][np.isfinite(stdval_AGN[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
-            axHisty.hist(stdval_AGN[np.isfinite(stdval_AGN)],linestyle=':',
-                         bins=bindefs,histtype='step',color=AGNcol, orientation='horizontal')
-        if len(meanval_bin) > 0:
-            axHisty.hist(stdval_bin[objidall < 1e9][np.isfinite(stdval_bin[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=bincol, orientation='horizontal')
-            axHisty.hist(stdval_bin[np.isfinite(stdval_bin)],linestyle=':',
-                         bins=bindefs,histtype='step',color=bincol, orientation='horizontal')
-        if len(meanval_sin) > 0:
-            axHisty.hist(stdval_sin[objidall < 1e9][np.isfinite(stdval_sin[objidall < 1e9])],linestyle='-',
-                         bins=bindefs,histtype='step',color=sincol, orientation='horizontal')
-            axHisty.hist(stdval_sin[np.isfinite(stdval_sin)],linestyle=':',
-                         bins=bindefs,histtype='step',color=sincol, orientation='horizontal')
 
+        for xx, xvalue in enumerate(xvalues):
+            if len(xvalue) > 0:
+                histvalues  = errvalues[xx][objidall < 1e9][np.isfinite(errvalues[xx][objidall < 1e9])]/\
+                              np.abs(xvalue[objidall < 1e9][np.isfinite(errvalues[xx][objidall < 1e9])])
+                axHisty.hist(histvalues,linestyle='-',bins=bindefs,histtype='step',color=collectionscolors[xx],
+                             orientation='horizontal')
+                histvalues  = errvalues[xx][np.isfinite(errvalues[xx])]/\
+                              np.abs(xvalue[np.isfinite(errvalues[xx])])
+                axHisty.hist(histvalues,linestyle=':',bins=bindefs,histtype='step',color=collectionscolors[xx],
+                             orientation='horizontal')
 
         axHisty.set_yticks([])
         axHisty.set_ylim([yminsys,ymaxsys])
@@ -586,10 +533,14 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
     pp.plot_stat_diagram(plotname_obj,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
                          xlog=True,ylog=False,datsetup='meanstd',verbose=verbose)
 
-
     plotname_obj = plotname.replace('.pdf','_median68percent_ZgasVSlogUs.pdf')
     pp.plot_stat_diagram(plotname_obj,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
                          xlog=True,ylog=False,datsetup='med68',verbose=verbose)
+
+    plotname_obj = plotname.replace('.pdf','_medianANDstd_ZgasVSlogUs.pdf')
+    pp.plot_stat_diagram(plotname_obj,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
+                         xlog=True,ylog=False,datsetup='medianstd',verbose=verbose)
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
                       xlog=False,ylog=False,datsetup='med68',verbose=True):
@@ -608,6 +559,10 @@ def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectio
         cen_ent     = 2
         errlow_ent  = 3
         errhigh_ent = 9
+    elif datsetup == 'medstd':
+        cen_ent     = 2
+        errlow_ent  = 1
+        errhigh_ent = 1
     elif datsetup == 'meanstd':
         cen_ent     = 0
         errlow_ent  = 1
@@ -669,7 +624,7 @@ def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectio
             markersym   = lce.get_reference_fromID(objid,verbose=False)[4]
             mfc         = False
         else:
-            print(' WARNING - stopped as could not assing a marker symbol to the id '+str(objid))
+            print(' WARNING - stopped as could not assign a marker symbol to the id '+str(objid))
             pdb.set_trace()
 
         ms          = marksize
@@ -814,7 +769,6 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         titlestr = 'Observational contraints for ID='+str(objid)+': '
 
-
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # if (Nmodels_list[0] > 0) & (Nmodels_list[1] > 0):
         #     Nmodels_ratio     = Nmodels_list[0]/(Nmodels_list[1]*2.0)
@@ -865,6 +819,8 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
             titlestr = titlestr+' None'
 
         # titlestr = titlestr.replace('10000000000.00','1e10')
+        if '10000000000.00' in titlestr:
+            pdb.set_trace()
         fig.suptitle(titlestr,fontsize=Fsize)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
