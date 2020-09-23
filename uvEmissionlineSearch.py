@@ -14223,7 +14223,7 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
                         if errval == 99:
                             valrange = [0,frval]
                         elif errval == -99:
-                            valrange = [frval,1e10]
+                            valrange = [frval,1e35]
                         else:
                             valrange = [frval-errval*Nsigma,frval+errval*Nsigma]
                     else:
@@ -14262,7 +14262,7 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
                         if errval == 99:
                             valrange = [0,frval]
                         elif errval == -99:
-                            valrange = [frval,1e10]
+                            valrange = [frval,1e35]
                         else:
                             valrange = [frval-errval*Nsigma,frval+errval*Nsigma]
                     else:
@@ -14282,7 +14282,7 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     basename = outdir+'UVESvsPhotoionizationModelParams'
 
-    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdiclist, basename=basename, generatePDFplots=True,
+    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdiclist, basename=basename, generatePDFplots=generatePDFplots,
                                                                 maxPDFyscale=False,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
