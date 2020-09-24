@@ -399,7 +399,7 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
 
         xvalues   = [xval_SF,xval_AGN,xval_bin,xval_sin]
         errvalues = [errval_SF,errval_AGN,errval_bin,errval_sin]
-
+        sampstr   = ['NEOGAL SF', 'NEOGAL AGN', 'BPASS binary', 'BPASS single']
         #-------- PLOT 'EM --------
         plotname_stat = plotname.replace('.pdf','_'+xstr+'VSerr_'+key+'.pdf')
 
@@ -472,6 +472,40 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         else:
             xlog = False
 
+        #--------------------------- Estimate wheighted averages ---------------------------
+
+        for xx, xvalue in enumerate(xvalues):
+            if any(np.isfinite(errvalues[xx])):
+                goodents       = np.where((objidall < 1e9) & np.isfinite(xvalue) & np.isfinite(errvalues[xx]) &
+                                          (np.nan_to_num(errvalues[xx]) > 0.0))[0]
+                xvalues_uves   = xvalue[goodents]
+                errvalues_uves = errvalues[xx][goodents]
+                whtav_uves     = np.sum( xvalues_uves/errvalues_uves**2 ) / np.sum(1.0/errvalues_uves**2)
+                whtav_uves_err = 1/np.sqrt(np.sum(errvalues_uves))
+                if verbose: print('\n - wheighted average UVES('+sampstr[xx]+','+key+') = '+str(whtav_uves)+'+/-'+str(whtav_uves_err)+
+                                  ' (Nmeasurements='+str(len(goodents))+')')
+
+                goodents       = np.where((objidall > 1e9) & np.isfinite(xvalue) & np.isfinite(errvalues[xx]) &
+                                          (np.nan_to_num(errvalues[xx]) > 0.0))[0]
+                xvalues_lit    = xvalue[goodents]
+                errvalues_lit  = errvalues[xx][goodents]
+                whtav_lit      = np.sum( xvalues_lit/errvalues_lit**2 ) / np.sum(1.0/errvalues_lit**2)
+                whtav_lit_err  = 1/np.sqrt(np.sum(errvalues_lit))
+                if verbose: print(' - wheighted average literature('+sampstr[xx]+','+key+') = '+str(whtav_lit)+'+/-'+str(whtav_lit_err)+
+                                  ' (Nmeasurements='+str(len(goodents))+')')
+
+                goodents       = np.where((objidall > 1.0) & np.isfinite(xvalue) & np.isfinite(errvalues[xx]) &
+                                          (np.nan_to_num(errvalues[xx]) > 0.0))[0]
+                xvalues_all    = xvalue[goodents]
+                errvalues_all  = errvalues[xx][goodents]
+                whtav_all      = np.sum( xvalues_all/errvalues_all**2 ) / np.sum(1.0/errvalues_all**2)
+                whtav_all_err  = 1/np.sqrt(np.sum(errvalues_all))
+                if verbose: print(' - wheighted average all('+sampstr[xx]+','+key+') = '+str(whtav_all)+'+/-'+str(whtav_all_err)+
+                                  ' (Nmeasurements='+str(len(goodents))+')'+'\n')
+
+            else:
+                if verbose: print(' - wheighted averages not estimated as no finite (error) values for ('+sampstr[xx]+','+key+') \n')
+
         #--------------------------- Plot X-axis Histograms ---------------------------
         Nbins   = 50
         axHistx = plt.axes(rect_histx)
@@ -503,11 +537,11 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
 
         for xx, xvalue in enumerate(xvalues):
             if len(xvalue) > 0:
-                histvalues  = errvalues[xx][objidall < 1e9][np.isfinite(errvalues[xx][objidall < 1e9])]/\
+                histvalues  = errvalues[xx][objidall < 1e9][np.isfinite(errvalues[xx][objidall < 1e9])]/ \
                               np.abs(xvalue[objidall < 1e9][np.isfinite(errvalues[xx][objidall < 1e9])])
                 axHisty.hist(histvalues,linestyle='-',bins=bindefs,histtype='step',color=collectionscolors[xx],
                              orientation='horizontal')
-                histvalues  = errvalues[xx][np.isfinite(errvalues[xx])]/\
+                histvalues  = errvalues[xx][np.isfinite(errvalues[xx])]/ \
                               np.abs(xvalue[np.isfinite(errvalues[xx])])
                 axHisty.hist(histvalues,linestyle=':',bins=bindefs,histtype='step',color=collectionscolors[xx],
                              orientation='horizontal')
@@ -539,7 +573,7 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
 
     plotname_obj = plotname.replace('.pdf','_medianANDstd_ZgasVSlogUs.pdf')
     pp.plot_stat_diagram(plotname_obj,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
-                         xlog=True,ylog=False,datsetup='medianstd',verbose=verbose)
+                         xlog=True,ylog=False,datsetup='medstd',verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectionscolors,xrange,yrange,
