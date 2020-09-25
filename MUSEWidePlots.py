@@ -1097,7 +1097,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Plotting figure ')
     figuresize_x = 13
-    figuresize_y = 10
+    figuresize_y = 8
     fig          = plt.figure(figsize=(figuresize_x,figuresize_y))
     Fsize        = 12
     LW           = 2
@@ -1110,10 +1110,10 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     left   = 0.06   # the left side of the subplots of the figure
     right  = 0.98   # the right side of the subplots of the figure
-    bottom = 0.05   # the bottom of the subplots of the figure
+    bottom = 0.07   # the bottom of the subplots of the figure
     top    = 0.98   # the top of the subplots of the figure
     wspace = 0.25   # the amount of width reserved for blank space between subplots
-    hspace = 0.25   # the amount of height reserved for white space between subplots
+    hspace = 0.32   # the amount of height reserved for white space between subplots
     plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if speccols is None:
