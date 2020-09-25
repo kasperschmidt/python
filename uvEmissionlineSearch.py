@@ -9291,6 +9291,13 @@ def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/spectra_noise/median
     if os.path.isfile(outfile) & (not overwrite):
         sys.exit(' - The output file '+outfile+' exists and overwrite=False')
 
+    #### UDF10 ####
+    datacubes = ['/Users/kschmidt/work/MUSE/QtClassify/UDF10/udf-10_mfs-and-effvar-cube.fits',
+                 '/Users/kschmidt/work/MUSE/QtClassify/UDF10/udf-10_mfs-and-effvar-cube.fits']
+    noiseext  = 'EFFVAR'
+    waveunits = 'Angstrom'
+    fluxunits = '1e-20 erg/s/cm2/A'
+
     #### UDF ####
     # datacubes = glob.glob('/Users/kschmidt/work/MUSE/QtClassify/*/udf-*_mfs-and-effvar-cube.fits')
     # noiseext  = 'EFFVAR'
@@ -9298,10 +9305,10 @@ def build_noise_spectrum(outfile='/Users/kschmidt/work/MUSE/spectra_noise/median
     # fluxunits = '1e-20 erg/s/cm2/A'
 
     #### CDFS/COSMOS MUSE-Wide ####
-    datacubes = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_candels-*_v1.0_dcbgc_effnoised.fits')
-    noiseext  = 'EFF_STAT'
-    waveunits = 'Angstrom'
-    fluxunits = '1e-20 erg/s/cm2/A'
+    # datacubes = glob.glob('/Volumes/DATABCKUP1/MUSE-Wide/DATACUBES/DATACUBE_candels-*_v1.0_dcbgc_effnoised.fits')
+    # noiseext  = 'EFF_STAT'
+    # waveunits = 'Angstrom'
+    # fluxunits = '1e-20 erg/s/cm2/A'
 
     if verbose: print(' - Generating median vec for: ')
     for dd, cube in enumerate(datacubes):
