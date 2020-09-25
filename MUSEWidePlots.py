@@ -1504,7 +1504,6 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
             plt.fill_between(skywave,skylow+yrangecomb[0],skyhigh+yrangecomb[0],alpha=1.0,color='black',zorder=1)
 
-    if yrangecomb == [0,10]:     pdb.set_trace()
     return yrangecomb
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,LW,wavetype='vac'):
