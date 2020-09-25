@@ -13,6 +13,8 @@ import collections
 import MiGs
 import aplpy
 import tdose_utilities as tu
+import felis
+import scipy
 import commands
 import pdb
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1343,11 +1345,52 @@ def plot_1DspecOverview_subplot(nrows,ncols,plotindex,
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        showFELISresults = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/CCresults_summary_templateLLLL_FELISmatch2all_200213.txt'
+        FELISvetting     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/FELISvettingOfLineEstimates200213vettingcompleted200226.txt'
+
+        objid             = int(spectra[0].split('_')[-1].split('.fit')[0])
+        S2Nmin            = 3.0
+        vshiftmax         = 1000.0
+
+        if showFELISresults:
+            line_felis = line.split('166')[0]
+            FELISsummaryfile  = glob.glob(showFELISresults.replace('LLLL',line_felis))
+
+            if len(FELISsummaryfile) == 1:
+                pickledir         = showFELISresults.split('CCresults')[0]
+                outkeystr         = FELISsummaryfile[0].split('template'+line_felis)[-1].split('.tx')[0]
+
+                fmt              = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
+                summarydat       = np.genfromtxt(FELISsummaryfile[0],skip_header=25,dtype=fmt,comments='#',names=True)
+                objsummary_ent   = np.where(summarydat['id'].astype(int) == objid)[0]
+                zobj             = summarydat['z_spec'][objsummary_ent]
+
+                if len(objsummary_ent) != 0:
+                    FELISpicklefile = glob.glob(pickledir+'*'+str(objid)+'*template'+line_felis+'*'+outkeystr+'*.pkl')
+
+                    maxS2N = summarydat['FELIS_S2Nmax'][objsummary_ent]
+                    vshift = summarydat['vshift_CCmatch'][objsummary_ent]
+                    if (maxS2N > S2Nmin) & (np.abs(vshift) < vshiftmax):
+
+                        if FELISvetting:
+                            dat_vetfelis  = np.genfromtxt(FELISvetting,  dtype=None,comments='#',names=True,skip_header=12)
+                            Nobj_fvet     = len(np.unique(dat_vetfelis['id']))
+
+                            vetobjent = np.where(dat_vetfelis['id'] == objid)[0]
+                            vetresult = dat_vetfelis['trust'+line_felis][vetobjent][0]
+                        else:
+                            vetresult = None
+
+                        # if 'OIII' in line: pdb.set_trace()
+                        mwp.plot_1DspecOverview_addFELIStemplate(FELISpicklefile[0],spectra[0],xrange,
+                                                                 FELISvettingResult=vetresult,FELIScolor='red')
+
+        # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
     else:
         plt.plot(-1,-1)
-        plt.text(0.5,0.5,'No good coverage of\n'+linestring,
+        plt.text(0.5,0.5,'No coverage of\n'+linestring,
                  color='red',size=Fsize*2,horizontalalignment='center',verticalalignment='center')
         plt.yticks([])
         plt.xticks([])
@@ -1483,7 +1526,7 @@ def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,c
             plt.text(xpos,ypos,linename,color=col_linemarker,size=Fsize,
                      rotation='horizontal',horizontalalignment=horalign,verticalalignment='top',zorder=20)
 
-            if voffset != 0.0:
+            if np.abs(voffset) != 0.0:
                 zoffset  = voffset*(redshift+1.0) / 299792.458
                 range    = np.sort(np.asarray([((redshift+zoffset)+1)*linewave/wavescale, (redshift +1)*linewave/wavescale]))
                 lineymin = yrange[0]
@@ -1494,6 +1537,65 @@ def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,c
                     pdb.set_trace()
     # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_1DspecOverview_addFELIStemplate(FELISpicklefile,specname,xrange,FELISvettingResult=None,FELIScolor='red'):
+    """
+    Overplotting the best-fit template from FELIS
+
+    """
+    loaddic  = felis.load_picklefile(FELISpicklefile)
+
+    spec_wave, spec_flux, spec_df, spec_s2n = felis.load_spectrum(specname,verbose=False)
+    waveent = (spec_wave > xrange[0]) & (spec_wave < xrange[1])
+    spec_wave, spec_flux, spec_df, spec_s2n = spec_wave[waveent], spec_flux[waveent], spec_df[waveent], spec_s2n[waveent]
+
+    spec_dic  = loaddic[specname]
+    z_spec    = spec_dic['zspec']
+
+    # Getting the entry of the template with maximum S/N in the CC results
+    max_S2N = np.max(spec_dic['S2NCCmaxvec'])
+    besttemplate_ent = np.where(spec_dic['ccresultsarr_S2N'] == max_S2N)[0][0] # Template of max S/N
+
+    template         = spec_dic['templatevec'][besttemplate_ent]
+    max_z            = spec_dic['zCCmaxvec'][besttemplate_ent]
+
+    t_wave_init, t_flux_init, t_df_init, t_s2n_init = felis.load_spectrum(template,verbose=False)
+    func       = scipy.interpolate.interp1d(t_wave_init,t_flux_init,kind='linear',fill_value="extrapolate")
+    t_flux     = func(spec_wave/(1.0+z_spec))
+
+    # Getting the entry in the CC flux scalings vector for the given template where S/N is max
+    max_S2N_ent      = np.where(spec_dic['ccresultsarr_S2N'][besttemplate_ent,:] == max_S2N)[0][0]
+
+    t_wave_obs = t_wave_init*(1.0+z_spec)
+    Npix = len(spec_flux)
+    template_triplelength            = np.zeros(3*Npix)
+    template_triplelength[0:Npix]    = t_flux
+    template_shift_S2Nmax            = np.roll(template_triplelength, int(max_S2N_ent+np.floor(Npix/2.)))[Npix:-Npix]
+    template_shift_S2Nmax_normalized = template_shift_S2Nmax/np.trapz(template_shift_S2Nmax,spec_wave/(1.0+z_spec))
+
+    flux_scale_S2Nmax     = spec_dic['ccresultsarray_flux'][besttemplate_ent,max_S2N_ent]
+    max_wave              = spec_dic['wavelengths'][max_S2N_ent]
+
+    # moving template to observed frame and scaling it
+    template_obs_flux = template_shift_S2Nmax_normalized * (flux_scale_S2Nmax / (1.0+z_spec))
+
+    #scale by continuum offset
+    template_obs_flux = template_obs_flux + spec_dic['continuumlevel']
+
+    skipfelistemplate = False
+    if FELISvettingResult is None:
+        linestyle  = '-'
+        FELIScolor = 'orange'
+    elif FELISvettingResult == 1:
+        linestyle = '-'
+    elif FELISvettingResult == 9:
+        linestyle = '--'
+    elif FELISvettingResult == 0:
+        #skipfelistemplate = True
+        linestyle = '.'
+
+    if not skipfelistemplate:
+        plt.plot(spec_wave, template_obs_flux, linestyle, alpha=0.8 , color=FELIScolor,label=None, lw=5)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_FoVoverview(ras,decs,names,sizeFoV,outputdir='./',pointings=None,showregions=True,
