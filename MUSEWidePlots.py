@@ -983,6 +983,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
                         col_matrix=False, col_matrix_title='The Color Matrix', col_matrix_text='Text',
                         col_matrix_labels=['xparam','yparam'], col_matrix_ranges=[[0,3],[0,3]],
                         col_matrix_binranges=None,col_matrix_p1dat=None,col_matrix_p2dat=None,
+                        showFELISresults=False,FELISvetting=None,
                         verbose=True):
     """
 
@@ -1158,7 +1159,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
             mwp.plot_1DspecOverview_subplot(nrows,ncols,plotindex,linename,datadic,spectra,skyspectra,wavecols_sky,
                                             fluxcols_sky,speccols,plotSN,voffset,llistdic,Fsize,col_linemarker,LW,
                                             xlabel,ylabel,show_error,linelatex,windowcenter,windowwidth,wavescale,redshift,
-                                            specinrange=speccoverage)
+                                            showFELISresults=showFELISresults,FELISvetting=FELISvetting,specinrange=speccoverage)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if col_matrix:
@@ -1336,7 +1337,8 @@ def plot_1DspecOverview_subplotinfo():
 def plot_1DspecOverview_subplot(nrows,ncols,plotindex,
                                 line,datadic,spectra,skyspectra,wavecols_sky,fluxcols_sky,speccols,plotSN,voffset,
                                 llistdic,Fsize,col_linemarker,LW,xlabel,ylabel,show_error,
-                                linestring,windowcenter,windowwidth,wavescale,redshift,specinrange=True):
+                                linestring,windowcenter,windowwidth,wavescale,redshift,
+                                showFELISresults,FELISvetting,specinrange=True):
     """
     Function generating sub plots for plot_1DspecOverview()
     """
@@ -1350,45 +1352,43 @@ def plot_1DspecOverview_subplot(nrows,ncols,plotindex,
         mwp.plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,
                                           xrange,yrange,redshift,LW,wavetype='vac')
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        showFELISresults = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/CCresults_summary_templateLLLL_FELISmatch2all_200213.txt'
-        FELISvetting     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/FELISvettingOfLineEstimates200213vettingcompleted200226.txt'
+        if not plotSN:
+            objid             = int(spectra[0].split('_')[-1].split('.fit')[0])
+            S2Nmin            = 3.0
+            vshiftmax         = 1000.0
 
-        objid             = int(spectra[0].split('_')[-1].split('.fit')[0])
-        S2Nmin            = 3.0
-        vshiftmax         = 1000.0
+            if showFELISresults:
+                line_felis = line.split('166')[0]
+                FELISsummaryfile  = glob.glob(showFELISresults.replace('LLLL',line_felis))
 
-        if showFELISresults:
-            line_felis = line.split('166')[0]
-            FELISsummaryfile  = glob.glob(showFELISresults.replace('LLLL',line_felis))
+                if len(FELISsummaryfile) == 1:
+                    pickledir         = showFELISresults.split('CCresults')[0]
+                    outkeystr         = FELISsummaryfile[0].split('template'+line_felis)[-1].split('.tx')[0]
 
-            if len(FELISsummaryfile) == 1:
-                pickledir         = showFELISresults.split('CCresults')[0]
-                outkeystr         = FELISsummaryfile[0].split('template'+line_felis)[-1].split('.tx')[0]
+                    fmt              = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
+                    summarydat       = np.genfromtxt(FELISsummaryfile[0],skip_header=25,dtype=fmt,comments='#',names=True)
+                    objsummary_ent   = np.where(summarydat['id'].astype(int) == objid)[0]
+                    zobj             = summarydat['z_spec'][objsummary_ent]
 
-                fmt              = '12a,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,300a,300a'
-                summarydat       = np.genfromtxt(FELISsummaryfile[0],skip_header=25,dtype=fmt,comments='#',names=True)
-                objsummary_ent   = np.where(summarydat['id'].astype(int) == objid)[0]
-                zobj             = summarydat['z_spec'][objsummary_ent]
+                    if len(objsummary_ent) != 0:
+                        FELISpicklefile = glob.glob(pickledir+'*'+str(objid)+'*template'+line_felis+'*'+outkeystr+'*.pkl')
 
-                if len(objsummary_ent) != 0:
-                    FELISpicklefile = glob.glob(pickledir+'*'+str(objid)+'*template'+line_felis+'*'+outkeystr+'*.pkl')
+                        maxS2N = summarydat['FELIS_S2Nmax'][objsummary_ent]
+                        vshift = summarydat['vshift_CCmatch'][objsummary_ent]
+                        if (maxS2N > S2Nmin) & (np.abs(vshift) < vshiftmax):
 
-                    maxS2N = summarydat['FELIS_S2Nmax'][objsummary_ent]
-                    vshift = summarydat['vshift_CCmatch'][objsummary_ent]
-                    if (maxS2N > S2Nmin) & (np.abs(vshift) < vshiftmax):
+                            if FELISvetting:
+                                dat_vetfelis  = np.genfromtxt(FELISvetting,  dtype=None,comments='#',names=True,skip_header=12)
+                                Nobj_fvet     = len(np.unique(dat_vetfelis['id']))
 
-                        if FELISvetting:
-                            dat_vetfelis  = np.genfromtxt(FELISvetting,  dtype=None,comments='#',names=True,skip_header=12)
-                            Nobj_fvet     = len(np.unique(dat_vetfelis['id']))
+                                vetobjent = np.where(dat_vetfelis['id'] == objid)[0]
+                                vetresult = dat_vetfelis['trust'+line_felis][vetobjent][0]
+                            else:
+                                vetresult = None
 
-                            vetobjent = np.where(dat_vetfelis['id'] == objid)[0]
-                            vetresult = dat_vetfelis['trust'+line_felis][vetobjent][0]
-                        else:
-                            vetresult = None
-
-                        # if 'OIII' in line: pdb.set_trace()
-                        mwp.plot_1DspecOverview_addFELIStemplate(FELISpicklefile[0],spectra[0],xrange,
-                                                                 FELISvettingResult=vetresult,FELIScolor='red')
+                            # if 'OIII' in line: pdb.set_trace()
+                            mwp.plot_1DspecOverview_addFELIStemplate(FELISpicklefile[0],spectra[0],xrange,
+                                                                     FELISvettingResult=vetresult,FELIScolor='red')
 
         # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         plt.xlabel(xlabel)
@@ -1437,10 +1437,14 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
             plt.step(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N'], '-',
                      alpha=1.0,color=colors[ss],label=labels[ss],zorder=100,where='mid')
 
+            plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N']*0.0+3.0, '--',
+                     alpha=1.0,color='gray',label=labels[ss],zorder=100,lw=1)
+
             try:
-                fluxmin = np.min(np.asarray([0,  np.min(np.isfinite(datadic[specname]['spec_S2N'][waveent])) ]))
-                fluxmax = np.max(np.asarray([10, np.max(np.isfinite(datadic[specname]['spec_S2N'][waveent])) ]))
-                yrange  = [fluxmin,1.1*fluxmax]
+                specvals = datadic[specname]['spec_S2N'][waveent][np.isfinite(datadic[specname]['spec_S2N'][waveent])]
+                fluxmin  = np.min(np.asarray([0,  np.min(specvals) ]))
+                fluxmax  = np.max(np.asarray([10, np.max(specvals) ]))
+                yrange   = [fluxmin,1.1*fluxmax]
             except:
                 yrange = [0,10]
 
@@ -1453,9 +1457,10 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
                                  alpha=0.20,color=colors[ss],zorder=100,step='mid')
 
             try:
-                fluxmin = np.min(np.asarray([0,  np.min(datadic[specname]['spec_flux'][waveent]) ]))
-                fluxmax = np.max(np.asarray([10, np.max(datadic[specname]['spec_flux'][waveent]) ]))
-                yrange  = [fluxmin,1.1*fluxmax]
+                specvals = datadic[specname]['spec_flux'][waveent][np.isfinite(datadic[specname]['spec_flux'][waveent])]
+                fluxmin  = np.min(np.asarray([0,  np.min(specvals) ]))
+                fluxmax  = np.max(np.asarray([10, np.max(specvals) ]))
+                yrange   = [fluxmin,1.1*fluxmax]
             except:
                 yrange = [0,100]
 
@@ -1483,6 +1488,9 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
                 else:
                     sky_f = sky_f / 1e3
 
+            if '/Users/kschmidt/work/MUSE/spectra_noise/median_eff_noise_spectrum' in skyspectra[ss]:
+                sky_f   = 2*sky_f
+
             sky_f   = sky_f / meanerr # scale to fit in S/N windows
 
             skyent  = np.where((sky_w > xrange[0]) & (sky_w < xrange[1]) &
@@ -1496,6 +1504,7 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
 
             plt.fill_between(skywave,skylow+yrangecomb[0],skyhigh+yrangecomb[0],alpha=1.0,color='black',zorder=1)
 
+    if yrangecomb == [0,10]:     pdb.set_trace()
     return yrangecomb
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_1DspecOverview_plotlines(voffset,llistdic,wavescale,windowwidth,Fsize,col_linemarker,xrange,yrange,redshift,LW,wavetype='vac'):
