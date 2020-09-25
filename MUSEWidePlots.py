@@ -1099,7 +1099,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     figuresize_x = 13
     figuresize_y = 10
     fig          = plt.figure(figsize=(figuresize_x,figuresize_y))
-    Fsize        = 10
+    Fsize        = 12
     LW           = 2
     plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
     plt.rc('font', family='serif',size=Fsize)           # setting text font
@@ -1112,8 +1112,8 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
     right  = 0.98   # the right side of the subplots of the figure
     bottom = 0.05   # the bottom of the subplots of the figure
     top    = 0.98   # the top of the subplots of the figure
-    wspace = 0.20   # the amount of width reserved for blank space between subplots
-    hspace = 0.20   # the amount of height reserved for white space between subplots
+    wspace = 0.25   # the amount of width reserved for blank space between subplots
+    hspace = 0.25   # the amount of height reserved for white space between subplots
     plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if speccols is None:
@@ -1438,7 +1438,7 @@ def plot_1DspecOverview_plotspecs(datadic,spectra,skyspectra,wavecols_sky,fluxco
                      alpha=1.0,color=colors[ss],label=labels[ss],zorder=100,where='mid')
 
             plt.plot(datadic[specname]['spec_wave'], datadic[specname]['spec_S2N']*0.0+3.0, '--',
-                     alpha=1.0,color='gray',label=labels[ss],zorder=100,lw=1)
+                     alpha=1.0,color='gray',zorder=100,lw=1)
 
             try:
                 specvals = datadic[specname]['spec_S2N'][waveent][np.isfinite(datadic[specname]['spec_S2N'][waveent])]
