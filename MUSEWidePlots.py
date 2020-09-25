@@ -1012,6 +1012,11 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     yrangefull    To fix the y-range for the overview panel including all spectra set it with this keyword
     linenames     List of (9) line names to generate zoom-ins around. If None hardcoded setups will be used
+
+    col_matrix    These set of commands enables illustrating the binning of componsite (stacked) spectra
+                  showin in the overview. This will add a matrix highlighting the binning location.
+                  See uves.stack_composite_plotNxNspecs() for use.
+
     verbose       Toggle verbosity
 
     --- EXAMPLE OF USE ---
