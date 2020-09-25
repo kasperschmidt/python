@@ -9716,7 +9716,7 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
             fluxcols     = ['flux']*len(specoverview)
             fluxerrcols  = ['fluxerror']*len(specoverview)
             redshift     = zobj
-            voffset      = 100.0
+            voffset      = 0.0
 
             if str(objid)[0] == '1':
                 skyspec     = '/Users/kschmidt/work/MUSE/spectra_sky/SKY_SPECTRUM_candels-cdfs-'+str(objid)[1:3]+'_av.fits'
