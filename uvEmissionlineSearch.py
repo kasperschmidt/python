@@ -9592,7 +9592,7 @@ def plot_UDF10masedaobjcomparison(gaussspec=False,overwrite=False,verbose=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshiftmax=1e4,
                       plot_overview=False,skipplotting=False,
-                      verbose=True,verboseplots=False):
+                      showFELISresults=False,FELISvetting=None,verbose=True,verboseplots=False):
     """
     Wrapper to search for objects with line detections and then plot
     the corresponding FELIS template overview.
@@ -9774,7 +9774,8 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
             mwp.plot_1DspecOverview(specoverview, labels, wavecols, fluxcols, fluxerrcols, redshift,
                                     voffset=voffset, skyspectra=skyspectra, wavecols_sky=wavecols_sky,
                                     fluxcols_sky=fluxcols_sky, outputfigure=outputfigure,linenames=linenames,
-                                    yrangefull=yrangefull, xrangefull=xrangefull, plotSN=False,verbose=verboseplots)
+                                    yrangefull=yrangefull, xrangefull=xrangefull, plotSN=False,
+                                    showFELISresults=showFELISresults,FELISvetting=FELISvetting,verbose=verboseplots)
 
             mwp.plot_1DspecOverview(specoverview, labels, wavecols, fluxcols, fluxerrcols, redshift,
                                     voffset=voffset, skyspectra=skyspectra, wavecols_sky=wavecols_sky,
