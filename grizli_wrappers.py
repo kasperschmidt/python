@@ -1217,7 +1217,7 @@ def NIRISSsim_A2744(generatesimulation=True):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=[0.2, 8.0] , mockspec_type='manual_lines',
                     onlyreplaceextractIDs=False, useJADESz=True, fixJADEStemplate=None,
-                    singlefilterrun=False, quickrun=False, plotsingleobj=False,
+                    singlefilterrun=False, quickrun=False, plotsingleobj=False, workingdir=None,
                     extractids=[65,476,726,233,754,755,793,848]):
     """
 
@@ -1243,6 +1243,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     singlefilterrun       Only run simulation for F356W to speed up things
     quickrun              If True corners are cut to make the modeling proceed faster (for testing)
     plotsingleobj         Plot the beams of the extracted objects?
+    workingdir            Directory to work in. If not set the current working directory is used.
     extractids            List of GLASS ids to extract.
 
     --- EXAMPLE OF USE ---
@@ -1266,8 +1267,27 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     #polymodelcoeffs = [0.05, 0.00]
     polyxrange      = [1.0, 7.0]
 
-    cwd = os.getcwd()+'/'
-    if 'NIRCAM' not in cwd:
+    if workingdir is None:
+        cwd = os.getcwd()+'/'
+    else:
+        print(' - Setting cwd = '+workingdir)
+        if os.path.isdir(workingdir):
+            answer = input('   -> that directory already exists, do you want to move there and continue?   ')
+            if (answer.lower() == 'y') or (answer.lower() == 'yes'):
+                os.chdir(workingdir)
+                cwd = workingdir
+            else:
+                sys.exit('   You did not reply with (y)es so exiting')
+        else:
+            answer = input('   -> that directory does not exist. Do you want to create it, go there and continue?   ')
+            if (answer.lower() == 'y') or (answer.lower() == 'yes'):
+                os.mkdir(workingdir)
+                os.chdir(workingdir)
+                cwd = workingdir
+            else:
+                sys.exit('   You did not reply with (y)es so exiting')
+
+    if 'nircam' not in cwd.lower():
         sys.exit('"NIRCAM" is not part of workign directory name. Assumes this means the working location is incorrect')
     else:
         print('')
@@ -1306,8 +1326,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     HFFimgfilter    = 'f140w'
     imagepath       = '/Users/kschmidt/work/images_MAST/A2744/'
     ref_hffimg      = imagepath+'hlsp_frontier_hst_wfc3-60mas_abell2744_'+HFFimgfilter+'_v1.0_drz.fits'
-    photcatout      = cwd+'a2744_f140w_glasscat_with_ASTRODEEP_f140w_mag.cat'
-    segmentationmap = cwd+'hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v001_align-drz-seg.fits'
+    photcatout      = cwd+'../referenceImageAndCat/a2744_f140w_glasscat_with_ASTRODEEP_f140w_mag.cat'
+    segmentationmap = cwd+'../referenceImageAndCat/hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v001_align-drz-seg.fits'
 
     if generatesimulation:
         ra, dec         = 3.588197688, -30.39784202 # Cluster center
@@ -1327,9 +1347,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         NEXP    = 16       # total Intergrations
 
         print(' - Generating simulations')
-        print(' - Will loda HFF '+HFFimgfilter+' images of A2744 from \n   '+imagepath)
+        print(' - Will load HFF '+HFFimgfilter+' images of A2744 from \n   '+imagepath)
         print(' - Loading GLASS A2744 source catalog and corresponding segmentation map')
-        cat = np.genfromtxt('hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v001_glassmaster.txt',dtype=None,names=True)
+        cat = np.genfromtxt(cwd+'../referenceImageAndCat/hlsp_glass_hst_wfc3_a2744-fullfov-pa999_ir_v001_glassmaster.txt',dtype=None,names=True)
 
         print(' - Get matches to ASTRODEEP catalog')
         ADpath  = '/Users/kschmidt/work/GLASS/LAEsearchFullGLASS/catalogs/ASTRODEEP/fullrelease/'
