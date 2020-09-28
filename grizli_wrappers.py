@@ -2063,7 +2063,7 @@ def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
 
     beamhdu.writeto(outname,overwrite=overwrite)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbose=True):
+def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbose=True, verbose_loop=False):
     """
     Function generating file with pairings of the (GLASS) objects in the A2744 FoV with the mock spectra from
     JADES.
@@ -2078,11 +2078,12 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
 
     --- EXAMPLE OF USE ---
     import grizli_wrappers as gw
-    gw.determine_JADESmatchForA2744obj('A2744_JADESmatches.txt',overwrite=True,verbose=True)
+    outfile = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches.txt'
+    gw.determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True,verbose_loop=True)
 
     """
     if verbose: print(' - Loading GLASS catalog to get object IDs and coordinates')
-    glasscat   = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/a2744_f140w_glasscat_with_ASTRODEEP_f140w_mag.cat'
+    glasscat   = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/referenceImageAndCat/a2744_f140w_glasscat_with_ASTRODEEP_f140w_mag.cat'
     glassdat   = np.genfromtxt(glasscat,names=True,dtype=None)
     id_GLASS   = glassdat['NUMBER']
     mag_GLASS  = glassdat['MAG_AUTO']
@@ -2140,7 +2141,8 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         fout.write('#     \n')
         fout.write('# id_GLASS ra_GLASS dec_GLASS f140wmag_GLASS    '
                    'cat_match id_match ra_match dec_match r_match redshift    '
-                   'JADESid  JADESz JADESf140wmag '
+                   'AD_id AD_ra AD_dec AD_r_match AD_zbest AD_Mstar AD_mu AD_SFR '
+                   'JADESid  JADESz JADESf140wmag JADESMstar '
                    'size_id_info   size_ra_match  size_dec_match  size_r_match  size_id_galfit  size_r50obj_arcsec  size_r90_arcsec\n')
 
     if verbose: print(' - Loop over objects to get match to JADES mock catalog')
@@ -2156,13 +2158,13 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         obj_radec = SkyCoord(ra=ra_GLASS[oo]*u.degree, dec=dec_GLASS[oo]*u.degree)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if verbose: print(' - Crossmatch object to redshift catalogs ')
+        if verbose_loop: print(' - Crossmatch object to redshift catalogs ')
         AD_radec    = SkyCoord(ra=ADdat_info['RA']*u.degree, dec=ADdat_info['DEC']*u.degree)
         MUSE_radec  = SkyCoord(ra=MUSEdat['RA']*u.degree, dec=MUSEdat['DEC']*u.degree)
         glass_radec = SkyCoord(ra=glasszdat['RA']*u.degree, dec=glasszdat['DEC']*u.degree)
         size_radec = SkyCoord(ra=size_ra*u.degree, dec=size_dec*u.degree)
 
-        # if verbose: print(' - Getting sources within '+str(matchtol)+' arc seconds of redshift catalogs ')
+        if verbose_loop: print(' - Getting sources within '+str(matchtol)+' arc seconds of redshift catalogs ')
         AD_idx, AD_d2d, AD_d3d          = obj_radec.match_to_catalog_sky(AD_radec)
         MUSE_idx, MUSE_d2d, MUSE_d3d    = obj_radec.match_to_catalog_sky(MUSE_radec)
         glass_idx, glass_d2d, glass_d3d = obj_radec.match_to_catalog_sky(glass_radec)
@@ -2176,9 +2178,9 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
 
         glass_idx = np.atleast_1d(glass_idx)[np.where(glass_d2d < matchtol*u.arcsec)[0]]
         glass_d2d = glass_d2d[np.where(glass_d2d < matchtol*u.arcsec)[0]]
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        # if verbose: print(' - Extract redshift for object (MUSE over GLASS over ASTRODEEP')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose_loop: print(' - Extract redshift for object (MUSE over GLASS over ASTRODEEP)')
         if len(MUSE_idx) > 0:
             bestent    = np.where(MUSE_d2d.arcsec == np.min(MUSE_d2d.arcsec))
             matchent   = MUSE_idx[bestent]
@@ -2213,7 +2215,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             dec_match  = ADdat_info['DEC'][matchent]
             r_match    = AD_d2d.arcsec[bestent]
         else:
-            # if verbose: print('   No match to id_GLASS = '+str(objid)+' in any of the redshift catalogs searched             ')
+            if verbose_loop: print('   No match to id_GLASS = '+str(objid)+' in any of the redshift catalogs searched             ')
             cat_match  = 'NONE'
             id_match   = [-99]
             ra_match   = [-99]
@@ -2221,25 +2223,85 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             r_match    = [-99]
             redshift   = -99
 
-        if redshift > 0:
-            # if verbose: print(' - Select best JADES match (closest match to objects F140W magnitude within z_obj +/- 0.25)')
-            zrange    = [redshift-0.1,redshift+0.1]
-            JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=[f140wmag,-99],jadesinfo=jadesinfo,verbose=False)
-            if len(JADESinfo) == 0:
-                JADESid   = [-9999]
-                JADESz    = [-9999]
-                JADESmag  = [-9999]
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose_loop: print(' - Assign mSFR to object to be used for selection if good AD match available.')
+        if len(AD_idx) > 0:
+            bestent    = np.where(AD_d2d.arcsec == np.min(AD_d2d.arcsec))
+            matchent   = AD_idx[bestent]
+
+            AD_id      = ADdat_info['ID'][matchent]
+            AD_ra      = ADdat_info['RA'][matchent]
+            AD_dec     = ADdat_info['DEC'][matchent]
+            AD_r_match = AD_d2d.arcsec[bestent]
+
+            if ADdat_info['ID'][matchent] < 100000:
+                if ADdat_info['ID'][matchent] != ADdat['ID'][matchent]:
+                    sys.exit(' The IDs of the ASTRODEEP catalogs loaded do not match ')
+                else:
+                    AD_zbest   = ADdat['ZBEST'][matchent][0]
+                    AD_mu      = ADdat['MAGNIF'][matchent][0]
+                    AD_Mstar   = np.log10(ADdat['MSTAR'][matchent][0]*1e9)
+                    AD_SFR     = ADdat['SFR'][matchent][0]
             else:
-                JADESid   = JADESinfo['ID']
-                JADESz    = JADESinfo['redshift']
-                JADESmag  = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
+                AD_zbest   = -99
+                AD_mu      = -99
+                AD_Mstar   = -99
+                AD_SFR     = -99
         else:
-            JADESid   = [-99]
-            JADESz    = [-99]
-            JADESmag  = [-99]
+                AD_id      = [-99]
+                AD_ra      = [-99]
+                AD_dec     = [-99]
+                AD_r_match = [-99]
+                AD_zbest   = -99
+                AD_mu      = -99
+                AD_Mstar   = -99
+                AD_SFR     = -99
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose_loop: print(' - Select best JADES match based on z, M* and F140W mag AB')
+        if redshift > 0:
+            zdiff   = 0.1
+            magdiff = 0.5
 
-        # print(' - Add size of nearest object (to GLASS coordinates) from Takahiros estimates ')
+            if AD_Mstar > 0:
+                if verbose_loop: print('   M* available so selecting best match to M* given z+/-'+str(zdiff)+' and mF140W+/-'+str(magdiff))
+                zrange    = [redshift-zdiff,redshift+zdiff]
+                mrange    = [f140wmag-magdiff,f140wmag+magdiff]
+                JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=mrange,mStar=[AD_Mstar,-99],
+                                                jadesinfo=jadesinfo,verbose=True)
+
+                if len(JADESinfo) == 0:
+                    JADESid    = [-9999]
+                    JADESz     = [-9999]
+                    JADESmag   = [-9999]
+                    JADESmStar = [-9999]
+                else:
+                    JADESid    = JADESinfo['ID']
+                    JADESz     = JADESinfo['redshift']
+                    JADESmag   = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
+                    JADESmStar = JADESinfo['mStar']
+            else:
+                if verbose_loop: print('   No M* so selecting best match to mF140W given z+/-'+str(zdiff))
+                zrange    = [redshift-0.1,redshift+0.1]
+                JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=[f140wmag,-99],
+                                                jadesinfo=jadesinfo,verbose=False)
+                if len(JADESinfo) == 0:
+                    JADESid    = [-9999]
+                    JADESz     = [-9999]
+                    JADESmag   = [-9999]
+                    JADESmStar = [-9999]
+                else:
+                    JADESid    = JADESinfo['ID']
+                    JADESz     = JADESinfo['redshift']
+                    JADESmag   = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
+                    JADESmStar = [-9999]
+        else:
+            JADESid    = [-99]
+            JADESz     = [-99]
+            JADESmag   = [-99]
+            JADESmStar = [-99]
+
+        if verbose_loop: print(' - Add size of nearest object (to GLASS coordinates) from Takahiros estimates ')
         size_bestent    = np.where(size_d2d.arcsec == np.min(size_d2d.arcsec))
         size_matchent   = np.atleast_1d(size_idx)[size_bestent]
         size_ent        = np.where(size_id == size_id_info[size_matchent])[0]
@@ -2264,18 +2326,20 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             size_r50obj = size_r50obj * 0.06
             size_r90obj = size_r90obj * 0.06
 
-        # print(' - Store object information and JADES id to output file')
+        if verbose_loop: print(' - Store object information and JADES id to output file')
         outstring = str(objid)+'  '+str(ra_GLASS[oo])+'  '+str(dec_GLASS[oo])+'  '+str("%.4f" % f140wmag)+'  '+\
                     str("%10s" % cat_match)+'  '+str(id_match[0])+'  '+str(ra_match[0])+' '+\
                     str(dec_match[0])+'  '+str(r_match[0])+'  '+str("%.4f" % redshift)+'  '+\
-                    str(JADESid[0])+'  '+str(JADESz[0])+'  '+str(JADESmag[0])+'  '+\
+                    str(AD_id[0])+'  '+str(AD_ra[0])+'  '+str(AD_dec[0])+'  '+str(AD_r_match[0])+'  '+\
+                    str(AD_zbest)+'  '+str(AD_Mstar)+'  '+str(AD_mu)+'  '+str(AD_SFR)+'  '+\
+                    str(JADESid[0])+'  '+str(JADESz[0])+'  '+str(JADESmag[0])+'  '+str(JADESmStar[0])+'  '+\
                     str(size_id1[0])+'  '+str(size_ra_match)+'  '+str(size_dec_match)+'  '+\
                     str(size_r_match)+'  '+str(size_id2)+'  '+str(size_r50obj)+'  '+str(size_r90obj)
         fout.write(outstring+'\n')
     if verbose: print('\n   ... done')
 
     fout.close()
-    if verbose: print(' - Stored JADES ID matches to '+outfile)
+    if verbose: print(' - Stored JADES ID matches of all '+str(len(id_GLASS))+' objects to '+outfile)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_matchAD2GLASS(matchtol=0.5,GLASSids=None,ASTRODEEPids=None,verbose=True):
