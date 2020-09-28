@@ -1979,7 +1979,7 @@ def compute_single_model_JADES(sim,cat,detection_bp,useJADESz=True,fixJADEStempl
 
     """
     JADESmatches = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_180305.txt'
-    print(' - Assigning JADES templates as models for individual objects using \n'+JADESmatches)
+    print(' - Assigning JADES templates as models for individual objects using \n   '+JADESmatches)
 
     dat = np.genfromtxt(JADESmatches,names=True,dtype=None,skip_header=10)
     # for ii, id in enumerate(dat['JADESid']):
@@ -2106,11 +2106,10 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
     glasszdat  = np.genfromtxt(glasszcat,names=True,dtype=None)
     glasszdat  = glasszdat[np.where(glasszdat['redshift'] > 0)]
 
-    MUSEcat    = catdir + 'Mahler18_A2744_redshifts_cat_final.fits'
+    MUSEcat    = catdir + 'richard20/A2744_DR_v1.0.fits'
     MUSEdat    = fits.open(MUSEcat)[1].data
 
-
-    if verbose: print(' - Loading GALFIT size estiamtesb ')
+    if verbose: print(' - Loading GALFIT size estiamtes ')
     sizedir = '/Users/kschmidt/work/observing/proposals_preparation/180406_JWSTcycle1_A2744/galfitFromTaka/'
     size_info = np.genfromtxt(sizedir + 'f160w_01.cat',names=True,dtype=None,skip_header=27)
     size_dat  = np.genfromtxt(sizedir + 'galfit_crs_01.cat',names=True,dtype=None)
@@ -2184,11 +2183,11 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             bestent    = np.where(MUSE_d2d.arcsec == np.min(MUSE_d2d.arcsec))
             matchent   = MUSE_idx[bestent]
             cat_match  = 'MUSE'
-            id_match   = MUSEdat['# ID'][matchent]
+            id_match   = MUSEdat['iden'][matchent]
             ra_match   = MUSEdat['RA'][matchent]
             dec_match  = MUSEdat['DEC'][matchent]
             r_match    = MUSE_d2d.arcsec[bestent]
-            redshift   = MUSEdat['Z'][matchent][0]
+            redshift   = MUSEdat['z'][matchent][0]
         elif len(glass_idx) > 0:
             bestent    = np.where(glass_d2d.arcsec == np.min(glass_d2d.arcsec))
             matchent   = glass_idx[bestent]
@@ -2244,9 +2243,9 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         size_bestent    = np.where(size_d2d.arcsec == np.min(size_d2d.arcsec))
         size_matchent   = np.atleast_1d(size_idx)[size_bestent]
         size_ent        = np.where(size_id == size_id_info[size_matchent])[0]
-        size_id1        = size_id_info[size_matchent]
-        size_ra_match   = size_dec[size_matchent][0]
-        size_dec_match  = size_ra[size_matchent][0]
+        size_id1        = size_id[size_matchent]
+        size_ra_match   = size_ra[size_matchent][0]
+        size_dec_match  = size_dec[size_matchent][0]
         size_r_match    = size_d2d.arcsec[size_bestent][0]
 
         if len(size_ent) != 0:
