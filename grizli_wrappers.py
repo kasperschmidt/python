@@ -1454,7 +1454,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                 quickrunIDs = extractids
 
             gw.compute_single_model_JADES(sim,cat,detection_bp,selectIDs=quickrunIDs,
-                                          useJADESz=useJADESz,fixJADEStemplate=fixJADEStemplate)
+                                          useJADESz=useJADESz,fixJADEStemplate=fixJADEStemplate,
+                                          JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt')
         print('   Done buildinfg and/or assembling models for individual objects in simulation \n')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1974,11 +1975,11 @@ def compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,
                                      in_place=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def compute_single_model_JADES(sim,cat,detection_bp,useJADESz=True,fixJADEStemplate=None,selectIDs=False):
+def compute_single_model_JADES(sim,cat,detection_bp,useJADESz=True,fixJADEStemplate=None,selectIDs=False,
+                               JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt'):
     """
 
     """
-    JADESmatches = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_180305.txt'
     print(' - Assigning JADES templates as models for individual objects using \n   '+JADESmatches)
 
     dat = np.genfromtxt(JADESmatches,names=True,dtype=None,skip_header=10)
@@ -2063,7 +2064,7 @@ def gen_sci_nocontam_beams_file(beamfile,overwrite=False):
 
     beamhdu.writeto(outname,overwrite=overwrite)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbose=True, verbose_loop=False):
+def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbose=True, testing=False):
     """
     Function generating file with pairings of the (GLASS) objects in the A2744 FoV with the mock spectra from
     JADES.
@@ -2074,12 +2075,13 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
     outfile         Name of output file to store list of matches to
     overwrite       Overwrite existing file?
     verbose         Toggle verbosity
+    testing         Set this to true if testing the code (more info printed and only limited number of objects matched)
 
 
     --- EXAMPLE OF USE ---
     import grizli_wrappers as gw
     outfile = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches.txt'
-    gw.determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True,verbose_loop=True)
+    gw.determine_JADESmatchForA2744obj(outfile,overwrite=True,verbose=True,testing=True)
 
     """
     if verbose: print(' - Loading GLASS catalog to get object IDs and coordinates')
@@ -2123,6 +2125,13 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
     size_r50 = size_dat['27r50_sext']
     size_r90 = size_dat['28r90_sext']
 
+    # make sure to only consider IDs in info list that are also in GALFIT results catalog
+    for ii, sii in enumerate(size_id_info):
+        if sii not in size_id:
+            size_id_info[ii]  = -99
+            size_ra[ii]       = 0.0
+            size_dec[ii]      = 0.0
+
     if verbose: print(' - Setting up output file '+outfile)
     if os.path.isfile(outfile) & (overwrite == False):
         sys.exit(outfile+' already exists and "overwrite"=False ')
@@ -2147,7 +2156,13 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
 
     if verbose: print(' - Loop over objects to get match to JADES mock catalog')
     for oo, objid in enumerate(id_GLASS):
-        if (objid < 750) or (objid > 760): continue
+        if testing:
+            verbose_loop = True
+            verbose_ju   = True
+            if (objid < 2070) or (objid > 2080): continue
+        else:
+            verbose_loop = False
+            verbose_ju   = False
         if verbose:
             infostr = '   matching and getting JADES info for id_GLASS = '+str(objid)+' ('+\
                       str("%6.f" % (oo+1))+' / '+str("%6.f" % len(id_GLASS))+')          '
@@ -2268,7 +2283,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
                 zrange    = [redshift-zdiff,redshift+zdiff]
                 mrange    = [f140wmag-magdiff,f140wmag+magdiff]
                 JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=mrange,mStar=[AD_Mstar,-99],
-                                                jadesinfo=jadesinfo,verbose=True)
+                                                jadesinfo=jadesinfo,verbose=verbose_ju)
 
                 if len(JADESinfo) == 0:
                     JADESid    = [-9999]
@@ -2284,7 +2299,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
                 if verbose_loop: print('   No M* so selecting best match to mF140W given z+/-'+str(zdiff))
                 zrange    = [redshift-0.1,redshift+0.1]
                 JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=[f140wmag,-99],
-                                                jadesinfo=jadesinfo,verbose=False)
+                                                jadesinfo=jadesinfo,verbose=verbose_ju)
                 if len(JADESinfo) == 0:
                     JADESid    = [-9999]
                     JADESz     = [-9999]
@@ -2301,13 +2316,14 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             JADESmag   = [-99]
             JADESmStar = [-99]
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose_loop: print(' - Add size of nearest object (to GLASS coordinates) from Takahiros estimates ')
         size_bestent    = np.where(size_d2d.arcsec == np.min(size_d2d.arcsec))
         size_matchent   = np.atleast_1d(size_idx)[size_bestent]
         size_ent        = np.where(size_id == size_id_info[size_matchent])[0]
-        size_id1        = size_id[size_matchent]
-        size_ra_match   = size_ra[size_matchent][0]
-        size_dec_match  = size_dec[size_matchent][0]
+        size_id1        = size_id[size_ent]
+        size_ra_match   = size_ra[size_ent][0]
+        size_dec_match  = size_dec[size_ent][0]
         size_r_match    = size_d2d.arcsec[size_bestent][0]
 
         if len(size_ent) != 0:
@@ -2326,6 +2342,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             size_r50obj = size_r50obj * 0.06
             size_r90obj = size_r90obj * 0.06
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose_loop: print(' - Store object information and JADES id to output file')
         outstring = str(objid)+'  '+str(ra_GLASS[oo])+'  '+str(dec_GLASS[oo])+'  '+str("%.4f" % f140wmag)+'  '+\
                     str("%10s" % cat_match)+'  '+str(id_match[0])+'  '+str(ra_match[0])+' '+\
@@ -2396,18 +2413,15 @@ def get_matchAD2GLASS(matchtol=0.5,GLASSids=None,ASTRODEEPids=None,verbose=True)
     return outarr
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def print_JADESoutputFromFile(GLASSids,verbose=True):
+def print_JADESoutputFromFile(GLASSids,verbose=True,
+                              JADESmatchfile='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt'):
     """
     GLASSids = [3.0,25.0,34.0,35.0,98.0,104.0,118.0,142.0,463.0,477.0,783.0,1014.0,1084.0,1517.0,1535.0,1627.0,1722.0,1744.0,1745.0,1787.0,1977.0,1987.0,2095.0,2113.0]
 
     gw.print_JADESoutputFromFile(GLASSids)
 
     """
-    # dat = np.genfromtxt("A2744_JADESmatches_180305.txt",names=True,dtype=None,skip_header=10)
-    #
-    # colnames = [name for name in  dat.dtype.names]
-
-    f = open("/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_180305.txt",'r')
+    f = open(JADESmatchfile,'r')
 
     for line in f:
         if line.startswith('#'):
