@@ -31,8 +31,8 @@ def generate_literature_fitscatalog(verbose=True):
     lce.generate_literature_fitscatalog()
 
     # updating plots
-    lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=False,shownames=False)
     lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2020)','MUSE UDF mosaic (Schmidt et al. 2020)', 'MUSE UDF10 (Schmidt et al. 2020)'],extra_symlist=['o','D','X'],showkeynames=False)
+    lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=True,shownames=False)
 
     """
     outdir      = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
@@ -57,65 +57,18 @@ def generate_literature_fitscatalog(verbose=True):
     if verbose: print('\n - Collecting literature data arrays and appending them')
     refdic                 = lce.referencedictionary()
 
-    dataref, dataarray     = lce.data_nan19(verbose=True)
-    outputdataarray        = dataarray
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
+    fctlist = []
+    for fct in dir(lce):
+        if ('data_' in fct) & (fct != 'data_TEMPLATE'):
+            fctlist.append(fct)
 
-    dataref, dataarray     = lce.data_sch17(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_sen17(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_rig14(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_rig15(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_erb10(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_sta14(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_sta15(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_mai18(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_sha03(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_bay14(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_sch16(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_lef19(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_amo17(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
-
-    dataref, dataarray     = lce.data_ber19(verbose=True)
-    outputdataarray        = np.append(outputdataarray,dataarray)
-    if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
+    for datafunction in fctlist:
+        dataref, dataarray     = getattr(lce, datafunction)(verbose=False)
+        try:
+            outputdataarray        = np.append(outputdataarray,dataarray)
+        except:
+            outputdataarray        = dataarray
+        if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -217,6 +170,7 @@ def referencedictionary(verbose=False):
     refdic['mai18'] = [99,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
     refdic['sha03'] = [99,    'Shapley et al. (2003)',                                  'h']
     refdic['bay14'] = [99,    'Bayliss et al. (2014)',                                  'H']
+    refdic['du20']  = [99,    'Du et al. (2020)',                                       r'$\bowtie$']
     refdic['dummy'] = [99,    'dummy',                                                  '+']
     refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                                 'x']
     refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                            'D']
@@ -257,11 +211,9 @@ def referencedictionary(verbose=False):
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Mainali et al. (2020) - CIII emitters at z~2 from RELICS
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Du et al. (2020) - Lya and CIII EWs
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Ravindranath et al. (2020) Green pea CIII + OIII + Lya emitters
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # -----># Senchyna et al. (2019); Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
+    # Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Plat et al. (2019) compilation... check
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -3278,4 +3230,127 @@ def data_ber19(fluxscale=1e4,verbose=True):
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_du20(fluxscale=1.0,verbose=True):
+    """
+    Data collected from Du et al. (2020)
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'du20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['COSMOS-521','COSMOS-1151','COSMOS-1619','COSMOS-1762','COSMOS-2129','COSMOS-2814','COSMOS-3164','COSMOS-3403','COSMOS-3480','COSMOS-3839','COSMOS-4064','COSMOS-4156','COSMOS-4205','COSMOS-4788','COSMOS-5281','COSMOS-5283','COSMOS-5593','COSMOS-6283','COSMOS-6332','COSMOS-6348','COSMOS-7672','COSMOS-7686','COSMOS-7883','COSMOS-8067','COSMOS-8383','COSMOS-8711','COSMOS-9983','COSMOS-10155','AEGIS-3057','AEGIS-3455','AEGIS-4656','AEGIS-8907','AEGIS-9939','AEGIS-12032','AEGIS-13602','AEGIS-14156','AEGIS-16874','AEGIS-17160','AEGIS-17514','AEGIS-17842','AEGIS-18543','AEGIS-18729','AEGIS-19696','AEGIS-20987','AEGIS-21918','AEGIS-22858','AEGIS-24181','AEGIS-24314','AEGIS-24857','AEGIS-26531','AEGIS-28358','AEGIS-33462','AEGIS-33688','AEGIS-35021','AEGIS-38677'])
+    datadic['id']        = np.array([521,1151,1619,1762,2129,2814,3164,3403,3480,3839,4064,4156,4205,4788,5281,5283,5593,6283,6332,6348,7672,7686,7883,8067,8383,8711,9983,10155,3057,3455,4656,8907,9939,12032,13602,14156,16874,17160,17514,17842,18543,18729,19696,20987,21918,22858,24181,24314,24857,26531,28358,33462,33688,35021,38677]) + baseid
+    rasex                = np.array(['04:22:00.81'])
+    decsex               = np.array(['-38:37:03.59'])
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # ralist  = []
+    # declist = []
+    # skeltoncat_cos = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+    # skeltoncat_aeg = '/Users/kschmidt/work/catalogs/skelton/aegis_3dhst.v4.1.cats/Catalog/aegis_3dhst.v4.1.cat.FITS'
+    # for cat in [skeltoncat_cos,skeltoncat_aeg]:
+    #     skeldat = afits.open(cat)[1].data
+    #
+    #     if 'cosmos' in cat:
+    #         idlist = [521,1151,1619,1762,2129,2814,3164,3403,3480,3839,4064,4156,
+    #                   4205,4788,5281,5283,5593,6283,6332,6348,7672,7686,7883,8067,8383,8711,9983,10155]
+    #     elif 'aegis' in cat:
+    #         idlist = [3057,3455,4656,8907,9939,12032,13602,14156,16874,17160,17514,
+    #                   17842,18543,18729,19696,20987,21918,22858,24181,24314,24857,26531,28358,33462,33688,35021,38677]
+    #     else:
+    #         sys.exit(' not right catalog...')
+    #
+    #     for objid in idlist:
+    #         objent = np.where(skeldat['id'] == objid)[0]
+    #         if len(objent) != 1:
+    #             print('hmmm; there is '+str(len(objent))+' entries for '+str(objid)+' in '+cat)
+    #             pdb.set_trace()
+    #         ralist.append(skeldat['ra'][objent][0])
+    #         declist.append(skeldat['dec'][objent][0])
+    # datadic['ra']        = np.asarray(ralist)
+    # datadic['dec']       = np.asarray(declist)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    datadic['ra']        = np.array([150.12922668, 150.09890747, 150.08901978, 150.11735535,
+                                     150.13356018, 150.09945679, 150.16065979, 150.18649292,
+                                     150.17085266, 150.15518188, 150.1015625 , 150.17932129,
+                                     150.13993835, 150.0960083 , 150.13302612, 150.18666077,
+                                     150.07997131, 150.11528015, 150.12243652, 150.09754944,
+                                     150.16314697, 150.1938324 , 150.135849  , 150.11877441,
+                                     150.18721008, 150.14877319, 150.1656189 , 150.17324829,
+                                     215.01733398, 215.05856323, 215.01461792, 215.04498291,
+                                     214.95423889, 214.97021484, 214.94296265, 214.9598999 ,
+                                     214.97047424, 215.0307312 , 214.94458008, 215.03538513,
+                                     214.95158386, 214.97691345, 215.00788879, 214.94960022,
+                                     215.02043152, 214.97955322, 215.0209198 , 214.95968628,
+                                     214.938797  , 214.96990967, 215.00230408, 214.94770813,
+                                     214.99040222, 214.97428894, 214.91616821])
+    datadic['dec']        = np.array([ 2.18508196,  2.19115639,  2.19622922,  2.19726372,  2.20125866,
+                                       2.20760393,  2.21095228,  2.21305156,  2.21372318,  2.21686935,
+                                       2.21914482,  2.21977043,  2.22021198,  2.22651935,  2.23151278,
+                                       2.2319591 ,  2.23517036,  2.24191332,  2.24219131,  2.24230862,
+                                       2.25707197,  2.25724459,  2.25997376,  2.26230001,  2.26479006,
+                                       2.26798081,  2.28166223,  2.2828939 , 52.87504959, 52.90653992,
+                                      52.88145828, 52.91952515, 52.86125183, 52.88140106, 52.86864853,
+                                      52.88308334, 52.90179443, 52.94544983, 52.88584137, 52.95142746,
+                                      52.89466095, 52.91314697, 52.93918228, 52.90310669, 52.95685196,
+                                      52.93217087, 52.96637344, 52.92338943, 52.91078568, 52.93939209,
+                                      52.96863937, 52.95067978, 52.98193359, 52.97533798, 52.94908142])
+
+    datadic['redshift']  = np.array([2.1996,2.2475,np.nan,1.4093,2.4205,1.7052,2.0435,2.0413,1.6474,np.nan,1.5058,2.1904,1.8400,1.4083,1.8326,2.1771,2.1040,2.2263,2.1769,2.0983,2.1945,1.8026,2.1565,2.2016,2.0933,1.8073,1.8525,2.4945,2.2808,1.9397,1.3588,1.5909,1.9328,1.8615,np.nan,1.6757,1.8883,2.1561,2.0157,2.2949,2.1421,2.2125,np.nan,2.1617,1.9066,1.3983,1.3928,np.nan,1.9083,1.5902,1.5741,2.2688,1.7176,1.7778,np.nan])
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['EW0_Lya']        = np.array([5.3,2.7,np.nan,np.nan,0.8,-8.6,-7.1,19.4,32.1,np.nan,np.nan,22.2,33.1,np.nan,-24.3,12.5,10.4,-11.5,9.0,-0.8,7.9,131.6,17.7,22.7,51.5,3.9,22.1,3.4,3.3,15.4,np.nan,3.8,4.7,2.5,np.nan,37.6,6.3,12.4,-4.4,10.7,-0.8,8.0,np.nan,-5.4,-55.8,np.nan,np.nan,np.nan,1.4,13.8,-7.9,-5.2,35.8,3.2,np.nan])
+    datadic['EW0err_Lya']     = np.array([1.7,2.2,np.nan,np.nan,1.6,4.2,3.2,10.6,5.2,np.nan,np.nan,1.3,3.8,np.nan,1.7,0.4,1.3,2.8,1.6,3.4,1.2,10.9,1.6,2.3,4.3,3.2,4.3,2.5,1.0,1.2,np.nan,6.4,1.9,1.5,np.nan,14.9,3.8,1.8,0.7,1.9,0.3,0.7,np.nan,2.0,22.8,np.nan,np.nan,np.nan,1.0,7.1,4.1,2.3,2.3,2.8,np.nan])
+
+    datadic['EW0_CIII']      = np.array([1.1,1.5,np.nan,5.1,3.0,1.5,0.2,4.8,1.8,np.nan,6.9,7.8,np.nan,2.1,7.9,2.9,3.0,1.0,3.4,5.1,1.3,13.2,5.0,1.1,2.2,1.2,1.2,2.0,3.5,4.4,3.7,1.3,0.8,np.nan,np.nan,8.2,1.3,3.6,2.7,10.5,2.5,3.6,np.nan,1.0,	1.8,6.9,6.2,np.nan,6.6,4.1,5.7,1.2,3.8,2.2,np.nan])
+    datadic['EW0err_CIII']   = np.array([0.3,0.5,np.nan,0.7,99,99,99,99,99,np.nan,0.3,0.5,np.nan,0.5,1.7,0.2,0.4,0.3,99,1.0,0.4,0.8,0.9,99,99,99,99,99,0.6,0.7,0.6,0.3,99,np.nan,np.nan,2.0,99,0.7,0.3,1.4,0.3,0.4,np.nan,99,0.3,1.7,0.8,np.nan,0.6,0.9,1.2,99,0.3,0.4,np.nan])
+
+    datadic['EW0_OIII4959,5007']    = np.array([np.nan,np.nan,np.nan,1022,111,38,np.nan,862,311,np.nan,1940,1234,555,240,353,919,601,367,180,758,np.nan,1417,598,121,1302,100,256,np.nan,690,240,931,95,835,1168,291,344,455,561,748,931,876,377,203,512,697,753,930,1139,1382,408,437,308,1142,762,np.nan])
+    datadic['EW0err_OIII4959,5007'] = np.array([np.nan,np.nan,np.nan,159,62,32,np.nan,225,35,np.nan,403,205,50,34,38,66,30,28,125,76,np.nan,236,54,34,65,42,66,np.nan,83,30,165,14,104,147,135,36,63,81,72,83,88,22,30,103,67,187,56,168,170,71,32,31,139,74,np.nan])
+
+    datadic['EW0_CIV']        = datadic['EW0_Lya']*np.nan
+    datadic['EW0err_CIV']     = datadic['EW0_Lya']*np.nan
+
+    datadic['EW0_HeII']        = datadic['EW0_Lya']*np.nan
+    datadic['EW0err_HeII']     = datadic['EW0_Lya']*np.nan
+
+    datadic['EW0_OIII']        = datadic['EW0_Lya']*np.nan
+    datadic['EW0err_OIII']     = datadic['EW0_Lya']*np.nan
+
+    entCOSMOS7686 = 21
+    datadic['EW0_CIV'][entCOSMOS7686]     = 8.8
+    datadic['EW0err_CIV'][entCOSMOS7686]  = 1.0
+    datadic['EW0_HeII'][entCOSMOS7686]    = 1.41
+    datadic['EW0err_HeII'][entCOSMOS7686] = 99
+    datadic['EW0_OIII'][entCOSMOS7686]    = 5.3
+    datadic['EW0err_OIII'][entCOSMOS7686] = 0.9
+
+    entCOSMOS4064 = 10
+    datadic['EW0_CIV'][entCOSMOS4064]     = 1.5
+    datadic['EW0err_CIV'][entCOSMOS4064]  = 0.2
+    datadic['EW0_HeII'][entCOSMOS4064]    = 1.7
+    datadic['EW0err_HeII'][entCOSMOS4064] = 0.3
+    datadic['EW0_OIII'][entCOSMOS4064]    = 1.5
+    datadic['EW0err_OIII'][entCOSMOS4064] = 0.3
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
