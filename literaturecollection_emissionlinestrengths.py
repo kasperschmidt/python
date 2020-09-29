@@ -179,11 +179,11 @@ def get_reference_fromID(idlist,verbose=True):
                     foundref = True
 
             if not foundref:
-                if verbose: print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
-                                  '            The id '+idstr+' has no match in literature collection. '
-                                                              'Setting marker for plots to "$??$"')
+                print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
+                      '            The id '+idstr+' has no match in literature collection. '
+                      'Setting marker for plots to "$??$"')
 
-                pdb.set_trace()
+
                 returnrefs.append([idstr,'NoRef',baseid,'NoRef','$??$'])
 
     if len(idlist) != len(returnrefs):
@@ -193,40 +193,51 @@ def get_reference_fromID(idlist,verbose=True):
     else:
         return returnrefs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def referencedictionary():
+def referencedictionary(verbose=False):
     """
 
     --- EXAMPLE OF USE ---
     import literaturecollection_emissionlinestrengths as lce
-    refval = 'sch17'
-    lce.referencedictionary()[refval][1]
+    refval  = 'sch17'
+    refdic  = lce.referencedictionary(verbose=True)
+    refinfo = [refval]
 
     """
     refdic = collections.OrderedDict()
     #                  baseid   reference                                             plotsymbol
-    refdic['nan19'] = [01e9,    'Nanaykkara et al. (2019)',                               '^']
-    refdic['sch17'] = [02e9,    'Schmidt et al. (2017) & Mainali et al. (2017)',          '<']
-    refdic['sen17'] = [03e9,    'Senchyna et al. (2017)',                                 'v']
-    refdic['rig14'] = [04e9,    'Rigby et al. (2014)',                                    '>']
-    refdic['rig15'] = [05e9,    'Rigby et al. (2015)',                                    '8']
-    refdic['erb10'] = [06e9,    'Erb et al. (2010)',                                      's']
-    refdic['sta14'] = [07e9,    'Stark et al. (2014)',                                    'p']
-    refdic['sta15'] = [08e9,    'Stark et al. (2015a,b, 2017)',                           'P']
-    refdic['mai18'] = [09e9,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
-    refdic['sha03'] = [10e9,    'Shapley et al. (2003)',                                  'h']
-    refdic['bay14'] = [11e9,    'Bayliss et al. (2014)',                                  'H']
-    refdic['dummy'] = [12e9,    'dummy',                                                  '+']
-    refdic['lef19'] = [13e9,    'Le Fevre et al. (2019)',                                 'x']
-    refdic['ber19'] = [14e9,    'Berg et al. (2016, 2019a,b)',                            'D']
-    refdic['dummy'] = [15e9,    'dummy',                                                  'd']
-    refdic['dummy'] = [16e9,    'dummy',                                                  (4, 1, 0)]   # 4-point star
-    refdic['dummy'] = [17e9,    'dummy',                                                  (4, 1, 45)]  # 4-point star
-    refdic['sch16'] = [18e9,    'Schmidt et al. (2016)',                                  (7, 1, 0)]   # 7-point star
-    refdic['dummy'] = [19e9,    'dummy',                                                  (7, 1, 90)]  # 7-point star
-    refdic['dummy'] = [20e9,    'dummy',                                                  (7, 1, 180)] # 7-point star
-    refdic['amo17'] = [51e9,    'Amorin et al. (2017)',                                   (5, 0, 180)] # pentagon rotated 180deg
-    refdic['dummy'] = [52e9,    'dummy',                                                  (5, 0, 90)]  # pentagon rotated 90deg
-    refdic['dummy'] = [53e9,    'dummy',                                                  (5, 0, 270)] # pentagon rotated 270deg
+    refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                               '^']
+    refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)',          '<']
+    refdic['sen17'] = [99,    'Senchyna et al. (2017)',                                 'v']
+    refdic['sen19'] = [99,    'Senchyna et al. (2019)',                                 'v']
+    refdic['rig14'] = [99,    'Rigby et al. (2014)',                                    '>']
+    refdic['rig15'] = [99,    'Rigby et al. (2015)',                                    '8']
+    refdic['erb10'] = [99,    'Erb et al. (2010)',                                      's']
+    refdic['sta14'] = [99,    'Stark et al. (2014)',                                    'p']
+    refdic['sta15'] = [99,    'Stark et al. (2015a,b, 2017)',                           'P']
+    refdic['mai18'] = [99,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
+    refdic['sha03'] = [99,    'Shapley et al. (2003)',                                  'h']
+    refdic['bay14'] = [99,    'Bayliss et al. (2014)',                                  'H']
+    refdic['dummy'] = [99,    'dummy',                                                  '+']
+    refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                                 'x']
+    refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                            'D']
+    refdic['dummy'] = [99,    'dummy',                                                  'd']
+    refdic['dummy'] = [99,    'dummy',                                                  (4, 1, 0)]   # 4-point star
+    refdic['dummy'] = [99,    'dummy',                                                  (4, 1, 45)]  # 4-point star
+    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                                  (7, 1, 0)]   # 7-point star
+    refdic['dummy'] = [99,    'dummy',                                                  (7, 1, 90)]  # 7-point star
+    refdic['dummy'] = [99,    'dummy',                                                  (7, 1, 180)] # 7-point star
+    refdic['amo17'] = [99,    'Amorin et al. (2017)',                                   (5, 0, 180)] # pentagon rotated 180deg
+    refdic['dummy'] = [99,    'dummy',                                                  (5, 0, 90)]  # pentagon rotated 90deg
+    refdic['dummy'] = [99,    'dummy',                                                  (5, 0, 270)] # pentagon rotated 270deg
+
+    if verbose: print(' --- Assigning base IDs to literature collections --- ')
+    if verbose: print(' #   baseid        reference ')
+    for ii, key in enumerate(refdic.keys()):
+        baseid = (ii+1)*1e9
+        refdic[key][0] = baseid
+        if verbose: print('   '+str("%12i" % refdic[key][0])+'    '+refdic[key][1])
+
+    #bow ties and half moons as symbols...
 
     # --- MUSE-Wide def: ---
     # CDFS and COSMOS:  'o'
@@ -240,11 +251,17 @@ def referencedictionary():
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Vanzella et al. (2020) - MACS0416 objects
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Richard et al. (2020) - MUSE lensing cluster's object line fluxes...
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Mainali et al. (2020) - CIII emitters at z~2 from RELICS
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Du et al. (2020) - Lya and CIII EWs
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Ravindranath et al. (2020) Green pea CIII + OIII + Lya emitters
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Senchyna et al. (2019); Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
+    # -----># Senchyna et al. (2019); Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Plat et al. (2019) compilation... check
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1265,6 +1282,19 @@ def colname2NEOGAL(colname):
                  ' in lce.colname2NEOGAL(); add one to proceed.')
 
     return translatedic[colname]
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def add_photoionization_modelgrid_to_plot(piplotparam,verbose=True):
+    """
+    Wrapper to add NEOGAL photoionization model grids to flux ratio plots
+
+    --- INPUT ---
+    piplotparam            The photoionization plot parameters.
+
+    --- EXAMPLE OF RUN ---
+
+    """
+
+    sys.exit(' Not enabled yet...')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def add_photoionization_models_to_plot(piplotparam,verbose=True):
@@ -1884,6 +1914,95 @@ def data_sen17(fluxscale=1e5,verbose=True):
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sen19(fluxscale=1e5,verbose=True):
+    """
+    Data collected from Senchyna+2019
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sen19'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['id']        = np.array([4250,3648,2935,5130,576,133]) + baseid
+    datadic['name']      = np.array(['HS1442+4250' , 'J0405-3648' , 'J0940+2935' , 'J1119+5130' , 'SBSG1129+576' , 'UM133'])
+
+    rasex                = np.array(['14:44:11.46','4:05:20.46','9:40:12.87','11:19:34.37','11:32:02.64','1:44:41.37'])
+    decsex               = np.array([' 42:37:35.6','-36:48:59.1',' 29:35:30.2',' 51:30:12.0',' 57:22:36.4',' 4:53:25.3 '])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+
+    distances            = np.array([11,15,8 ,22,25,29])
+    datadic['redshift']  = np.array([acoord.Distance(objdist, u.Mpc).compute_z(cosmology=acosmo.Planck15) for objdist in distances])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+    datadic['f_CIV1']       = np.array([4.52,0.06,0.06,0.08,0.04,0.09])
+    datadic['ferr_CIV1']    = np.array([0.05,99,99,99,99,99])
+    datadic['EW0_CIV1']     = np.array([2.92,0.07,0.07,0.04,0.08,0.09])
+    datadic['EW0err_CIV1']  = np.array([0.05,99,99,99,99,99])
+
+    datadic['f_CIV2']       = np.array([2.46,0.06,0.07,0.08,0.05,0.09])
+    datadic['ferr_CIV2']    = np.array([0.05,99,99,99,99,99])
+    datadic['EW0_CIV2']     = np.array([1.46,0.07,0.06,0.04,0.08,0.08])
+    datadic['EW0err_CIV2']  = np.array([0.03,99,99,99,99,99])
+
+    linename = 'CIV'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    datadic['f_HeII']    = np.array([2.64,0.07,0.08,0.10,0.61,0.64])
+    datadic['ferr_HeII'] = np.array([0.05,99,99,99,0.05,0.03])
+    datadic['EW0_HeII']    = np.array([1.69,0.09,0.08,0.05,1.14,0.60])
+    datadic['EW0err_HeII'] = np.array([0.03,99,99,99,0.09,0.03])
+
+    datadic['f_OIII1']       = np.array([1.51,0.22,0.27,0.90,0.20,0.33])
+    datadic['ferr_OIII1']    = np.array([0.05,99,99,0.06,99,99])
+    datadic['EW0_OIII1']     = np.array([0.99,0.28,0.27,0.49,0.41,0.32])
+    datadic['EW0err_OIII1']  = np.array([0.03,99,99,0.04,99,99])
+
+    datadic['f_OIII2']       = np.array([3.26,0.22,0.69,2.64,0.42,1.44])
+    datadic['ferr_OIII2']    = np.array([0.05,99,0.04,0.13,0.02,0.04])
+    datadic['EW0_OIII2']     = np.array([2.15,0.31,0.72,1.53,0.95,1.47])
+    datadic['EW0err_OIII2']  = np.array([0.04,99,0.05,0.08,0.05,0.05])
+
+    linename = 'OIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    datadic['f_CIII']       = np.array([11.58,0.51,0.57,0.78,0.76,4.70])
+    datadic['ferr_CIII']    = np.array([0.57,99,99,99,99,0.38])
+    datadic['EW0_CIII']     = np.array([11.09,2.64,1.09,0.83,3.51,10.75])
+    datadic['EW0err_CIII']  = np.array([0.72,99,99,99,99,1.13])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_nan19(fluxscale=1.0,verbose=True):
     """
