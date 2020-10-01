@@ -1270,7 +1270,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     if workingdir is None:
         cwd = os.getcwd()+'/'
     else:
-        print(' - Setting cwd = '+workingdir)
+        print('\n - Setting cwd = '+workingdir)
         if os.path.isdir(workingdir):
             answer = input('   -> that directory already exists, do you want to move there and continue?   ')
             if (answer.lower() == 'y') or (answer.lower() == 'yes'):
@@ -1296,18 +1296,25 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         print(' --- Started wrapper at:                       '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         print('\n - Using grizli version: %s' %(grizli.__version__))
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if singlefilterrun:
-        print(' \n\n          NB - running a "singlefilterrun" \n\n')
-        #filterloops  = ['F277W']
-        filterloops  = ['F356W']
-        #filterloops  = ['F444W']
+        print(' \n\n          NB - Running a "singlefilterrun" ')
+
+        if type(singlefilterrun) == str:
+            singlefilt   = singlefilterrun
+
+
+        else:
+            singlefilt  = 'F356W'
+        filterloops  = [singlefilt]
+        print('               Using filter "'+singlefilt+'" \n\n')
         orientations = [0,90]
         pmc = {}
         pmc['F277W'] = [0.2, -0.025] # coeffs=[1.2, -0.5]))
         pmc['F356W'] = [0.2, -0.025]
         pmc['F444W'] = [0.05, 0.0]
         polymodelcoeffs = pmc[filterloops[0]]
-
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - Polynomial coefficients to use for model: '+str(polymodelcoeffs))
     print(' - Polynomial range to use for model:        '+str(polyxrange))
 
@@ -1398,10 +1405,10 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                 elif theta == 90:
                     grism_img = 'GRISMC'
 
-                if (filt == 'F277W') & (theta == 0): # offset f277w row disperion
+                if (filt == 'F277W') & (theta == 9990): # offset f277w row disperion
                     pointra  = ra277R
                     pointdec = dec277R
-                elif (filt == 'F277W') & (theta == 90): # offset f277w column disperion
+                elif (filt == 'F277W') & (theta == 90999): # offset f277w column disperion
                     pointra  = ra277C
                     pointdec = dec277C
                 else:
@@ -1462,61 +1469,71 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
 
         subplot_indices = [0,2,4,1,3,5]
         if singlefilterrun:
-            subplot_indices = [0]
-            if len(orientations) == 2:
-                subplot_indices = [0,1]
+            if singlefilt == 'F277W': subplot_indices = [0,-99,-99,1,-99,-99]
+            if singlefilt == 'F356W': subplot_indices = [-99,0,-99,-99,1,-99]
+            if singlefilt == 'F444W': subplot_indices = [-99,-99,0,-99,-99,1]
+        #---------------------------------------------------------------------------
+        Fsize = 8.0
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        #---------------------------------------------------------------------------
         print(' - Plot blotted reference image; "grism" exposures are still empty, just noise')
         fig = plt.figure(figsize=[9,9*2./3])
         for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,3,ix+1)
-            ax.imshow(sim.FLTs[i].direct['REF'], vmin=-0.01, vmax=0.05, cmap='viridis',
-                      origin='lower')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.grid(color='w', alpha=0.8)
-            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+            if i != -99:
+                ax = fig.add_subplot(2,3,ix+1)
+                ax.imshow(sim.FLTs[i].direct['REF'], vmin=-0.01, vmax=0.05, cmap='viridis',
+                          origin='lower')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.grid(color='w', alpha=0.8)
+                ax.text(100,100,sim.FLTs[i].grism_file.replace('_','\_'), color='w', size=10, ha='left', va='bottom')
         fig.tight_layout(pad=0.1)
         plt.savefig('./blotted_reference_image.pdf')
-
+        #---------------------------------------------------------------------------
         print(' - Plot blotted segmentation image; "grism" exposures are still empty, just noise')
         fig = plt.figure(figsize=[9,9*2./3])
         for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,3,ix+1)
-            ax.imshow(sim.FLTs[i].seg, vmin=-0.01, vmax=3000, cmap='viridis', origin='lower')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.grid(color='w', alpha=0.8)
-            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+            if i != -99:
+                ax = fig.add_subplot(2,3,ix+1)
+                ax.imshow(sim.FLTs[i].seg, vmin=-0.01, vmax=3000, cmap='viridis', origin='lower')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.grid(color='w', alpha=0.8)
+                ax.text(100,100,sim.FLTs[i].grism_file.replace('_','\_'), color='w', size=10, ha='left', va='bottom')
         fig.tight_layout(pad=0.1)
         plt.savefig('./blotted_segmentation_image.pdf')
-
+        #---------------------------------------------------------------------------
         print(' - Plot "grism" exposures that are still empty, just noise')
         fig = plt.figure(figsize=[9,9*2./3])
         for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,3,ix+1)
-            ax.imshow(sim.FLTs[i].grism['SCI'], vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.grid(color='w', alpha=0.8)
-            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+            if i != -99:
+                ax = fig.add_subplot(2,3,ix+1)
+                ax.imshow(sim.FLTs[i].grism['SCI'], vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.grid(color='w', alpha=0.8)
+                ax.text(100,100,sim.FLTs[i].grism_file.replace('_','\_'), color='w', size=10, ha='left', va='bottom')
         fig.tight_layout(pad=0.1)
         plt.savefig('./blotted_grismnoise_image.pdf')
-
+        #---------------------------------------------------------------------------
         print(' - Plot model stored in FLTs[i].model attribute')
         fig = plt.figure(figsize=[9,9*2./3])
         for ix, i in enumerate(subplot_indices):
-            ax = fig.add_subplot(2,3,ix+1)
+            if i != -99:
+                ax = fig.add_subplot(2,3,ix+1)
+                # show as if it were the rotated grism
+                if (i % 2) > 0:
+                    ax.imshow(np.rot90(sim.FLTs[i].model,-1), vmin=-0.01, vmax=0.05, cmap='viridis',
+                              origin='lower')
+                else:
+                    ax.imshow(sim.FLTs[i].model, vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
 
-            # show as if it were the rotated grism
-            if (i % 2) > 0:
-                ax.imshow(np.rot90(sim.FLTs[i].model,-1), vmin=-0.01, vmax=0.05, cmap='viridis',
-                          origin='lower')
-            else:
-                ax.imshow(sim.FLTs[i].model, vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
-
-            ax.set_xticklabels([]); ax.set_yticklabels([])
-            ax.grid(color='w', alpha=0.8)
-            ax.text(100,100,sim.FLTs[i].grism_file, color='w', size=10, ha='left', va='bottom')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.grid(color='w', alpha=0.8)
+                ax.text(100,100,sim.FLTs[i].grism_file.replace('_','\_'), color='w', size=10, ha='left', va='bottom')
         fig.tight_layout(pad=0.1)
         plt.savefig('./flt_model_attribute.pdf')
-
+        #---------------------------------------------------------------------------
         print(' - Update SCI extension of the fake FLT images with the models just computed')
         for flt in sim.FLTs:
             print('Update', flt.grism_file)
@@ -1524,7 +1541,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
             orig_flt['SCI'].data += flt.model[flt.pad:-flt.pad, flt.pad:-flt.pad]
             orig_flt.flush()
 
-
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         print('   Reloading simulations to update the SCI extension')
         grp = grizli.multifit.GroupFLT(grism_files=glob.glob('nircam_*flt.fits'), direct_files=[],
                                        ref_file=ref_hffimg, ref_ext=0,
@@ -1533,6 +1550,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                                        cpu_count=Ncpu, # <0 dont parallelize; =0 use all available; >0 CPUs to use
                                        pad=padval,
                                        polyx=polyxrange) # range the polynomial model is calculated over in microns
+
 
         print('\n - Computing model (for contam model); started at:                    '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         print('   First pass to get contamination model, flat continuum')
@@ -1543,6 +1561,33 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
 
         # print(' - saving refined contamination model')
         grp.save_full_data()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        GrismFLTimgs = glob.glob('nircam*.GrismFLT.fits')
+        for gfi in GrismFLTimgs:
+            outfile  = gfi.replace('GrismFLT.fits','GrismFLT_modeldiff.fits')
+            gw.create_diffimg(gfi,'GSCI',gfi,'MODEL',outfile,overwrite=True,header=True)
+
+        #---------------------------------------------------------------------------
+        print(' - Plot GrismFLT_modeldiff.fits images')
+        fig = plt.figure(figsize=[9,9*2./3])
+        for ix, i in enumerate(subplot_indices):
+            if i != -99:
+                datfile = GrismFLTimgs[i].replace('GrismFLT.fits','GrismFLT_modeldiff.fits')
+                ax = fig.add_subplot(2,3,ix+1)
+                diffdata = afits.open(datfile)[0].data
+
+                # show as if it were the rotated grism
+                if (i % 2) > 0:
+                    ax.imshow(np.rot90(diffdata,-1), vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
+                else:
+                    ax.imshow(diffdata, vmin=-0.01, vmax=0.05, cmap='viridis', origin='lower')
+                ax.set_xticklabels([]); ax.set_yticklabels([])
+                ax.grid(color='w', alpha=0.8)
+                ax.text(100,100,datfile.split('/')[-1].replace('_','\_'), color='w', size=10, ha='left', va='bottom')
+        fig.tight_layout(pad=0.1)
+        plt.savefig('./GrismFLT_modeldiff_files.pdf')
+        #---------------------------------------------------------------------------
 
     else:
         print('\n - NB: Going directly to analysis of simulated data (assuming they exist)')
@@ -1555,12 +1600,6 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                                        cpu_count=Ncpu, # <0 dont parallelize; =0 use all available; >0 CPUs to use
                                        pad=padval,
                                        polyx=polyxrange) # range the polynomial model is calculated over in microns
-
-
-    GrismFLTimgs = glob.glob('nircam*.GrismFLT.fits')
-    for gfi in GrismFLTimgs:
-        outfile  = gfi.replace('GrismFLT.fits','GrismFLT_modeldiff.fits')
-        gw.create_diffimg(gfi,'GSCI',gfi,'MODEL',outfile,overwrite=True,header=True)
 
     if extractids is not None:
         print('\n - Analyze simulated data; started at:             '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
