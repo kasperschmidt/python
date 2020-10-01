@@ -1218,7 +1218,7 @@ def NIRISSsim_A2744(generatesimulation=True):
 def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=[0.2, 8.0] , mockspec_type='manual_lines',
                     onlyreplaceextractIDs=False, useJADESz=True, fixJADEStemplate=None,
                     singlefilterrun=False, quickrun=False, plotsingleobj=False, workingdir=None,
-                    extractids=[65,476,726,233,754,755,793,848]):
+                    extractids=[65,476,726,233,754,755,793,848],usesamecenter=True):
     """
 
     NIRCAM simulations of A2744 (based on grizli_wrappers.NIRISSsim_A2744()
@@ -1245,6 +1245,8 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     plotsingleobj         Plot the beams of the extracted objects?
     workingdir            Directory to work in. If not set the current working directory is used.
     extractids            List of GLASS ids to extract.
+    usesamecenter         To use the same center for the different filters set this to True
+                          Otherwise different centers will be used to align "full coverage regions"
 
     --- EXAMPLE OF USE ---
     import grizli_wrappers as gw
@@ -1338,18 +1340,17 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
 
     if generatesimulation:
         ra, dec         = 3.588197688, -30.39784202 # Cluster center
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Coordinates providing center of NIRCam module A putting cluster center
+        # in "full coverage in both GrismR and GrismC full coverage" area
+        radecdic          = {}
+        radecdic['F277W'] = 3.5990425, -30.405018
+        radecdic['F356W'] = 3.595451,  -30.401799
+        radecdic['F444W'] = 3.5822446, -30.390036
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        ra277R, dec277R = 3.574423698, -30.40970039 # SW ~1 arcmin from (ra, dec)
-
-        #ra277C, dec277C = 3.601881571, -30.40965939 # Offset for 277 dispersion in column direction; ~1 arcmin from (ra, dec)
-        #ra277C, dec277C = 3.574515015, -30.38604164 # Offset for 277 dispersion in column direction; ~1 arcmin from (ra, dec)
-        ra277C, dec277C = 3.588197688, -30.39784202 # Cluster center
-        #ra277C, dec277C = 3.602111525, -30.38638374 # Offset for 277 dispersion in row direction (180); ~1 arcmin from (ra, dec)
-        #ra277C, dec277C = 3.594818398, -30.39189161 # NE ~30 arcsec from (ra, dec)
-        #ra277C, dec277C = 3.595044930, -30.40375511 # SE ~30 arcsec from (ra, dec)
-        #ra277C, dec277C = 3.580995897, -30.3917931  # NW ~30 arcsec from (ra, dec)
-
-        pa_aper = 135      # Using GLASS PA_V3
+        # pa_aper = 135      # Using GLASS PA_V3
+        pa_aper = 0.0      
         EXPTIME = 6012.591 # seconds exposure (GLASS NIRISS ERS is 5218.07)
         NEXP    = 16       # total Intergrations
 
@@ -1405,15 +1406,19 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
                 elif theta == 90:
                     grism_img = 'GRISMC'
 
-                if (filt == 'F277W') & (theta == 9990): # offset f277w row disperion
-                    pointra  = ra277R
-                    pointdec = dec277R
-                elif (filt == 'F277W') & (theta == 90999): # offset f277w column disperion
-                    pointra  = ra277C
-                    pointdec = dec277C
-                else:
+                if usesamecenter:
                     pointra  = ra
                     pointdec = dec
+                elif (filt in ['F277W','F356W','F444W']) & (theta == 0): # offset f277w row disperion
+                    # pointra  = ra277R
+                    # pointdec = dec277R
+                    pointra, pointdec  = radecdic[filt]
+                elif (filt in ['F277W','F356W','F444W']) & (theta == 90): # offset f277w column disperion
+                    # pointra  = ra277C
+                    # pointdec = dec277C
+                    pointra, pointdec  = radecdic[filt]
+                else:
+                    sys.exit('Nor coordinate set setup found for filt='+str(filt)+' and theta='+str(theta)+' combination')
 
                 h, wcs = grizli.fake_image.nircam_header(filter=filt, ra=pointra, dec=pointdec,
                                                          pa_aper=pa_aper+theta,grism=grism_img)
