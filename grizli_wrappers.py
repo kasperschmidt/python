@@ -12,16 +12,19 @@ import grizli.utils
 from grizli.multifit import GroupFLT, MultiBeam, get_redshift_fit_defaults
 import pdb
 from astropy.io import ascii
+from astropy import wcs
+from astropy.coordinates import SkyCoord
 from importlib import reload
 import JADESutilities as ju
 
 # plotting
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.patches as patch
 import matplotlib.gridspec
 mpl.rcParams['figure.figsize'] = (10.0, 6.0)
 mpl.rcParams['font.size'] = 14
-mpl.rcParams['savefig.dpi'] = 72
+mpl.rcParams['savefig.dpi'] = 144
 
 #importlib.reload(module)
 
@@ -1350,7 +1353,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         # pa_aper = 135      # Using GLASS PA_V3
-        pa_aper = 0.0      
+        pa_aper = 0.0
         EXPTIME = 6012.591 # seconds exposure (GLASS NIRISS ERS is 5218.07)
         NEXP    = 16       # total Intergrations
 
@@ -1593,7 +1596,11 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         fig.tight_layout(pad=0.1)
         plt.savefig('./GrismFLT_modeldiff_files.pdf')
         #---------------------------------------------------------------------------
-
+        if not singlefilterrun:
+            splitstr = '/nircam_'
+            basename = GrismFLTimgs[0].split(splitstr)[-1]+splitstr
+            gw.plot_grismFoV(basename,edgecut=2000,verbose=True)
+        #---------------------------------------------------------------------------
     else:
         print('\n - NB: Going directly to analysis of simulated data (assuming they exist)')
 
@@ -1725,6 +1732,137 @@ def run_zfit(beamfile,zrangefit=[0.1,10.0],dzfit=[0.01, 0.001],grp=None,plotmaps
         gw.plot_ELmaps(beamfile.replace('.beams.','.line.'), map_vmin = -0.03, map_vmax = 0.08)
 
     return out
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_grismFoV(basename,edgecut=0.0,markbeams=[None],cmap='viridis',verbose=True):
+    """
+    Function plotting simulation full-FoV output with direct image of GRISMR and GRISMC renderings
+
+    --- INPUT ---
+    basename      The path and main part of the output files. Will then look for the simulated GrismFLT files
+                  corresponding to the 3 NIRCam filters.
+    edgecut       Remove the edges of the images (correcting for the padval in the simulations)
+    markbeams     Provide list of beam files to mark location in images
+
+    --- EXAMPLE OF USE ---
+    import grizli_wrappers as gw, glob
+    workdir   = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/201002_basicsimulation/'
+    basename  = workdir+'nircam_'
+    beamfiles = glob.glob(workdir+'*.beams.fits')
+    gw.plot_grismFoV(basename,markbeams=beamfiles,edgecut=1900)
+
+    """
+    outfile = basename+'grismFoV.pdf'
+    if verbose: print(' - Generating full-FoV figure of NIRCam grisms. Storing in\n   '+outfile)
+
+    grismFLTs_F277W = glob.glob(basename+'F277W*.GrismFLT.fits')
+    grismFLTs_F356W = glob.glob(basename+'F356W*.GrismFLT.fits')
+    grismFLTs_F444W = glob.glob(basename+'F444W*.GrismFLT.fits')
+
+    fig   = plt.figure(figsize=[12,4])
+    Fsize = 10.0
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+
+    datalist = [afits.open(grismFLTs_F277W[0])['DREF'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]*5e19,
+                afits.open(grismFLTs_F277W[0])['GSCI'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut],
+                afits.open(grismFLTs_F356W[0])['DREF'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]*5e19,
+                afits.open(grismFLTs_F356W[0])['GSCI'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut],
+                afits.open(grismFLTs_F444W[0])['DREF'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]*5e19,
+                afits.open(grismFLTs_F444W[0])['GSCI'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut],
+                afits.open(grismFLTs_F277W[1])['DREF'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]*5e19,
+                afits.open(grismFLTs_F277W[1])['GSCI'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut],
+                afits.open(grismFLTs_F356W[1])['DREF'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]*5e19,
+                afits.open(grismFLTs_F356W[1])['GSCI'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut],
+                afits.open(grismFLTs_F444W[1])['DREF'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]*5e19,
+                afits.open(grismFLTs_F444W[1])['GSCI'].data[0+edgecut:-1*edgecut,0+edgecut:-1*edgecut]]
+
+    namelist = [grismFLTs_F277W[0]+'DREF',
+                grismFLTs_F277W[0]+'GSCI',
+                grismFLTs_F356W[0]+'DREF',
+                grismFLTs_F356W[0]+'GSCI',
+                grismFLTs_F444W[0]+'DREF',
+                grismFLTs_F444W[0]+'GSCI',
+                grismFLTs_F277W[1]+'DREF',
+                grismFLTs_F277W[1]+'GSCI',
+                grismFLTs_F356W[1]+'DREF',
+                grismFLTs_F356W[1]+'GSCI',
+                grismFLTs_F444W[1]+'DREF',
+                grismFLTs_F444W[1]+'GSCI']
+
+
+    beamSCIheaders  = []
+    coordlist       = []
+    for beamfile in markbeams:
+        if beamfile is not None:
+            bhdu            = afits.open(beamfile)
+            for hdu in bhdu[1:]:
+                if (hdu.header['EXTNAME'] == 'SCI') or (hdu.header['EXTNAME'] == 'REF'):
+                    beamSCIheaders.append(hdu.header)
+                    coordlist.append([afits.open(beamfile)[0].header['RA'],afits.open(beamfile)[0].header['DEC']])
+
+    for ii, datashow in enumerate(datalist):
+        ax = fig.add_subplot(2,6,ii+1)
+        # goodpix = datashow[np.isfinite(datashow) & (datashow!=0.0)]
+        # pixsort = np.sort(goodpix)
+        ax.imshow(datashow, vmin=-0.01, vmax=0.05, cmap=cmap, origin='lower', aspect='auto')
+
+        for bb, beamhdr in enumerate(beamSCIheaders):
+            if (beamhdr['PARENT'].split('_flt.fits')[0] in namelist[ii]):
+                if namelist[ii].endswith('REF') & (beamhdr['EXTNAME'] == 'REF'):
+                    xpix, ypix = beamhdr['ORIGINX']-edgecut, beamhdr['ORIGINY']-edgecut
+                    width      = beamhdr['NAXIS1']
+                    height     = beamhdr['NAXIS2']
+
+                    radius     = 5
+                    objpatch   = patch.Circle((xpix+width/2.,ypix+height/2.),radius,color='red',fill=None)
+                    ax.add_patch(objpatch)
+
+                    objpatch   = patch.Rectangle((xpix,ypix), width, height, color='red', linewidth=1.0, linestyle='-', fill=None)
+                    ax.add_patch(objpatch)
+
+                    skipWCSpatch = True
+                    if not skipWCSpatch:
+                        # Base patch location on WCS and coordinates instead of header info
+                        wcs_GrismFLT  = wcs.WCS(afits.open(namelist[ii][:-4])[namelist[ii][-4:]].header)
+                        coords        = SkyCoord(coordlist[bb][0],coordlist[bb][1], unit="deg")
+                        pixcoord      = wcs.utils.skycoord_to_pixel(coords,wcs_GrismFLT,origin=1)
+                        xpix, ypix    = pixcoord[0]-edgecut, pixcoord[1]-edgecut
+                        radius        = 30
+                        objpatch      = patch.Circle((xpix,ypix),radius,color='white',fill=None)
+                        ax.add_patch(objpatch)
+
+                if namelist[ii].endswith('SCI') & (beamhdr['EXTNAME'] == 'SCI'):
+                    # xpix, ypix = beamhdr['CRPIX1']-edgecut, beamhdr['CRPIX2']-edgecut
+                    xpix, ypix = beamhdr['ORIGINX']-edgecut, beamhdr['ORIGINY']-edgecut
+                    width      = beamhdr['NAXIS1']
+                    height     = beamhdr['NAXIS2']
+                    objpatch   = patch.Rectangle((xpix,ypix), width, height, color='red', linewidth=1.0, linestyle='-', fill=None)
+                    ax.add_patch(objpatch)
+
+        ax.set_xticks([]); ax.set_yticks([])
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+
+    fig.axes[0].set_title('F277W REF IMG')
+    fig.axes[2].set_title('F356W REF IMG')
+    fig.axes[4].set_title('F444W REF IMG')
+
+    fig.axes[1].set_title('F277W GRISM')
+    fig.axes[3].set_title('F356W GRISM')
+    fig.axes[5].set_title('F444W GRISM')
+
+    fig.axes[0].set_ylabel('GRISM R')
+    fig.axes[6].set_ylabel('GRISM C')
+
+    fig.tight_layout(pad=0.1)
+    plt.savefig(outfile)
+    plt.clf()
+    plt.close('all')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_beams(beamfile,cmap='viridis_r',verbose=True):
     """
