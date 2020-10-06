@@ -5304,7 +5304,12 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                          markerfacecolor=markerfacecolor,ecolor=ecol,
                          markeredgecolor=mecol,zorder=markerzorder)
 
+        #------------------ Drawing lines to guide the eye ------------------
         Zsun = 8.69
+        xminsys, xmaxsys = plt.xlim()
+        yminsys, ymaxsys = plt.ylim()
+        tot_maxval = np.max([xmaxsys, ymaxsys])
+        tot_minval = np.min([xminsys, yminsys])
         if linetype == 'horizontal':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'onetoone':
@@ -5316,6 +5321,12 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             plt.plot([-1,1e5],[-1,1e5],'--',color='black',lw=lthick,zorder=10)
             plt.fill_between([5.0,Zsun,Zsun,10],[10.0,10.0,10.0,10.0],[Zsun,Zsun,5.0,5.0],color='lightgray')
             plt.text(7.0,8.75,'super-solar',color='gray',zorder=10)
+        elif linetype == 'onethreeten':
+            plt.plot([tot_minval,tot_maxval],[tot_minval,tot_maxval],'-',color='black',lw=lthick,zorder=10)
+            plt.plot([tot_minval,tot_maxval],[tot_minval/10.,tot_maxval/10.],':',color='black',lw=lthick,zorder=10)
+            plt.plot([tot_minval,tot_maxval],[tot_minval*10,tot_maxval*10],':',color='black',lw=lthick,zorder=10)
+            plt.plot([tot_minval,tot_maxval],[tot_minval/3.,tot_maxval/3.],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([tot_minval,tot_maxval],[tot_minval*3,tot_maxval*3],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'yZsun':
             plt.fill_between([-1.0,10],[10.0,10.0],[Zsun,Zsun],color='lightgray')
             plt.text(1.0,8.75,'super-solar',color='gray',zorder=10)
@@ -5344,7 +5355,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         else:
             sys.exit(' Unknown value of linetype = "'+linetype+'"')
 
-        #--------- PHOTOIONIZATION GRIDS ---------
+        #------------------ PHOTOIONIZATION GRIDS ------------------
         titleaddition = ''
         if photoionizationplotparam is not None:
             # titleaddition = uves.add_photoionization_models_to_lineratioplot(photoionizationplotparam)
@@ -7794,10 +7805,11 @@ def get_infodat_plotcols():
     # colinfo['redshift']      = ['redshift',None,                                       '$z$']
 
     # from JK's 100 field catalog: /Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits
-    colinfo['lyaew_b2']        = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
-    colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
-    colinfo['lyafwhm_a']       = ['fwhm_a_jk','fwhm_A_err',                              'FWHM(Ly$\\alpha$) [\AA]']
-    colinfo['lyafwhm_kms']     = ['fwhm_kms_jk','fwhm_kms_err',                          'FWHM(Ly$\\alpha$) [km/s]']
+    colinfo['lyaew_JKmed']     = ['EW_0_beta_own_median','EW_0_beta_own_median_error',   'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.95$)']
+    colinfo['lyaew_b2']        = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
+    colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
+    colinfo['lyafwhm_a']       = ['fwhm_a','fwhm_A_err',                                 'FWHM(Ly$\\alpha$) [\AA]']
+    colinfo['lyafwhm_kms']     = ['fwhm_kms','fwhm_kms_err',                             'FWHM(Ly$\\alpha$) [km/s]']
     colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
     colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2',None,                          'M(UV,1500) ($\\beta = -2$)']
     colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many',None,                    'M(UV,1500) ($\\beta$ linear multiband fit)']
@@ -7805,9 +7817,14 @@ def get_infodat_plotcols():
     colinfo['magUV_-2']        = ['mag_UV_cont_beta2',None,                              'm(UV,1500) ($\\beta = -2$)']
     colinfo['magUV_many']      = ['mag_UV_cont_linear_many',None,                        'm(UV,1500) ($\\beta$ linear multiband fit)']
     colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.97$)']
-    colinfo['redshift']        = ['red_vac','red_vac_err',                '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
+    colinfo['redshift']        = ['red_vac','red_vac_err',                               '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
     colinfo['lyaflux']         = ['line_flux','line_flux_error',                         'F(Ly$\\alpha$) [erg/s/cm$^2$]']
-    colinfo['peaksep_kms']     = ['peak_sep_kms_jk','peak_sep_kms_err',                  'Peak separation [km/s]']
+    colinfo['peaksep_kms']     = ['peak_sep_kms','peak_sep_kms_err',                     'Peak separation [km/s]']
+
+    for key in colinfo.keys():
+        for ent in [0,1]:
+            if colinfo[key][ent] is not None:
+                colinfo[key][ent] = colinfo[key][ent]+'_jk100'
 
     return colinfo
 
@@ -8177,12 +8194,13 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     infofile        = B2Bdir+'../objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     EWest_postvet   = B2Bdir+'fluxratios_FELISmatch2all_200213_postFELISvetting_EW0estimates.txt'
 
-    addliteraturevalues = False
+    addliteraturevalues = True
     showlimits          = False
-    lyaEWtype           = 'lyaew_b2'
-    obj2show            = [102014087,122022112,157001017,602922055,606813186,721590802] # 'all_nodup'
+    lyaEWtype           = 'lyaew_JKmed' # from
+    ErrNsigma           = 3.0 # the size of the errorbars (limits are kept at 3sigma limits)
+    obj2show            = 'all_nodup' # [102014087,122022112,157001017,602922055,606813186,721590802] #
 
-    uves.plot_EW0estimates(FRfile_postvet, plotbase_EWest, infofile, EWest_postvet, lyaEWtype=lyaEWtype, ErrNsigma=3.0, vshiftmax=1000.0, overwrite=True, colorvar_obj='redshift', xlog=True,ylog=True, addliteraturevalues=addliteraturevalues, showlimits=showlimits, obj2show=obj2show)
+    uves.plot_EW0estimates(FRfile_postvet, plotbase_EWest, infofile, EWest_postvet, lyaEWtype=lyaEWtype, ErrNsigma=ErrNsigma, vshiftmax=1000.0, overwrite=True, colorvar_obj='redshift', xlog=True,ylog=True, addliteraturevalues=addliteraturevalues, showlimits=showlimits, obj2show=obj2show)
 
 
     """
@@ -8194,22 +8212,23 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     infofiledat      = afits.open(infofile)[1].data
     infofiledat      = infofiledat[np.where((infofiledat['id']<4.9e8) | (infofiledat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
 
-    if obj2show is 'all':
+    if verbose: print(' - Selecting objects to show ')
+    if str(obj2show).lower() == 'all':
         showent = np.arange(len(fluxratiodatALL))
-    elif obj2show is 'all_nodup':
+    elif str(obj2show).lower() == 'all_nodup':
         idlist2show = infofiledat[(infofiledat['duplicationID'] == 0.0) & (infofiledat['redshift'] <= 4.955)]['id']
         showent     = np.array([])
         for objid in idlist2show:
             objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
             if len(objent) > 0:
                 showent = np.append(showent,objent)
-    elif obj2show.lower() == 'none':
+    elif str(obj2show).lower() == 'none':
         showent = np.array([0])
-    elif obj2show.lower() == 'udf10_goodspec_only':
+    elif str(obj2show).lower() == 'udf10_goodspec_only':
         sample = 'udf10'
         ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
         idlist2show = ids_goodTDOSEspec
-    elif obj2show.lower() == 'udf10_badspec_only':
+    elif str(obj2show).lower() == 'udf10_badspec_only':
         sample = 'udf10'
         ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
         idlist2show = ids_badTDOSEspec
@@ -8221,17 +8240,20 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
             objent = np.where( fluxratiodatALL['id'].astype(int) == objid)[0]
             if len(objent) > 0:
                 showent = np.append(showent,objent)
+            else:
+                if verbose: print(' - The ID '+str(objid)+' was not found in the lineratiofile ')
 
     Nselspec    = len(showent)
     if Nselspec > 0:
         fluxratiodat = fluxratiodatALL[showent.astype(int)]
         EW0dat       = EW0datALL[showent.astype(int)]
         if verbose: print(' - '+str(Nselspec)+'/'+str(len(fluxratiodatALL))+
-                          ' spectra in flux ratio summary (and EW0 file) satisfies the cuts\n')
+                          ' spectra in flux ratio summary (and EW0 file) satisfies the cuts')
     else:
         if verbose: print(' WARNING No flux ratio matches found in summary file satisfying cuts; returning...')
         #return
 
+    if verbose: print(' - Pulling out Lya measurements from Kerutt et al. (2020) columns in infofile ')
     LyaEW         = np.zeros(len(fluxratiodat['id']))*np.nan
     LyaEWerr      = np.zeros(len(fluxratiodat['id']))*np.nan
 
@@ -8244,8 +8266,8 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     colinfo = uves.get_infodat_plotcols()
     for ii, id in enumerate(fluxratiodat['id']):
         infoent            = np.where(infofiledat['id'] == int(id))
-        LyaEW[ii]          = infofiledat[colinfo['lyaew_b2'][0]][infoent]
-        LyaEWerr[ii]       = infofiledat[colinfo['lyaew_b2'][1]][infoent]
+        LyaEW[ii]          = infofiledat[colinfo[lyaEWtype][0]][infoent]
+        LyaEWerr[ii]       = infofiledat[colinfo[lyaEWtype][1]][infoent]
         LyaFWHM[ii]        = infofiledat[colinfo['lyafwhm_kms'][0]][infoent]
         LyaFWHMerr[ii]     = infofiledat[colinfo['lyafwhm_kms'][1]][infoent]
         LyaPeaksep[ii]     = infofiledat[colinfo['peaksep_kms'][0]][infoent]
@@ -8273,6 +8295,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
     #------------------------------- Append literature measurements -------------------------------
     if addliteraturevalues:
+        if verbose: print(' - Loading and appending data from catalog of literature observations ')
         litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
                   'literaturecollection_emissionlinestrengths.fits'
         litdat  = afits.open(litcat)[1].data
@@ -8310,24 +8333,25 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
             cdatvec = np.hstack((cdatvec,litdat['EW0_Lya']))
         else:
             sys.exit(' Selected color vector not enabled for literature values ')
+        if verbose: print('   Appended data for '+str(Nlitobj)+' literature objects \n')
 
     #----------------------------------------------------------------------------------------------s
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Defining plotting ranges and sets of parameters to plot ')
     if ylog:
-        EW0_range_y = [0.1,1000]
+        EW0_range_y = [0.1,2000]
     else:
-        EW0_range_y = [0,40]
+        EW0_range_y = [-5,42]
 
     if xlog:
-        EW0_range_x = [0.1,1000]
+        EW0_range_x = [0.1,2000]
     else:
-        EW0_range_x = [0,40]
+        EW0_range_x = [-5,42]
 
     if xlog:
         LyaEW_range = [0.1,2000]
     else:
-        LyaEW_range = [0,300]
+        LyaEW_range = [-100,320]
 
     if xlog:
         LyaPS_range = [0.1,2000]
@@ -8407,43 +8431,31 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
 
     if 'lya' in str1.lower():
         if ('f_'+str2 in fluxratiodat.dtype.names) & showlimits:
-            goodent  = np.where(np.isfinite(EWdat['EW0_'+str2]) &  (lineEW1[2] != 0) &  np.isfinite(lineEW1[2]) &
-                                np.isfinite(fluxratiodat['f_'+str2]) &
-                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+            goodent  = np.where(np.isfinite(EWdat['EW0_'+str2]) &  np.isfinite(lineEW1[2]) &
+                                np.isfinite(lineEW1[2]) & (lineEW1[2] != 0) )[0]
         elif ('f_'+str2 in fluxratiodat.dtype.names) & (not showlimits):
-            goodent  = np.where((np.abs(EWdat['EW0err_'+str2]) != 99) & (lineEW1[2] != 0) & np.isfinite(lineEW1[2]) &
-                                (EWdat['EW0err_'+str2] != 0) &
-                                np.isfinite(EWdat['EW0_'+str2]) &
-                                np.isfinite(fluxratiodat['f_'+str2])  &
-                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+            goodent  = np.where((np.abs(EWdat['EW0err_'+str2]) != 99.) & (lineEW1[2] != 0) & np.isfinite(lineEW1[2]) &
+                                (EWdat['EW0err_'+str2] != 0) & (np.abs(lineEW1[3]) != 99.) &
+                                np.isfinite(EWdat['EW0_'+str2]))[0]
         else:
             goodent  = []
     elif 'lya' in str2.lower():
         if ('f_'+str1 in fluxratiodat.dtype.names) & showlimits:
-            goodent  = np.where(np.isfinite(EWdat['EW0_'+str1]) & (lineEW2[2] != 0) & np.isfinite(lineEW2[2]) &
-                                np.isfinite(fluxratiodat['f_'+str1]) &
-                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) )[0]
+            goodent  = np.where(np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(lineEW2[2]) &
+                                np.isfinite(lineEW2[2]) & (lineEW2[2] != 0))[0]
         elif ('f_'+str1 in fluxratiodat.dtype.names) & (not showlimits):
-            goodent  = np.where((np.abs(EWdat['EW0err_'+str1]) != 99) & (lineEW2[2] != 0) & np.isfinite(lineEW2[2]) &
-                                (EWdat['EW0err_'+str1] != 0) &
-                                np.isfinite(EWdat['EW0_'+str1]) &
-                                np.isfinite(fluxratiodat['f_'+str1])  &
-                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) )[0]
+            goodent  = np.where((np.abs(EWdat['EW0err_'+str1]) != 99.) & (lineEW2[2] != 0) & np.isfinite(lineEW2[2]) &
+                                (EWdat['EW0err_'+str1] != 0) & (np.abs(lineEW2[3]) != 99.) &
+                                np.isfinite(EWdat['EW0_'+str1]) )[0]
         else:
             goodent  = []
     else:
         if ('f_'+str1 in fluxratiodat.dtype.names) & ('f_'+str2 in fluxratiodat.dtype.names) & showlimits:
-            goodent  = np.where(np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(EWdat['EW0_'+str2]) &
-                                np.isfinite(fluxratiodat['f_'+str1]) & np.isfinite(fluxratiodat['f_'+str2]) &
-                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) &
-                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+            goodent  = np.where(np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(EWdat['EW0_'+str2]))[0]
         elif ('f_'+str1 in fluxratiodat.dtype.names) & ('f_'+str2 in fluxratiodat.dtype.names) & (not showlimits):
-            goodent  = np.where((np.abs(EWdat['EW0err_'+str1]) != 99) & (np.abs(EWdat['EW0err_'+str2]) != 99) &
+            goodent  = np.where((np.abs(EWdat['EW0err_'+str1]) != 99.) & (np.abs(EWdat['EW0err_'+str2]) != 99.) &
                                 (EWdat['EW0err_'+str1] != 0) & (EWdat['EW0err_'+str2] != 0) &
-                                np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(EWdat['EW0_'+str2]) &
-                                np.isfinite(fluxratiodat['f_'+str1]) & np.isfinite(fluxratiodat['f_'+str2]) &
-                                (np.abs(fluxratiodat['vshift_'+str1]) < vshiftmax) &
-                                (np.abs(fluxratiodat['vshift_'+str2]) < vshiftmax) )[0]
+                                np.isfinite(EWdat['EW0_'+str1]) & np.isfinite(EWdat['EW0_'+str2]))[0]
         else:
             goodent  = []
 
@@ -8485,8 +8497,13 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
     if point_text is not None:
         point_text = point_text[goodent]
 
+    if ('lya' in str1.lower()) or ('lya' in str2.lower()):
+        lines2show = 'onethreeten'
+    else:
+        lines2show = 'onetoone'
+
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
-                                                   'dummydat',linetype='onetoone',title=title,ids=IDsALL,
+                                                   'dummydat',linetype=lines2show,title=title,ids=IDsALL,
                                                    ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
                                                    colortype=cdattype,colorcode=True,cdatvec=cdatvec[goodent],
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
