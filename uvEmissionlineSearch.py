@@ -8169,13 +8169,26 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
 
     --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+    B2Bdir          = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/'
+    FRfile_postvet  = B2Bdir+'fluxratios_FELISmatch2all_200213_postFELISvetting.txt'
+    plotbase_EWest  = B2Bdir+'plots_FRaEW/fluxratios_FELISmatch2all_200213_postFELISvetting_EW0estimates'
+    infofile        = B2Bdir+'../objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
+    EWest_postvet   = B2Bdir+'fluxratios_FELISmatch2all_200213_postFELISvetting_EW0estimates.txt'
+
+    addliteraturevalues = False
+    showlimits          = False
+    lyaEWtype           = 'lyaew_b2'
+    obj2show            = [102014087,122022112,157001017,602922055,606813186,721590802] # 'all_nodup'
+
+    uves.plot_EW0estimates(FRfile_postvet, plotbase_EWest, infofile, EWest_postvet, lyaEWtype=lyaEWtype, ErrNsigma=3.0, vshiftmax=1000.0, overwrite=True, colorvar_obj='redshift', xlog=True,ylog=True, addliteraturevalues=addliteraturevalues, showlimits=showlimits, obj2show=obj2show)
 
 
     """
     if verbose: print(' - Loading flux ratio and EW data to plot ')
     fluxratiodatALL = np.genfromtxt(lineratiofile,skip_header=7,dtype='d',comments='#',names=True)
-    EW0datALL       = np.genfromtxt(EW0file,skip_header=8,dtype='d',comments='#',names=True)
-
+    EW0datALL       = np.genfromtxt(EW0file,skip_header=10,dtype='d',comments='#',names=True)
 
     if verbose: print(' - Loading infofile data for expanded selection and plotting ')
     infofiledat      = afits.open(infofile)[1].data
@@ -8192,16 +8205,16 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
                 showent = np.append(showent,objent)
     elif obj2show.lower() == 'none':
         showent = np.array([0])
-    else:
+    elif obj2show.lower() == 'udf10_goodspec_only':
         sample = 'udf10'
-        if obj2show is 'goodspec_only':
-            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
-            idlist2show = ids_goodTDOSEspec
-        elif obj2show is 'badspec_only':
-            ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
-            idlist2show = ids_badTDOSEspec
-        else:
-            idlist2show = obj2show
+        ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
+        idlist2show = ids_goodTDOSEspec
+    elif obj2show.lower() == 'udf10_badspec_only':
+        sample = 'udf10'
+        ids_badTDOSEspec, ids_goodTDOSEspec = uves.summarize_tdosevetting(returnsample=sample,verbose=verbose)
+        idlist2show = ids_badTDOSEspec
+    else:
+        idlist2show = obj2show
 
         showent = np.array([])
         for objid in idlist2show:
@@ -10070,9 +10083,9 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
     dat_lineratio   = np.genfromtxt(lineratiosummary,skip_header=7,dtype=fmt,comments='#',names=True)
 
     if EWestimates:
-        ew0BadFMT = np.genfromtxt(EWestimates,skip_header=8,dtype='d',comments='#',names=True)
+        ew0BadFMT = np.genfromtxt(EWestimates,skip_header=10,dtype='d',comments='#',names=True)
         fmt       = 'd,12a,'+','.join((len(ew0BadFMT.dtype.names)-2)*['d'])
-        dat_ew0   = np.genfromtxt(EWestimates,skip_header=8,dtype=fmt,comments='#',names=True)
+        dat_ew0   = np.genfromtxt(EWestimates,skip_header=10,dtype=fmt,comments='#',names=True)
     else:
         dat_ew0 = None
 
@@ -10456,7 +10469,7 @@ def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
     dat_fluxratio    = np.genfromtxt(file_fluxratio,    dtype=None,comments='#',names=True,skip_header=7)
 
     if verbose: print(' - Load EW estiamtes ')
-    dat_EWestimates  = np.genfromtxt(file_EWestimates,  dtype=None,comments='#',names=True,skip_header=8)
+    dat_EWestimates  = np.genfromtxt(file_EWestimates,  dtype=None,comments='#',names=True,skip_header=10)
 
     pointingIDdic            = {}
     pointingIDdic[106004019] = 'stackof01and06'
@@ -10571,7 +10584,7 @@ def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
 def build_mastercat(outputfits, printwarning=True, overwrite=False, verbose=True):
     """
     --------------------------------------------------------------------------------------------------------
-    ---> See uves.build_mastercat_v2() making this function sobsolete for ouputs generated after 200218 <---
+    ---> See uves.build_mastercat_v2() making this function obsolete for ouputs generated after 200218 <---
     --------------------------------------------------------------------------------------------------------
 
     Function assembling a master output catalog from the flux ratio measurements and EW estimates taking
