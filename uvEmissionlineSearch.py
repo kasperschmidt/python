@@ -7121,7 +7121,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # NOTE: See uves.get_infodat_plotcols() for column definitions and plot labels
     linesetlist_lya = []
-    infocols        = ['lyaew_b2',
+    infocols        = ['lyaew_JKmed',
+                       'lyaew_b2',
                        'lyafwhm_a',
                        'lyafwhm_kms',
                        # 'beta_beta2',
@@ -7133,6 +7134,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                        'redshift']
 
     info_ranges     = [[-100,600],
+                       [-100,600],
                        [-5,30],
                        [-100,1000],
                        # [-4,3],
