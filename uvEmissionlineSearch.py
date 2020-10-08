@@ -7904,8 +7904,8 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
                     'F105W':105,'F125W':125,'F160W':160}
         fout.write('# The reference continuum band (before extrapolation to line location using beta) is based on the band indicated in the cont_band columns and use the keys: \n# '+str(bandskey)+'\n')
         fout.write('# Only the bands F435W, F606W, F775W, F814W, F125W, and F160W have fluxes estimated in the catalog by Kerutt et al. (2020). \n')
-        fout.write('# The photref column provides a reference to the catalog where the broad band flux comes from: Kerutt, 3D-HST or Rafelski\n#\n')
-
+        fout.write('# The photref columns provides a reference to the flux catalog used: Kerutt (1), 3D-HST (2) or Rafelski (3).\n#\n')
+    prefkey = {'Kerutt':1, '3D-HST':2, 'Rafelski':3}
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading photometric catalogs for continuum estimates when not match to Kerutt+20 catalog')
     catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
@@ -7920,10 +7920,12 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
         if colname.startswith('f_'):
             fluxcols.append(colname)
     Nfluxcol   = len(fluxcols)
-    outcolumns = '# id  pointing  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]) for fc in fluxcols])+'  photref '
+    outcolumns = '# id  pointing  beta  '+'    '.join([('EW0_'+fc[2:]+' '+'EW0err_'+fc[2:]+' '+'contband_'+fc[2:]+' '+'contmagAB_'+fc[2:]+' '+'contmagABerr_'+fc[2:]+' '+'photref_'+fc[2:]) for fc in fluxcols])#+'  photref  contmag '
     fout.write(outcolumns+'\n')
 
-    EW0array = np.zeros([len(ids),Nfluxcol*3])*np.nan
+    sizeColSet = 6 # size of set of columns: EW0, EW0err, contband, magAB, magABerr, photref
+    EW0array = np.zeros([len(ids),Nfluxcol*sizeColSet])*np.nan
+    magarray = np.zeros([len(ids),Nfluxcol*sizeColSet])*np.nan
 
     if verbose: print(' - Estimating continuum level based on band fluxes and from that EW0 for all lines for object: ')
     betavals = np.zeros(len(ids))
@@ -7955,9 +7957,8 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
                     else:
                         beta  = defaultbeta
 
-                f_conts, photrefs = uves.estimate_fcont(infofiledat,obj_infoent,line_wave,fixbeta=beta,
-                                                        datSkeltonGS=datSkeltonGS, datSkeltonCOS=datSkeltonCOS, datRafelski=datRafelski,
-                                                        verbose=fcontverbose)
+                f_conts, photrefs, magABs = uves.estimate_fcont(infofiledat,obj_infoent,line_wave,fixbeta=beta,verbose=fcontverbose,
+                                                                datSkeltonGS=datSkeltonGS, datSkeltonCOS=datSkeltonCOS, datRafelski=datRafelski)
 
                 betavals[ii] = beta
                 # selecting continuum band to extrapolate from as:
@@ -7996,24 +7997,37 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
                     f_cont_restframe     = f_cont     * (1.0 + redshift)
                     f_cont_err_restframe = f_cont_err * (1.0 + redshift)
 
-                    if (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err > s2nlimit):
-                        EW0array[ii,ff*3]   = line_flux / f_cont_restframe
-                        EW0array[ii,ff*3+1] = np.sqrt((line_fluxerr/line_flux)**2 +
-                                                      (f_cont_err_restframe/f_cont_restframe)**2) * EW0array[ii,ff*3]
-                    elif (line_flux/line_fluxerr <= s2nlimit) & (f_cont/f_cont_err > s2nlimit):
-                        EW0array[ii,ff*3]   = s2nlimit * line_fluxerr / f_cont_restframe
-                        EW0array[ii,ff*3+1] = +99 # indicate that EW0 value is "s2nlimit sigma upper limit"
-                    elif (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err <= s2nlimit):
-                        EW0array[ii,ff*3]   = line_flux / (s2nlimit * f_cont_err_restframe)
-                        EW0array[ii,ff*3+1] = -99 # indicate that EW0 value is "s2nlimit sigma lower limit"
-                    else:
-                        EW0array[ii,ff*3]   = 0.0
-                        EW0array[ii,ff*3+1] = 0.0
+                    magAB, magABerr      = magABs[cont_band]
+                    if magABerr == 0.0: # denote lower limit (fainter than) magnitude by -99
+                        magABerr = -99
 
-                    EW0array[ii,ff*3+2] = bandskey[cont_band.upper()]
+                    if (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err > s2nlimit):
+                        EW0array[ii,ff*sizeColSet]   = line_flux / f_cont_restframe
+                        EW0array[ii,ff*sizeColSet+1] = np.sqrt((line_fluxerr/line_flux)**2 +
+                                                      (f_cont_err_restframe/f_cont_restframe)**2) * EW0array[ii,ff*3]
+                        EW0array[ii,ff*sizeColSet+3] = magAB
+                        EW0array[ii,ff*sizeColSet+4] = magABerr
+                    elif (line_flux/line_fluxerr <= s2nlimit) & (f_cont/f_cont_err > s2nlimit):
+                        EW0array[ii,ff*sizeColSet]   = s2nlimit * line_fluxerr / f_cont_restframe
+                        EW0array[ii,ff*sizeColSet+1] = +99 # indicate that EW0 value is "s2nlimit sigma upper limit"
+                        EW0array[ii,ff*sizeColSet+3] = magAB
+                        EW0array[ii,ff*sizeColSet+4] = magABerr
+                    elif (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err <= s2nlimit):
+                        EW0array[ii,ff*sizeColSet]   = line_flux / (s2nlimit * f_cont_err_restframe)
+                        EW0array[ii,ff*sizeColSet+1] = -99 # indicate that EW0 value is "s2nlimit sigma lower limit"
+                        EW0array[ii,ff*sizeColSet+3] = magAB
+                        EW0array[ii,ff*sizeColSet+4] = -99   # quote magAB as lower limit (fainter than) if S/N < s2nlimit
+                    else:
+                        EW0array[ii,ff*sizeColSet]   = 0.0
+                        EW0array[ii,ff*sizeColSet+1] = 0.0
+                        EW0array[ii,ff*sizeColSet+3] = magAB
+                        EW0array[ii,ff*sizeColSet+4] = -99   # quote magAB as upper limit (fainter than) if S/N < s2nlimit
+
+                    EW0array[ii,ff*sizeColSet+2] = bandskey[cont_band.upper()]
+                    EW0array[ii,ff*sizeColSet+5] = prefkey[photoref]
 
         outstr = str(int(id))+' '+pointings[ii]+' '+str("%10.2f" % betavals[ii])+' '+\
-                 ' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])+'  '+photoref
+                 ' '.join([str("%10.4f" % ff) for ff in EW0array[ii,:]])
         fout.write(outstr.replace('.0000','     ')+' \n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fout.close()
@@ -8060,6 +8074,7 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
 
     f_cont        = {}
     photrefs      = ['']*len(bands)
+    magABs        = {}
     for bb, band in enumerate(bands):
         if verbose: print(' - Getting flux estimate for band '+band)
         if (band not in bandswithLya) & (band not in bandswithline):
@@ -8074,6 +8089,8 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
                     f_ref         = infofiledat[ 'flux_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0] * 1e20
                     f_ref_err     = infofiledat[ 'flux_error_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0] * 1e20
                     photrefs[bb]  = 'Kerutt'
+                    magAB         = infofiledat[ 'mag_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0]
+                    magABerr      = infofiledat[ 'mag_error_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0]
                 else:
                     f_ref     = 0.0
                     f_ref_err = 0.0
@@ -8100,6 +8117,8 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
                             f_ref     = f_cont_jy     * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
                             f_ref_err = f_cont_jy_err * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
                             photrefs[bb]  = 'Rafelski'
+                            magAB         =   datRafelski['MAG_'+band.upper()][phot_ent]
+                            magABerr      =   datRafelski['MAGERR_'+band.upper()][phot_ent]
                         except:
                             f_ref     = 0.0
                             f_ref_err = 0.0
@@ -8145,21 +8164,24 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
                     if verbose: print('   Hmm; no value in photmetric catalogs either. Returning NaNs')
                 f_cont[band] = np.nan, np.nan
                 photrefs[bb]  = 'None'
+                magABs[band]  = np.nan, np.nan
             else:
                 if verbose: print('   Using flux value to estimate the continuum strength at lambda='+
                                   str(wavelength)+' using beta='+str(beta))
                 f_wave       = uves.estimate_continuumlevel_viaBeta(wavelength, uves.band_waveeff(band), f_ref, beta, verbose=False)
                 f_wave_err   = f_ref_err * np.abs((wavelength / uves.band_waveeff(band))**beta)
                 f_cont[band] = f_wave, f_wave_err
+                magABs[band]  = magAB, magABerr
         else:
             if verbose: print('   Band contains either Lya or the wavelength itself, so returning -99s')
             f_cont[band] = -99, -99
             photrefs[bb] = 'LyaOrLineInBand'
+            magABs[band] = np.nan, np.nan
 
     if '' in photrefs:
         print(' ---> There should not be empty "photrefs" entries; stopping to enable further investigation ')
         pdb.set_trace()
-    return f_cont, photrefs
+    return f_cont, photrefs, magABs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def band_waveeff(bandname):
     """
