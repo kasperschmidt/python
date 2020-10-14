@@ -5366,7 +5366,13 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
 
         for ii,xval in enumerate(xvalues): # loop necessary for coloring
             if point_text is not None:
-                plt.text(xvalues[ii]*1.03,yvalues[ii]*1.03,
+                if xlog:
+                    xtextval = xvalues[ii]*1.03
+                else:
+                    xminsys, xmaxsys = plt.xlim()
+                    xtextval = xvalues[ii] + (xmaxsys-xminsys)*0.02
+
+                plt.text(xtextval,yvalues[ii],
                          point_text[ii],color='white',fontsize=Fsize*0.2,zorder=30,
                          bbox=dict(boxstyle="round",edgecolor='k',facecolor=colvec[ii],linewidth=lthick*0.2))
 
@@ -5377,7 +5383,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             plt.yscale('log')
         if xlog:
             plt.xscale('log')
-
+        #------------------ HISTOGRAM AXES ------------------
         if histaxes:
             axHistx = plt.axes(rect_histx)
             if (title is not None):
@@ -5397,8 +5403,9 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             if ids is not None:
                 axHistx.hist(xvalues[ids.astype(int) < 1e9][np.isfinite(xvalues[ids.astype(int) < 1e9])],linestyle='-',
                              bins=bindefs,histtype='step',color='k')
-                axHistx.hist(xvalues[np.isfinite(xvalues)],linestyle=':',
-                             bins=bindefs,histtype='step',color='k')
+                if len(np.where(ids.astype(int) >= 1e9)[0]) > 0: # checking for literature IDs
+                    axHistx.hist(xvalues[np.isfinite(xvalues)],linestyle=':',
+                                 bins=bindefs,histtype='step',color='k')
             else:
                 axHistx.hist(xvalues[np.isfinite(xvalues)], bins=bindefs,histtype='step',color='k')
             axHistx.set_xticks([])
@@ -5413,8 +5420,9 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             if ids is not None:
                 axHisty.hist(yvalues[ids.astype(int) < 1e9][np.isfinite(yvalues[ids.astype(int) < 1e9])],linestyle='-',
                              bins=bindefs,histtype='step',color='k', orientation='horizontal')
-                axHisty.hist(yvalues[np.isfinite(yvalues)],linestyle=':',
-                             bins=bindefs,histtype='step',color='k', orientation='horizontal')
+                if len(np.where(ids.astype(int) >= 1e9)[0]) > 0: # checking for literature IDs
+                    axHisty.hist(yvalues[np.isfinite(yvalues)],linestyle=':',
+                                 bins=bindefs,histtype='step',color='k', orientation='horizontal')
             else:
                 axHisty.hist(yvalues[np.isfinite(yvalues)], bins=bindefs,histtype='step',color='k', orientation='horizontal')
             axHisty.set_yticks([])
@@ -13971,6 +13979,229 @@ def plot_neVSne(plotname,T_e_fix,
                                                    point_text=None, #fluxdat['id'][goodent].astype(str),
                                                    photoionizationplotparam=None,
                                                    histaxes=False,Nbins=Nhistbins, showgraylimits=False,
+                                                   overwrite=overwrite,verbose=verbose)
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CIV','HeII','OIII','SiIII','CIII'],
+                                showlimits=False, verbose=True, overwrite=False, addidlabels=False):
+    """
+    Function to generate plots of two estimates of n_e. Used in uves.perform_PyNeb_calc_main()
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uvesdir            = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    outdir_magdist     = uvesdir+'magnitudedistributions/'
+    infofile           = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
+    masterfits         = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
+
+    uves.plot_magnitudedistributions(outdir_magdist,infofile,masterfits)
+    """
+    masterdat = afits.open(masterfits)[1].data
+    infodat   = afits.open(infofile)[1].data
+    infodat   = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    for ii, id in enumerate(masterdat['id']): # double checking that order of objects is the same
+        if infodat['id'][ii] != id:
+            sys.exit('There was a mismatch in ids for entry '+str(ii))
+
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Collecting indexes of magnitudes for line sets to plot ')
+    magdic = collections.OrderedDict()
+
+    if showlimits:
+        limval = 0.0
+    else:
+        limval = 99
+
+    for emline in emlinelist:
+
+        magAB_ent   = np.where((masterdat['contmagABerr_'+emline] != -99) & (masterdat['duplicationID'] == 0) &
+                               (np.abs(masterdat['EW0err_'+emline]) != limval) & (masterdat['EW0_'+emline] != 0.0) &
+                               np.isfinite(masterdat['contmagABerr_'+emline]))[0]
+        magAB       = masterdat['contmagAB_'+emline][magAB_ent]
+        magABerr    = masterdat['contmagABerr_'+emline][magAB_ent]
+        EW          = masterdat['EW0_'+emline][magAB_ent]
+        EWerr       = masterdat['EW0err_'+emline][magAB_ent]
+        redshift    = masterdat['redshift'][magAB_ent]
+        objids      = masterdat['id'][magAB_ent]
+
+        magdic[emline] = {'mag':magAB, 'magerr':magABerr, 'EW':EW, 'EWerr':EWerr, 'redshift':redshift, 'id':objids}
+
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Setting up and generating plots for each emission line')
+    Nhistbins = 30
+    xrange    = [19,30.5]
+    yrange    = [0.1,400]
+    colortype = 'zmanual' # 'z' fixes redshift range in color
+    for emline in magdic.keys():
+        plotname   = outputdir+'magdist_'+emline+'.pdf'
+        xlabel     = 'EW$_0$ continuum AB magnitude ('+emline+')'
+        xvalues    = magdic[emline]['mag']
+        xerr       = magdic[emline]['magerr']
+        ylabel     = 'EW$_0$('+emline+') [\AA]'
+        yvalues    = magdic[emline]['EW']
+        yerr       = magdic[emline]['EWerr']
+        cdatvec    = magdic[emline]['redshift']
+        if addidlabels:
+            point_text = magdic[emline]['id'].astype(str)
+        else:
+            point_text = None
+
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                       'dummydat',linetype=None,title=None,ids=magdic[emline]['id'],
+                                                       ylog=True,xlog=False,yrange=yrange,xrange=xrange,
+                                                       colortype=colortype,colorcode=True,cdatvec=cdatvec,
+                                                       point_text=point_text,photoionizationplotparam=None,
+                                                       histaxes=True,Nbins=Nhistbins,
+                                                       overwrite=overwrite,verbose=verbose)
+
+    #------------------------------------------------------------------------------
+    linecolors  = {'CIV':'purple','HeII':'blue','OIII':'green','SiIII':'orange','CIII':'red','MgII':'darkred'}
+    if verbose: print(' - Setting up and generating plot of histograms in same window')
+    plotname = outputdir+'magdist_linescombined.pdf'
+
+    if os.path.isfile(plotname) & (overwrite == False):
+        print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
+    else:
+        fig = plt.figure(figsize=(5, 4))
+
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.97)
+        # left, width = 0.15, 0.60
+        # bottom, height = 0.15, 0.60
+        # bottom_h = left_h = left + width + 0.01
+        # fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=0.99, bottom=bottom, top=bottom+height)
+        # rect_histx = [left, bottom_h, 0.705, 0.2]
+
+        Fsize    = 12
+        lthick   = 1.0
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        # - - - - - - Histogram of n_e  - - - - - -
+        xminsys, xmaxsys = xrange
+        binwidth_x = np.diff([xminsys,xmaxsys])/Nhistbins
+        bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+        #bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+
+        for emline in magdic.keys():
+            histdata = magdic[emline]['mag']
+            plt.hist(histdata, bins=bindefs,histtype='stepfilled',color=linecolors[emline],alpha=0.3,linestyle='-',label=emline)
+
+
+        plt.ylabel('Number of objects')
+        plt.xlabel('EW$_0$ continuum AB magnitude')
+        plt.xlim(xrange)
+        plt.ylim(0,11)
+        leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
+                         # bbox_to_anchor=(0.5, 1.1),)  # add the legend
+        leg.get_frame().set_alpha(0.7)
+
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Setting up and generating plot of histograms in same window')
+    plotname = outputdir+'magdist_linescombined_sharedaxis.pdf'
+    if os.path.isfile(plotname) & (overwrite == False):
+        print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
+    else:
+        fig = plt.figure(figsize=(3, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.1, top=0.99)
+
+        Fsize    = 10
+        lthick   = 1.0
+        marksize = 6
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        #plt.title(inforstr[:-2],fontsize=Fsize)
+
+        # - - - - - - Histogram of n_e  - - - - - -
+        xminsys, xmaxsys = xrange
+        binwidth_x = np.diff([xminsys,xmaxsys])/Nhistbins
+        bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
+        # bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
+
+        axfull = fig.add_subplot(111)
+        axfull.set_xlabel('EW$_0$ continuum AB magnitude')
+        axfull.set_ylabel('Number of objects')
+        # Turn off axis lines and ticks of the full window subplot
+        axfull.spines['top'].set_color('none')
+        axfull.spines['bottom'].set_color('none')
+        axfull.spines['left'].set_color('none')
+        axfull.spines['right'].set_color('none')
+        axfull.tick_params(labelcolor='white', top=False, bottom=False, left=False, right=False)
+
+        # - - - - - - - - - - - - - -
+        for ee, emline in enumerate(magdic.keys()):
+            if ee == 0:
+                ax       = fig.add_subplot(len(emlinelist)*100+11+ee)
+            else:
+                ax       = fig.add_subplot(len(emlinelist)*100+11+ee, sharex=ax, sharey=ax)
+            histdata = magdic[emline]['mag']
+            ax.hist(histdata, bins=bindefs,histtype='stepfilled',color=linecolors[emline],alpha=0.9,linestyle='-',label=emline,zorder=100)
+            ax.grid(True,zorder=10,color='lightgrey')
+            ax.set_xticks(np.arange(19,31,2))
+            ax.set_yticks(np.arange(0,12,2))
+
+            leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
+                             # bbox_to_anchor=(0.5, 1.1),)  # add the legend
+            leg.get_frame().set_alpha(0.7)
+        # - - - - - - - - - - - - - -
+
+        for ax in fig.get_axes():
+            ax.label_outer()
+
+        plt.xlim(xrange)
+        plt.ylim(0,11)
+
+
+        if verbose: print('   Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Collecting Lya absolute mags')
+    goodent  = np.where((infodat['abs_mag_UV_cont_own_median_jk100'] != 0) & (infodat['duplicationID'] == 0))[0]
+
+    mag                 = infodat['abs_mag_UV_cont_own_median_jk100'][goodent]
+    magerr              = None
+    EW                  = infodat['EW_0_beta_own_median_jk100'][goodent]
+    EWerr               = infodat['EW_0_beta_own_median_error_jk100'][goodent]
+    if showlimits:
+        EWerr[EWerr == 0.0] = -99
+    else:
+        EW[EWerr == 0.0]    = np.nan
+        EWerr[EWerr == 0.0] = np.nan
+    redshift            = infodat['redshift'][goodent]
+
+    plotname = outputdir+'magdist_LAE_MUV.pdf'
+    xlabel    = 'M$_\\textrm{UV,1500\AA}$'
+    xvalues   = mag[np.isfinite(EW)]
+    xerr      = None #magerr[np.isfinite(EW)]
+    ylabel    = 'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.95$)'
+    yvalues   = EW[np.isfinite(EW)]
+    yerr      = EWerr[np.isfinite(EW)]
+    cdatvec   = redshift[np.isfinite(EW)]
+
+    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
+                                                   'dummydat',linetype=None,title=None,ids=infodat['id'][goodent],
+                                                   ylog=True,xlog=False,yrange=[0.1,2000],xrange=[-24.9,-14.9],
+                                                   colortype=colortype,colorcode=True,cdatvec=cdatvec,
+                                                   point_text=None,photoionizationplotparam=None,
+                                                   histaxes=True,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
