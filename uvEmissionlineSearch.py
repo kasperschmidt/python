@@ -13983,9 +13983,20 @@ def plot_neVSne(plotname,T_e_fix,
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CIV','HeII','OIII','SiIII','CIII'],
-                                showlimits=False, verbose=True, overwrite=False, addidlabels=False):
+                                EWlimprint=100.0, showlimits=False, verbose=True, overwrite=False, addidlabels=False):
     """
     Function to generate plots of two estimates of n_e. Used in uves.perform_PyNeb_calc_main()
+
+    --- INPUT ---
+    outputdir       The directory to store the generated plots in.
+    infofile        The UVES object main infofile with object parameters.
+    masterfits      The UVES master fits file with EW estimates.
+    emlinelist      List of emission lines to include in plots; available: ['CIV','HeII','OIII','SiIII','CIII','MgII']
+    addidlabels     To display the IDs in the plots set to True. This will also print ID lists of extreme EW objects.
+    EWlimprint      The lower limit of the extreme EW emitters to plot with "addidlabels".
+    showlimits      Show the upper/lower limits in the plots.
+    verbose         Toggle verbosity
+    overwrite       Overwrite existing figures?
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
@@ -14043,7 +14054,9 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         yerr       = magdic[emline]['EWerr']
         cdatvec    = magdic[emline]['redshift']
         if addidlabels:
-            point_text = magdic[emline]['id'].astype(str)
+            point_text  = magdic[emline]['id'].astype(str)
+            ewGT100_ebt = np.where(yvalues >= EWlimprint)[0]
+            print(' - The list of objects with EW_0('+emline+') >= '+str(EWlimprint)+':\n   '+str(point_text[ewGT100_ebt]))
         else:
             point_text = None
 
@@ -14092,7 +14105,6 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         for emline in magdic.keys():
             histdata = magdic[emline]['mag']
             plt.hist(histdata, bins=bindefs,histtype='stepfilled',color=linecolors[emline],alpha=0.3,linestyle='-',label=emline)
-
 
         plt.ylabel('Number of objects')
         plt.xlabel('EW$_0$ continuum AB magnitude')
