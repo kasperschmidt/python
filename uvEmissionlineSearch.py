@@ -13189,26 +13189,25 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbose=True):
+def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=False,verbose=True):
     """
     Plotting gas phase abundances estimate with uves.estimateGasPhaseAbundanceFromBylerFittingFunctions()
 
     --- Example of use ---
     import uvEmissionlineSearch as uves
     outputdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/BylerAbundanceFigures/'
-    uves.plot_GasPhaseAbundances(outputdir,overwrite=True,withliterature=False,verbose=True)
-    uves.plot_GasPhaseAbundances(outputdir,overwrite=True,withliterature=True,verbose=True)
-    """
     kbswork      = '/Users/kschmidt/work/'
-
+    kbswork+'MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
+    uves.plot_GasPhaseAbundances(masterfits,outputdir,overwrite=True,withliterature=False,verbose=True)
+    uves.plot_GasPhaseAbundances(masterfits,overwrite=True,withliterature=True,verbose=True)
+    """
     # - - - - - - get entries for UVES results - - - - - -
     if verbose: print('\n ----- Estimating abundances ----- ')
     if verbose: print(' - Estimate abundances for UVES detections ')
-    linefluxfile_uves  = kbswork+'MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'
-    fdat_uves         = afits.open(linefluxfile_uves)[1].data
+    fdat_uves         = afits.open(masterfits)[1].data
 
     id_Si3O3C3_uves, Z_Si3O3C3_uves, Z_Si3O3C3_err_uves, id_He2O3C3_uves, Z_He2O3C3_uves, Z_He2O3C3_err_uves  = \
-        uves.estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile_uves,verbose=True)
+        uves.estimateGasPhaseAbundanceFromBylerFittingFunctions(masterfits,verbose=True)
 
     bothest_id_uves             = np.intersect1d(id_Si3O3C3_uves,id_He2O3C3_uves)
     bothest_ent_uves            = []
@@ -13240,6 +13239,7 @@ def plot_GasPhaseAbundances(outputdir,withliterature=True,overwrite=False,verbos
 
     # - - - - - - get entries for literature results - - - - - -
     if verbose: print(' - Estimate abundances for literature collection ')
+    kbswork           = '/Users/kschmidt/work/'
     linefluxfile_lit  = kbswork+'catalogs/literaturecollection_emissionlinestrengths/literaturecollection_emissionlinestrengths.fits'
     fdat_lit          = afits.open(linefluxfile_lit)[1].data
     id_Si3O3C3_lit, Z_Si3O3C3_lit, Z_Si3O3C3_err_lit, id_He2O3C3_lit, Z_He2O3C3_lit, Z_He2O3C3_err_lit  =\
