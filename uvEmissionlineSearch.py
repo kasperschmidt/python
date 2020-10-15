@@ -6886,6 +6886,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
                 ferr_num = ferr_num * Nsigmalimits
 
                 if (obj_vetfelis['trust'+numerator_line] == 0) or \
+                        (obj_vetfelis['trust'+numerator_line] == 9) or \
                         (obj_vetfelis['trust'+numerator_line] == 99) or \
                         (obj_vetfelis['trust'+numerator_line] == 9999) or \
                         (fluxratioarray[ii,colents['s2n_'+numerator_line]] < Nsigmalimits):
@@ -6950,6 +6951,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
                         ferr_denom = ferr_denom * Nsigmalimits
 
                         if (obj_vetfelis['trust'+denominator_line] == 0) or \
+                                (obj_vetfelis['trust'+denominator_line] == 9) or \
                                 (obj_vetfelis['trust'+denominator_line] == 99) or \
                                 (f_denom/ferr_denom < Nsigmalimits):
                             f_denom           = ferr_denom
@@ -13983,7 +13985,7 @@ def plot_neVSne(plotname,T_e_fix,
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CIV','HeII','OIII','SiIII','CIII'],
-                                EWlimprint=100.0, showlimits=False, verbose=True, overwrite=False, addidlabels=False):
+                                EWlimprint=10.0, showlimits=False, verbose=True, overwrite=False, addidlabels=False):
     """
     Function to generate plots of two estimates of n_e. Used in uves.perform_PyNeb_calc_main()
 
@@ -14109,7 +14111,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         plt.ylabel('Number of objects')
         plt.xlabel('EW$_0$ continuum AB magnitude')
         plt.xlim(xrange)
-        plt.ylim(0,11)
+        plt.ylim(0,7.2)
         leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
                          # bbox_to_anchor=(0.5, 1.1),)  # add the legend
         leg.get_frame().set_alpha(0.7)
@@ -14165,7 +14167,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
             ax.hist(histdata, bins=bindefs,histtype='stepfilled',color=linecolors[emline],alpha=0.9,linestyle='-',label=emline,zorder=100)
             ax.grid(True,zorder=10,color='lightgrey')
             ax.set_xticks(np.arange(19,31,2))
-            ax.set_yticks(np.arange(0,12,2))
+            ax.set_yticks(np.arange(0,8,1))
 
             leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
                              # bbox_to_anchor=(0.5, 1.1),)  # add the legend
@@ -14176,7 +14178,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
             ax.label_outer()
 
         plt.xlim(xrange)
-        plt.ylim(0,11)
+        plt.ylim(0,7.2)
 
 
         if verbose: print('   Saving plot to '+plotname)
