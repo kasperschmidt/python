@@ -7141,6 +7141,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                        'absmagUV_median',
                        'magUV_median',
                        'lyaflux',
+                       'zsys',
                        'redshift']
 
     info_ranges     = [[-100,600],
@@ -7153,6 +7154,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                        [-25,-10],
                        [20,35],
                        [1e-19,1e-15],
+                       [0.0,8.0],
                        [0.0,8.0]]
 
     addvaryingbetavalues = False
@@ -7825,11 +7827,11 @@ def get_infodat_plotcols():
     colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
     colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2',None,                          'M(UV,1500) ($\\beta = -2$)']
     colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many',None,                    'M(UV,1500) ($\\beta$ linear multiband fit)']
-    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median',None,                     'M(UV,1500) ($\\beta = -1.97$)']
+    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median',None,                     'M(UV,1500) ($\\beta = -1.95$)']
     colinfo['magUV_-2']        = ['mag_UV_cont_beta2',None,                              'm(UV,1500) ($\\beta = -2$)']
     colinfo['magUV_many']      = ['mag_UV_cont_linear_many',None,                        'm(UV,1500) ($\\beta$ linear multiband fit)']
-    colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.97$)']
-    colinfo['redshift']        = ['red_vac','red_vac_err',                               '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
+    colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.95$)']
+    colinfo['zsys']            = ['red_vac','red_vac_err',                               '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
     colinfo['lyaflux']         = ['line_flux','line_flux_error',                         'F(Ly$\\alpha$) [erg/s/cm$^2$]']
     colinfo['peaksep_kms']     = ['peak_sep_kms','peak_sep_kms_err',                     'Peak separation [km/s]']
 
@@ -7837,6 +7839,8 @@ def get_infodat_plotcols():
         for ent in [0,1]:
             if colinfo[key][ent] is not None:
                 colinfo[key][ent] = colinfo[key][ent]+'_jk100'
+
+    colinfo['redshift']        = ['redshift',None,                                       '$z_\\textrm{lead line}$']
 
     return colinfo
 
