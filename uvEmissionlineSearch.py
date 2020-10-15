@@ -8329,6 +8329,8 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
     #------------------------------- Append literature measurements -------------------------------
     if addliteraturevalues:
+        plotbasename = plotbasename+'_wLit'
+
         if verbose: print(' - Loading and appending data from catalog of literature observations ')
         litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
                   'literaturecollection_emissionlinestrengths.fits'
@@ -8536,7 +8538,6 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
     else:
         lines2show = 'onetoone'
 
-    pdb.set_trace()
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype=lines2show,title=title,ids=IDsALL,
                                                    ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
@@ -14112,7 +14113,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         plt.ylabel('Number of objects')
         plt.xlabel('EW$_0$ continuum AB magnitude')
         plt.xlim(xrange)
-        plt.ylim(0,7.2)
+        plt.ylim(0,11.0)
         leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
                          # bbox_to_anchor=(0.5, 1.1),)  # add the legend
         leg.get_frame().set_alpha(0.7)
@@ -14168,7 +14169,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
             ax.hist(histdata, bins=bindefs,histtype='stepfilled',color=linecolors[emline],alpha=0.9,linestyle='-',label=emline,zorder=100)
             ax.grid(True,zorder=10,color='lightgrey')
             ax.set_xticks(np.arange(19,31,2))
-            ax.set_yticks(np.arange(0,8,1))
+            ax.set_yticks(np.arange(0,11,2))
 
             leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
                              # bbox_to_anchor=(0.5, 1.1),)  # add the legend
@@ -14179,7 +14180,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
             ax.label_outer()
 
         plt.xlim(xrange)
-        plt.ylim(0,7.2)
+        plt.ylim(0,11.0)
 
 
         if verbose: print('   Saving plot to '+plotname)
