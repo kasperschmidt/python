@@ -8082,9 +8082,9 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
 
     bandswithline = uves.wavelength_in_bands( wavelength )
 
-    f_cont        = {}
+    f_cont        = collections.OrderedDict()
     photrefs      = ['']*len(bands)
-    magABs        = {}
+    magABs        = collections.OrderedDict()
     for bb, band in enumerate(bands):
         if verbose: print(' - Getting flux estimate for band '+band)
         if (band not in bandswithLya) & (band not in bandswithline):
@@ -8095,7 +8095,7 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
                 hstinst = 'acs'
 
             try:
-                if infofiledat[ 'flux_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0]:
+                if infofiledat['use_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0]:
                     f_ref         = infofiledat[ 'flux_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0] * 1e20
                     f_ref_err     = infofiledat[ 'flux_error_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][obj_infoent][0] * 1e20
                     photrefs[bb]  = 'Kerutt'
@@ -8395,7 +8395,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
     linesetlist_EWs = []
 
-    for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII']: #, 'NV'
+    for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII', 'NV']:
         linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
                                 yline   ,LyaEW_range, EW0_range_y,   None])
         linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
@@ -8536,6 +8536,7 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
     else:
         lines2show = 'onetoone'
 
+    pdb.set_trace()
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype=lines2show,title=title,ids=IDsALL,
                                                    ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
