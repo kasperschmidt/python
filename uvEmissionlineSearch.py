@@ -5225,6 +5225,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                     pdb.set_trace()
             else:
                 markersym   = 'o'
+                mfc         = True
             ms          = marksize
             limsizefrac = 0.05
 
@@ -10558,7 +10559,19 @@ def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setting up output structure. \n   Definiing columns: ')
-    outcolnames = dat_fluxratio.dtype.names + dat_EWestimates.dtype.names[2:]
+    outcolnames_init = dat_fluxratio.dtype.names + dat_EWestimates.dtype.names[2:]
+
+    outcolnames = []
+    for outcolname in outcolnames_init: # looping over columns to ignore unnescessary entries (too keep below 1000 columns)
+        if outcolname.startswith('FR') & ('1' in outcolname.split('_')[-1]):
+            continue
+        elif outcolname.startswith('FR') & ('2' in outcolname.split('_')[-1]):
+            continue
+        else:
+            outcolnames.append(outcolname)
+
+    print(outcolnames)
+
     Nrows       = len(dat_info)
     Ncols       = len(outcolnames)
     for cc, colname in enumerate(outcolnames):
@@ -10619,14 +10632,16 @@ def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
 
         if len(objent_flux) == 1:
             for colname in dat_fluxratio.dtype.names:
-                if colname == 'pointing':
-                    hdu_out.data[colname][ii] = pointingIDdic[id]
-                else:
-                    hdu_out.data[colname][ii] = dat_fluxratio[colname][objent_flux][0]
+                if colname in outcolnames:
+                    if colname == 'pointing':
+                        hdu_out.data[colname][ii] = pointingIDdic[id]
+                    else:
+                        hdu_out.data[colname][ii] = dat_fluxratio[colname][objent_flux][0]
 
         if len(objent_ew) == 1:
             for colname in dat_EWestimates.dtype.names[2:]:
-                hdu_out.data[colname][ii] = dat_EWestimates[colname][objent_ew][0]
+                if colname in outcolnames:
+                    hdu_out.data[colname][ii] = dat_EWestimates[colname][objent_ew][0]
 
         if hdu_out.data['id'][ii] == -99: # checking that data for object was inserted
             hdu_out.data['id'][ii]       = id
