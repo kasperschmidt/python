@@ -13,7 +13,6 @@ from grizli.multifit import GroupFLT, MultiBeam, get_redshift_fit_defaults
 import pdb
 from astropy.io import ascii
 from astropy import wcs
-from astropy.coordinates import SkyCoord
 from importlib import reload
 import JADESutilities as ju
 
@@ -2716,4 +2715,127 @@ def check_coeffs(polycoeffs=[0.05, 0.01],polyxrange=[1.0, 7.0],verbose=True):
     plt.clf()
     plt.close('all')
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def tracedisplacement(DISPL,DISPX,DISPY,waverange,verbose=True):
+    """
+    Tranlating Pirzkal & Ryan (2016) deispersion polynomial parameters to the grizli format.
+
+    DISPL,DISPX, and DISPY dispersion polynomial parameters can all be taken from
+    https://github.com/npirzkal/GRISM_NIRCAM/tree/master/V2
+
+    --- INPUT ---
+    DISPL0,DISPL1       The wavelength (lambda) DISPL_#_0 and DISPL_#_1 (# indicates spectral order) parameters
+                        from *.conf files at https://github.com/npirzkal/GRISM_NIRCAM/tree/master/V2
+
+    DISPX1,DISPX0       The x-direction DISPX_#_0 and DISPX_#_1 (# indicates spectral order) parameters
+                        from *.conf files at https://github.com/npirzkal/GRISM_NIRCAM/tree/master/V2
+
+    DISPY1,DISPY0       The y-direction DISPY_#_0 and DISPY_#_1 (# indicates spectral order) parameters
+                        from *.conf files at https://github.com/npirzkal/GRISM_NIRCAM/tree/master/V2
+
+    waverange           Wavelength range of dispersion filter to consider.
+                        Can be obtained from senistivity curves at https://github.com/npirzkal/GRISM_NIRCAM/tree/master/V2
+
+    --- EXAMPLE OF USE ---
+    import grizli_wrappers as gw
+    gw.tracedisplacement([24000.,26000.],[-1530.8764939967652,2589.641434263754],[0,0],[22794.3334,32954.50519]) # OLD
+    gw.tracedisplacement([23699.9735,8700.0146],[-1530.8764939967652,866.5338650000007],[19.97158346116109,1.5926025904834888],[23700.0,32400.0]) #v2
+
+    """
+    DLDP_1 = DISPL[1] / DISPX[1]
+    DLDP_0 = DISPL[0] - DISPX[0] * DLDP_1
+
+    pix_limit_min = (waverange[0] - DLDP_0) / DLDP_1
+    pix_limit_max = (waverange[1] - DLDP_0) / DLDP_1
+
+    if not np.array_equal(np.asarray(DISPY).astype(float), np.zeros(2)):
+        if verbose: print(' WARNING: Ignoring provided dispersions in the y-direction')
+
+    pixlimits = [int(pix_limit_min), int(pix_limit_max)]
+    DLDP      = [DLDP_0, DLDP_1]
+
+    return pixlimits, DLDP
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def gen_grizli_dispersion_conf(outputdir,axeconfdir,filterlist=['F277W','F356W','F444W'],
+                               grisms=['GRISMR','GRISMC'],modules=['A','B'],verbose=True):
+    """
+    Generating Tranlating Pirzkal & Ryan (2016) deispersion polynomial parameters to the grizli format.
+
+    --- EXAMPLE OF USE ---
+    import grizli_wrappers as gw
+
+    outputdir   = '/Users/kschmidt/work/grizli/CONF/NIRCamConfPirzkal_grizliversion/'
+    axeconfdir  = '/Users/kschmidt/work/grizli/CONF/NIRCamConfPirzkal/V2/'
+    gw.gen_grizli_dispersion_conf(outputdir,axeconfdir,filterlist=['F277W','F356W','F444W'])
+
+    """
+    grizliorders = {'+1':'A','+2':'B'}
+
+
+    if filterlist == 'all':
+        filters = ['F430M', 'F460M', 'F250M', 'F335M', 'F322W2', 'F277W', 'F356W', 'F444W', 'F300M', 'F480M', 'F410M', 'F360M']
+    else:
+        filters = filterlist
+
+    for filter in filters:
+        for module in modules:
+            for grism in grisms:
+                confinput = axeconfdir+'NIRCAM_'+filter+'_mod'+module+'_'+grism[-1]+'.conf'
+                if verbose: print( ' - Loading configuration in '+confinput)
+                axeconf = grizli.grismconf.aXeConf(confinput)
+
+                outconf   = outputdir+'NIRCam.'+module+'.'+grism+'.'+filter+'.conf'
+                if verbose: print( '   Storing grizli-friendly configuration setup to \n   '+outconf)
+                fout = open(outconf, 'w')
+
+                for order in ['+1', '+2']:
+                    outsens                = outputdir+'NIRCam.'+module+'.'+grism+'.'+filter+'.'+grizliorders[order]+'.sens.fits'
+                    if verbose: print( '   Storing filter sensitivity curve to \n   '+outsens)
+                    filtercurve            = afits.open(axeconfdir+axeconf.conf['SENSITIVITY_'+order])[1].data
+                    outtab                 = grizli.utils.GTable()
+                    outtab['WAVELENGTH']   = filtercurve['WAVELENGTH']*1.e4
+                    outtab['SENSITIVITY']  = filtercurve['SENSITIVITY']
+                    outtab['ERROR']        = filtercurve['ERROR']
+                    outtab.write(outsens, format='fits', overwrite=True)
+                    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                    if verbose: print( '   Estimating dispersion parameters with gw.tracedisplacement()')
+                    DISPL     = [axeconf.conf['DISPL_'+order+'_0']*1.e4,axeconf.conf['DISPL_'+order+'_1']*1.e4]
+                    DISPX     = [axeconf.conf['DISPX_'+order+'_0'],axeconf.conf['DISPX_'+order+'_1']]
+                    DISPY     = [axeconf.conf['DISPY_'+order+'_0'],axeconf.conf['DISPY_'+order+'_1']]
+
+                    selectent = np.where(outtab['SENSITIVITY'] > 0.001*np.max(outtab['SENSITIVITY']))
+                    lamrange  = [np.min(outtab['WAVELENGTH'][selectent]),
+                                 np.max(outtab['WAVELENGTH'][selectent])]
+
+                    pixlimits, DLDP = gw.tracedisplacement(DISPL,DISPX,DISPY,lamrange,verbose=True)
+
+                    fout.write("""
+#------------------------------
+# Beam/order {o}={o_axe}
+
+MMAG_EXTRACT_{o} 40
+
+BEAM{o} {left} {right}
+
+XOFF_{o} 0.0
+
+YOFF_{o} 0.0
+
+DYDX_ORDER_{o} 0
+
+DYDX_{o}_0 0.
+
+DISP_ORDER_{o} 1
+
+DLDP_{o}_0 {DLDP_0:.2f}
+
+DLDP_{o}_1 {DLDP_1:.2f}
+
+SENSITIVITY_{o} {grismsens}
+
+""".format(o=grizliorders[order], module=module, DLDP_0=DLDP[0], DLDP_1=DLDP[1], filt=filter, o_axe=order,
+           left=pixlimits[0], right=pixlimits[1], grismsens=outsens.split('/Users/kschmidt/work/grizli/CONF/')[-1]))
+
+                fout.close()
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
