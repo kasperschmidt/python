@@ -1325,7 +1325,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
     if quickrun:
         print(' \n\n          NB - using the "quickrun" setup \n\n')
         matchtol  = 0.01      # arcsec
-        mag_limit  = 20
+        mag_limit  = 18
         mag_limits = [10, mag_limit]
     else:
         matchtol  = 2.0      # arcsec
@@ -1596,9 +1596,9 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
         plt.savefig('./GrismFLT_modeldiff_files.pdf')
         #---------------------------------------------------------------------------
         if not singlefilterrun:
-            splitstr = '/nircam_'
-            basename = GrismFLTimgs[0].split(splitstr)[-1]+splitstr
-            gw.plot_grismFoV(basename,edgecut=2000,verbose=True)
+            splitstr = 'nircam_'
+            basename = GrismFLTimgs[0].split(splitstr)[0]+splitstr
+            gw.plot_grismFoV(basename,edgecut=1900,verbose=True)
         #---------------------------------------------------------------------------
     else:
         print('\n - NB: Going directly to analysis of simulated data (assuming they exist)')
