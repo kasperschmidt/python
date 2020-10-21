@@ -59,22 +59,42 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,showspec=False,verbose=True)
     spec_lam     = JADEShdu['FULL SED WL'].data
     spec_flux    = JADEShdu['FULL SED'].data[objent][0]
 
+    framestr = 'rest frame'
     if observedframe:
         spec_lam     = spec_lam  * (1 + JADESinfo['redshift'])
         spec_flux    = spec_flux / (1 + JADESinfo['redshift'])
+        framestr     = 'obs. frame'
 
     HSTF140Wmag  = -2.5 * np.log10(JADESinfo['HST_F140W_fnu']/1e9) + 8.90
 
+    infostr = 'JADESid = '+str(JADESid)+' @ z = '+str("%.4f" % JADESinfo['redshift'])+\
+              ' with HST F140W AB mag = '+str("%.2f" % HSTF140Wmag)
     if verbose:
-        print(' - Returning info and spec for JADESid = '+str(JADESid)+
-              ' @ z = '+str("%.4f" % JADESinfo['redshift'])+
-              ' with HST F140W AB mag = '+str("%.2f" % HSTF140Wmag))
+        print(' - Returning info and spec for '+infostr)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if showspec:
         import pylab as plt
-        plt.plot(spec_lam,spec_flux)
-        plt.show()
+        import MiGs
+        linelist = MiGs.linelistdic()
+        plt.title(infostr+' shown in '+framestr)
+        yvalues = spec_flux # *spec_lam
+        plt.step(spec_lam,yvalues, '-',alpha=1.0,color='black',where='mid',zorder=10)
 
+        for emline in linelist:
+            linewave = linelist[emline][1]
+            if observedframe:
+                linewave = linewave * (1 + JADESinfo['redshift'])
+
+            wavediff = np.abs(spec_lam-linewave)
+            waveent = np.where(wavediff == np.min(wavediff))[0]
+            plt.text(linewave,yvalues[waveent],linelist[emline][0],color='gray',size=10,
+                     rotation='horizontal',horizontalalignment=linelist[emline][2],verticalalignment='bottom',zorder=20)
+
+        plt.xlabel('$\\lambda$[\AA]')
+        plt.ylabel('$f(\\lambda)$[erg/s/cm$^2$/\AA]')
+        plt.show()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return JADESinfo, spec_lam, spec_flux
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
