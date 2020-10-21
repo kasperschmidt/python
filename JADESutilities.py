@@ -87,8 +87,8 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,ver
 
         fig   = plt.figure(figsize=[10,6])
         Fsize = 14.0
-        # plt.rc('text', usetex=True)
-        # plt.rc('font', family='serif',size=Fsize)
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
         plt.clf()
         plt.rc('xtick', labelsize=Fsize)
         plt.rc('ytick', labelsize=Fsize)
@@ -114,7 +114,7 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,ver
     return JADESinfo, spec_lam, spec_flux
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=None,jadesinfo=None,verbose=True):
+def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=None,SFR=None,jadesinfo=None,verbose=True):
     """
     Function to return JADES mock objects given a set of parameter ranges.
 
@@ -125,15 +125,17 @@ def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=Non
 
 
     --- INPUT ---
-    redshift         Range of redshifts to return objects for. If None all values are accepted
-                     If redshift[1]=-99 best match to redshift[0] is returned
-    mag_f140w        Range of HST F140W AB mags to return objects for. If None all values are accepted
-                     If mag_f140w[1]=-99 best match to mag_f140w[0] is returned
-    MUV              Range of MUV to return objects for. If None all values are accepted
-                     If MUV[1]=-99 best match to MUV[0] is returned
-    mStar            Range of mStar to return objects for. If None all values are accepted
-                     If mStar[1]=-99 best match to mStar[0] is returned
-    jadesinfo        If JADES catalog should not be loaded in-function, provide the catalog in here
+    redshift         Range of redshifts to return objects for. If None all values are accepted.
+                     If redshift[1]=-99 best match to redshift[0] is returned after other selections performed.
+    mag_f140w        Range of HST F140W AB mags to return objects for. If None all values are accepted.
+                     If mag_f140w[1]=-99 best match to mag_f140w[0] is returned after other selections performed.
+    MUV              Range of MUV to return objects for. If None all values are accepted.
+                     If MUV[1]=-99 best match to MUV[0] is returned after other selections performed.
+    mStar            Range of mStar [logMsun] to return objects for. If None all values are accepted.
+                     If mStar[1]=-99 best match to mStar[0] is returned after other selections performed.
+    SFR              Range of SFR [logMsun/yr] to return objects for. If None all values are accepted.
+                     If SFR[1]=-99 best match to SFR[0] is returned after other selections performed.
+    jadesinfo        If JADES catalog should not be loaded in-function, provide the catalog data here
     verbose          Toggle verbosity
 
     --- EXAMPLE OF USE ---
@@ -162,7 +164,7 @@ def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=Non
     else:
         HST_F140W_fnu = mag_f140w
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    inputs  = {'redshift':redshift, 'HST_F140W_fnu':HST_F140W_fnu, 'MUV':MUV, 'mStar':mStar}
+    inputs  = {'redshift':redshift, 'HST_F140W_fnu':HST_F140W_fnu, 'MUV':MUV, 'mStar':mStar, 'SFR_100':SFR}
 
     if verbose: print(' - Performing selection for objects with provided ranges ')
     goodindices    = np.arange(len(jadesinfo))
@@ -185,12 +187,12 @@ def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=Non
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if len(outputinfo) == 0:
         if verbose:
-            print(' - WARNING: No objects were found satisfying the selections:')
-            print(inputs)
+            print('\n - WARNING: No objects were found satisfying the selections:')
+            print('   '+str(inputs)+'\n')
     else:
         if verbose:
             print(' - Returning the indices for the '+str(len(outputinfo))+' JADES mock objects satisfying the selections:')
-            print(inputs)
+            print('   '+str(inputs))
 
     return outputinfo
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
