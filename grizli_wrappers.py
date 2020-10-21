@@ -2382,7 +2382,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         if testing:
             verbose_loop = True
             verbose_ju   = True
-            if (objid < 780) or (objid > 790): continue
+            if (objid < 450) or (objid > 470): continue
         else:
             verbose_loop = False
             verbose_ju   = False
@@ -2392,7 +2392,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
             sys.stdout.write("%s\r" % infostr)
             sys.stdout.flush()
 
-        f140wmag  = mag_GLASS[oo]
+        f140wmag  = np.abs(mag_GLASS[oo])
         obj_radec = SkyCoord(ra=ra_GLASS[oo]*u.degree, dec=dec_GLASS[oo]*u.degree)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
