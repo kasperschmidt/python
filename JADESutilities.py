@@ -13,13 +13,14 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_JADESspecAndInfo(JADESid,observedframe=True,showspec=False,verbose=True):
+def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,verbose=True):
     """
     Assemble JADES spectrum and info
 
     --- INPUT ---
     JADESid        JADES mock object ID (Williams et al. 2018) to return info and spectrum for
     observedframe  Return the spectrum in observed frame (shifting lambda and scaling Flambda)?
+    zobs           To show spectrum at different observed redshift than the JADES redshift provide it here.
     showspec       To show the JADES spectrum (in puplot window), set to true.
     verbose        Toggle verbosity
 
@@ -60,15 +61,21 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,showspec=False,verbose=True)
     spec_flux    = JADEShdu['FULL SED'].data[objent][0]
 
     framestr = 'rest frame'
+    zplot    = 0.0
     if observedframe:
-        spec_lam     = spec_lam  * (1 + JADESinfo['redshift'])
-        spec_flux    = spec_flux / (1 + JADESinfo['redshift'])
+        if zobs is not None:
+            zplot = zobs
+        else:
+            zplot = JADESinfo['redshift']
+
+        spec_lam     = spec_lam  * (1 + zplot)
+        spec_flux    = spec_flux / (1 + zplot)
         framestr     = 'obs. frame'
 
     HSTF140Wmag  = -2.5 * np.log10(JADESinfo['HST_F140W_fnu']/1e9) + 8.90
 
-    infostr = 'JADESid = '+str(JADESid)+' @ z = '+str("%.4f" % JADESinfo['redshift'])+\
-              ' with HST F140W AB mag = '+str("%.2f" % HSTF140Wmag)
+    infostr = 'id$_\\textrm{JADES}$ = '+str(JADESid)+' with $z_\\textrm{JADES}$ = '+str("%.4f" % JADESinfo['redshift'])+\
+              ' with F140W = '+str("%.2f" % HSTF140Wmag)+' [AB]'
     if verbose:
         print(' - Returning info and spec for '+infostr)
 
@@ -77,18 +84,27 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,showspec=False,verbose=True)
         import pylab as plt
         import MiGs
         linelist = MiGs.linelistdic()
-        plt.title(infostr+' shown in '+framestr)
+
+        fig   = plt.figure(figsize=[10,6])
+        Fsize = 14.0
+        # plt.rc('text', usetex=True)
+        # plt.rc('font', family='serif',size=Fsize)
+        plt.clf()
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+
+        plt.title(infostr+'\n Spectrum shown in '+framestr+' at $z_\\textrm{plot}$ = '+str(zplot),fontsize=Fsize)
         yvalues = spec_flux # *spec_lam
-        plt.step(spec_lam,yvalues, '-',alpha=1.0,color='black',where='mid',zorder=10)
+        plt.step(spec_lam,yvalues, '-',alpha=1.0,color='black',where='mid',zorder=14)
 
         for emline in linelist:
             linewave = linelist[emline][1]
             if observedframe:
-                linewave = linewave * (1 + JADESinfo['redshift'])
+                linewave = linewave * (1 + zplot)
 
             wavediff = np.abs(spec_lam-linewave)
             waveent = np.where(wavediff == np.min(wavediff))[0]
-            plt.text(linewave,yvalues[waveent],linelist[emline][0],color='gray',size=10,
+            plt.text(linewave,yvalues[waveent],linelist[emline][0],color='gray',size=Fsize-3,
                      rotation='horizontal',horizontalalignment=linelist[emline][2],verticalalignment='bottom',zorder=20)
 
         plt.xlabel('$\\lambda$[\AA]')
