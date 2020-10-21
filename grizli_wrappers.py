@@ -2364,17 +2364,17 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         fout.write('# Best match JADES ids to GLASS objects detected in A2744. \n')
         fout.write('# Generated with grizli_wrappers.determine_JADESmatchForA2744obj() on '+nowstr+' \n')
         fout.write('#     \n')
-        fout.write('#    -99      set if no match to id_GLASS in any of redshift catalogs searched \n')
-        fout.write('#    -999     set if ASTRODEEP match has id > 100000 in which case there is not photo-z estimate \n')
-        fout.write('#    -9999    set if match in redshift catalogs but zrange (z+/-0.1) is below JADES redshift, i.e., z_max < 0.2 \n')
+        fout.write('#    -99      set if no match to id_GLASS in any of redshift catalogs searched within '+str(matchtol)+' arcsec \n')
+        fout.write('#    -999     set if ASTRODEEP match has id > 100000 in which case there is no photo-z estimate \n')
+        fout.write('#    -9999    set if no good match in JADES catalog given z, AB mag, and potentially M* and SFR from ASTRODEEP fits\n')
         fout.write('#    -99999   set if no GALFIT results for matched (GALFIT) object \n')
         fout.write('#     \n')
         fout.write('# Catalog can be loaded with:   dat = np.genfromtxt("'+outfile+'",names=True,dtype=None,skip_header=10) \n')
         fout.write('#     \n')
         fout.write('# id_GLASS ra_GLASS dec_GLASS f140wmag_GLASS    '
                    'cat_match id_match ra_match dec_match r_match redshift    '
-                   'AD_id AD_ra AD_dec AD_r_match AD_zbest AD_Mstar AD_mu AD_SFR '
-                   'JADESid  JADESz JADESf140wmag JADESMstar '
+                   'AD_id AD_ra AD_dec AD_r_match AD_zbest AD_Mstar AD_mu AD_SFR    '
+                   'JADESid  JADESz JADESf140wmag JADESMstar JADESsfr     '
                    'size_id_info   size_ra_match  size_dec_match  size_r_match  size_id_galfit  size_r50obj_arcsec  size_r90_arcsec\n')
 
     if verbose: print(' - Loop over objects to get match to JADES mock catalog')
@@ -2382,7 +2382,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         if testing:
             verbose_loop = True
             verbose_ju   = True
-            if (objid < 2070) or (objid > 2080): continue
+            if (objid < 780) or (objid > 790): continue
         else:
             verbose_loop = False
             verbose_ju   = False
@@ -2476,10 +2476,16 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
                 if ADdat_info['ID'][matchent] != ADdat['ID'][matchent]:
                     sys.exit(' The IDs of the ASTRODEEP catalogs loaded do not match ')
                 else:
-                    AD_zbest   = ADdat['ZBEST'][matchent][0]
-                    AD_mu      = ADdat['MAGNIF'][matchent][0]
-                    AD_Mstar   = np.log10(ADdat['MSTAR'][matchent][0]*1e9)
-                    AD_SFR     = ADdat['SFR'][matchent][0]
+                    AD_zbest     = ADdat['ZBEST'][matchent][0]
+                    AD_mu        = ADdat['MAGNIF'][matchent][0]
+
+                    AD_Mstar     = np.log10(ADdat['MSTAR'][matchent][0]*1e9)
+                    AD_Mstar_min = np.log10(ADdat['MSTAR_MIN'][matchent][0]*1e9)
+                    AD_Mstar_max = np.log10(ADdat['MSTAR_MAX'][matchent][0]*1e9)
+
+                    AD_SFR       = np.log10(ADdat['SFR'][matchent][0])
+                    AD_SFR_min   = np.log10(ADdat['SFR_MIN'][matchent][0])
+                    AD_SFR_max   = np.log10(ADdat['SFR_MAX'][matchent][0])
             else:
                 AD_zbest   = -99
                 AD_mu      = -99
@@ -2498,46 +2504,74 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose_loop: print(' - Select best JADES match based on z, M* and F140W mag AB')
         if redshift > 0:
-            zdiff   = 0.1
-            magdiff = 0.5
+            zdiff     = 0.1
+            magdiff   = 0.5
 
-            if AD_Mstar > 0:
-                if verbose_loop: print('   M* available so selecting best match to M* given z+/-'+str(zdiff)+' and mF140W+/-'+str(magdiff))
-                zrange    = [redshift-zdiff,redshift+zdiff]
-                mrange    = [f140wmag-magdiff,f140wmag+magdiff]
-                JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=mrange,mStar=[AD_Mstar,-99],
-                                                jadesinfo=jadesinfo,verbose=verbose_ju)
-
-                if len(JADESinfo) == 0:
-                    JADESid    = [-9999]
-                    JADESz     = [-9999]
-                    JADESmag   = [-9999]
-                    JADESmStar = [-9999]
-                else:
-                    JADESid    = JADESinfo['ID']
-                    JADESz     = JADESinfo['redshift']
-                    JADESmag   = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
-                    JADESmStar = JADESinfo['mStar']
+            if (AD_SFR > 0) & (AD_Mstar > 0):
+                if verbose_loop: print('   M* and SFR available so including those in selection before matching in redshift')
+                zrange     = [redshift,-99] # [redshift-zdiff,redshift+zdiff]
+                mrange     = [f140wmag-magdiff,f140wmag+magdiff]
+                Mstarrange = [AD_Mstar_min,AD_Mstar_max]
+                sfrrange   = [AD_SFR_min,AD_SFR_max]
+            # elif (AD_SFR > 0):
+            #     if verbose_loop: print('   SFR (not M*) available so including that in selection before matching in redshift')
+            #     zrange     = [redshift,-99]
+            #     mrange     = [f140wmag-magdiff,f140wmag+magdiff]
+            #     Mstarrange = None
+            #     sfrrange   = [AD_SFR_min,AD_SFR_max]
+            # elif AD_Mstar > 0:
+            #     if verbose_loop: print('   M* (not SFR) available so including that in selection before matching in redshift')
+            #     zrange     = [redshift,-99] # [redshift-zdiff,redshift+zdiff]
+            #     mrange     = [f140wmag-magdiff,f140wmag+magdiff]
+            #     Mstarrange = [AD_Mstar_min,AD_Mstar_max]
+            #     sfrrange   = None
             else:
-                if verbose_loop: print('   No M* so selecting best match to mF140W given z+/-'+str(zdiff))
-                zrange    = [redshift-0.1,redshift+0.1]
-                JADESinfo = ju.get_JADESobjects(redshift=zrange,mag_f140w=[f140wmag,-99],
-                                                jadesinfo=jadesinfo,verbose=verbose_ju)
-                if len(JADESinfo) == 0:
-                    JADESid    = [-9999]
-                    JADESz     = [-9999]
-                    JADESmag   = [-9999]
-                    JADESmStar = [-9999]
+                if verbose_loop: print('   Neither M* not SFR so selecting best match to mF140W given z+/-'+str(zdiff))
+                JADESzMin = 0.2
+                if redshift < JADESzMin:
+                    zrange     = [0.0,JADESzMin+zdiff]
                 else:
-                    JADESid    = JADESinfo['ID']
-                    JADESz     = JADESinfo['redshift']
-                    JADESmag   = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
-                    JADESmStar = [-9999]
+                    zrange     = [redshift-zdiff,redshift+zdiff]
+                mrange     = [f140wmag,-99]
+                Mstarrange = None
+                sfrrange   = None
+
+            JADESinfo  = ju.get_JADESobjects(redshift=zrange,mag_f140w=mrange,mStar=Mstarrange,SFR=sfrrange,
+                                            jadesinfo=jadesinfo,verbose=verbose_ju)
+
+            if len(JADESinfo) == 0:
+                JADESid    = [-9999]
+                JADESz     = [-9999]
+                JADESmag   = [-9999]
+                JADESmStar = [-9999]
+                JADESsfr   = [-9999]
+            else:
+                JADESid    = JADESinfo['ID']
+                JADESz     = JADESinfo['redshift']
+                JADESmag   = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
+                JADESmStar = JADESinfo['mStar']
+                JADESsfr   = JADESinfo['SFR_100']
+
         else:
-            JADESid    = [-99]
-            JADESz     = [-99]
-            JADESmag   = [-99]
-            JADESmStar = [-99]
+            zrange     = [0,100]
+            mrange     = [f140wmag,-99]
+            Mstarrange = None
+            sfrrange   = None
+
+            JADESinfo  = ju.get_JADESobjects(redshift=zrange,mag_f140w=mrange,mStar=Mstarrange,SFR=sfrrange,
+                                            jadesinfo=jadesinfo,verbose=verbose_ju)
+
+            JADESid    = JADESinfo['ID']
+            JADESz     = JADESinfo['redshift']
+            JADESmag   = -2.5*np.log10(JADESinfo['HST_F140W_fnu']/1e9)+8.90
+            JADESmStar = JADESinfo['mStar']
+            JADESsfr   = JADESinfo['SFR_100']
+            cat_match  = 'JADES'
+            id_match   = JADESid
+            ra_match   = [-99]
+            dec_match  = [-99]
+            r_match    = [-99]
+            redshift   = JADESz
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose_loop: print(' - Add size of nearest object (to GLASS coordinates) from Takahiros estimates ')
@@ -2567,15 +2601,19 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if verbose_loop: print(' - Store object information and JADES id to output file')
-        outstring = str(objid)+'  '+str(ra_GLASS[oo])+'  '+str(dec_GLASS[oo])+'  '+str("%.4f" % f140wmag)+'  '+\
+        outstring = str(objid)+'  '+str(ra_GLASS[oo])+'  '+str(dec_GLASS[oo])+'  '+str("%.4f" % f140wmag)+'       '+\
                     str("%10s" % cat_match)+'  '+str(id_match[0])+'  '+str(ra_match[0])+' '+\
-                    str(dec_match[0])+'  '+str(r_match[0])+'  '+str("%.4f" % redshift)+'  '+\
+                    str(dec_match[0])+'  '+str(r_match[0])+'  '+str("%.4f" % redshift)+'       '+\
                     str(AD_id[0])+'  '+str(AD_ra[0])+'  '+str(AD_dec[0])+'  '+str(AD_r_match[0])+'  '+\
-                    str(AD_zbest)+'  '+str(AD_Mstar)+'  '+str(AD_mu)+'  '+str(AD_SFR)+'  '+\
-                    str(JADESid[0])+'  '+str(JADESz[0])+'  '+str(JADESmag[0])+'  '+str(JADESmStar[0])+'  '+\
+                    str(AD_zbest)+'  '+str(AD_Mstar)+'  '+str(AD_mu)+'  '+str(AD_SFR)+'       '+\
+                    str(JADESid[0])+'  '+str(JADESz[0])+'  '+str(JADESmag[0])+'  '+str(JADESmStar[0])+'  '+str(JADESsfr[0])+'       '+\
                     str(size_id1[0])+'  '+str(size_ra_match)+'  '+str(size_dec_match)+'  '+\
                     str(size_r_match)+'  '+str(size_id2)+'  '+str(size_r50obj)+'  '+str(size_r90obj)
         fout.write(outstring+'\n')
+
+        # print(str(redshift)+'\n')
+        # if redshift == -99.: pdb.set_trace()
+        # if id_match == 1718: pdb.set_trace()
     if verbose: print('\n   ... done')
 
     fout.close()
