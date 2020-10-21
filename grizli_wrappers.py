@@ -2647,16 +2647,18 @@ def print_JADESoutputFromFile(GLASSids,verbose=True,
     dat = np.genfromtxt(JADESmatches,names=True,dtype=None,skip_header=10)
 
     JADESids = []
+    objents  = []
     for id in GLASSids:
         objent = np.where(dat['id_GLASS'] == float(id))[0]
         if len(objent) == 1:
             if verbose: print( str(dat[objent][0])[1:-1].replace(',',' ') )
             JADESids.append(dat['JADESid'][objent][0])
+            objents.append(objent[0])
         else:
             if verbose: print(' WARNING: Found '++' matches to input GLASS id '+str(id)+' so skipping ')
             JADESids.append(np.nan)
 
-    return JADESids
+    return JADESids, dat[np.asarray(objents)]
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_diffimg(fits1,ext1,fits2,ext2,outfile,overwrite=True,header=False,verbose=True):
     """
