@@ -180,7 +180,14 @@ def get_JADESobjects(redshift=[3.2,3.6],mag_f140w=[23.5,24.5],MUV=None,mStar=Non
     if (bestmatchinput is not None) & (len(goodindices) > 0):
         if verbose: print(' - Finding best match to "'+bestmatchinput[0]+'" value among the '+str(len(goodindices))+' remaining objects ')
         goodi = ju.get_subcat(jadesinfo[goodindices],bestmatchinput[0],bestmatchinput[1])
-        outputinfo  = jadesinfo[goodindices.astype(int)][goodi]
+
+        if len(goodi[0]) > 1:
+            outputinfo  = jadesinfo[goodindices.astype(int)][goodi[0][:1]]
+            print('\n   WARNING '+str(len(goodi[0]))+' "best" matches found satisfying the selections:')
+            print('   '+str(inputs)+'\n   selecting the first object (idJADES='+str(outputinfo['ID'])+')\n')
+        else:
+            outputinfo  = jadesinfo[goodindices.astype(int)][goodi]
+
     else:
         outputinfo  = jadesinfo[goodindices.astype(int)]
 
