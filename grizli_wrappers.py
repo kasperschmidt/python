@@ -2637,23 +2637,26 @@ def get_matchAD2GLASS(matchtol=0.5,GLASSids=None,ASTRODEEPids=None,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def print_JADESoutputFromFile(GLASSids,verbose=True,
-                              JADESmatchfile='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt'):
+                              JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt'):
     """
     GLASSids = [3.0,25.0,34.0,35.0,98.0,104.0,118.0,142.0,463.0,477.0,783.0,1014.0,1084.0,1517.0,1535.0,1627.0,1722.0,1744.0,1745.0,1787.0,1977.0,1987.0,2095.0,2113.0]
 
     gw.print_JADESoutputFromFile(GLASSids)
 
     """
-    f = open(JADESmatchfile,'r')
+    dat = np.genfromtxt(JADESmatches,names=True,dtype=None,skip_header=10)
 
-    for line in f:
-        if line.startswith('#'):
-            continue
+    JADESids = []
+    for id in GLASSids:
+        objent = np.where(dat['id_GLASS'] == float(id))[0]
+        if len(objent) == 1:
+            if verbose: print( str(dat[objent][0])[1:-1].replace(',',' ') )
+            JADESids.append(dat['JADESid'][objent][0])
         else:
-            id = float(line.split()[0])
-            if id in GLASSids:
-                print(line)
+            if verbose: print(' WARNING: Found '++' matches to input GLASS id '+str(id)+' so skipping ')
+            JADESids.append(np.nan)
 
+    return JADESids
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def create_diffimg(fits1,ext1,fits2,ext2,outfile,overwrite=True,header=False,verbose=True):
     """
