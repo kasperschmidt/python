@@ -2370,7 +2370,7 @@ def determine_JADESmatchForA2744obj(outfile, matchtol=0.1, overwrite=True, verbo
         fout.write('#     \n')
         fout.write('#    -99      set if no match to id_GLASS in any of redshift catalogs searched within '+str(matchtol)+' arcsec \n')
         fout.write('#    -999     set if ASTRODEEP match has id > 100000 in which case there is no photo-z estimate \n')
-        fout.write('#    -9999    set if no good match in JADES catalog given z, AB mag, and potentially M* and SFR from ASTRODEEP fits -> however, bot needed anymore as all objects get JADES spec assigned on at least z and AB mag\n')
+        fout.write('#    -9999    set if no good match in JADES catalog given z, AB mag, and potentially M* and SFR from ASTRODEEP fits -> however, as of 201022 not needed anymore as all objects get JADES spec assigned on at least z and AB mag match.\n')
         fout.write('#    -99999   set if no GALFIT results for matched (GALFIT) object \n')
         fout.write('#     \n')
         fout.write('# Catalog can be loaded with:   dat = np.genfromtxt("'+outfile+'",names=True,dtype=None,skip_header=10) \n')
