@@ -13,7 +13,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,verbose=True):
+def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,lamrange=None,verbose=True):
     """
     Assemble JADES spectrum and info
 
@@ -76,9 +76,6 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,ver
 
     infostr = 'id$_\\textrm{JADES}$ = '+str(JADESid)+' with $z_\\textrm{JADES}$ = '+str("%.4f" % JADESinfo['redshift'])+\
               ' with F140W = '+str("%.2f" % HSTF140Wmag)+' [AB]'
-    if verbose:
-        print(' - Returning info and spec for '+infostr)
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if showspec:
         import pylab as plt
@@ -97,20 +94,32 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,ver
         yvalues = spec_flux # *spec_lam
         plt.step(spec_lam,yvalues, '-',alpha=1.0,color='black',where='mid',zorder=14)
 
+        if lamrange is not None:
+            plt.xlim(lamrange)
+        xmin,xmax = plt.xlim()
+
         for emline in linelist:
             linewave = linelist[emline][1]
             if observedframe:
                 linewave = linewave * (1 + zplot)
 
-            wavediff = np.abs(spec_lam-linewave)
-            waveent = np.where(wavediff == np.min(wavediff))[0]
-            plt.text(linewave,yvalues[waveent],linelist[emline][0],color='gray',size=Fsize-3,
-                     rotation='horizontal',horizontalalignment=linelist[emline][2],verticalalignment='bottom',zorder=20)
+            if (linewave > xmin) & (linewave < xmax):
+                wavediff = np.abs(spec_lam-linewave)
+                waveent = np.where(wavediff == np.min(wavediff))[0]
+                plt.text(linewave,yvalues[waveent],linelist[emline][0],color='gray',size=Fsize-3,
+                         rotation='horizontal',horizontalalignment=linelist[emline][2],verticalalignment='bottom',zorder=20)
 
         plt.xlabel('$\\lambda$[\AA]')
         plt.ylabel('$f(\\lambda)$[erg/s/cm$^2$/\AA]')
-        plt.show()
+
+        if type(showspec) == str:
+            if verbose: print(' - Saving plot of JADES spectrum to '+showspec)
+            plt.savefig(showspec)
+        else:
+            plt.show()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    if verbose: print(' - Returning info and spec for '+infostr)
     return JADESinfo, spec_lam, spec_flux
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
