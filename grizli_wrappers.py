@@ -1470,7 +1470,7 @@ def NIRCAMsim_A2744(generatesimulation=True, runfulldiagnostics=True, zrangefit=
 
             gw.compute_single_model_JADES(sim,cat,detection_bp,selectIDs=quickrunIDs,
                                           useJADESz=useJADESz,fixJADEStemplate=fixJADEStemplate,
-                                          JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt')
+                                          JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_201021.txt')
         print('   Done buildinfg and/or assembling models for individual objects in simulation \n')
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -2199,7 +2199,7 @@ def compute_single_model_MANUAL(sim,detection_bp,has_AD_match,AD_cat,AD_idx,cat,
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def compute_single_model_JADES(sim,cat,detection_bp,useJADESz=True,fixJADEStemplate=None,selectIDs=False,
-                               JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt'):
+                               JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_201021.txt'):
     """
 
     """
@@ -2675,7 +2675,7 @@ def get_matchAD2GLASS(matchtol=0.5,GLASSids=None,ASTRODEEPids=None,verbose=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def print_JADESoutputFromFile(GLASSids,verbose=True,
-                              JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_200928.txt'):
+                              JADESmatches='/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/A2744_JADESmatches_201021.txt'):
     """
     GLASSids = [3.0,25.0,34.0,35.0,98.0,104.0,118.0,142.0,463.0,477.0,783.0,1014.0,1084.0,1517.0,1535.0,1627.0,1722.0,1744.0,1745.0,1787.0,1977.0,1987.0,2095.0,2113.0]
 
