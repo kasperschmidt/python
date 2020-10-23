@@ -10563,7 +10563,16 @@ def build_mastercat_v2(outputfits, file_info, file_fluxratio, file_EWestimates,
 
     outcolnames = []
     for outcolname in outcolnames_init: # looping over columns to ignore unnescessary entries (too keep below 1000 columns)
-        if outcolname.startswith('FR') & ('1' in outcolname.split('_')[-1]):
+        if outcolname.startswith('FR') & (outcolname.split('_')[-1].endswith('1')):
+            continue
+        elif outcolname.startswith('FR') & (outcolname.split('_')[-1].endswith('2')):
+            FRname = outcolname.split('_')[-1]
+            if ('1' in FRname):
+                if FRname.split('1')[0] == FRname.split('1')[-1][:-1]:
+                    outcolnames.append(outcolname)
+                else:
+                    continue
+        elif outcolname.startswith('FR') & ('1' in outcolname.split('_')[-1]):
             continue
         elif outcolname.startswith('FR') & ('2' in outcolname.split('_')[-1]):
             continue
@@ -12048,7 +12057,8 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
     kbs.create_DS9region(regionname,ras,decs,color='red',circlesize=20,textlist=None,clobber=True,point='cross')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,objectsAsDots=False,pointingswithnumbers=True,verbose=True):
+def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,objectsAsDots=False,
+                  usehighresimages=True,pointingswithnumbers=True,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
@@ -12060,7 +12070,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
 
     # with object details
     figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV'
-    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,objectsAsDots=False,pointingswithnumbers=True,verbose=True)
+    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,objectsAsDots=False,pointingswithnumbers=True,verbose=True)
 
     # more publication friendly:
     figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV_pubfriendly'
@@ -12075,6 +12085,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
 
     if verbose: print('   o Objects with at least one detection')
     sel_UVdet = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
                            ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
                            ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
                            ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
@@ -12086,26 +12097,38 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
     # sel_LAEs = np.where( (masterdat['redshift'] >= 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
     sel_LAEs = np.where( (masterdat['redshift'] >= 2.9) )[0]
 
-    if verbose: print('   o CIII emitters ')
-    sel_CIII = np.where(((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) &
+    if verbose: print('   o NV emitters ')
+    sel_NV   = np.where(((np.abs(masterdat['ferr_NV']) != 99.0) & np.isfinite(masterdat['ferr_NV'])) &
                         (masterdat['duplicationID'] == 0.0) )[0]
 
     if verbose: print('   o CIV emitters ')
     sel_CIV  = np.where(((np.abs(masterdat['ferr_CIV']) != 99.0) & np.isfinite(masterdat['ferr_CIV'])) &
                         (masterdat['duplicationID'] == 0.0) )[0]
 
+    if verbose: print('   o HeII emitters ')
+    sel_HeII = np.where(((np.abs(masterdat['ferr_HeII']) != 99.0) & np.isfinite(masterdat['ferr_HeII'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
     if verbose: print('   o OIII emitters ')
     sel_OIII = np.where(((np.abs(masterdat['ferr_OIII']) != 99.0) & np.isfinite(masterdat['ferr_OIII'])) &
                         (masterdat['duplicationID'] == 0.0) )[0]
 
-    if verbose: print('   o OIII emitters ')
+    if verbose: print('   o SiIII emitters ')
     sel_SiIII= np.where(((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o CIII emitters ')
+    sel_CIII = np.where(((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) &
+                        (masterdat['duplicationID'] == 0.0) )[0]
+
+    if verbose: print('   o MgII emitters ')
+    sel_MgII = np.where(((np.abs(masterdat['ferr_MgII']) != 99.0) & np.isfinite(masterdat['ferr_MgII'])) &
                         (masterdat['duplicationID'] == 0.0) )[0]
 
     if verbose: print(' - Defining images and ranges')
     fields  = ['GOODS-S','COSMOS','UDF','MXDFregion']
 
-    if showobjects:
+    if usehighresimages:
         imagefiles = ['/Users/kschmidt/work/images_MAST/goodss_3dhst.v4.0.F125W_F140W_F160W_det.fits',
                       '/Users/kschmidt/work/images_MAST/cosmos_3dhst.v4.0.F125W_F140W_F160W_det.fits',
                       '/Users/kschmidt/work/images_MAST/hlsp_hlf_hst_acs-60mas_goodss_f775w_v2.0_sci.fits',
@@ -12136,8 +12159,8 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
     titletexts = ['HUDF Parallels and GOODS-S','COSMOS','The UDF mosaic and UDF10','MXDF']
 
     for ii, imagefile in enumerate(imagefiles):
-        # if ii != 3:
-        #     continue
+        if ii != 3: # only plotting MXDF
+            continue
         plotname  = figbasename+'_'+fields[ii]+figext
         if showobjects:
             plotname  = plotname.replace(figext,'_withobj'+figext)
@@ -12244,18 +12267,17 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
                     edgecolor = 'forestgreen'
                     symsize    = 7
                 else:
-
                     if objid in masterdat['id'][sel_LAEs]:
                         plotmarker = 's'
                     else:
                         plotmarker = 'o'
 
                     if (objid in masterdat['id'][sel_CIII]) & (objid not in masterdat['id'][sel_CIV]):
-                        pointcolor = 'green'
+                        pointcolor = 'forestgreen'
                     elif (objid in masterdat['id'][sel_CIV]) & (objid not in masterdat['id'][sel_CIII]):
                         pointcolor = 'blue'
                     elif (objid in masterdat['id'][sel_CIV]) & (objid in masterdat['id'][sel_CIII]):
-                        pointcolor = 'orange'
+                        pointcolor = 'darkorange'
                     else:
                         pointcolor = 'red'
 
@@ -12268,8 +12290,16 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
                         edgecolor  = pointcolor
                         symsize    = 7
 
+                    if (objid in masterdat['id'][sel_HeII]):
+                        plotmarker = 'P'
+                        symsize = 20
+
+                    if (objid in masterdat['id'][sel_NV]):
+                        plotmarker = 'D'
+                        symsize = 20
+
                     if (objid in agn) or (objid in agncand):
-                        plotmarker = '*'
+                        plotmarker = 'X'
                         symsize = 20
 
                 if 'MXDF' in fields[ii]:
@@ -12334,9 +12364,9 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     if verbose: print(' - Defining colum sets for tables to generate')
     columnslist   = [['ra','dec','redshift','EW_0','EW_0_err',
                       'id_skelton','sep_skelton','id_rafelski','sep_rafelski','id_guo','sep_guo','id_laigle','sep_laigle'],
-                     ['ra','dec','redshift','f_CIV','f_HeII','f_OIII','f_SiIII','f_CIII','f_MgII'],
+                     ['ra','dec','redshift','f_NV','f_CIV','f_HeII','f_OIII','f_SiIII','f_CIII','f_MgII'],
                      ['ra','dec','redshift',
-                      'FR_CIV1CIV2','FR_OIII1OIII2','FR_SiIII1SiIII2','FR_CIII1CIII2','FR_MgII1MgII2']]
+                      'FR_NV1NV2','FR_CIV1CIV2','FR_OIII1OIII2','FR_SiIII1SiIII2','FR_CIII1CIII2','FR_MgII1MgII2']]
     tabstrings    = ['lyainfo','fluxes','fluxratios']
 
     if verbose: print(' - Collecting objects for the individual tables ')
@@ -12349,7 +12379,9 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     areanames      = ['100fields','musewide','cdfsproper','cosmos','cdfspar1','cdfspar2','udfmosaic','udf10']
     idstart        = [1,2,3,4,6,7]
     idstartname    = areanames[2:]
-    rangename      = ['allobj','allobjUVrange','CIIIorCIV','CIV','HeII','OIII','SiIII','CIII','MgII']
+    rangename      = ['allobj','allobjUVrange','CIIIorCIV','Lya', 'NV','CIV','HeII','OIII','SiIII','CIII','MgII','Non-LAE-NoCIV']
+    zranges        = [[0,10.0],[0,4.9699],[1.5241,4.9699],[2.9729,6.5958],[2.8918,6.4432],[2.1114,4.9699],[1.9379,4.6411],
+                      [1.8969,4.5632],[1.5514,3.9067],[1.5241,3.8548],[0.7174,2.3142],[1.5,2.1114]]
     subsel         = ['full','LAEs']
     Nkeys_init     = 0
     for rr in rangename:
@@ -12360,7 +12392,8 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('   o Objects with at least one detection')
-    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+    selection = np.where(( ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
+                           ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
                            ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
                            ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
                            ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
@@ -12384,7 +12417,8 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     detectiondic['udf10_allobjUVrange_full']     = [int(Nudf10)]
 
     if verbose: print('   o LAEs with at least one other detection')
-    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+    selection = np.where(( ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
+                           ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
                            ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
                            ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
                            ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
@@ -12442,7 +12476,8 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     detectiondic['udfmosaic_CIIIorCIV_LAEs'] = [int(Nmosaic)]
     detectiondic['udf10_CIIIorCIV_LAEs']     = [int(Nudf10)]
 
-    for linesel in ['ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']:
+    f_linelist = ['ferr_NV','ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']
+    for linesel in f_linelist:
         linename = linesel.split('err_')[-1]
         if verbose: print('   o '+linename+' doublet emitters ')
         selection = np.where(((np.abs(masterdat[linesel])  != 99.0) & np.isfinite(masterdat[linesel])) &
@@ -12462,7 +12497,7 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
         detectiondic['udfmosaic_'+linesel.split('_')[-1]+'_full'] = [int(Nmosaic)]
         detectiondic['udf10_'+linesel.split('_')[-1]+'_full']     = [int(Nudf10)]
 
-    for linesel in ['ferr_CIV','ferr_HeII','ferr_OIII','ferr_SiIII','ferr_CIII','ferr_MgII']:
+    for linesel in f_linelist:
         linename = linesel.split('err_')[-1]
         if verbose: print('   o '+linename+' doublet emitters with Lya (z>2.9)')
         selection = np.where(((np.abs(masterdat[linesel])  != 99.0) & np.isfinite(masterdat[linesel])) &
@@ -12498,9 +12533,6 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     #                                  (masterdat['id'] != 208014258) &
     #                                  (masterdat['id'] != 600341002)])
     # print('\n All/LAEs  = '+str(Nall)+'/'+str(NLAE))
-
-    zranges   = [[0,10.0],[0,4.9699],[1.5241,4.9699],[2.1114,4.9699],[1.9379,4.6411],
-                 [1.8969,4.5632],[1.5514,3.9067],[1.5241,3.8548],[0.7174,2.3142]]
 
     if verbose: print('-------------------- Number counts in all 100 arcmin2 --------------------')
     for zz, zr in enumerate(zranges):
