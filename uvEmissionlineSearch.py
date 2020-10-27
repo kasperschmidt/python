@@ -14299,7 +14299,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
                                                        overwrite=overwrite,verbose=verbose)
 
     #------------------------------------------------------------------------------
-    linecolors  = {'CIV':'purple','HeII':'blue','OIII':'green','SiIII':'orange','CIII':'red','MgII':'darkred'}
+    linecolors  = {'NV':'purple','CIV':'blue','HeII':'cyan','OIII':'green','SiIII':'orange','CIII':'red','MgII':'darkred'}
     if verbose: print(' - Setting up and generating plot of histograms in same window')
     plotname = outputdir+'magdist_linescombined.pdf'
 
