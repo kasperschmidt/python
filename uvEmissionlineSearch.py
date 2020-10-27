@@ -5313,6 +5313,9 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         tot_minval = np.min([xminsys, yminsys])
         if linetype == 'horizontal':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
+        elif linetype == 'horizontalWlya':
+            plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([2.9,2.9],[yminsys,ymaxsys],'--',color='gray',lw=lthick,zorder=10)
         elif linetype == 'onetoone':
             plt.plot([-1e10,1e10],[-1e10,1e10],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'plus':
@@ -14475,7 +14478,17 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         if infodat['id'][ii] != id:
             sys.exit('There was a mismatch in ids for entry '+str(ii))
 
+    linenamelist = ['NV','CIV','HeII','OIII','SiIII','CIII','MgII']
+    Nlines       = len(linenamelist)
+    # zlineranges  = [[2.8918,6.4432],[2.1114,4.9699],[1.9379,4.6411],[1.8969,4.5632],[1.5514,3.9067],[1.5241,3.8548],[0.7174,2.3142]]
+    zlineranges  = [[2.86,6.5],[2.0,5.1],[1.7,4.8],[1.7,4.7],[1.4,3.95],[1.4,3.95],[0.7174,2.5]]
+    #\lya                		&  2.9729 -- 6.5958 	&
+
     # - - - - - - - ALL lead lines - - - - - - -
+    dv_NV_ent    = np.where((dat_uves['vshift_NV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['vshift_NV']))[0]
+    dv_NV        = dat_uves['vshift_NV'][dv_NV_ent]
+
     dv_CIV_ent   = np.where((dat_uves['vshift_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
                           np.isfinite(dat_uves['vshift_CIV']))[0]
     dv_CIV       = dat_uves['vshift_CIV'][dv_CIV_ent]
@@ -14501,6 +14514,9 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     dv_MgII      = dat_uves['vshift_MgII'][dv_MgII_ent]
 
     # - - - - - - - Only Lya as lead line - - - - - - -
+    dv_NV_ent_LAE    = np.where((dat_uves['vshift_NV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['vshift_NV']) & (infodat['leadline'] == 'Lya'))[0]
+    dv_NV_LAE        = dat_uves['vshift_NV'][dv_NV_ent_LAE]
 
     dv_CIV_ent_LAE   = np.where((dat_uves['vshift_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
                           np.isfinite(dat_uves['vshift_CIV']) & (infodat['leadline'] == 'Lya'))[0]
@@ -14547,7 +14563,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
     clabel  = '$z$(lead line)'
     cmin    = 1.5
-    cmax    = 5.0
+    cmax    = 6.5
     cextend = 'neither'
 
     colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
@@ -14568,21 +14584,22 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     cb.set_label(clabel)
     #----------------------------
 
-    xvals      = np.arange(6)+1.0
-    xticklabel = ['CIV','HeII','OIII','SiIII','CIII','MgII']
-    dvs_ent    = [dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]
-    dvs        = [dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]
+    xticklabel = linenamelist
+    xvals      = np.arange(Nlines)+1.0
+    dvs_ent    = [dv_NV_ent,dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]
+    dvs        = [dv_NV,dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]
 
     ymin, ymax = [-1,1]
     for objent, objid in enumerate(dat_uves['id']):
-        yvals = np.asarray([np.nan]*6)
+        yvals = np.asarray([np.nan]*Nlines)
 
-        detectiontracker = [0.0]*6
+        detectiontracker = [0.0]*Nlines
         for ee, entlist in enumerate(dvs_ent):
             if objent in entlist:
                 detectiontracker[ee] = 1.0
                 obj_dvs_ent          = np.where(entlist == objent)[0]
                 yvals[ee]            = dvs[ee][obj_dvs_ent][0]
+                # if np.abs(yvals[ee]) > 1000: pdb.set_trace()
 
         if (np.sum(detectiontracker) >= Nlinedetections[0]) & (np.sum(detectiontracker) < Nlinedetections[1]):
             objcol = cmap(colnorm(dat_uves['redshift'][objent]))
@@ -14622,7 +14639,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
     plt.ylabel('$\Delta v$(lead line)')
     plt.xlabel(' ')
-    plt.xlim([-1,6.3])
+    plt.xlim([-1,7.3])
     plt.ylim([ymin,ymax])
 
     plt.xticks(xvals, xticklabel, rotation='horizontal')
@@ -14639,13 +14656,13 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plots of lead line offsets ')
 
-    linename   = ['CIV','HeII','OIII','SiIII','CIII','MgII']+\
-                 ['CIV','HeII','OIII','SiIII','CIII','MgII']
-    leadline   = ['lead line']*6 + ['Lya']*6
-    dvs_ent    = [dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]+\
-                 [dv_CIV_ent_LAE,dv_HeII_ent_LAE,dv_OIII_ent_LAE,dv_SiIII_ent_LAE,dv_CIII_ent_LAE,dv_MgII_ent_LAE]
-    dvs        = [dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]+\
-                 [dv_CIV_LAE,dv_HeII_LAE,dv_OIII_LAE,dv_SiIII_LAE,dv_CIII_LAE,dv_MgII_LAE]
+    linename   = linenamelist+linenamelist
+    zranges    = zlineranges+zlineranges
+    leadline   = ['lead line']*Nlines + ['Lya']*Nlines
+    dvs_ent    = [dv_NV_ent,dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]+\
+                 [dv_NV_ent_LAE,dv_CIV_ent_LAE,dv_HeII_ent_LAE,dv_OIII_ent_LAE,dv_SiIII_ent_LAE,dv_CIII_ent_LAE]#,dv_MgII_ent_LAE]
+    dvs        = [dv_NV,dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]+\
+                 [dv_NV_LAE,dv_CIV_LAE,dv_HeII_LAE,dv_OIII_LAE,dv_SiIII_LAE,dv_CIII_LAE]#,dv_MgII_LAE]
 
     for vv, dv in enumerate(dvs):
         histaxes  = True
@@ -14660,10 +14677,14 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
         #---- vs redshift ---
         plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSredshiftLeadLine.pdf'
+
+        xrange = zranges[vv]
         if leadline[vv] == 'Lya':
-            xrange   = [2.8,5.0]
+            xrange[0] = np.max([xrange[0],2.8])
+            linetype  = 'horizontal'
         else:
-            xrange   = [1.5,5.0]
+            xrange[0] = np.max([xrange[0],1.4])
+            linetype  = 'horizontalWlya'
 
         xlabel   = '$z$('+llstring+')'
         xerr     = None
@@ -14672,7 +14693,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         else:
             yerr = None
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname,dat_uves['redshift'][dvs_ent[vv]],dv,xerr,yerr,xlabel,ylabel,
-                                                       'dummydat',linetype='horizontal',title=None, #'this is title',
+                                                       'dummydat',linetype=linetype,title=None, #'this is title',
                                                        ids=dat_uves['id'][dvs_ent[vv]],
                                                        ylog=False,xlog=False,yrange=yrange,xrange=xrange,
                                                        colortype='s2nfelis',colorcode=True,
@@ -14697,8 +14718,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
             plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSvoffsetVerhammeJK.pdf'
 
             zleadline = dat_uves['redshift'][dvs_ent[vv]]
-            zsys      = infodat[infocols['redshift'][0]][dvs_ent[vv]]
-            zsys_err  = infodat[infocols['redshift'][1]][dvs_ent[vv]]
+            zsys      = infodat[infocols['zsys'][0]][dvs_ent[vv]]
+            zsys_err  = infodat[infocols['zsys'][1]][dvs_ent[vv]]
             xvalues   = 299792.458 * (zleadline-zsys)/(1.0+zsys) # cf. Erb+2014
             xerr      = np.abs(xvalues) * np.sqrt(2*(zsys_err/zsys)**2)
 
