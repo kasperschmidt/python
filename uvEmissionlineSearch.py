@@ -10092,7 +10092,7 @@ def count_SpecOnArche(countfields):
 def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3.0,
                        emlines=['NV', 'CIV', 'HeII', 'OIII', 'SiIII', 'CIII', 'MgII'],
                        infofile='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/LAEinfo_UVemitters_3timesUDFcats.fits',
-                       FELISsummary=False,EWestimates=False,overwrite=False,verbose=True):
+                       FELISsummary=False,EWestimates=False,overwrite=False,performinspections=True,verbose=True):
     """
     Script to automize the vetting of the supposed FELIS emission line detections.
 
@@ -10168,10 +10168,11 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
             plolist   = ' '.join(glob.glob(plotdir+'overview_1DspecWzooms*'+str("%.9d" % objid)+'*.pdf'))
             mainplots = mainplots + plolist
         opencommand = 'open -n -F '
-        if mainplots != '':
-            pipe_mainplots = subprocess.Popen(opencommand+mainplots,shell=True,executable=os.environ["SHELL"])
-            time.sleep(1.1) # sleep to make sure process appears in PIDlist
-            pid_mainplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
+        if performinspections:
+            if mainplots != '':
+                pipe_mainplots = subprocess.Popen(opencommand+mainplots,shell=True,executable=os.environ["SHELL"])
+                time.sleep(1.1) # sleep to make sure process appears in PIDlist
+                pid_mainplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
 
         for pp, objpoint in enumerate(objpointings):
             objent_lr        = objent_lineratio[pp]
@@ -10248,41 +10249,45 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
                         for lp in lp_all.split():
                             if (lp.split('/')[-1]).startswith("overview_1DspecWzooms") == False:
                                 lineplots = lineplots+' '+lp
-
-                        if lineplots != '':
-                            pipe_lineplots = subprocess.Popen(opencommand+lineplots,shell=True,executable=os.environ["SHELL"])
-                            time.sleep(1.1) # sleep to make sure process appears in PIDlist
-                            pid_lineplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
-                        else:
-                            if verbose: print('   WARNING did not find a plot of the FELIS match to the line')
-
-                        while answer.lower() not in ['y','n','m']:
-                            if pversion == 2:
-                                answer = raw_input(ELquestion) # raw_input for python 2.X
-                            elif pversion == 3:
-                                answer = input(ELquestion)     # input for python 3.X
+                        if performinspections:
+                            if lineplots != '':
+                                pipe_lineplots = subprocess.Popen(opencommand+lineplots,shell=True,executable=os.environ["SHELL"])
+                                time.sleep(1.1) # sleep to make sure process appears in PIDlist
+                                pid_lineplots  = MiGs.getPID('Preview.app',verbose=False) # get PID of png process
                             else:
-                                sys.exit(' Unknown version of python: version = '+str(pversion))
-                            if answer == 'e':
-                                fout.close()
-                                sys.exit('   Exiting as answer provided was "e". Vetting summarized in\n   '+outputfile)
-                        if lineplots != '':
-                            killsignal = 1
-                            try:
-                                os.kill(pipe_lineplots.pid+1,killsignal)
-                            except:
-                                print(' WARNING: Was unable to close lineplots ')
+                                if verbose: print('   WARNING did not find a plot of the FELIS match to the line')
 
+                            while answer.lower() not in ['y','n','m']:
+                                if pversion == 2:
+                                    answer = raw_input(ELquestion) # raw_input for python 2.X
+                                elif pversion == 3:
+                                    answer = input(ELquestion)     # input for python 3.X
+                                else:
+                                    sys.exit(' Unknown version of python: version = '+str(pversion))
+                                if answer == 'e':
+                                    fout.close()
+                                    sys.exit('   Exiting as answer provided was "e". Vetting summarized in\n   '+outputfile)
+                            if lineplots != '':
+                                killsignal = 1
+                                try:
+                                    os.kill(pipe_lineplots.pid+1,killsignal)
+                                except:
+                                    print(' WARNING: Was unable to close lineplots ')
+                        else:
+                            answer = 'n' # no lines trusted when not performing inspections
                     outstr = outstr+str("%12i" % answerkeys[answer.lower()])+' '
 
-            if pversion == 2:
-                notes  = raw_input('   -> Anything to add for this object?\n'
-                                   '      (AGN? Marginal detections? Bad spec?)    ') # raw_input for python 2.X
-            elif pversion == 3:
-                notes  = input('   -> Anything to add for this object?\n'
-                               '      (AGN? Marginal detections? Bad spec?)    ') # raw_input for python 3.X
+            if performinspections:
+                if pversion == 2:
+                    notes  = raw_input('   -> Anything to add for this object?\n'
+                                       '      (AGN? Marginal detections? Bad spec?)    ') # raw_input for python 2.X
+                elif pversion == 3:
+                    notes  = input('   -> Anything to add for this object?\n'
+                                   '      (AGN? Marginal detections? Bad spec?)    ') # raw_input for python 3.X
+                else:
+                    sys.exit(' Unknown version of python: version = '+str(pversion))
             else:
-                sys.exit(' Unknown version of python: version = '+str(pversion))
+                notes = ' Automatically generated entry from setting performinspections=True'
 
             if notes == 'e':
                 fout.close()
@@ -10294,12 +10299,13 @@ def vet_felisdetection(idlist,plotdirs,outputfile,lineratiosummary,S2Nmincheck=3
             fout.close()
             fout = open(outputfile,'a')
 
-        if mainplots != '':
-            killsignal = 1
-            try:
-                os.kill(pid_mainplots,killsignal)
-            except:
-                print(' WARNING: Was unable to close mainplots ')
+        if performinspections:
+            if mainplots != '':
+                killsignal = 1
+                try:
+                    os.kill(pid_mainplots,killsignal)
+                except:
+                    print(' WARNING: Was unable to close mainplots ')
     if verbose: print('\n--------- Done --------- ')
     if verbose: print(' Wrote output to:\n '+outputfile)
     fout.close()
