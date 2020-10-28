@@ -9895,7 +9895,8 @@ def plot_FELISmatches(objectids,pickledir,summaryfiles,outputdir,S2Nmin=3.0,vshi
 
             yrangefull   = None
             xrangefull   = [4600,9400]
-            linenames    = ['Lyb','Lya','CIV','HeII','OIII1663','SiIII','CIII','MgII','OII']
+            #linenames    = ['Lyb+OVI','Lya+NV','CIV','HeII','OIII1663','SiIII','CIII','MgII','OII']
+            linenames    = ['Lyb+OVI','Lya','NV','CIV','HeII','OIII1663','SiIII','CIII','MgII']
             outputfigure = outputdir+'overview_1DspecWzooms_'+str(objid)+'.pdf'
 
             mwp.plot_1DspecOverview(specoverview, labels, wavecols, fluxcols, fluxerrcols, redshift,
