@@ -1142,12 +1142,6 @@ def plot_modelparametercollections_addhist(paramcollections,collectionstats,coll
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def keylabels(keyinput):
     """
-    Function returning LaTeX label for photionisation keyword
-
-    """
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def keylabels(keyinput):
-    """
     Function returning LaTeX label for photoionization keywords
 
     """
