@@ -14793,6 +14793,13 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
     FRdiclist = []
 
     coldic = {}
+    coldic['NVCIV']     = 'NV1240/CIV1550'
+    coldic['NVHeII']    = 'NV1240/HeII1640'
+    coldic['NVOIII']    = 'NV1240/OIII1663'
+    coldic['NVSiIII']   = 'NV1240/SiIII1888'
+    coldic['NVCIII']    = 'NV1240/CIII1908'
+    # coldic['NVMgII']    = 'NV1240/SiIII1888'  # MgII not in NEOGAL models
+
     coldic['CIVHeII']   = 'CIV1550/HeII1640'
     coldic['CIVOIII']   = 'CIV1550/OIII1663'
     coldic['CIVSiIII']  = 'CIV1550/SiIII1888'
@@ -14819,7 +14826,6 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
     coldic['SiIIIOIII'] = 'SiIII1888/OIII1663'
     coldic['CIIIOIII']  = 'CIII1908/OIII1663'
     coldic['CIIISiIII'] = 'CIII1908/SiIII1888'
-
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if addinputobj:
