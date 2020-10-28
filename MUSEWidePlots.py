@@ -1134,9 +1134,9 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
 
     if linenames is None:
         if redshift > 2.5:
-            linenames    = ['Lyb','Lya','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
+            linenames    = ['Lyb','Lya','NV','CII','SiIVOIV','CIV','HeII','CIII','MgII']
         elif redshift == 0.0:
-            linenames    = ['Lyb','Lya','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
+            linenames    = ['Lyb','Lya+NV','CII','SiIVOIV','CIV','HeII','CIII','MgII','OII']
         elif (redshift > 1.5) & (redshift <= 2.5):
             linenames    = ['CIV','HeII','CIII','MgII','OII','NeIII','Hg','Hb','OIII']
         else:
@@ -1185,7 +1185,7 @@ def plot_1DspecOverview(spectra, labels, wavecols, fluxcols, fluxerrcols, redshi
         checkwave     = linewave*(1+redshift)
         speccoverage  = mwp.plot_1DspecOverview_checkcoverage(spectra,datadic,checkwave)
         if speccoverage:
-            mwp.plot_1DspecOverview_genbox(linename,xrangedic[linename],yrangedic[linename],
+            mwp.plot_1DspecOverview_genbox(subplotinfo[linename][3],xrangedic[linename],yrangedic[linename],
                                            LW,boxzorder,Dyrangefull,col_linemarker,Fsize)
 
     #--------- LEGEND ---------
@@ -1311,26 +1311,28 @@ def plot_1DspecOverview_subplotinfo():
 
     #                             linewave    wavecenter,    wavewidth,    latexname
     subplotinfodic['Lyg']     =  [ 973.0,      973.0,        20.0,         'Ly$\gamma$']
-    subplotinfodic['Lyb']     =  [1026.0,     1030.0,        20.0,         'Ly$\\beta$ + OVI doublet']
-    subplotinfodic['Lya']     =  [1216.0,     1229.0,        30.0,         'Ly$\\alpha$ + NV doublet']
+    subplotinfodic['Lyb+OVI'] =  [1026.0,     1030.0,        20.0,         'Ly$\\beta$ + OVI']
+    subplotinfodic['Lya+NV']  =  [1216.0,     1229.0,        30.0,         'Ly$\\alpha$ + NV']
+    subplotinfodic['Lya']     =  [1216.0,     1216.0,        10.0,         'Ly$\\alpha$']
+    subplotinfodic['NV']      =  [1216.0,     1241.0,        10.0,         'NV']
     subplotinfodic['CII']     =  [1335.0,     1335.0,        10.0,         'CII$\\lambda$1336']
-    subplotinfodic['SiIVOIV'] =  [1400.0,     1400.0,        13.0,         'SiIV and OIV] doublets']
-    subplotinfodic['CIV']     =  [1549.0,     1549.0,        10.0,         'CIV doublet']
+    subplotinfodic['SiIVOIV'] =  [1400.0,     1400.0,        13.0,         'SiIV + OIV]']
+    subplotinfodic['CIV']     =  [1549.0,     1549.0,        10.0,         'CIV']
     subplotinfodic['HeII']    =  [1640.0,     1640.0,        10.0,         'HeII']
-    subplotinfodic['OIII1663']=  [1663.0,     1663.0,        10.0,         'OIII] doublet']
-    subplotinfodic['SiIII']   =  [1888.0,     1886.0,        10.0,         'SiIII doublet']
-    subplotinfodic['CIII']    =  [1909.0,     1908.0,        10.0,         'CIII] doublet']
+    subplotinfodic['OIII1663']=  [1663.0,     1663.0,        10.0,         'OIII]']
+    subplotinfodic['SiIII']   =  [1888.0,     1886.0,        10.0,         'SiIII']
+    subplotinfodic['CIII']    =  [1909.0,     1908.0,        10.0,         'CIII]']
     subplotinfodic['CIIb']    =  [2326.0,     2326.0,        26.0,         'CIIb']
-    subplotinfodic['MgII']    =  [2795.0,     2798.0,        10.0,         'MgII doublet']
-    subplotinfodic['OII']     =  [3727.0,     3727.5,        10.0,         '[OII] doublet']
+    subplotinfodic['MgII']    =  [2795.0,     2798.0,        10.0,         'MgII']
+    subplotinfodic['OII']     =  [3727.0,     3727.5,        10.0,         '[OII]']
     subplotinfodic['NeIII']   =  [3869.0,     3869.0,        30.0,         '[NeIII]$\\lambda$3869']
     subplotinfodic['Hd']      =  [4101.0,     4101.0,        10.0,         'H\delta']
     subplotinfodic['Hg']      =  [4340.0,     4340.0,        30.0,         'H$\gamma$']
     subplotinfodic['Hb']      =  [4862.0,     4862.0,        30.0,         'H$\\beta$']
-    subplotinfodic['OIII']    =  [5007.0,     4985.0,        60.0,         '[OIII] doublet']
+    subplotinfodic['OIII']    =  [5007.0,     4985.0,        60.0,         '[OIII]']
     subplotinfodic['HeI']     =  [5877.0,     5877.0,        30.0,         'HeI$\\lambda$5877']
     subplotinfodic['Ha']      =  [6563.0,     6563.0,        30.0,         'H$\\alpha$']
-    subplotinfodic['SII']     =  [6717.0,     6723.0,        30.0,         '[SII] doublet']
+    subplotinfodic['SII']     =  [6717.0,     6723.0,        30.0,         '[SII]']
 
     return subplotinfodic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
