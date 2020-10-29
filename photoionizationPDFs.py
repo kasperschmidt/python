@@ -271,7 +271,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = basename+'_Stats.pdf'
-    pp.plot_stat(plotname,collectionstats,collectionscolors,verbose=verbose)
+    #pp.plot_stat(plotname,collectionstats,collectionscolors,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if generatePDFplots:
@@ -279,7 +279,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
         plotname = basename+'_PDFs.pdf'
         pp.plot_modelparametercollections(plotname, paramcollections, collectionstats, collectionscolors,
                                           fluxratiodictionarylist=fluxratiodictionarylist, maxPDFyscale=maxPDFyscale,
-                                          verbose=verbose)
+                                          obsinfoontheside=True,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     return paramcollections, collectionstats
@@ -746,7 +746,7 @@ def plot_stat_diagram(plotname,collectionstats,xkey,ykey,xlabel,ylabel,collectio
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_modelparametercollections(plotname, paramcollections, collectionstats, collectionscolors, maxPDFyscale=False,
-                                   constraintsstr=None, fluxratiodictionarylist=None, verbose=True):
+                                   constraintsstr=None, fluxratiodictionarylist=None, obsinfoontheside=False, verbose=True):
     """
 
     --- INPUT ---
@@ -778,10 +778,14 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         plt.clf()
         plt.ioff()
 
-        left   = 0.10   # the left side of the subplots of the figure
-        right  = 0.95   # the right side of the subplots of the figure
+        if obsinfoontheside:
+            left   = 0.28   # the left side of the subplots of the figure
+            top    = 0.90   # the top of the subplots of the figure
+        else:
+            left   = 0.10   # the left side of the subplots of the figure
+            top    = 0.85   # the top of the subplots of the figure
+        right  = 0.98   # the right side of the subplots of the figure
         bottom = 0.10   # the bottom of the subplots of the figure
-        top    = 0.85   # the top of the subplots of the figure
         wspace = 1.50   # the amount of width reserved for blank space between subplots
         hspace = 0.50   # the amount of height reserved for white space between subplots
         plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
@@ -801,14 +805,10 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         N_bintot = 40131.
         N_sintot = 40131.
 
-        titlestr = 'Observational contraints for ID='+str(objid)+': '
+        titlestr = 'Observational contraints ID='+str(objid)+': '
+        infostr  = 'Observational contraints \nID = '+str(objid)+' : '
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if (Nmodels_list[0] > 0) & (Nmodels_list[1] > 0):
-        #     Nmodels_ratio     = Nmodels_list[0]/(Nmodels_list[1]*2.0)
-        #     titlestr_addition = '; SF/(2*AGN)='+str("%.4f" % Nmodels_ratio)
-        #     titlestr          = titlestr+titlestr_addition
-
         if fluxratiodictionarylist is not None:
             constraints     = fluxratiodictionarylist[oo]
 
@@ -823,12 +823,6 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
                         highstr = str("%.2f" % constraints[key][1])
 
                     constraintslist.append(key+':['+lowstr+','+highstr+']')
-            # constraintslist = [key+':['+str("%.2e" % constraints[key][0])+','+str("%.2f" % constraints[key][1])+']'
-            #                    for key in constraints.keys() if key not in ['id']]
-            #
-            # if 'OIII1663/HeII1640' in constraints.keys():
-            #     if constraints['OIII1663/HeII1640'][1] > 1e30: pdb.set_trace()
-
         Ncons = 0
         for constraint in constraintslist:
             if '[0.00,1e35]' not in constraint:
@@ -842,20 +836,30 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
                     titlestr = titlestr+'\n '
 
                 if constraint.endswith(',1e35]'):
-                    titlestr = titlestr+constraint.replace(',1e35]','').replace('[',' $>$ ').replace(':','')+'; '
+                    constraintstr = constraint.replace(',1e35]','').replace('[',' $>$ ').replace(':','')
                 elif constraint.split(':')[-1].startswith('[0.00,'):
-                    titlestr = titlestr+constraint.replace('[0.00,',' $<$ ').replace(']','').replace(':','')+'; '
+                    constraintstr = constraint.replace('[0.00,',' $<$ ').replace(']','').replace(':','')
                 else:
-                    titlestr = titlestr+constraint+'; '
+                    constraintstr = constraint
+
+                if constraintstr.split(':')[-1].startswith('[-'):
+                    constraintstr = constraintstr.split(':')[0]+':]0,'+constraintstr.split(':')[-1].split(',')[-1]
+
+                titlestr = titlestr+constraintstr+'; '
+                infostr  = infostr+'\n'+constraintstr
+
                 Ncons += 1
 
         if Ncons == 0:
             titlestr = titlestr+' None'
+            infostr  = infostr+'\n-None-'
 
         # titlestr = titlestr.replace('10000000000.00','1e10')
         if '10000000000.00' in titlestr:
             pdb.set_trace()
-        fig.suptitle(titlestr,fontsize=Fsize)
+
+        if not obsinfoontheside:
+            fig.suptitle(titlestr,fontsize=Fsize)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Zgas
@@ -1005,9 +1009,18 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
                  label='BPASS single (Xiao+18)\n'
                        'N(model)='+ str(int(Nmodels_list[3]))+' ('+str("%.2f" % (Nmodels_list[3]/N_sintot*100.0))+'\%)')
 
-        leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize},ncol=4,numpoints=1,
-                         bbox_to_anchor=(-1.75, 4.45),)  # add the legend
-        leg.get_frame().set_alpha(0.7)
+
+        if obsinfoontheside:
+            leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize-2},ncol=4,numpoints=1,
+                             bbox_to_anchor=(-1.91, 4.45),)  # add the legend
+            leg.get_frame().set_alpha(0.7)
+            yminval, ymaxval = plt.ylim()
+            plt.text(-9.4,yminval+np.abs(ymaxval-yminval)*4.3,infostr,fontsize=Fsize-1,ha='left',va='top')
+        else:
+            leg = plt.legend(fancybox=True, loc='upper center',prop={'size':Fsize},ncol=4,numpoints=1,
+                             bbox_to_anchor=(-1.75, 4.45),)  # add the legend
+            leg.get_frame().set_alpha(0.7)
+
         #--------------------------
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
