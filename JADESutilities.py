@@ -9,11 +9,11 @@ import datetime
 import numpy as np
 import sys
 import pdb
-from astropy.io import fits
+import astropy.io.fits as afits
 import matplotlib.pyplot as plt
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,lamrange=None,verbose=True):
+def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,lamrange=None,verbose=True,savefitsspec=False,overwrite=False):
     """
     Assemble JADES spectrum and info
 
@@ -33,7 +33,7 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,lam
 
     """
     JADESdir     = '/Users/kschmidt/work/catalogs/JADES_GTO/'
-    JADEScat     = fits.open(JADESdir+'JADES_SF_mock_r1_v1.0.fits')[1].data
+    JADEScat     = afits.open(JADESdir+'JADES_SF_mock_r1_v1.0.fits')[1].data
 
     objent       = np.where(JADEScat['ID'] == JADESid)[0]
     JADESinfo    = JADEScat[objent]
@@ -55,7 +55,7 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,lam
     else:
         sys.exit(' Provided ID ('+str(JADESid)+') is outside JADES id range ')
 
-    JADEShdu     = fits.open(JADESdir+specfile)
+    JADEShdu     = afits.open(JADESdir+specfile)
     objent       = np.where(JADEShdu['OBJECT PROPERTIES'].data['ID'] == JADESid)
     spec_lam     = JADEShdu['FULL SED WL'].data
     spec_flux    = JADEShdu['FULL SED'].data[objent][0]
@@ -114,11 +114,20 @@ def get_JADESspecAndInfo(JADESid,observedframe=True,zobs=None,showspec=False,lam
 
         if type(showspec) == str:
             if verbose: print(' - Saving plot of JADES spectrum to '+showspec)
-            plt.savefig(showspec)
+            plt.savefig(showspec,overwrite=overwrite)
         else:
             plt.show()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if savefitsspec:
+        if verbose: print(' - Saving JADES spectrum to '+savefitsspec)
+        c1    = afits.Column(name='WAVELENGTH',   unit='angstrom', format='D',  array=np.array(spec_lam)     )
+        c2    = afits.Column(name='FLUX',         unit='flam',     format='D',  array=np.array(spec_flux)    )
+        c3    = afits.Column(name='FLUXERR',      unit='flam',     format='D',  array=np.array(spec_flux*0.0))
+        tout  = afits.BinTableHDU.from_columns([c1, c2, c3])
 
+        tout.writeto(savefitsspec,overwrite=overwrite)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Returning info and spec for '+infostr)
     return JADESinfo, spec_lam, spec_flux
 
