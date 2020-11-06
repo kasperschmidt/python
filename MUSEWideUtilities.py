@@ -1276,7 +1276,7 @@ def stack_MUSEWideSpecs_plot(plotmultiple=False,plotSN=False):
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage,minRaper=0.5,minCutwidth=4.5,overwrite=False,verbose=True):
+def TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage,idstoinclude='all',minRaper=0.5,minCutwidth=4.5,overwrite=False,verbose=True):
     """
     Generate a TDOSE source catatalog (and catalog with intitial guesses for Gaussian modeling) from
     the Rafelski+2015 UVUDF catalog.
@@ -1368,6 +1368,14 @@ def TDOSE_sourcecat_from_Rafelski(outputnamebase,refimage,minRaper=0.5,minCutwid
     ypos       = pixcoord[1]
     goodent    = np.where((xpos < refimghdr['NAXIS1']) & (xpos > 0) &
                           (ypos < refimghdr['NAXIS2']) & (ypos > 0)   )[0]
+
+    if idstoinclude != 'all':
+        goodent    = np.where((xpos < refimghdr['NAXIS1']) & (xpos > 0) &
+                              (ypos < refimghdr['NAXIS2']) & (ypos > 0)   )[0]
+        for ge in goodent:
+            if ids_all[ge] not in idstoinclude:
+                goodent[ge] = -99
+        goodent   = goodent[np.where(goodent != -99)[0]]
 
     if verbose: print('   (Make sure no 0s exist in a 6x6 pixel region around position, i.e., ignoring 0-edges of ref images.)')
     Ngoodinit  = len(goodent)
