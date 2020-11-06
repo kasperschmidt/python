@@ -108,8 +108,8 @@ fix_sky = False #False
 disp_type = 'regular' # Display type (regular, curses, both)
 options = 0 # Options: 0=normal run; 1,2=make model/imgblock & quit
 
-fix_pos = False # write True or False
-fit_others = False # write True of you want to fit other close objects
+fix_pos =    True #<-KBS201106forTUsources     #False # write True or False
+fit_others = True #<-KBS201106forTUsources     #False # write True of you want to fit other close objects
 
 # write 'sersic', 'expdisk', 'gaussian', 'moffat' or 'nuker' or 'psf'
 obj_type = 'sersic'
@@ -349,12 +349,20 @@ if use_for == 'psf':
 # read Guo catalogue to get all visible objects
 
 if Guo_catalogue is not None:
-    Guo_open     = open(Guo_catalogue,'r')
-    Guo_data     = np.genfromtxt(Guo_open)
-    Guo_ID       = [row[0] for row in Guo_data] # ID of Object in cataloge
-    Guo_RA       = [row[2] for row in Guo_data]
-    Guo_DEC      = [row[3] for row in Guo_data]
-    Guo_open.close()
+    if 'Rafelski' in Guo_catalogue:
+        Guo_data     = fits.open(Guo_catalogue)[1].data
+        Guo_ID       = Guo_data['id']
+        Guo_RA       = Guo_data['ra']
+        Guo_DEC      = Guo_data['dec']
+        Guo_mag      = 2.5*(23-np.log10(Guo_data['flux_iso_f775w']/5.0*1e-6))-48.6 # approximate conversion of rafelski iso flux from TOPCAT calc
+    else:
+        Guo_open     = open(Guo_catalogue,'r')
+        Guo_data     = np.genfromtxt(Guo_open)
+        Guo_ID       = [row[0] for row in Guo_data] # ID of Object in cataloge
+        Guo_RA       = [row[2] for row in Guo_data]
+        Guo_DEC      = [row[3] for row in Guo_data]
+        Guo_mag      = [23.99  for row in Guo_data]
+        Guo_open.close()
 else:
     Guo_ID       = [9999]
     Guo_RA       = [0.0]
@@ -390,15 +398,17 @@ close_here = [] # array with xy tuples of positions of close objects
 close_here_ID = [] # closest object, so hopefully the Guo counterpart
 close_here_x = []
 close_here_y = []
+close_here_mag = []
 for i in xrange(len(ID_obj)):
     dist = np.sqrt((x_pos[i]-x_pos_Guo)**2+(y_pos[i]-y_pos_Guo)**2)
-    close_bool = dist<margin
+    close_bool = dist<margin*2
     try:
         closest = np.where(dist == np.min(dist))[0][0]
         close_here_ID.append(int(Guo_ID[closest]))
         close_here.append(zip(x_pos_Guo[close_bool],y_pos_Guo[close_bool]))
         close_here_x.append(x_pos_Guo[close_bool])
         close_here_y.append(y_pos_Guo[close_bool])
+        close_here_mag.append(Guo_mag[close_bool])
     except:
         close_here_ID.append([0])
         close_here.append([0,0])
@@ -509,6 +519,7 @@ if use_shape_params != None:
     fix_other_params['magnitude'] = [1 for i in x_pos]
     fix_other_params['R_e'] = [0 for i in x_pos]
     fix_other_params['position angle'] = [0 for i in x_pos]
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # copy so params_all_lines is not overwritten
 failed_because = copy.deepcopy(stuff[0]) 
@@ -564,6 +575,18 @@ if use_for != 'psf':
                                                ['magnitude']]))
         fix_posy_close_here.append(np.asarray([fix_posy[0] for i in stuff[0]
                                                ['magnitude']]))
+
+    # v v v v v v v v v v v KBS201106 v v v v v v v v v v v
+    # fixining individual parameters for all objects
+    fixparam_manual = {'sersic exp':4} # 4=deVeaucaleurs, 1=exponential
+    for fpkey in fixparam_manual.keys():
+        params_close_here[0][fpkey]           = np.asarray([fixparam_manual[fpkey] for i in stuff[0][fpkey]])
+        fix_other_params_close_here[0][fpkey] = np.asarray([0 for i in stuff[0][fpkey]])
+
+    params_close_here[0]['magnitude']           = close_here_mag[0]
+    # fix_other_params_close_here[0]['magnitude'] = np.asarray([0 for i in stuff[0]['magnitude']])
+    # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # get array of additional objects that were fitted in 814
 if use_shape_params != None:
