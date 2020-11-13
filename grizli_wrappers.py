@@ -2173,11 +2173,11 @@ def plot_fluxratiomaps(linefile,ratiomap='o32', zoom=None, colormap='viridis', m
     ax.set_xticks([]); ax.set_yticks([])
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if showDSCIcontour:
-        maxcont  = mapdata[int(mapdata.shape[0]/2),int(mapdata.shape[1]/2)]
+        contdata = line['DSCI'].data[ymin:ymax,xmin:xmax]
+        maxcont  = contdata[int(contdata.shape[0]/2),int(contdata.shape[1]/2)]
         mincont  = 0.01
         for ax in fig.axes:
-            con_dsci = ax.contour(line['DSCI'].data[ymin:ymax,xmin:xmax],
-                                  levels = np.logspace(np.log10(mincont),np.log10(maxcont), 3), colors='white', alpha=0.7)
+            con_dsci = ax.contour(contdata,levels = np.logspace(np.log10(mincont),np.log10(maxcont), 3), colors='white', alpha=0.7)
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     fig.tight_layout(pad=0.2)
