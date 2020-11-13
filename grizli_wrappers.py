@@ -2007,7 +2007,7 @@ def plot_beams_add_figure(outputfile,beamdatalist,beamtext,panelindices,ylabel,c
     plt.close('all')
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vmax=20000, colormap='rainbow'):
+def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vmax=20000, zoom=None, colormap='viridis', verbose=True):
     """
     Plot emission line maps in *.line.fits files
 
@@ -2021,6 +2021,176 @@ def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vma
     maps = line[0].header['HASLINES'].split()
     line.info()
 
+    latexnames = gw.linelatexnames()
+
+    if zoom is None:
+        xmin,ymin = 0,0
+        xmax,ymax = line['DSCI'].data.shape
+    else:
+        xmin,xmax,ymin,ymax = zoom
+
+    lowcorner_x = np.abs(xmax-xmin)*0.05
+    lowcorner_y = np.abs(ymax-ymin)*0.05
+
+    Nmaps    = len(maps)
+    Nrows    = Nmaps+1
+    Ncols    = 4
+    FS       = 8
+    fig = plt.figure(figsize=[4,Nmaps+1])
+
+    ax = fig.add_subplot(Nrows, Ncols, 1)
+    ax.imshow(line['DSCI'].data[ymin:ymax,xmin:xmax], vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+    ax.text(lowcorner_x, lowcorner_y,'Direct '+line['DSCI'].header['FILTER'], ha='left', va='bottom', fontsize=FS)
+    # ax.set_title('Direct '+line['DSCI'].header['FILTER'], fontsize=FS, color='black')
+
+    ax = fig.add_subplot(Nrows, Ncols, 2)
+    ax.imshow(line['DWHT'].data[ymin:ymax,xmin:xmax], vmin=wht_vmin, vmax=wht_vmax, cmap='gray', origin='lower')
+    ax.text(lowcorner_x, lowcorner_y,r'Direct weight', ha='left', va='bottom', color='w', fontsize=FS)
+    # ax.set_title(r'Direct weight', fontsize=FS, color='black')
+
+    for mm, map in enumerate(maps):
+        ax = fig.add_subplot(Nrows, Ncols, 1+4*(mm+1))
+        ax.imshow(line['LINE', map].data[ymin:ymax,xmin:xmax], vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+        ax.text(lowcorner_x, lowcorner_y,latexnames[map][0], ha='left', va='bottom', fontsize=FS)
+        # ax.set_title(latexnames[map][0], fontsize=FS, color='black')
+
+        ax = fig.add_subplot(Nrows, Ncols, 2+4*(mm+1))
+        ax.imshow(line['LINEWHT', map].data[ymin:ymax,xmin:xmax], vmin=wht_vmin, vmax=wht_vmax, cmap='gray', origin='lower')
+        ax.text(lowcorner_x, lowcorner_y,latexnames[map][1], ha='left', va='bottom', color='w', fontsize=FS)
+        # ax.set_title(latexnames[map][1], fontsize=FS, color='black')
+
+        ax = fig.add_subplot(Nrows, Ncols, 3+4*(mm+1))
+        ax.imshow(line['CONTINUUM', map].data[ymin:ymax,xmin:xmax], vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+        ax.text(lowcorner_x, lowcorner_y,latexnames[map][2], ha='left', va='bottom', fontsize=FS)
+        # ax.set_title(latexnames[map][2], fontsize=FS, color='black')
+
+        ax = fig.add_subplot(Nrows, Ncols, 4+4*(mm+1))
+        ax.imshow(line['CONTAM', map].data[ymin:ymax,xmin:xmax], vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+        ax.text(lowcorner_x, lowcorner_y,latexnames[map][3], ha='left', va='bottom', fontsize=FS)
+        # ax.set_title(latexnames[map][3], fontsize=FS, color='black')
+
+    for ax in fig.axes:
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.set_xticks([]); ax.set_yticks([])
+
+    fig.tight_layout(pad=0.1)
+
+    plotname = linefile.replace('.fits','_emissionlinemaps.pdf')
+    if verbose: print(' - Saving figure to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_fluxratiomaps(linefile,ratiomap='o32', zoom=None, colormap='viridis', map_vmin=0.1, map_vmax=2.0,
+                       showDSCIcontour=True, verbose=True):
+    """
+    Generating Tranlating Pirzkal & Ryan (2016) deispersion polynomial parameters to the grizli format.
+
+    --- EXAMPLE OF USE ---
+    import grizli_wrappers as gw
+
+    linefile   = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/201109_fullsimulation_samecenter/nircam-a2744_00783.line.fits'
+
+    zoomregion = (62,97,62,97)
+    gw.plot_ELmaps(linefile, colormap='viridis', zoom=zoomregion)
+    gw.plot_fluxratiomaps(linefile, ratiomap='O32', colormap='viridis', zoom=zoomregion, map_vmin=0.1, map_vmax=2.0)
+    gw.plot_fluxratiomaps(linefile, ratiomap='HbHd', colormap='viridis', zoom=zoomregion, map_vmin=0.3, map_vmax=4.0)
+
+    """
+    line   = afits.open(linefile)
+    ELmaps = line[0].header['HASLINES'].split()
+    line.info()
+
+    latexnames = gw.linelatexnames()
+
+    if zoom is None:
+        xmin,ymin = 0,0
+        xmax,ymax = line['DSCI'].data.shape
+    else:
+        xmin,xmax,ymin,ymax = zoom
+
+    if ratiomap.lower() == 'o32':
+        numerator_data   = line['LINE', 'OIII'].data[ymin:ymax,xmin:xmax]
+        denominator_data = line['LINE', 'OII'].data[ymin:ymax,xmin:xmax]
+        ratiomap_data = numerator_data / denominator_data
+        cbarname = latexnames['OIII'][0]+'/'+latexnames['OII'][0]
+        numname  = latexnames['OIII'][0]
+        denname  = latexnames['OII'][0]
+    elif ratiomap.lower() == 'hbhd':
+        numerator_data   = line['LINE', 'Hb'].data[ymin:ymax,xmin:xmax]
+        denominator_data = line['LINE', 'Hd'].data[ymin:ymax,xmin:xmax]
+        ratiomap_data = numerator_data / denominator_data
+        cbarname = latexnames['Hb'][0]+'/'+latexnames['Hd'][0]
+        numname  = latexnames['Hb'][0]
+        denname  = latexnames['Hd'][0]
+    else:
+        sys.exit('Plotting the ratiomap ='+ratiomap+' is not set up')
+
+    Nrows    = 1
+    Ncols    = 4
+    FS       = 10
+    fig = plt.figure(figsize=[Ncols*2.5,Nrows*2])
+
+    # Dpix     = np.abs(np.max(mapdata[np.isfinite(mapdata)])-np.min(mapdata[np.isfinite(mapdata)]))
+    # map_vmin = np.min(mapdata[np.isfinite(mapdata)])+0.1*Dpix
+    # map_vmax = np.max(mapdata[np.isfinite(mapdata)])-0.1*Dpix
+    map_vmin_dsci = -0.03
+    map_vmax_dsci = 0.08
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ax = fig.add_subplot(Nrows, Ncols, 1)
+    mapdata  = line['DSCI'].data[ymin:ymax,xmin:xmax]
+    ax.imshow(mapdata, vmin=map_vmin_dsci, vmax=map_vmax_dsci, cmap=colormap, origin='lower')
+    # ax.text(5,5,'Direct '+line['DSCI'].header['FILTER'], ha='left', va='bottom', fontsize=FS, color='white')
+    ax.set_title('Direct '+line['DSCI'].header['FILTER'], fontsize=FS, color='black')
+    ax.set_xticklabels([]); ax.set_yticklabels([])
+    ax.set_xticks([]); ax.set_yticks([])
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ax = fig.add_subplot(Nrows, Ncols, 2)
+    mapdata  = ratiomap_data
+    im = ax.imshow(mapdata, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
+    # ax.text(5,5,mapname, ha='left', va='bottom', fontsize=FS, color='white')
+    ax.set_title(ratiomap, fontsize=FS, color='black')
+    ax.set_xticklabels([]); ax.set_yticklabels([])
+    ax.set_xticks([]); ax.set_yticks([])
+
+    cbar = fig.colorbar(im, ax=ax, shrink=1.0)
+    cbar.set_label(label=cbarname,size=FS) #,weight='bold'
+    cbar.ax.tick_params(labelsize=FS)
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ax = fig.add_subplot(Nrows, Ncols, 3)
+    mapdata  = numerator_data
+    ax.imshow(mapdata, vmin=map_vmin_dsci, vmax=map_vmax_dsci, cmap=colormap, origin='lower')
+    ax.set_title(numname, fontsize=FS, color='black')
+    ax.set_xticklabels([]); ax.set_yticklabels([])
+    ax.set_xticks([]); ax.set_yticks([])
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ax = fig.add_subplot(Nrows, Ncols, 4)
+    mapdata  = denominator_data
+    ax.imshow(mapdata, vmin=map_vmin_dsci, vmax=map_vmax_dsci, cmap=colormap, origin='lower')
+    ax.set_title(denname, fontsize=FS, color='black')
+    ax.set_xticklabels([]); ax.set_yticklabels([])
+    ax.set_xticks([]); ax.set_yticks([])
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if showDSCIcontour:
+        maxcont  = mapdata[int(mapdata.shape[0]/2),int(mapdata.shape[1]/2)]
+        mincont  = 0.01
+        for ax in fig.axes:
+            con_dsci = ax.contour(line['DSCI'].data[ymin:ymax,xmin:xmax],
+                                  levels = np.logspace(np.log10(mincont),np.log10(maxcont), 3), colors='white', alpha=0.7)
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    fig.tight_layout(pad=0.2)
+
+    plotname = linefile.replace('.fits','_emissionlinemaps_'+ratiomap+'.pdf')
+    if verbose: print(' - Saving figure to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linelatexnames():
+    """
+    """
     latexnames = {}
     latexnames['PaA']       = [r'Pa$\alpha$',              r'Weight', r'Continuum', r'Contam']
     latexnames['PaB']       = [r'Pa$\beta$',               r'Weight', r'Continuum', r'Contam']
@@ -2052,50 +2222,7 @@ def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vma
     latexnames['NIV-1487']  = [r'NIV$\lambda$1487',        r'Weight', r'Continuum', r'Contam']
     latexnames['NV-1240']   = [r'NV$\lambda$1240',         r'Weight', r'Continuum', r'Contam']
     latexnames['Lya']       = [r'Ly$\alpha$',              r'Weight', r'Continuum', r'Contam']
-
-    Nmaps    = len(maps)
-    Nrows    = Nmaps+1
-    Ncols    = 4
-    FS       = 8
-
-    # cmap = 'cubehelix_r'
-    # cmap = 'rainbow'
-    fig = plt.figure(figsize=[4,Nmaps+1])
-
-    ax = fig.add_subplot(Nrows, Ncols, 1)
-    ax.imshow(line['DSCI'].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
-    ax.text(5,5,'Direct '+line['DSCI'].header['FILTER'], ha='left', va='bottom', fontsize=FS)
-
-    ax = fig.add_subplot(Nrows, Ncols, 2)
-    ax.imshow(line['DWHT'].data, vmin=wht_vmin, vmax=wht_vmax, cmap='gray', origin='lower')
-    ax.text(5,5,r'Direct weight', ha='left', va='bottom', color='w', fontsize=FS)
-
-    for mm, map in enumerate(maps):
-        ax = fig.add_subplot(Nrows, Ncols, 1+4*(mm+1))
-        ax.imshow(line['LINE', map].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
-        ax.text(5,5,latexnames[map][0], ha='left', va='bottom', fontsize=FS)
-
-        ax = fig.add_subplot(Nrows, Ncols, 2+4*(mm+1))
-        ax.imshow(line['LINEWHT', map].data, vmin=wht_vmin, vmax=wht_vmax, cmap='gray', origin='lower')
-        ax.text(5,5,latexnames[map][1], ha='left', va='bottom', color='w', fontsize=FS)
-
-        ax = fig.add_subplot(Nrows, Ncols, 3+4*(mm+1))
-        ax.imshow(line['CONTINUUM', map].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
-        ax.text(5,5,latexnames[map][2], ha='left', va='bottom', fontsize=FS)
-
-        ax = fig.add_subplot(Nrows, Ncols, 4+4*(mm+1))
-        ax.imshow(line['CONTAM', map].data, vmin=map_vmin, vmax=map_vmax, cmap=colormap, origin='lower')
-        ax.text(5,5,latexnames[map][3], ha='left', va='bottom', fontsize=FS)
-
-    for ax in fig.axes:
-        ax.set_xticklabels([]); ax.set_yticklabels([])
-
-    fig.tight_layout(pad=0.1)
-
-    plt.savefig(linefile.replace('.fits','_emissionlinemaps.pdf'))
-    plt.clf()
-    plt.close('all')
-
+    return latexnames
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def compute_single_model_EAZY(cat,Nmatches,temp_sed_dir,sim,AD_cat,AD_idx,has_AD_match,lamcol,fluxcol,detection_bp):
     """
