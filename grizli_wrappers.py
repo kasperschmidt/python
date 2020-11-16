@@ -2083,7 +2083,7 @@ def plot_ELmaps(linefile, map_vmin=-0.03, map_vmax=0.06, wht_vmin=-0.01, wht_vma
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_fluxratiomaps(linefile,ratiomap='o32', zoom=None, colormap='viridis', map_vmin=0.1, map_vmax=2.0,
-                       showDSCIcontour=True, verbose=True):
+                       showDSCIcontour=True, map_vmin_dsci=-0.05,  map_vmax_dsci=0.10, verbose=True):
     """
     Generating Tranlating Pirzkal & Ryan (2016) deispersion polynomial parameters to the grizli format.
 
@@ -2093,7 +2093,7 @@ def plot_fluxratiomaps(linefile,ratiomap='o32', zoom=None, colormap='viridis', m
     linefile   = '/Users/kschmidt/work/JWST/grizly_A2744/Sim_A2744_NIRCAM/201109_fullsimulation_samecenter/nircam-a2744_00783.line.fits'
 
     zoomregion = (62,97,62,97)
-    gw.plot_ELmaps(linefile, colormap='viridis', zoom=zoomregion)
+    gw.plot_ELmaps(linefile, colormap='viridis', zoom=zoomregion,map_vmin=-0.05,  map_vmax=0.10)
     gw.plot_fluxratiomaps(linefile, ratiomap='O32', colormap='viridis', zoom=zoomregion, map_vmin=0.1, map_vmax=2.0)
     gw.plot_fluxratiomaps(linefile, ratiomap='HbHd', colormap='viridis', zoom=zoomregion, map_vmin=0.3, map_vmax=4.0)
 
@@ -2132,11 +2132,6 @@ def plot_fluxratiomaps(linefile,ratiomap='o32', zoom=None, colormap='viridis', m
     FS       = 10
     fig = plt.figure(figsize=[Ncols*2.5,Nrows*2])
 
-    # Dpix     = np.abs(np.max(mapdata[np.isfinite(mapdata)])-np.min(mapdata[np.isfinite(mapdata)]))
-    # map_vmin = np.min(mapdata[np.isfinite(mapdata)])+0.1*Dpix
-    # map_vmax = np.max(mapdata[np.isfinite(mapdata)])-0.1*Dpix
-    map_vmin_dsci = -0.03
-    map_vmax_dsci = 0.08
     #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ax = fig.add_subplot(Nrows, Ncols, 1)
     mapdata  = line['DSCI'].data[ymin:ymax,xmin:xmax]
