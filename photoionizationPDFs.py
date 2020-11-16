@@ -8,6 +8,7 @@ import glob
 import astropy.io.fits as afits
 import sys
 import pdb
+import corner
 from astropy.cosmology import FlatLambdaCDM
 import matplotlib.pyplot as plt
 import matplotlib
@@ -270,8 +271,12 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
     collectionscolors = [col_NEOGAL_SF,col_NEOGAL_AGN,col_BPASS_bin,col_BPASS_sin]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = basename+'_cornor.pdf'
+    plot_samplePDFcornors(plotname,paramcollections,collectionscolors,collectionplotname=['SF','AGN','BIN','SIN'],verbose=True)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = basename+'_Stats.pdf'
-    #pp.plot_stat(plotname,collectionstats,collectionscolors,verbose=verbose)
+    pp.plot_stat(plotname,collectionstats,collectionscolors,verbose=verbose)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if generatePDFplots:
@@ -1151,6 +1156,83 @@ def plot_modelparametercollections_addhist(paramcollections,collectionstats,coll
                              color=collectionscolors[colindex])  # 68% confidence interval lower
                     plt.plot([colstat[colindex][8]]*2, [yminsys, ymaxsys], ':', lw=LW,alpha=0.5,
                              color=collectionscolors[colindex])  # 68% confidence interval lower
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_samplePDFcornors(plotbasename,paramcollections,collectionscolors,collectionplotname=['SF','AGN','BIN','SIN'],
+                          verbose=True):
+    """
+    Plotting a corner plot of the "stacked" PDFs of the full sample of estiamted PDFs.
+
+    --- INPUT ---
+
+    --- EXAMPLE OF USE ---
+
+
+    """
+    paramranges = {'Zgas'   : [5e-6,0.1],
+                   'logUs'  : [-5.25,-0.075],
+                   'xid'    : [-0.05,0.65],
+                   'nh'     : [0.5,1e5],
+                   'COCOsol': [0.07,2.0],
+                   'mup'    : [-10,410],
+                   'alpha'  : [-2.2,-0.9],
+                   'logAge' : [5.8,8.2]}
+
+    loglist = ['Zgas','nh','COCOsol'] # parameters to display as logged quantitites
+    for pc, paramcollection in enumerate(paramcollections):
+        sampleparams =     {'Zgas'   : np.array([]),
+                            'logUs'  : np.array([]),
+                            'xid'    : np.array([]),
+                            'nh'     : np.array([]),
+                            'COCOsol': np.array([]),
+                            'mup'    : np.array([]),
+                            'alpha'  : np.array([]),
+                            'logAge' : np.array([])}
+        for objcollection in paramcollection:
+            for paramkey in objcollection.keys():
+                if not paramkey == 'id':
+                    if objcollection[paramkey] is not None:
+                        sampleparams[paramkey] = np.append(sampleparams[paramkey],objcollection[paramkey])
+
+        paramnames  = []
+        Nmodelslist = []
+        for skey in sampleparams.keys():
+            if len(sampleparams[skey]) > 0:
+                paramnames.append(skey)
+                Nmodelslist.append(len(sampleparams[skey]))
+
+        if len(np.unique(np.asarray(Nmodelslist))) != 1:
+            print('  Woops - there number of models for the sample differ between the different parameters... weird! stopping for investigation')
+            pdb.set_trace()
+        else:
+            Nmodels    = np.unique(np.asarray(Nmodelslist))
+
+        paramdata = np.zeros([Nmodels[0],len(paramnames)])
+        plotranges = []
+        paramlabel = []
+        for ii, pname in enumerate(paramnames):
+            if pname in loglist:
+                paramdata[:,ii] = np.log10(sampleparams[pname])
+                paramlabel.append('log('+pp.keylabels(pname)+')')
+                plotranges.append(np.log10(paramranges[pname]))
+            else:
+                paramdata[:,ii] = sampleparams[pname]
+                paramlabel.append(pp.keylabels(pname))
+                plotranges.append(paramranges[pname])
+
+        Fsize = 15
+        cfig = corner.corner(paramdata, labels=paramlabel,  label_kwargs={"fontsize": Fsize}, range=plotranges,
+                             quantiles=[0.16, 0.5, 0.84],color=collectionscolors[pc],# smmoth1d = 3.0,
+                             plot_contours=True, no_fill_contours=True, contour_kwargs={"colors":'black'},
+                             show_titles=True, title_kwargs={"fontsize": Fsize})
+
+        for ax in cfig.get_axes():
+            ax.tick_params(axis='both', labelsize=Fsize)
+
+        outputfig = plotbasename.replace('.pdf','_'+collectionplotname[pc]+'.pdf')
+        if verbose: print(' - Saving plot of sample PDFs for the '+str(Nmodels[0])+
+                          ' from the '+str(len(paramcollection))+' objects in sample to\n   '+outputfig)
+        cfig.savefig(outputfig)
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def keylabels(keyinput):
