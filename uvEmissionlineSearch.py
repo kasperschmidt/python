@@ -13299,6 +13299,194 @@ def plot_detectiondic(detectiondic,outdir='/Users/kschmidt/Desktop/',subsel='LAE
     plt.savefig(plotname)
     plt.clf()
     plt.close('all')
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_detectionFractionsInFields(plotname,verbose=True):
+    """
+    import uvEmissionlineSearch as uves
+
+    plotname = '/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/table_UVdetections_detectionratios.pdf'
+    uves.plot_detectionFractionsInFields(plotname)
+
+    """
+    textable = '/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/table_UVdetections.tex'
+    if verbose: print(' - Loading manually (hard-coded) arrays of fractions from \n   '+textable)
+    allobjarr = np.array((  [ 5.02  ,  2.18  ,  6.82 , 12.88]  ,
+                            [ 4.84  ,  1.90  ,  6.59 , 14.29]  ,
+                            [ 0.35  ,  0.27  ,  0.44 ,  0.47]  ,
+                            [ 2.63  ,  1.58  ,  2.88 ,  7.51]  ,
+                            [ 1.09  ,  0.86  ,  1.62 ,  0.65]  ,
+                            [ 1.24  ,  0.25  ,  1.41 ,  5.92]  ,
+                            [ 1.30  ,  0.00  ,  2.31 ,  4.07]  ,
+                            [ 5.28  ,  0.96  ,  8.45 , 14.75]  ,
+                            [58.82  , 25.00  , 68.42 , 54.55]  ))
+
+    laearr    = np.array((  [ 2.70  , 1.74  ,  3.05  ,  6.51]  ,
+                            [ 2.62  , 1.59  ,  2.95  ,  7.32]  ,
+                            [ 0.35  , 0.27  ,  0.44  ,  0.47]  ,
+                            [ 2.02  , 1.38  ,  2.08  ,  5.49]  ,
+                            [ 0.56  , 0.62  ,  0.63  ,  0.00]  ,
+                            [ 0.42  , 0.25  ,  0.00  ,  2.84]  ,
+                            [ 0.21  , 0.00  ,  0.32  ,  0.94]  ,
+                            [ 1.61  , 0.78  ,  2.24  ,  3.85]  ))
+    arrayrows = {'ANY':0, 'CIIIorCIV':1, 'NV':2,'CIV':3,'HeII':4,'OIII':5,'SiIII':6,'CIII':7}#,'MgII':8}
+    # ymaxvals  = {'ANY':16, 'CIIIorCIV':16, 'NV':0.7,'CIV':9.3,'HeII':2.2,'OIII':7.1,'SiIII':5.2,'CIII':16.1}#,'MgII':60}
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Setting up and generating plot:\n   '+plotname)
+    fig = plt.figure(figsize=(3, 3))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.30, top=0.97)
+    Fsize    = 10
+    lthick   = 2
+    marksize = 6
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(inforstr[:-2],fontsize=Fsize)
+
+    linecolors = uves.linecolors(colormap='plasma')
+    linenames  = uves.linenames()
+
+    ticknames = ['100 Fields','MUSE-Wide','UDF mosaic','UDF-10']
+
+    xvalues = [10,35,55,75]
+    ylabel  = '\% objects with UV line detection'
+
+    # -------------------------- Full frame --------------------------
+    axfull = fig.add_subplot(111)
+    axfull.set_xlabel('')
+    axfull.set_ylabel(ylabel)
+    # Turn off axis lines and ticks of the full window subplot
+    axfull.spines['top'].set_color('none')
+    axfull.spines['bottom'].set_color('none')
+    axfull.spines['left'].set_color('none')
+    axfull.spines['right'].set_color('none')
+    axfull.tick_params(labelcolor='white', top=False, bottom=False, left=False, right=False)
+    # plt.axis('off')
+
+    # -------------------------- FULL Z RANGE --------------------------
+    ax = fig.add_subplot(2, 1, 1)
+
+    for uvline in linecolors.keys():
+        if uvline != 'MgII': # not showing MgII for LAEs
+            yvalues  = allobjarr[arrayrows[uvline],:]
+            linecol  = linecolors[uvline]
+            plt.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10,label=linenames[uvline])
+            plt.plot(xvalues[1:],yvalues[1:],'-',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+
+    ymax = 15
+    plt.plot([20,20],[0,ymax],'-',color='black',alpha=1.0,zorder=1,lw=1)
+
+    plt.xticks(xvalues, ticknames)#, rotation='vertical')
+    plt.xlim([0,90])
+    plt.ylim([0,ymax])
+
+    # -------------------------- LAEs --------------------------
+    ax = fig.add_subplot(2, 1, 2)
+
+    for uvline in linecolors.keys():
+        if uvline != 'MgII': # not showing MgII for LAEs
+            yvalues  = laearr[arrayrows[uvline],:]
+            linecol  = linecolors[uvline]
+            plt.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10,label=linenames[uvline][0])
+            plt.plot(xvalues[1:],yvalues[1:],'-',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+
+    ymax = 9
+    plt.plot([20,20],[0,ymax],'-',color='black',alpha=1.0,zorder=1,lw=1)
+
+    plt.xticks(xvalues, ticknames)#, rotation='vertical')
+    plt.xlim([0,90])
+    plt.ylim([0,ymax])
+
+    #--------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize},ncol=3,numpoints=1,
+                     bbox_to_anchor=(0.5, -0.9),)  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    #--------------------------
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
+
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Setting up and generating plot of histograms in same window')
+    plotname = plotname.replace('.pdf','_sharedaxis.pdf')
+    fig = plt.figure(figsize=(3, 7))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.12, top=0.99)
+
+    Fsize    = 10
+    lthick   = 1.0
+    marksize = 6
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    #plt.title(inforstr[:-2],fontsize=Fsize)
+
+
+    axfull = fig.add_subplot(111)
+    axfull.set_xlabel('')
+    axfull.set_ylabel(ylabel)
+    # Turn off axis lines and ticks of the full window subplot
+    axfull.spines['top'].set_color('none')
+    axfull.spines['bottom'].set_color('none')
+    axfull.spines['left'].set_color('none')
+    axfull.spines['right'].set_color('none')
+    axfull.tick_params(labelcolor='white', top=False, bottom=False, left=False, right=False)
+
+    # - - - - - - - - - - - - - -
+    for ee, emline in enumerate(linecolors.keys()):
+        if emline != 'MgII': # not showing MgII for LAEs
+            if ee == 0:
+                ax       = fig.add_subplot((len(linecolors.keys())-1)*100+11+ee)
+            else:
+                ax       = fig.add_subplot((len(linecolors.keys())-1)*100+11+ee, sharex=ax, sharey=None)
+
+            linecol  = linecolors[emline]
+
+            yvalues  = laearr[arrayrows[emline],:]
+            ax.plot(xvalues,yvalues,'s',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            ax.plot(xvalues[1:],yvalues[1:],':',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+
+            yvalues  = allobjarr[arrayrows[emline],:]
+            ax.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            ax.plot(xvalues[1:],yvalues[1:],'-',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+
+            ax.set_xticks(xvalues)
+            allyvals = np.append(laearr[arrayrows[emline],:],allobjarr[arrayrows[emline],:])
+            ymax     = np.max(allyvals)
+            yrange   = [0.0-ymax*0.1,ymax+ymax*0.15]
+
+            ax.set_ylim(yrange)
+            ax.plot([20,20],yrange,'-',color='black',alpha=1.0,zorder=1,lw=1)
+            ax.text(23,ymax*0.9,linenames[emline][0],fontsize=Fsize,ha='left',color=linecol)
+
+    ax.set_xticklabels(ticknames, rotation=20, ha='right')
+    # - - - - - - - - - - - - - -
+    ax.plot([-10],[-10],'s',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='Full $z$-range')
+    ax.plot([-10],[-10],'o',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='LAEs ($z>2.9$)')
+    leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize},ncol=2,numpoints=1,
+                     bbox_to_anchor=(0.4, -1.2),)  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # - - - - - - - - - - - - - -
+
+    for ax in fig.get_axes():
+        ax.label_outer()
+
+    plt.xlim([0,85])
+    # plt.ylim([0,15.0])
+
+    if verbose: print('   Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True):
     """
@@ -14245,7 +14433,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     infofile           = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
     masterfits         = uvesdir+'back2backAnalysis_200213/results_master_catalog_version200213.fits'
 
-    uves.plot_magnitudedistributions(outdir_magdist,infofile,masterfits)
+    uves.plot_magnitudedistributions(outdir_magdist,infofile,masterfits,emlinelist = ['NV','CIV','HeII','OIII','SiIII','CIII','MgII'])
     """
     masterdat = afits.open(masterfits)[1].data
     infodat   = afits.open(infofile)[1].data
@@ -14309,7 +14497,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
                                                        overwrite=overwrite,verbose=verbose)
 
     #------------------------------------------------------------------------------
-    linecolors  = {'NV':'purple','CIV':'blue','HeII':'cyan','OIII':'green','SiIII':'orange','CIII':'red','MgII':'darkred'}
+    linecolors  = uves.linecolors(colormap='plasma')
     if verbose: print(' - Setting up and generating plot of histograms in same window')
     plotname = outputdir+'magdist_linescombined.pdf'
 
@@ -15036,4 +15224,51 @@ def get_AGN_ids(infofile=None):
                 sys.exit('Weird - more than 1 match to id'+str(objid))
 
     return agn, agncand
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linecolors(colormap=None):
+    """
+    Return colors of lines to use in plots
+    """
+    linecolors  = collections.OrderedDict()
+
+    linecolors['ANY']       = 'black'
+    linecolors['CIIIorCIV'] = 'gray'
+    linecolors['NV']        = 'purple'
+    linecolors['CIV']       = 'blue'
+    linecolors['HeII']      = 'cyan'
+    linecolors['OIII']      = 'green'
+    linecolors['SiIII']     = 'orange'
+    linecolors['CIII']      = 'red'
+    linecolors['MgII']      = 'darkred'
+
+    if colormap is not None:
+        cmin      = 2
+        cmax      = len(linecolors.keys())-1
+        cmap      = matplotlib.cm.get_cmap(colormap)
+        colnorm   = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
+        cmaparr   = np.linspace(cmin, cmax, num=50)
+        m         = plt.cm.ScalarMappable(cmap=cmap)
+        m.set_array(cmaparr)
+
+        for ll, uvline in enumerate(linecolors.keys()):
+            if uvline not in ['ANY','CIIIorCIV']:
+                linecolors[uvline] = cmap(colnorm(ll))
+
+    return linecolors
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def linenames():
+    """
+    Return latex names of lines to use in plots
+    """
+    linenames   = {'ANY'       :['Any detection', 'Any UV detection'],
+                   'CIIIorCIV' :['CIII or CIV',   'TBD'],
+                   'NV'        :['NV',            'TBD'],
+                   'CIV'       :['CIV',           'TBD'],
+                   'HeII'      :['HeII',          'TBD'],
+                   'OIII'      :['OIII',          'TBD'],
+                   'SiIII'     :['SiIII',         'TBD'],
+                   'CIII'      :['CIII',          'TBD'],
+                   'MgII'      :['MgII',          'TBD']}
+    return linenames
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
