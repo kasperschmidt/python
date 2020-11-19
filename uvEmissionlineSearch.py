@@ -13469,8 +13469,8 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
 
     ax.set_xticklabels(ticknames, rotation=20, ha='right')
     # - - - - - - - - - - - - - -
-    ax.plot([-10],[-10],'s',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='Full $z$-range')
-    ax.plot([-10],[-10],'o',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='LAEs ($z>2.9$)')
+    ax.plot([-10],[-10],'o',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='Full $z$-range')
+    ax.plot([-10],[-10],'s',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='LAEs ($z>2.9$)')
     leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize},ncol=2,numpoints=1,
                      bbox_to_anchor=(0.4, -1.2),)  # add the legend
     leg.get_frame().set_alpha(0.7)
