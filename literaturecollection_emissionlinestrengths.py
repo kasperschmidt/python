@@ -170,7 +170,7 @@ def referencedictionary(verbose=False):
     refdic['mai18'] = [99,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
     refdic['sha03'] = [99,    'Shapley et al. (2003)',                                  'h']
     refdic['bay14'] = [99,    'Bayliss et al. (2014)',                                  'H']
-    refdic['dummy'] = [99,    'dummy',                                                  '+']
+    refdic['rav20'] = [99,    'Ravindranath et al. (2020)',                             '+']
     refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                                 'x']
     refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                            'D']
     refdic['mai20'] = [99,    'Mainali et al. (2020)',                                  'd']
@@ -207,8 +207,6 @@ def referencedictionary(verbose=False):
     # Vanzella et al. (2020) - MACS0416 objects
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Richard et al. (2020) - MUSE lensing cluster's object line fluxes...
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Ravindranath et al. (2020) Green pea CIII + OIII + Lya emitters
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1767,6 +1765,56 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
         if key.startswith('EW0'):
             datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
                                                        (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_rav20(fluxscale=1e5,verbose=True):
+    """
+    Data collected from Ravindranath et al. (2020) Green pea CIII + OIII + Lya emitters
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'rav20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['J030321-075923', 'J081552+215623', 'J091113+183108', 'J105330+523752', 'J113303+651341', 'J113722+352426', 'J121903+152608', 'J124423+021540', 'J124834+123402', 'J145735+223201'])
+    datadic['id']        = np.array([30321, 81552, 91113, 105330, 113303, 113722, 121903, 124423, 124834, 145735]) + baseid
+    rasex                = np.array(['03:03:21.41', '08:15:52.00', '09:11:13.34', '10:53:30.82', '11:33:03.79', '11:37:22.14', '12:19:03.98', '12:44:23.37', '12:48:34.63', '14:57:35.13'])
+    decsex               = np.array(['-07:59:23.2', '+21:56:23.6', '+18:31:08.1', '+52:37:52.8', '+65:13:41.3', '+35:24:26.6', '+15:26:08.5', '+02:15:40.4', '+12:34:02.9', '+22:32:01.7'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([0.165, 0.141, 0.262, 0.253, 0.241, 0.194, 0.196, 0.239, 0.263, 0.149])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+
+    datadic['EW0_Lya']        = np.array([6, 68, 52, 8, 35, 28, 174, 34, 96, -4 ])
+    datadic['EW0err_Lya']     = np.array([1, 4, 4, 1, 2, 2, 9, 2, 6, 1])
+
+    datadic['f_CIII']         = np.array([0.849, 1.617, 0.446, 0.987, 0.368, 0.856, 1.992, 0.656, 0.998, 2.080])
+    datadic['ferr_CIII']      = np.array([0.09, 0.01, +99, +99, 0.08, +99, 0.01, 0.06, 0.09, 0.02])
+    datadic['EW0_CIII']       = np.array([3.72, 8.27, 0.49, 0.66, 1.66, 0.59, 5.66, 2.87, 4.14, 9.35])
+    datadic['EW0err_CIII']    = np.array([0.24, 0.53, +99, +99, 0.44, +99, 0.48, 0.44, 0.98, 0.76])
+
+    datadic['f_OIII']         = np.array([0.714, 0.460, 0.605, 2.505, 0.556, 1.479, 1.141, 0.742, 0.727, 0.622])
+    datadic['ferr_OIII']      = np.array([+99, +99, +99, +99, +99, +99, +99, +99, +99, +99])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
