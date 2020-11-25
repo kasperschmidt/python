@@ -7,6 +7,7 @@ import sys
 import os
 from fits2ascii import ascii2fits
 import MiGs
+import glob
 from astropy import units as u
 import astropy
 import astropy.io.fits as afits
@@ -178,7 +179,7 @@ def referencedictionary(verbose=False):
     refdic['dummy'] = [99,    'dummy',                                                  r'$\clubsuit$']
     refdic['sch16'] = [99,    'Schmidt et al. (2016)',                                  (4, 1, 0)]   # 4-point star
     refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)',          (4, 1, 45)]  # 4-point star
-    refdic['dummy'] = [99,    'dummy',                                                  (7, 1, 0)]   # 7-point star
+    refdic['ric20'] = [99,    'Richard et al. (2020)',                                  (7, 1, 0)]   # 7-point star
     refdic['amo17'] = [99,    'Amorin et al. (2017)',                                   (5, 0, 180)] # pentagon rotated 180deg
     refdic['dummy'] = [99,    'dummy',                                                  (5, 0, 90)]  # pentagon rotated 90deg
     refdic['dummy'] = [99,    'dummy',                                                  (5, 0, 270)] # pentagon rotated 270deg
@@ -1721,8 +1722,9 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([5.55])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
     # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['f_Lya']          = np.array([])
     datadic['ferr_Lya']       = np.array([])
@@ -3478,4 +3480,146 @@ def data_du20(fluxscale=1.0,verbose=True):
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
 
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/richard20/',verbose=True):
+    """
+    Data collected from Richard et al. (2020) MUSE cluster lensing catalogs
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    # ---------------------------- LOADING CATLAOGS AND ASSEMBLING INFO --------------------------------------
+    lenscats  = glob.glob(catalogdirectory+'*.fits')
+    cat_z     = []
+    cat_lines = []
+    for cat in lenscats:
+        if '_lines.fits' in cat:
+            cat_lines.append(cat)
+        else:
+            cat_z.append(cat)
+
+    cat_z     = np.sort(cat_z)
+    cat_lines = np.sort(cat_lines)
+
+    ids_all     = np.array([])
+    name_all    = np.array([])
+    z_all       = np.array([])
+    ra_all      = np.array([])
+    dec_all     = np.array([])
+
+    clusterids  = np.arange(len(cat_z))+1
+
+    goodent     = []
+
+    for zz, zcat in enumerate(cat_z):
+        dat_z     = afits.open(zcat)[1].data
+        cluster   = zcat.split('/')[-1].split('_')[0]
+        ids_all   = np.append(ids_all  ,dat_z['iden']+clusterids[zz]*1e7)
+        z_all     = np.append(z_all    ,dat_z['z'])
+        ra_all    = np.append(ra_all   ,dat_z['RA'])
+        dec_all   = np.append(dec_all  ,dat_z['DEC'])
+
+        for objid in dat_z['iden']:
+            name_all = np.append(name_all,cluster+'_'+str(objid))
+
+    linedic     = collections.OrderedDict()
+    linedic['Lya']      =  'LYALPHA'
+    linedic['HeII']     =  'HeII1640'
+    linedic['CIII1']    =  'CIII1907'
+    linedic['CIII2']    =  'CIII1909'
+    linedic['CIV1']     =  'CIV11548'
+    linedic['CIV2']     =  'CIV1551'
+    linedic['NV1']      =  'NV1238'
+    linedic['NV2']      =  'NV1243'
+    linedic['OIII1']    =  'OIII1660'
+    linedic['OIII2']    =  'OIII1666'
+    linedic['SiIII1']   =  'SiIII1883'
+    linedic['SiIII2']   =  'SiIII1892'
+
+    arr_flux   = np.zeros([len(linedic.keys()),len(ids_all)]) * np.nan
+    arr_ferr   = np.zeros([len(linedic.keys()),len(ids_all)]) * np.nan
+    arr_ew     = np.zeros([len(linedic.keys()),len(ids_all)]) * np.nan
+    arr_ewerr  = np.zeros([len(linedic.keys()),len(ids_all)]) * np.nan
+
+    for zz, zcat in enumerate(cat_z):
+        dat_z     = afits.open(zcat)[1].data
+        cluster   = zcat.split('/')[-1].split('_')[0]
+        if verbose: print(' - ric20: Storing line data for ('+str(zz+1)+'/13) '+cluster+"'s "+str(len(dat_z['iden']))+' cataloged objects ')
+
+        dat_lines = afits.open(cat_lines[zz])[1].data
+        for objid in dat_z['iden']:
+            for ll, linekey in enumerate(linedic.keys()):
+                lineent = np.where((dat_lines['iden'] == objid) & (dat_lines['LINE'] == linedic[linekey]) &
+                                   (dat_lines['FAMILY'] != 'abs') & (dat_lines['FLUX']/dat_lines['FLUX_ERR'] >= 3.0))[0]
+                if len(lineent) > 0:
+                    # if verbose: print(' - ric20: Storing line data for '+cluster+' '+str(objid)+' '+linedic[linekey]+' ')
+                    if len(lineent) > 1:
+                        if verbose: print('        WARNING: Found '+str(len(lineent))+' (non-abs) matches for '+
+                                          cluster+' '+str(objid)+' '+linedic[linekey]+'         -> Using the first entry found... ')
+
+                    objent = np.where(ids_all == (objid+clusterids[zz]*1e7))[0][0]
+                    goodent.append(objent)
+                    arr_flux[ll,objent]  = dat_lines['FLUX'][lineent[0]]
+                    arr_ferr[ll,objent]  = dat_lines['FLUX_ERR'][lineent[0]]
+                    arr_ew[ll,objent]    = dat_lines['EQW'][lineent[0]]*-1
+                    arr_ewerr[ll,objent] = dat_lines['EQW_ERR'][lineent[0]]
+
+    goodent         = np.unique(np.array(goodent))
+    ids_all         = ids_all[goodent]
+    name_all        = name_all[goodent]
+    z_all           = z_all[goodent]
+    ra_all          = ra_all[goodent]
+    dec_all         = dec_all[goodent]
+
+    catreference    = 'ric20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = name_all
+    datadic['id']        = ids_all + baseid
+    datadic['ra']        = ra_all
+    datadic['dec']       = dec_all
+    datadic['redshift']  = z_all
+    datadic['reference'] = [catreference]*len(datadic['id'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+    for ll, linekey in enumerate(linedic.keys()):
+        datadic['f_'+linekey]          = arr_flux[ll,goodent]
+        datadic['ferr_'+linekey]       = arr_ferr[ll,goodent]
+        datadic['EW0_'+linekey]        = arr_ew[ll,goodent]
+        datadic['EW0err_'+linekey]     = arr_ewerr[ll,goodent]
+
+    for ll, linename in enumerate(['CIII','CIV','NV','OIII','SiIII']):
+        datadic['f_'+linename], datadic['ferr_'+linename], \
+        datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+        datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+            lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                       datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                       EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                       EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    # if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    # for key in datadic.keys():
+    #     if key.startswith('f'):
+    #         datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+    #
+    # if verbose: print('   Making sure EWs are rest-frame EWs, i.e., EW0')
+    # for key in datadic.keys():
+    #     if key.startswith('EW0'):
+    #         datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
+    #                                                    (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
