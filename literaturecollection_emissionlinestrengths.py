@@ -160,7 +160,7 @@ def referencedictionary(verbose=False):
     refdic = collections.OrderedDict()
     #                  baseid   reference                                             plotsymbol
     refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                               '^']
-    refdic['dummy'] = [99,    'dummy',                                                  '<']
+    refdic['van20'] = [99,    'Vanzella et al. (2016, 2017, 2020)',                     '<']
     refdic['sen17'] = [99,    'Senchyna et al. (2017)',                                 'v']
     refdic['sen19'] = [99,    'Senchyna et al. (2019)',                                 'v']
     refdic['rig14'] = [99,    'Rigby et al. (2014)',                                    '>']
@@ -219,10 +219,6 @@ def referencedictionary(verbose=False):
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Smit et al. (2017)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Vanzella et al. (2016) - X-shooter + MUSE
-    # Vanzella et al. (2017) - X-shooter + MUSE
-    # Vanzella et al. (2020) - X-shooter Ion2 (SunburstArc comparison)
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # SILVERRUSH - Shibuya+2017b collection of CIV, NV, HeII limits - no CIII limits. Table 6 in appendix
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Matthee+2017 compilation
@@ -269,7 +265,7 @@ def lineinfo(verbose=True):
     """
     linetypedic = collections.OrderedDict()
     linetypedic['Lya']   = 'single'
-    #linetypedic['NV']    = 'doublet'
+    linetypedic['NV']    = 'doublet'
     linetypedic['CIV']   = 'doublet'
     linetypedic['HeII']  = 'single'
     linetypedic['OIII']  = 'doublet'
@@ -1767,6 +1763,136 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
         if key.startswith('EW0'):
             datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
                                                        (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_van20(fluxscale=1e3,verbose=True):
+    """
+    Data collected from Vanzella+2016 (X-shooter+MUSE of RXJ2248 obj), 2017 (X-shooter+MUSE of M0416 obj), 2020 (X-shooter of Ion2)
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'van20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['RXJ2248-ID11','MACS0416-ID14','Ion2'])
+    datadic['id']        = np.array([11,14,2]) + baseid
+    rasex                = np.array(['22:48:42.01','4:16:08.278','03:32:03.24'])
+    decsex               = np.array(['-44:32:27.7','-24:05:00.85','-27:45:18.8'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([3.1169, 3.222, 3.2121])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    Nsigcont = 5.0 # continuum S/N to use for EW error estimates
+
+    datadic['f_Lya']      = np.array([14.53,  0.24,  20.25])
+    SN_lya                = np.array([110,  2.5,   110])
+    datadic['ferr_Lya']   = datadic['f_Lya']/SN_lya
+    datadic['EW0_Lya']    = np.array([116,  1.1,  69.1])
+    datadic['EW0err_Lya'] = datadic['EW0_Lya']* np.sqrt( (datadic['ferr_Lya']/datadic['f_Lya'])**2 +
+                                                         (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_NV1']      = np.array([np.nan,  np.nan,  0.36])
+    datadic['ferr_NV1']   = np.array([np.nan,  np.nan,  +99])
+    datadic['EW0_NV1']     = np.array([np.nan,  np.nan,  1.5])
+    datadic['EW0err_NV1'] = np.array([np.nan,  np.nan,  +99])
+
+    datadic['f_NV2']= np.array([np.nan,  np.nan,  0.36])
+    datadic['ferr_NV2']   = np.array([np.nan,  np.nan,  +99])
+    datadic['EW0_NV2']    = np.array([np.nan,  np.nan,  1.5])
+    datadic['EW0err_NV2'] = np.array([np.nan,  np.nan,  +99])
+
+    datadic['f_CIV1']     = np.array([0.52,  2.18,  0.28])
+    SN_CIV1               = np.array([18.0,  20.0,  5.2])
+    datadic['ferr_CIV1']  = datadic['f_CIV1']/SN_CIV1
+    datadic['EW0_CIV1']   = np.array([7.0,  16.9,  1.5])
+    datadic['EW0err_CIV1'] = datadic['EW0_CIV1']* np.sqrt( (datadic['ferr_CIV1']/datadic['f_CIV1'])**2 +
+                                                           (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_CIV2']     = np.array([0.29,  1.20,  0.2])
+    SN_CIV2               = np.array([10.0,  11.0,  4.8])
+    datadic['ferr_CIV2']  = datadic['f_CIV2']/SN_CIV2
+    datadic['EW0_CIV2']   = np.array([4.0,  9.3,  1.1])
+    datadic['EW0err_CIV2'] = datadic['EW0_CIV2']* np.sqrt( (datadic['ferr_CIV2']/datadic['f_CIV2'])**2 +
+                                                           (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_HeII']     = np.array([0.21,  0.33,  0.45])
+    SN_HeII               = np.array([6.0,  4.8,  5.0])
+    datadic['ferr_HeII']  = datadic['f_HeII']/SN_HeII
+    datadic['EW0_HeII']   = np.array([3.0,  2.8,  2.8])
+    datadic['EW0err_HeII'] = datadic['EW0_HeII']* np.sqrt( (datadic['ferr_HeII']/datadic['f_HeII'])**2 +
+                                                           (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_OIII1']  = np.array([0.20,  0.48,  0.4])
+    SN_OIII1                = np.array([3.0,  5.4,  3.5])
+    datadic['ferr_OIII1']  = datadic['f_OIII1']/SN_OIII1
+    datadic['EW0_OIII1']  = np.array([3.0,  4.3,  2.5])
+    datadic['EW0err_OIII1'] = datadic['EW0_OIII1']* np.sqrt( (datadic['ferr_OIII1']/datadic['f_OIII1'])**2 +
+                                                             (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_OIII2']  = np.array([0.31,  1.02,  0.65])
+    SN_OIII2                = np.array([5.0,  11.7,  5.4])
+    datadic['ferr_OIII2']  = datadic['f_OIII2']/SN_OIII2
+    datadic['EW0_OIII2']  = np.array([5.0,  9.2,  4.2])
+    datadic['EW0err_OIII2'] = datadic['EW0_OIII2']* np.sqrt( (datadic['ferr_OIII2']/datadic['f_OIII2'])**2 +
+                                                             (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_SiIII1']   = np.array([np.nan,  np.nan,  0.3])
+    SN_SiIII1                = np.array([np.nan,  np.nan,  2.0])
+    datadic['ferr_SiIII1']   = datadic['f_SiIII1']/SN_SiIII1
+    datadic['EW0_SiIII1']   = np.array([np.nan,  np.nan,  2.4])
+    datadic['EW0err_SiIII1'] = datadic['EW0_SiIII1']* np.sqrt( (datadic['ferr_SiIII1']/datadic['f_SiIII1'])**2 +
+                                                               (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_SiIII2']   = np.array([np.nan,  np.nan,  0.15])
+    SN_SiIII2                = np.array([np.nan,  np.nan,  1.5])
+    datadic['ferr_SiIII2']   = datadic['f_SiIII2']/SN_SiIII2
+    datadic['EW0_SiIII2']   = np.array([np.nan,  np.nan,  1.2])
+    datadic['EW0err_SiIII2'] = datadic['EW0_SiIII2']* np.sqrt( (datadic['ferr_SiIII2']/datadic['f_SiIII2'])**2 +
+                                                               (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_CIII1']  = np.array([0.28,  0.55,  0.44])
+    SN_CIII1                = np.array([4.0,  6.2,  6.7])
+    datadic['ferr_CIII1']  = datadic['f_CIII1']/SN_CIII1
+    datadic['EW0_CIII1']  = np.array([6.0,  6.5,  4.1])
+    datadic['EW0err_CIII1'] = datadic['EW0_CIII1']* np.sqrt( (datadic['ferr_CIII1']/datadic['f_CIII1'])**2 +
+                                                             (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    datadic['f_CIII2']  = np.array([0.22,  0.45,  0.35])
+    SN_CIII2                = np.array([2.0,  5.1,  4.9])
+    datadic['ferr_CIII2']  = datadic['f_CIII2']/SN_CIII2
+    datadic['EW0_CIII2']  = np.array([5.0,  5.3,  3.2])
+    datadic['EW0err_CIII2'] = datadic['EW0_CIII2']* np.sqrt( (datadic['ferr_CIII2']/datadic['f_CIII2'])**2 +
+                                                             (1.0/Nsigcont)**2) # Assuming Nsigcont sigma continuum S/N
+
+    for linename in ['CIV', 'CIII','SiIII','OIII']:
+        datadic['f_'+linename], datadic['ferr_'+linename], \
+        datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+        datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+            lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                       datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                       EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                       EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
