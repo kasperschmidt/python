@@ -13,6 +13,7 @@ import astropy
 import astropy.io.fits as afits
 import astropy.coordinates as acoord
 import astropy.cosmology as acosmo
+import astropy.units as u
 import numpy as np
 import collections
 import matplotlib
@@ -32,7 +33,7 @@ def generate_literature_fitscatalog(verbose=True):
     lce.generate_literature_fitscatalog()
 
     # updating plots
-    lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2020)','MUSE UDF mosaic (Schmidt et al. 2020)', 'MUSE UDF10 (Schmidt et al. 2020)'],extra_symlist=['o','D','X'],showkeynames=False)
+    lce.plot_literature_fitscatalog_legend(legendshape=(15.0, 3.0),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2021)','MUSE UDF mosaic (Schmidt et al. 2021)', 'MUSE UDF10 (Schmidt et al. 2021)'],extra_symlist=['o','D','X'],showkeynames=False)
     lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=True,shownames=False)
 
     """
@@ -162,9 +163,9 @@ def referencedictionary(verbose=False):
     refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                               '^']
     refdic['van20'] = [99,    'Vanzella et al. (2016, 2017, 2020)',                     '<']
     refdic['sen17'] = [99,    'Senchyna et al. (2017)',                                 'v']
-    refdic['sen19'] = [99,    'Senchyna et al. (2019)',                                 'v']
+    refdic['sen19'] = [99,    'Senchyna et al. (2019)',                                 (3, 1, 165)]   # 3-point star
     refdic['rig14'] = [99,    'Rigby et al. (2014)',                                    '>']
-    refdic['rig15'] = [99,    'Rigby et al. (2015)',                                    '8']
+    refdic['rig15'] = [99,    'Rigby et al. (2015)',                                    (3, 1, 15)]   # 3-point star
     refdic['erb10'] = [99,    'Erb et al. (2010)',                                      's']
     refdic['sta14'] = [99,    'Stark et al. (2014)',                                    'p']
     refdic['sta15'] = [99,    'Stark et al. (2015a,b, 2017)',                           'P']
@@ -173,16 +174,29 @@ def referencedictionary(verbose=False):
     refdic['bay14'] = [99,    'Bayliss et al. (2014)',                                  'H']
     refdic['rav20'] = [99,    'Ravindranath et al. (2020)',                             '+']
     refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                                 'x']
-    refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                            'D']
-    refdic['mai20'] = [99,    'Mainali et al. (2020)',                                  'd']
+    refdic['ric20'] = [99,    'Richard et al. (2020)',                                  'd']
+    refdic['mai20'] = [99,    'Mainali et al. (2020)',                                  'D']
     refdic['du20']  = [99,    'Du et al. (2020)',                                       r'$\bowtie$']
     refdic['shi18'] = [99,    'Shibuya et al. (2018)',                                  r'$\clubsuit$']
     refdic['sch16'] = [99,    'Schmidt et al. (2016)',                                  (4, 1, 0)]   # 4-point star
     refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)',          (4, 1, 45)]  # 4-point star
-    refdic['ric20'] = [99,    'Richard et al. (2020)',                                  (7, 1, 0)]   # 7-point star
+    refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                            (7, 1, 0)]   # 7-point star
     refdic['amo17'] = [99,    'Amorin et al. (2017)',                                   (5, 0, 180)] # pentagon rotated 180deg
-    refdic['dummy'] = [99,    'dummy',                                                  (5, 0, 90)]  # pentagon rotated 90deg
-    refdic['dummy'] = [99,    'dummy',                                                  (5, 0, 270)] # pentagon rotated 270deg
+    refdic['mat17'] = [99,    'Matthee et al. (2017)',                                  (5, 2, 180)] # 5-point asterisk
+    # refdic['dum99'] = [99,    'dummy',                                                  (6, 2, 180)] # 6-point asterisk
+    # refdic['dum99'] = [99,    'dummy',                                                  '8']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\otimes$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\ominus$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\oplus$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\oslash$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\odot$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\spadesuit$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\heartsuit$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxtimes$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxminus$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxplus$']
+    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxdot$']
+
 
     if verbose: print(' --- Assigning base IDs to literature collections --- ')
     if verbose: print(' #   baseid        reference ')
@@ -205,6 +219,24 @@ def referencedictionary(verbose=False):
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # missing from Matthee+17 compilation
+    # -------------------------------------------------
+    # Ding+17: Five Lya-CIII emitters
+    # -------------------------------------------------
+    # Hutchison+19 CIII at redshift 7.5 (Finkelstein's pet object); FIGS_GN1_1292   7.51  Finkelstein et al. (2013); Tilvi et al. (2016)
+    # -------------------------------------------------
+    # Lidman+12:
+    # -------------------------------------------------
+    # Vanzella et al. (2011)
+    # -------------------------------------------------
+    # WISP302          6.44          Bagley et al. (2017)
+    # -------------------------------------------------
+    # LAE SDF-LEW-1          6.538          Kashikawa et al. (2012)
+    # -------------------------------------------------
+    # SDF-46975          6.844          Ono et al. (2012)
+    # -------------------------------------------------
+    # IOK-1          6.96          Iye et al. (2006); Cai et al. (2011); Ono et al. (2012)
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Vanzella et al. (2020) - MACS0416 objects
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
@@ -216,8 +248,6 @@ def referencedictionary(verbose=False):
     # Malkan et al. (1996)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Smit et al. (2017)
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Matthee+2017 compilation
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Nakajima+2017/18 Composite spectra
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -238,8 +268,6 @@ def referencedictionary(verbose=False):
     # R. Marques-Chaves+19 UV of LAEs from the BELLS survey
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Alendroff+13 type 2 QSO candidates
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Hutchison+19 CIII at redshift 7.5 (Finkelstein's pet object)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Herenz+20 Lya blob with Lya, HeII and CIV(limit) detections at three locations
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -606,10 +634,19 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
     input_lists = []
 
     # ------------------------------------ Flux vs Flux plots ------------------------------------
-    input_lists.append(['f_Lya','f_CIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIII) [1e-20 erg/s/cm$^2$/\AA]',
+    input_lists.append(['f_Lya','f_NV','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(NV) [1e-20 erg/s/cm$^2$/\AA]',
                         fluxes_range, fluxes_range, 'redshift',  ''])
     input_lists.append(['f_Lya','f_CIV', 'f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
                         fluxes_range, fluxes_range, 'redshift',  ''])
+    input_lists.append(['f_Lya','f_CIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIII) [1e-20 erg/s/cm$^2$/\AA]',
+                        fluxes_range, fluxes_range, 'redshift',  ''])
+    input_lists.append(['f_Lya','f_HeII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
+                        fluxes_range, fluxes_range, 'redshift',  ''])
+    input_lists.append(['f_Lya','f_OIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(OIII) [1e-20 erg/s/cm$^2$/\AA]',
+                        fluxes_range, fluxes_range, 'redshift',  ''])
+    input_lists.append(['f_Lya','f_SiIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(SiIII) [1e-20 erg/s/cm$^2$/\AA]',
+                        fluxes_range, fluxes_range, 'redshift',  ''])
+
     input_lists.append(['f_CIII','f_CIV','f(CIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
                         fluxes_range, fluxes_range, 'redshift',  ''])
     input_lists.append(['f_OIII','f_HeII','f(OIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
@@ -1745,6 +1782,88 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
                                                    EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
                                                    EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    if verbose: print('   Making sure EWs are rest-frame EWs, i.e., EW0')
+    for key in datadic.keys():
+        if key.startswith('EW0'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
+                                                       (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_mat17(fluxscale=1e3,verbose=True):
+    """
+    Data collected from Matthee+2017 (only grabbing ['SR6','VR7','CR7','Himiko'] as others are provided by different entries)
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'mat17'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['SR6','VR7','CR7','Himiko'])
+    datadic['id']        = np.array([1,2,3,4]) + baseid
+    rasex                = np.array(['22:19:49.76', '22:18:56.36', '10:00:58.005', '+2:17:57.612'])
+    decsex               = np.array(['+00:48:23.90', '+00:08:07.32', '+01:48:15.251', '-5:08:44.90'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([5.676, 6.532, 6.604, 6.59])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # L_Lya    = np.array([2.5, 2.4, 1.3])*1e43*u.erg/u.s
+    # redshift = np.array([5.676, 6.532, 8.8])
+    # cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+    # Ldist    = cosmo.luminosity_distance(redshift)
+    # F_Lya    = L_Lya / (4.0 * np.pi * Ldist.to(u.cm)**2)
+
+    cosmo = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+    L_Lya = np.array([2.5, 2.4, 8.5, 4.3])*1e43*u.erg/u.s
+    Ldist = cosmo.luminosity_distance(datadic['redshift'])
+    F_Lya = L_Lya / (4.0 * np.pi * Ldist.to(u.cm)**2)
+
+    datadic['f_Lya']      = F_Lya.value
+    datadic['ferr_Lya']   = datadic['f_Lya']/10.
+    datadic['EW0_Lya']    = np.array([250, 196, 211, 65])
+    datadic['EW0err_Lya'] = np.array([-99, -99, 211/10.0, 65/10.0])
+
+    datadic['f_NV']         = np.array([2.0,  1.0 , 0.03   * datadic['f_Lya'][2],  0.03 * datadic['f_Lya'][3]])*3./2.
+    datadic['ferr_NV']      = np.array([+99,  +99 , +99                         ,  +99                       ])
+    datadic['EW0_NV']       = np.array([48.0, 9.0 , np.nan,                        np.nan])*3./2.
+    datadic['EW0err_NV']    = np.array([+99,  +99 , np.nan,                        np.nan])
+    datadic['f_CIV']        = np.array([7.3,  2.3 , 0.12   * datadic['f_Lya'][2],  0.10 * datadic['f_Lya'][3]])*3./2.
+    datadic['ferr_CIV']     = np.array([+99,  +99 , +99                         ,  +99                       ])
+    datadic['EW0_CIV']      = np.array([174,  21. , np.nan,                        np.nan])*3./2.
+    datadic['EW0err_CIV']   = np.array([+99,  +99 , np.nan,                        np.nan])
+    datadic['f_HeII']       = np.array([3.6*3./2.,  2.3*3./2. , 0.14 * datadic['f_Lya'][3]  ,  0.05 *3./2.  * datadic['f_Lya'][2]])
+    datadic['ferr_HeII']    = np.array([+99,  +99 , 0.06 * datadic['f_Lya'][3]  ,  +99                         ])
+    datadic['EW0_HeII']     = np.array([86,   21. , np.nan,                        np.nan])*3./2.
+    datadic['EW0errHeII']   = np.array([+99,  +99 , np.nan,                        np.nan])
+    datadic['f_OIII']       = np.array([3.5,  2.2 , 0.09 * datadic['f_Lya'][3]  ,  np.nan])*3./2.
+    datadic['ferr_OIII']    = np.array([+99,  +99 , +99                         ,  np.nan])
+    datadic['EW0_OIII']     = np.array([84,   20. , np.nan,                        np.nan])*3./2.
+    datadic['EW0err_OIII']  = np.array([+99,  +99 , np.nan,                        np.nan])
+    datadic['f_CIII']       = np.array([3.9,  2.1 , 0.11 * datadic['f_Lya'][3]  ,  0.08   * datadic['f_Lya'][2]])*3./2.
+    datadic['ferr_CIII']    = np.array([+99,  +99 , +99                         ,  +99                         ])
+    datadic['EW0_CIII']     = np.array([93,   19. , np.nan,                        np.nan])*3./2.
+    datadic['EW0err_CIII']  = np.array([+99,  +99 , np.nan,                        np.nan])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
