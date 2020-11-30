@@ -56,6 +56,7 @@ from matplotlib.patches import Circle
 from scipy import odr
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter
+import scipy.stats as ss
 
 if sys.version_info[0] == 2:
     ### ASTROPYSICS ###
@@ -2268,6 +2269,31 @@ def plot_template_spectra(xrange=[1000,3000],norm2max=True,verbose=True,noisesig
     plt.close('all')
     if verbose: print(' - Saved figure to '+outname)
 
+#-------------------------------------------------------------------------------------------------------------
+def get_clopper_pearson_confidence_interval(k,n,CI=68):
+    """
+    See https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Clopper-Pearson_interval
+    The (CI) confidence intervals for a binomial distribution of k expected successes on n trials.
+
+    In other words: What is the uncertainty on a fractional success, i.e., k successes in n trials
+
+    --- INPUT ---
+    k   Number of successes for succesrate k/n
+    n   Number of trials for succesrate k/n
+    CI  Confidence interval to return; default is 65% confidence interval
+
+    --- EXAMPLE OF USE ---
+    k  = 14   # UV line detections
+    n  = 215  # out of 215 objects resulting in a fraction of 6.51%
+    CI = 68   # What is the 68% confidence interval on that measurements?
+
+    lo, hi = kbs.get_clopper_pearson_confidence_interval(k,n,CI=CI)
+
+    """
+    alpha = 1.0 - CI/100.0
+    lo = ss.beta.ppf(alpha/2, k, n-k+1)
+    hi = ss.beta.ppf(1 - alpha/2, k+1, n-k)
+    return lo, hi
 #-------------------------------------------------------------------------------------------------------------
 def generate_fitscatalog_selection(fitscatalog,columns,ranges,outputfits,overwrite=False,verbose=True):
     """
