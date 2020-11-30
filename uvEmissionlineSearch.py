@@ -13321,6 +13321,16 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
                             [ 5.28  ,  0.96  ,  8.45 , 14.75]  ,
                             [58.82  , 25.00  , 68.42 , 54.55]  ))
 
+    allobjarr_Nobj = np.array((  [ 2052  , 1100   ,  719  ,  233 ]  ,
+                                 [ 1736  , 947    ,  607  ,  182 ]  ,
+                                 [ 1997  , 1094   ,  688  ,  215 ]  ,
+                                 [ 1710  , 947    ,  590  ,  173 ]  ,
+                                 [ 1465  , 817    ,  495  ,  153 ]  ,
+                                 [ 1451  , 803    ,  496  ,  152 ]  ,
+                                 [ 1000  , 530    ,  347  ,  123 ]  ,
+                                 [ 985   , 520    ,  343  ,  122 ]  ,
+                                 [ 34    , 4      ,  19   ,  11  ]  ))
+
     laearr    = np.array((  [ 2.70  , 1.74  ,  3.05  ,  6.51]  ,
                             [ 2.62  , 1.59  ,  2.95  ,  7.32]  ,
                             [ 0.35  , 0.27  ,  0.44  ,  0.47]  ,
@@ -13329,8 +13339,38 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
                             [ 0.42  , 0.25  ,  0.00  ,  2.84]  ,
                             [ 0.21  , 0.00  ,  0.32  ,  0.94]  ,
                             [ 1.61  , 0.78  ,  2.24  ,  3.85]  ))
+
+    laearr_Nobj = np.array((  [ 1997  , 1094  , 688  , 215 ]  ,
+                              [ 1682  , 942   , 576  , 164 ]  ,
+                              [ 1997  , 1094  , 688  , 215 ]  ,
+                              [ 1682  , 942   , 576  , 164 ]  ,
+                              [ 1431  , 812   , 476  , 143 ]  ,
+                              [ 1413  , 798   , 474  , 141 ]  ,
+                              [ 947   , 525   , 316  , 106 ]  ,
+                              [ 931   , 515   , 312  , 104 ]  ))
+
+    # Any detection		& 103 & 2052 &   5.02\% & 24 & 1100 &  2.18\% & 49 & 719 &  6.82\% & 30 & 233 & 12.88\% \\
+    # \ciii{} or \civ{} & 84  & 1736 &   4.84\% & 18 & 947  &  1.90\% & 40 & 607 &  6.59\% & 26 & 182 & 14.29\% \\
+    # \nv			    & 7   & 1997 &   0.35\% & 3  & 1094 &  0.27\% & 3  & 688 &  0.44\% & 1  & 215 &  0.47\% \\
+    # \civ				& 45  & 1710 &   2.63\% & 15 & 947  &  1.58\% & 17 & 590 &  2.88\% & 13 & 173 &  7.51\% \\
+    # \heii             & 16  & 1465 &   1.09\% & 7  & 817  &  0.86\% & 8  & 495 &  1.62\% & 1  & 153 &  0.65\% \\
+    # \oiii				& 18  & 1451 &   1.24\% & 2  & 803  &  0.25\% & 7  & 496 &  1.41\% & 9  & 152 &  5.92\% \\
+    # \siiii			& 13  & 1000 &   1.30\% & 0  & 530  &  0.00\% & 8  & 347 &  2.31\% & 5  & 123 &  4.07\% \\
+    # \ciii				& 52  & 985  &   5.28\% & 5  & 520  &  0.96\% & 29 & 343 &  8.45\% & 18 & 122 & 14.75\% \\
+    # \mgii				&  20 & 34   &   58.82\% & 1 & 4    & 25.00\% & 13 & 19  & 68.42\% & 6  & 11  & 54.55\% \\
+    #
+    # Any detection		& 54 & 1997 &  2.70\% & 19 & 1094 &  1.74\% & 21 & 688 &  3.05\% & 14 & 215 &  6.51\% \\
+    # \ciii{} or \civ{} & 44 & 1682 &  2.62\% & 15 & 942  &  1.59\% & 17 & 576 &  2.95\% & 12 & 164 &  7.32\% \\
+    # \nv			    & 7  & 1997 &  0.35\% & 3  & 1094 &  0.27\% & 3  & 688 &  0.44\% & 1  & 215 &  0.47\% \\
+    # \civ				& 34 & 1682 &  2.02\% & 13 & 942  &  1.38\% & 12 & 576 &  2.08\% & 9  & 164 &  5.49\% \\
+    # \heii             &  8 & 1431 &  0.56\% & 5  & 812  &  0.62\% & 3  & 476 &  0.63\% & 0  & 143 &  0.00\% \\
+    # \oiii				&  6 & 1413 &  0.42\% & 2  & 798  &  0.25\% & 0  & 474 &  0.00\% & 4  & 141 &  2.84\% \\
+    # \siiii			&  2 & 947  &  0.21\% & 0  & 525  &  0.00\% & 1  & 316 &  0.32\% & 1  & 106 &  0.94\% \\
+    # \ciii				& 15 & 931  &  1.61\% & 4  & 515  &  0.78\% & 7  & 312 &  2.24\% & 4  & 104 &  3.85\% \\
+
     arrayrows = {'ANY':0, 'CIIIorCIV':1, 'NV':2,'CIV':3,'HeII':4,'OIII':5,'SiIII':6,'CIII':7}#,'MgII':8}
     # ymaxvals  = {'ANY':16, 'CIIIorCIV':16, 'NV':0.7,'CIV':9.3,'HeII':2.2,'OIII':7.1,'SiIII':5.2,'CIII':16.1}#,'MgII':60}
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setting up and generating plot:\n   '+plotname)
     fig = plt.figure(figsize=(3, 3))
@@ -13351,7 +13391,7 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
 
     ticknames = ['100 Fields','MUSE-Wide','UDF mosaic','UDF-10']
 
-    xvalues = [10,35,55,75]
+    xvalues = np.array([10,35,55,75])
     ylabel  = '\% objects with UV line detection'
 
     # -------------------------- Full frame --------------------------
@@ -13412,15 +13452,18 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     plt.close('all')
 
 
-    #------------------------------------------------------------------------------
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setting up and generating plot of histograms in same window')
-    plotname = plotname.replace('.pdf','_sharedaxis.pdf')
+    xoffset  = 2.5
+    errtype  = ''#'cp' #'binomvar'
+    plotname = plotname.replace('.pdf','_sharedaxis_'+errtype+'.pdf')
     fig = plt.figure(figsize=(3, 7))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.12, top=0.99)
 
     Fsize    = 10
     lthick   = 1.0
-    marksize = 6
+    marksize = 4
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif',size=Fsize)
     plt.rc('xtick', labelsize=Fsize)
@@ -13428,7 +13471,6 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     plt.clf()
     plt.ioff()
     #plt.title(inforstr[:-2],fontsize=Fsize)
-
 
     axfull = fig.add_subplot(111)
     axfull.set_xlabel('')
@@ -13450,22 +13492,57 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
 
             linecol  = linecolors[emline]
 
+            #- - - - - - - -
             yvalues  = laearr[arrayrows[emline],:]
-            ax.plot(xvalues,yvalues,'s',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10)
-            ax.plot(xvalues[1:],yvalues[1:],':',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            Nobjtot  = laearr_Nobj[arrayrows[emline],:]
+            Nsuccess = np.round(laearr_Nobj[arrayrows[emline],:]* yvalues / 100.)
+            if errtype == 'cp':
+                yval_lo, yval_hi = kbs.get_clopper_pearson_confidence_interval(Nsuccess,Nobjtot,CI=95)
+                yerrvals         = np.vstack((yvalues-yval_lo*100., yval_hi*100.-yvalues))
+            elif errtype == 'binomvar':
+                mean, var, skew, kurt = scipy.stats.binom.stats(Nobjtot, yvalues/100., moments='mvsk')
+                yerrvals              = np.vstack((np.sqrt(var)/Nobjtot*100.,
+                                                   np.sqrt(var)/Nobjtot*100.))
+            else:
+                yerrvals = np.zeros([2,4])
+            ymaxval_lae = yerrvals[1]+yvalues
+            ax.errorbar(xvalues+xoffset,yvalues,xerr=None,yerr=yerrvals,
+                        marker='s',lw=lthick, markersize=marksize,alpha=1.0, color='None',
+                        markerfacecolor=linecol,ecolor=linecol,markeredgecolor=linecol,zorder=5)
 
+            # ax.plot(xvalues,yvalues,'s',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            ax.plot(xvalues[1:]+xoffset,yvalues[1:],':',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            #- - - - - - - -
             yvalues  = allobjarr[arrayrows[emline],:]
-            ax.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10)
-            ax.plot(xvalues[1:],yvalues[1:],'-',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            Nobjtot  = allobjarr_Nobj[arrayrows[emline],:]
+            Nsuccess = np.round(allobjarr_Nobj[arrayrows[emline],:]* yvalues / 100.)
+            if errtype == 'cp':
+                yval_lo, yval_hi = kbs.get_clopper_pearson_confidence_interval(Nsuccess,Nobjtot,CI=95)
+                yerrvals         = np.vstack((yvalues-yval_lo*100., yval_hi*100.-yvalues))
+            elif errtype == 'binomvar':
+                mean, var, skew, kurt = scipy.stats.binom.stats(Nobjtot, yvalues/100., moments='mvsk')
+                yerrvals              = np.vstack((np.sqrt(var)/Nobjtot*100.,
+                                                   np.sqrt(var)/Nobjtot*100.))
+            else:
+                yerrvals = np.zeros([2,4])
+            ymaxval_all = yerrvals[1]+yvalues
+            ax.errorbar(xvalues-xoffset,yvalues,xerr=None,yerr=yerrvals,
+                        marker='o',lw=lthick, markersize=marksize,alpha=1.0, color='None',
+                        markerfacecolor=linecol,ecolor=linecol,markeredgecolor=linecol,zorder=5)
+
+            # ax.plot(xvalues-xoffset,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            ax.plot(xvalues[1:]-xoffset,yvalues[1:],'-',alpha=1.0,color=linecol,lw=lthick,zorder=10)
+            #- - - - - - - -
 
             ax.set_xticks(xvalues)
-            allyvals = np.append(laearr[arrayrows[emline],:],allobjarr[arrayrows[emline],:])
+            # allyvals = np.append(laearr[arrayrows[emline],:],allobjarr[arrayrows[emline],:])
+            allyvals = np.append(ymaxval_lae,ymaxval_all)
             ymax     = np.max(allyvals)
-            yrange   = [0.0-ymax*0.1,ymax+ymax*0.15]
+            yrange   = [0.0-ymax*0.1,ymax+ymax*0.05]
 
             ax.set_ylim(yrange)
             ax.plot([20,20],yrange,'-',color='black',alpha=1.0,zorder=1,lw=1)
-            ax.text(23,ymax*0.9,linenames[emline][0],fontsize=Fsize,ha='left',color=linecol)
+            ax.text(22,yrange[0]+(yrange[1]-yrange[0])*0.8,linenames[emline][0],fontsize=Fsize,ha='left',color=linecol)
 
     ax.set_xticklabels(ticknames, rotation=20, ha='right')
     # - - - - - - - - - - - - - -
@@ -13480,7 +13557,6 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
         ax.label_outer()
 
     plt.xlim([0,85])
-    # plt.ylim([0,15.0])
 
     if verbose: print('   Saving plot to '+plotname)
     plt.savefig(plotname)
