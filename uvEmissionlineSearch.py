@@ -15175,11 +15175,17 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
         if verbose: print(' - Found '+str(Nobjlitadded)+' objects with constraints from literature ')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    # Viridis colors pulled from uves.linecolors('viridis')
-    col_NEOGAL_AGN   = (0.267004, 0.004874, 0.329415, 1.0)    # 'blue'
-    col_NEOGAL_SF    = (0.190631, 0.407061, 0.556089, 1.0)    # 'red'
-    col_BPASS_bin    = (0.20803, 0.718701, 0.472873, 1.0)     # 'green'
-    col_BPASS_sin    = (0.993248, 0.906157, 0.143936, 1.0)    # 'orange'
+    # colors pulled from uves.linecolors('viridis')
+    col_NEOGAL_AGN   = (0.267004, 0.004874, 0.329415, 1.0)    # purple
+    col_NEOGAL_SF    = (0.190631, 0.407061, 0.556089, 1.0)    # blue
+    col_BPASS_bin    = (0.20803, 0.718701, 0.472873, 1.0)     # green
+    col_BPASS_sin    = (0.993248, 0.906157, 0.143936, 1.0)    # yellow
+
+    # colors pulled from uves.linecolors('plasma')
+    # col_NEOGAL_AGN   = (0.050383, 0.029803, 0.527975, 1.0)    # purple
+    # col_NEOGAL_SF    = (0.610667, 0.090204, 0.619951, 1.0)    # blue
+    # col_BPASS_bin    = (0.928329, 0.472975, 0.326067, 1.0)    # red
+    # col_BPASS_sin    = (0.940015, 0.975158, 0.131326, 1.0)    # yellow
 
     paramcollections, collectionstats = pp.estimate_object_PDFs(FRdiclist, basename=basename, generatePDFplots=generatePDFplots,
                                                                 col_NEOGAL_AGN=col_NEOGAL_AGN,col_NEOGAL_SF=col_NEOGAL_SF,

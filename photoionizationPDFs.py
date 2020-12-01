@@ -38,7 +38,13 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
     paramcollections, collectionstats = pp.estimate_object_PDFs(FRdic, basename=basename, generatePDFplots=True, maxPDFyscale=True)
 
     FRdicNC = [{'id':99}] # run for a single objects with no constraints to get instrinsic distribution
-    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True, maxPDFyscale=True,showemptyparamCorner=True)
+
+    col_NEOGAL_AGN   = (0.267004, 0.004874, 0.329415, 1.0)
+    col_NEOGAL_SF    = (0.190631, 0.407061, 0.556089, 1.0)
+    col_BPASS_bin    = (0.20803, 0.718701, 0.472873, 1.0)
+    col_BPASS_sin    = (0.565498, 0.84243, 0.262877, 1.0)
+
+    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True, maxPDFyscale=True,showemptyparamCorner=True,col_NEOGAL_AGN=col_NEOGAL_AGN,col_NEOGAL_SF=col_NEOGAL_SF,col_BPASS_bin=col_BPASS_bin,col_BPASS_sin=col_BPASS_sin)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
