@@ -157,45 +157,47 @@ def referencedictionary(verbose=False):
     refdic  = lce.referencedictionary(verbose=True)
     refinfo = [refval]
 
+    citelist = [refdic[ref][3].replace('citep','citet[]['+ref+']') for ref in np.sort(refdic.keys())]
+
     """
     refdic = collections.OrderedDict()
-    #                  baseid   reference                                             plotsymbol
-    refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                               '^']
-    refdic['van20'] = [99,    'Vanzella et al. (2016, 2017, 2020)',                     '<']
-    refdic['sen17'] = [99,    'Senchyna et al. (2017)',                                 'v']
-    refdic['sen19'] = [99,    'Senchyna et al. (2019)',                                 (3, 1, 165)]   # 3-point star
-    refdic['rig14'] = [99,    'Rigby et al. (2014)',                                    '>']
-    refdic['rig15'] = [99,    'Rigby et al. (2015)',                                    (3, 1, 15)]   # 3-point star
-    refdic['erb10'] = [99,    'Erb et al. (2010)',                                      's']
-    refdic['sta14'] = [99,    'Stark et al. (2014)',                                    'p']
-    refdic['sta15'] = [99,    'Stark et al. (2015a,b, 2017)',                           'P']
-    refdic['mai18'] = [99,    'Mainali et al. (2018) & Stark et al. (2017)',            '*']
-    refdic['sha03'] = [99,    'Shapley et al. (2003)',                                  'h']
-    refdic['bay14'] = [99,    'Bayliss et al. (2014)',                                  'H']
-    refdic['rav20'] = [99,    'Ravindranath et al. (2020)',                             '+']
-    refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                                 'x']
-    refdic['ric20'] = [99,    'Richard et al. (2020)',                                  'd']
-    refdic['mai20'] = [99,    'Mainali et al. (2020)',                                  'D']
-    refdic['du20']  = [99,    'Du et al. (2020)',                                       r'$\bowtie$']
-    refdic['shi18'] = [99,    'Shibuya et al. (2018)',                                  r'$\clubsuit$']
-    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                                  (4, 1, 0)]   # 4-point star
-    refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)',          (4, 1, 45)]  # 4-point star
-    refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                            (7, 1, 0)]   # 7-point star
-    refdic['amo17'] = [99,    'Amorin et al. (2017)',                                   (5, 0, 180)] # pentagon rotated 180deg
-    refdic['mat17'] = [99,    'Matthee et al. (2017)',                                  (5, 2, 180)] # 5-point asterisk
-    # refdic['dum99'] = [99,    'dummy',                                                  (6, 2, 180)] # 6-point asterisk
-    # refdic['dum99'] = [99,    'dummy',                                                  '8']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\otimes$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\ominus$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\oplus$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\oslash$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\odot$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\spadesuit$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\heartsuit$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxtimes$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxminus$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxplus$']
-    # refdic['dum99'] = [99,    'dummy',                                                  r'$\boxdot$']
+    #                  baseid   reference                                      plotsymbol      citekey
+    refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                      '^'           , '\citep{2019A&A...624A..89N}']
+    refdic['van20'] = [99,    'Vanzella et al. (2016, 2017, 2020)',            '<'           , '\citep{2016ApJ...821L..27V,2017ApJ...842...47V,2020MNRAS.491.1093V}']
+    refdic['sen17'] = [99,    'Senchyna et al. (2017)',                        'v'           , '\citep{2017MNRAS.472.2608S}']
+    refdic['sen19'] = [99,    'Senchyna et al. (2019)',                        (3, 1, 165)   , '\citep{2019MNRAS.488.3492S}']  # 3-point star
+    refdic['rig14'] = [99,    'Rigby et al. (2014)',                           '>'           , '\citep{2014ApJ...790...44R}']
+    refdic['rig15'] = [99,    'Rigby et al. (2015)',                           (3, 1, 15)    , '\citep{2015ApJ...814L...6R}']  # 3-point star
+    refdic['erb10'] = [99,    'Erb et al. (2010)',                             's'           , '\citep{2010ApJ...719.1168E}']
+    refdic['sta14'] = [99,    'Stark et al. (2014)',                           'p'           , '\citep{2014MNRAS.445.3200S}']
+    refdic['sta15'] = [99,    'Stark et al. (2015a,b, 2017)',                  'P'           , '\citep{2017MNRAS.464..469S,2015MNRAS.454.1393S,2015MNRAS.450.1846S}']
+    refdic['mai18'] = [99,    'Mainali et al. (2018) & Stark et al. (2017)',   '*'           , '\citep{2018MNRAS.479.1180M}']
+    refdic['sha03'] = [99,    'Shapley et al. (2003)',                         'h'           , '\citep{2003ApJ...588...65S}']
+    refdic['bay14'] = [99,    'Bayliss et al. (2014)',                         'H'           , '\citep{2014ApJ...790..144B}']
+    refdic['rav20'] = [99,    'Ravindranath et al. (2020)',                    '+'           , '\citep{2020ApJ...896..170R}']
+    refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                        'x'           , '\citep{2019A&A...625A..51L}']
+    refdic['ric20'] = [99,    'Richard et al. (2020)',                         'd'           , '\citep{2020arXiv200909784R}']
+    refdic['mai20'] = [99,    'Mainali et al. (2020)',                         'D'           , '\citep{2020MNRAS.494..719M}']
+    refdic['du20']  = [99,    'Du et al. (2020)',                              r'$\bowtie$'  , '\citep{2020ApJ...890...65D}']
+    refdic['shi18'] = [99,    'Shibuya et al. (2018)',                         r'$\clubsuit$', '\citep{2018PASJ...70S..15S}']
+    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                         (4, 1, 0)     , '\citep{2016ApJ...818...38S}']  # 4-point star
+    refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)', (4, 1, 45)    , '\citep{2017ApJ...839...17S,2017ApJ...836L..14M}']  # 4-point star
+    refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                   (7, 1, 0)     , '\citep{2016ApJ...827..126B,2019ApJ...878L...3B,2019ApJ...874...93B}']  # 7-point star
+    refdic['amo17'] = [99,    'Amorin et al. (2017)',                          (5, 0, 180)   , '\citep{2017NatAs...1E..52A}']  # pentagon rotated 180deg
+    refdic['mat17'] = [99,    'Matthee et al. (2017)',                         (5, 2, 180)   , '\citep{2017MNRAS.472..772M}']  # 5-point asterisk
+    # refdic['dum99'] = [99,    'dummy',                                         (6, 2, 180)]   # 6-point asterisk
+    # refdic['dum99'] = [99,    'dummy',                                         '8']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\otimes$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\ominus$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\oplus$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\oslash$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\odot$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\spadesuit$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\heartsuit$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxtimes$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxminus$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxplus$']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxdot$']
 
 
     if verbose: print(' --- Assigning base IDs to literature collections --- ')
