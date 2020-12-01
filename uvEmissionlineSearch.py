@@ -15130,7 +15130,9 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
         Nobjdatadded = len(FRdiclist)
         if verbose: print(' - Found '+str(Nobjdatadded)+' objects with constraints from data ')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    basename = outdir+'UVESvsPhotoionizationModelParams'
     if addliteratureobj:
+        basename = basename+'_wLit'
         litdir   = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/'
         litcat   = litdir+'literaturecollection_emissionlinestrengths.fits'
         litdat   = afits.open(litcat)[1].data
@@ -15172,10 +15174,17 @@ def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile
              Nobjlitadded = Nobjlitadded - Nobjdatadded
         if verbose: print(' - Found '+str(Nobjlitadded)+' objects with constraints from literature ')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    basename = outdir+'UVESvsPhotoionizationModelParams'
+
+    # Viridis colors pulled from uves.linecolors('viridis')
+    col_NEOGAL_AGN   = (0.267004, 0.004874, 0.329415, 1.0)    # 'blue'
+    col_NEOGAL_SF    = (0.190631, 0.407061, 0.556089, 1.0)    # 'red'
+    col_BPASS_bin    = (0.20803, 0.718701, 0.472873, 1.0)     # 'green'
+    col_BPASS_sin    = (0.993248, 0.906157, 0.143936, 1.0)    # 'orange'
 
     paramcollections, collectionstats = pp.estimate_object_PDFs(FRdiclist, basename=basename, generatePDFplots=generatePDFplots,
-                                                                maxPDFyscale=False,verbose=verbose)
+                                                                col_NEOGAL_AGN=col_NEOGAL_AGN,col_NEOGAL_SF=col_NEOGAL_SF,
+                                                                col_BPASS_bin=col_BPASS_bin,col_BPASS_sin=col_BPASS_sin,
+                                                                maxPDFyscale=False,verbose=verbose,showemptyparamCorner=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_AGN_ids(infofile=None):
