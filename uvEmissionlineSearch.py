@@ -5334,6 +5334,30 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         elif linetype == 'yZsun':
             plt.fill_between([-1.0,10],[10.0,10.0],[Zsun,Zsun],color='lightgray')
             plt.text(1.0,8.75,'super-solar',color='gray',zorder=10)
+        elif linetype == 'AV18_peaksep_wHorizontal':
+            plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
+            Npoints = 100.0
+            x         = np.arange(xminsys,xmaxsys,(xmaxsys-xminsys)/Npoints)
+            yarr      = np.zeros([4,int(Npoints)])
+            yarr[0,:] = (1.05-0.11) * x - 12 - 37
+            yarr[1,:] = (1.05-0.11) * x - 12 + 37
+            yarr[2,:] = (1.05+0.11) * x - 12 - 37
+            yarr[3,:] = (1.05+0.11) * x - 12 + 37
+            ylow      = np.min(yarr,axis=0)
+            yhigh     = np.max(yarr,axis=0)
+            plt.fill_between(x,ylow,yhigh,color='lightgray')
+        elif linetype == 'AV18_fwhm_wHorizontal':
+            plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
+            Npoints = 100.0
+            x         = np.arange(xminsys,xmaxsys,(xmaxsys-xminsys)/Npoints)
+            yarr      = np.zeros([4,int(Npoints)])
+            yarr[0,:] = (0.9-0.14) * x - 36 - 60
+            yarr[1,:] = (0.9-0.14) * x - 36 + 60
+            yarr[2,:] = (0.9+0.14) * x - 36 - 60
+            yarr[3,:] = (0.9+0.14) * x - 36 + 60
+            ylow      = np.min(yarr,axis=0)
+            yhigh     = np.max(yarr,axis=0)
+            plt.fill_between(x,ylow,yhigh,color='lightgray')
         elif linetype == 'horizontal_and_nakajima18EWvsDv':
             plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
 
@@ -15026,6 +15050,10 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
                     if 'EW' in xlabel:
                         linetype='horizontal_and_nakajima18EWvsDv'
+                    elif colname == 'peaksep_kms':
+                        linetype='AV18_peaksep_wHorizontal'
+                    elif colname == 'lyafwhm_kms':
+                        linetype='AV18_fwhm_wHorizontal'
                     else:
                         linetype='horizontal'
                     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
