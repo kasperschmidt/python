@@ -9,18 +9,15 @@ import astropy.io.fits as afits
 import sys
 import pdb
 import corner
-from astropy.cosmology import FlatLambdaCDM
-import matplotlib.pyplot as plt
-import matplotlib
-import itertools
 import literaturecollection_emissionlinestrengths as lce
-from matplotlib.colors import LogNorm
 from matplotlib.ticker import NullFormatter
 import NEOGALmodels as nm
 import BPASSmodels as bm
 import photoionizationPDFs as pp
+import matplotlib.pyplot as plt
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFyscale=False,basename='photoionizationmodelPDFs',
+                         showemptyparamCorner=True,
                          col_NEOGAL_AGN='blue',col_NEOGAL_SF='red',col_BPASS_bin='green',col_BPASS_sin='orange',verbose=True):
     """
     Function to estimate "PDFs" from the SF and AGN NEOGAL models given a set of flux ratio measurements.
@@ -41,7 +38,7 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
     paramcollections, collectionstats = pp.estimate_object_PDFs(FRdic, basename=basename, generatePDFplots=True, maxPDFyscale=True)
 
     FRdicNC = [{'id':99}] # run for a single objects with no constraints to get instrinsic distribution
-    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True, maxPDFyscale=True)
+    paramcollections, collectionstats = pp.estimate_object_PDFs(FRdicNC, basename=basename+'NOobsCONSTRAINTS', generatePDFplots=True, maxPDFyscale=True,showemptyparamCorner=True)
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -272,7 +269,8 @@ def estimate_object_PDFs(fluxratiodictionarylist,generatePDFplots=False,maxPDFys
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = basename+'_cornor.pdf'
-    plot_samplePDFcornors(plotname,paramcollections,collectionscolors,collectionplotname=['SF','AGN','BIN','SIN'],verbose=True)
+    plot_samplePDFcornors(plotname,paramcollections,collectionscolors,showemptyparam=showemptyparamCorner,
+                          collectionplotname=['SF','AGN','BIN','SIN'],verbose=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = basename+'_Stats.pdf'
@@ -872,7 +870,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
 
         # bindefs = np.array([5e-6,5e-5,1e-4, 0.0002, 0.0005, 0.001, 0.002, 0.003, 0.004, 0.006, 0.008, 0.010, 0.014,
         #                     0.017, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08])
-        bindefs = 10**np.arange(-6,-0.8,0.1)
+        bindefs = pp.parambindef('Zgas') #  10**np.arange(-6,-0.8,0.1)
 
         if maxPDFyscale:
             yrange = [0,3500]
@@ -889,7 +887,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         # logUs
         plt.subplot(Nrows, Ncols, (5,8))
 
-        bindefs = np.arange(-5.5, -0.0, 0.05)-0.025
+        bindefs = pp.parambindef('logUs') #  np.arange(-5.5, -0.0, 0.05)-0.025
 
         if maxPDFyscale:
             yrange = [0,2200]
@@ -905,7 +903,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         # xid
         plt.subplot(Nrows, Ncols, (9,12))
 
-        bindefs = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])-0.05
+        bindefs = pp.parambindef('xid') # np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])-0.05
 
         if maxPDFyscale:
             yrange = [0,4000]
@@ -922,7 +920,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         # nh
         plt.subplot(Nrows, Ncols, (13,16))
 
-        bindefs = 10**(np.arange(0.0, 5.0, 0.25)-0.125)
+        bindefs = pp.parambindef('nh') # 10**(np.arange(0.0, 5.0, 0.25)-0.125)
 
         if maxPDFyscale:
             yrange = [0,6300]
@@ -939,7 +937,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         plt.subplot(Nrows, Ncols, (17,18))
 
         #bindefs = np.array([0.10, 0.14, 0.20, 0.27, 0.38, 0.52, 0.72, 1.00, 1.40])
-        bindefs = 10**np.arange(-1.075,1.0,0.05) #np.arange(0.05,1.5,0.06)
+        bindefs = pp.parambindef('COCOsol') # 10**np.arange(-1.075,1.0,0.05) #np.arange(0.05,1.5,0.06)
 
         if maxPDFyscale:
             yrange = [0,1500]
@@ -955,7 +953,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         # mup
         plt.subplot(Nrows, Ncols, (19,20))
 
-        bindefs = np.arange(0,400,50)-25
+        bindefs = pp.parambindef('mup') # np.arange(0,400,50)-25
 
         if maxPDFyscale:
             yrange = [0,6500]
@@ -971,7 +969,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         # alpha
         plt.subplot(Nrows, Ncols, (21,22))
 
-        bindefs = np.arange(-2.05,-1.0,0.1)
+        bindefs = pp.parambindef('alpha') # np.arange(-2.05,-1.0,0.1)
 
         if maxPDFyscale:
             yrange = [0,1500]
@@ -987,7 +985,7 @@ def plot_modelparametercollections(plotname, paramcollections, collectionstats, 
         # logAge
         plt.subplot(Nrows, Ncols, (23,24))
 
-        bindefs = np.arange(5.8,8.2,0.05)-0.025
+        bindefs = pp.parambindef('logAge') #np.arange(5.8,8.2,0.05)-0.025
 
         if maxPDFyscale:
             yrange = [0,2200]
@@ -1158,7 +1156,7 @@ def plot_modelparametercollections_addhist(paramcollections,collectionstats,coll
                              color=collectionscolors[colindex])  # 68% confidence interval lower
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_samplePDFcornors(plotbasename,paramcollections,collectionscolors,collectionplotname=['SF','AGN','BIN','SIN'],
-                          verbose=True):
+                          showemptyparam=True,verbose=True):
     """
     Plotting a corner plot of the "stacked" PDFs of the full sample of estiamted PDFs.
 
@@ -1199,9 +1197,13 @@ def plot_samplePDFcornors(plotbasename,paramcollections,collectionscolors,collec
             if len(sampleparams[skey]) > 0:
                 paramnames.append(skey)
                 Nmodelslist.append(len(sampleparams[skey]))
+            else:
+                if showemptyparam:
+                    paramnames.append(skey+'-empty')
+                    Nmodelslist.append(len(sampleparams['Zgas']))
 
         if len(np.unique(np.asarray(Nmodelslist))) != 1:
-            print('  Woops - there number of models for the sample differ between the different parameters... weird! stopping for investigation')
+            print('  Woops - the number of models for the sample differ between the different parameters... weird! stopping for investigation')
             pdb.set_trace()
         else:
             Nmodels    = np.unique(np.asarray(Nmodelslist))
@@ -1209,20 +1211,36 @@ def plot_samplePDFcornors(plotbasename,paramcollections,collectionscolors,collec
         paramdata = np.zeros([Nmodels[0],len(paramnames)])
         plotranges = []
         paramlabel = []
+        bindefs    = []
         for ii, pname in enumerate(paramnames):
-            if pname in loglist:
-                paramdata[:,ii] = np.log10(sampleparams[pname])
-                paramlabel.append('log('+pp.keylabels(pname)+')')
-                plotranges.append(np.log10(paramranges[pname]))
+            if 'empty' in pname:
+                paramdata[:,ii] = np.asarray([np.nan]*Nmodels)
+                paramlabel.append(pp.keylabels(pname.split('-')[0]).split('[')[0]+'; N/A ')
+                plotranges.append(paramranges[pname.split('-')[0]])
+                bindefs.append(len(pp.parambindef(pname.split('-')[0])))
             else:
-                paramdata[:,ii] = sampleparams[pname]
-                paramlabel.append(pp.keylabels(pname))
-                plotranges.append(paramranges[pname])
+                if pname in loglist:
+                    paramdata[:,ii] = np.log10(sampleparams[pname])
+                    paramlabel.append('log('+pp.keylabels(pname)+')')
+                    plotranges.append(np.log10(paramranges[pname]))
+                    bindefs.append(len(pp.parambindef(pname)))
+                    # bindefs.append(pp.parambindef(pname))
+                else:
+                    paramdata[:,ii] = sampleparams[pname]
+                    paramlabel.append(pp.keylabels(pname))
+                    plotranges.append(paramranges[pname])
+                    bindefs.append(len(pp.parambindef(pname)))
+                    # bindefs.append(pp.parambindef(pname))
 
-        Fsize = 15
-        cfig = corner.corner(paramdata, labels=paramlabel,  label_kwargs={"fontsize": Fsize}, range=plotranges,
-                             quantiles=[0.16, 0.5, 0.84],color=collectionscolors[pc],# smmoth1d = 3.0,
-                             plot_contours=True, no_fill_contours=True, contour_kwargs={"colors":'black'},
+            # print(paramranges[pname])
+            # print(pp.parambindef(pname))
+            # print('--------------------------------')
+
+        Fsize = 17
+        cfig = corner.corner(paramdata, bins=bindefs, labels=paramlabel,  label_kwargs={"fontsize": Fsize}, range=plotranges,
+                             quantiles=[0.16, 0.5, 0.84],color=collectionscolors[pc], #smooth1d = 3.0,
+                             plot_contours=False, no_fill_contours=True, contour_kwargs={"colors":'black'},
+                             plot_density=False,
                              show_titles=True, title_kwargs={"fontsize": Fsize})
 
         for ax in cfig.get_axes():
@@ -1243,11 +1261,30 @@ def keylabels(keyinput):
     labeldic = {}
     labeldic['Zgas']    =  'Z'
     labeldic['logUs']   =  'log(U)'
-    labeldic['xid']     =  '$\\xi_\\textrm{d}$'
-    labeldic['nh']      =  '$n_\\textrm{H}$ [cm$^{-3}$]'
-    labeldic['COCOsol'] =  'C/O [(C/O)$_\\textrm{sun}$]'
-    labeldic['mup']     =  'm$_\\textrm{up}$ [M$_\\textrm{sun}$]'
+    labeldic['xid']     =  '$\\xi_\mathrm{d}$'
+    labeldic['nh']      =  '$n_\mathrm{H}$ [cm$^{-3}$]'
+    labeldic['COCOsol'] =  'C/O [(C/O)$_\mathrm{sun}$]'
+    labeldic['mup']     =  'm$_\mathrm{up}$ [M$_\mathrm{sun}$]'
     labeldic['alpha']   =  '$\\alpha$'
     labeldic['logAge']  =  'log(Age) [yr]'
+
+
     return labeldic[keyinput]
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def parambindef(keyinput):
+    """
+    Function returning LaTeX label for photoionization keywords
+
+    """
+
+    parambindefs   =   {'Zgas'   :  10**np.arange(-6,-0.8,0.1),
+                        'logUs'  :  np.arange(-5.5, -0.0, 0.05)-0.025,
+                        'xid'    :  np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])-0.05,
+                        'nh'     :  10**(np.arange(0.0, 5.0, 0.25)-0.125),
+                        'COCOsol':  10**np.arange(-1.075,1.0,0.05),
+                        'mup'    :  np.arange(0,400,50)-25,
+                        'alpha'  :  np.arange(-2.05,-1.0,0.1),
+                        'logAge' :  np.arange(5.8,8.2,0.05)-0.025}
+    return parambindefs[keyinput]
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
