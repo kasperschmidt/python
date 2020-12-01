@@ -300,9 +300,9 @@ def launch_bluebumpGUI():
     print('ERROR: Cannot be run within ipython using import. Run by simply typing "python determine_bb.py'),pdb.set_trace()
     print(' - Assuming positioned in /Users/kschmidt/work/MUSE/Josie_DoublePeakInspection/')
     print(' - Importing determine_bb.py (remember to edit file and catalog info ')
-    import determine_bb
+    #import determine_bb
     print(' - Launching inspection GUI; happy inspecting... ')
-    determine_bb.main()
+    #determine_bb.main()
 
     print(' - GUI existed after inspections')
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
