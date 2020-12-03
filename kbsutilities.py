@@ -1594,7 +1594,7 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunctio
         print('   '+str(popt[i])+' +/- '+str(perr[i]))
 
     if plotresults:
-        nstd = 5. # to draw 5-sigma intervals
+        nstd = 3. # to draw 3-sigma intervals
         popt_up = popt + nstd * perr
         popt_dw = popt - nstd * perr
 
@@ -1603,25 +1603,41 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunctio
             fit = kbs.odr_fitfunction_linear(popt, x_fit)
             fit_up = kbs.odr_fitfunction_linear(popt_up, x_fit)
             fit_dw= kbs.odr_fitfunction_linear(popt_dw, x_fit)
+
+            a,b       = popt
+            aerr,berr = perr
+            fitresultstring = 'ax+b = ('+\
+                              str("%.4f" % a)+'+/-'+str("%.4f" % aerr)+')x+('+\
+                              str("%.4f" % b)+'+/-'+str("%.4f" % berr)+')'
+
         elif fitfunction == 'quadratic':
             fit = kbs.odr_fitfunction_quad(popt, x_fit)
             fit_up = kbs.odr_fitfunction_quad(popt_up, x_fit)
             fit_dw= kbs.odr_fitfunction_quad(popt_dw, x_fit)
 
+            a, b, c        = popt
+            aerr,berr,cerr = perr
+            fitresultstring = 'ax^2+bx+c = ('+\
+                              str("%.4f" % a)+'+/-'+str("%.4f" % aerr)+')x^2+('+\
+                              str("%.4f" % b)+'+/-'+str("%.4f" % berr)+')x+('+\
+                              str("%.4f" % c)+'+/-'+str("%.4f" % cerr)+')'
+        else:
+            sys.exit('Not able to plot the fitfunction '+fitfunction)
+
         fig = plt.figure(figsize=(5,5))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.95)
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.95, bottom=0.1, top=0.90)
         lthick = 1
-        Fsize  = 12
+        Fsize  = 11
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif',size=Fsize)
         plt.rc('xtick', labelsize=Fsize)
         plt.rc('ytick', labelsize=Fsize)
         plt.clf()
         plt.ioff()
-        plt.title('Orthogonal Distance Regression fit to data w. error on both axes', fontsize=Fsize)
+        plt.title('Orthogonal Distance Regression fit to data: \n'+fitresultstring, fontsize=Fsize)
 
         plt.errorbar(xval, yval, yerr=yerr, xerr=xerr, hold=True, ecolor='k', fmt='none', label='data')
-        plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='5-sigma interval',color='red')
+        plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
         plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
         plt.xlabel('x values', fontsize=Fsize)
