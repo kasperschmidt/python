@@ -472,8 +472,10 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         # plt.ylim(yranges[key])
         yminsys, ymaxsys = plt.ylim()
 
-        plt.xlabel(xstr+'( '+pp.keylabels(key)+' )')
-        plt.ylabel('Normalized standard deviation of parameter PDF')
+        xaxis_label = xstr+'( '+pp.keylabels(key)+' )'
+        plt.xlabel(xaxis_label)
+        # plt.ylabel('Normalized standard deviation of parameter PDF')
+        plt.ylabel('$\sigma$('+pp.keylabels(key)+') / $|$'+xaxis_label+'$|$')
 
         if (key == 'Zgas') or (key == 'nh'):
             xlog = True
