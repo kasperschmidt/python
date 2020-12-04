@@ -1548,7 +1548,8 @@ def odr_fitfunction_linear(p, x):
 def odr_fitfunction_quad(p, x):
     a, b, c = p
     return a * x*x + b*x + c
-def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunction='linear',plotresults='./ODRfit2data.pdf'):
+def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=None, verbose=True,
+                                                  fitfunction='linear',plotresults='./ODRfit2data.pdf'):
     """
     Use scipy's Orthogonal Distance Regression (ODR) to fit a function to data with errors on both axes.
     Essential a 2D leas squares, where the diagonal convariance matrices of the data is accounted for.
@@ -1562,36 +1563,68 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunctio
 
 
     """
-    print(' - Setting up model to fit ('+fitfunction+')')
+    if verbose: print(' - Setting up model to fit ('+fitfunction+')')
     if fitfunction == 'linear':
         quad_model = odr.Model(kbs.odr_fitfunction_linear)
-        initguess  = [0., 1.]
+        if initguess is None:
+            initguess  = [0., 1.]
     elif fitfunction == 'quadratic':
         quad_model = odr.Model(kbs.odr_fitfunction_quad)
-        initguess  = [0., 1., 1.]
+        if initguess is None:
+            initguess  = [0., 1., 1.]
     else:
         sys.exit(' - fitfunction='+str(fitfunction)+' is not a valid choice')
 
-    print(' - Making sure all inputs are float arrays ')
+    if verbose: print(' - Making sure all inputs are float arrays ')
     xval = np.asarray(xval).astype(float)
     yval = np.asarray(yval).astype(float)
     xerr = np.asarray(xerr).astype(float)
     yerr = np.asarray(yerr).astype(float)
 
-    print(' - Create a ReadData object from the provided data ')
+    if verbose: print(' - Ignoring NaN and Inf values ')
+    goodent = np.where(np.isfinite(xval) & np.isfinite(yval) & np.isfinite(xerr) & np.isfinite(yerr))[0]
+    if len(goodent) > 0:
+        Nbefore  = len(xval)
+        Nremoved = Nbefore-len(goodent)
+        if verbose: print('   removed '+str(Nremoved)+' of the '+str(Nbefore)+' provided data points ')
+        xval = xval[goodent]
+        yval = yval[goodent]
+        xerr = xerr[goodent]
+        yerr = yerr[goodent]
+    else:
+        if verbose: print('   WARNING: No finite value found in data vectors')
+
+    if verbose: print(' - Checking for errors set to 0.0 ')
+    x0ent = np.where(xerr == 0.0)[0]
+    if len(x0ent) > 0:
+        if verbose: print('   WARNING: Found '+str(len(x0ent))+' of the remaining data points with x-errors = 0.0; setting to 1e-99')
+        xerr[x0ent] = 1e-99 #*yval[y0ent]
+
+    y0ent = np.where(yerr == 0.0)[0]
+    if len(y0ent) > 0:
+        if verbose: print('   WARNING: Found '+str(len(y0ent))+' of the remaining data points with y-errors = 0.0; setting to 1e-99')
+        yerr[y0ent] = 1e-99 #*yval[y0ent]
+
+    if verbose: print(' - Create a ReadData object from the provided data ')
     data = odr.RealData(xval, yval, sx=xerr, sy=yerr)
 
-    print(' - Set up ODR with the mode and the data ')
-    odrclass = odr.ODR(data, quad_model, beta0=initguess)
+    if verbose: print(' - Set up ODR with the mode and the data ')
+    # ifixb = np.asarray(initguess)*0.0+1.0 # sequence of integers with the same length as beta0 that determines
+    #                                       # which parameters are held fixed. A value of 0 fixes the parameter.
+    # ifixb[0] = 0.0
+    # if verbose: print('   fixing linear slope')
+    # maxit = 5000 # maxit is the total number of iterations performed
+    # if verbose: print('   maxit = '+str(maxit))
+    odrclass = odr.ODR(data, quad_model, beta0=initguess)#, maxit=maxit, ifixb=ifixb)
 
-    print(' - Run the Orthogonal Distance Regression on the data ')
+    if verbose: print(' - Run the Orthogonal Distance Regression on the data ')
     fitresults = odrclass.run()
 
-    print(' - The 1sigma parameter estimates of the '+fitfunction+' from the ODR fit are ')
+    if verbose: print(' - The 1sigma parameter estimates of the '+fitfunction+' from the ODR fit are ')
     popt = fitresults.beta
     perr = fitresults.sd_beta
     for i in range(len(popt)):
-        print('   '+str(popt[i])+' +/- '+str(perr[i]))
+        if verbose: print('   '+str(popt[i])+' +/- '+str(perr[i]))
 
     if plotresults:
         nstd = 3. # to draw 3-sigma intervals
@@ -1636,7 +1669,7 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunctio
         plt.ioff()
         plt.title('Orthogonal Distance Regression fit to data: \n'+fitresultstring, fontsize=Fsize)
 
-        plt.errorbar(xval, yval, yerr=yerr, xerr=xerr, hold=True, ecolor='k', fmt='none', label='data')
+        plt.errorbar(xval, yval, yerr=yerr, xerr=xerr, ecolor='k', fmt='none', label='data')
         plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
         plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
@@ -1647,6 +1680,7 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,fitfunctio
         leg.get_frame().set_alpha(0.7)
 
         plt.savefig(plotresults)
+        if verbose: print(' - Saved plot to '+plotresults)
     return fitresults
 #-------------------------------------------------------------------------------------------------------------
 def UniverseEpochsInFractionsOfHumaLifetime(humanlifetime=80,zevaluate=["MACS J1149",0.54],H0=70, Omega_m0=0.3, T_CMB0=2.725):
