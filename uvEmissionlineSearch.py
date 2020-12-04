@@ -7209,20 +7209,20 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         fluxes_range    = [10,8e3]
     ratios_range    = [1e-4,1e3]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    for ll, infocol in enumerate(infocols):
-        linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
-        linesetlist_lya.append([infocol, None, 'CIV',   None ,info_ranges[ll], fluxes_range, None])
-        linesetlist_lya.append([infocol, None, 'OIII',  None ,info_ranges[ll], fluxes_range, None])
-        linesetlist_lya.append([infocol, None, 'HeII',  None ,info_ranges[ll], fluxes_range, None])
-        linesetlist_lya.append([infocol, None, 'MgII',  None ,info_ranges[ll], fluxes_range, None])
-        linesetlist_lya.append([infocol, None, 'SiIII', None ,info_ranges[ll], fluxes_range, None])
-        linesetlist_lya.append([infocol, None, 'NV',    None ,info_ranges[ll], fluxes_range, None])
-
-        linesetlist_lya.append([infocol, None, 'CIV',   'CIII',info_ranges[ll], ratios_range, None])
-        linesetlist_lya.append([infocol, None, 'HeII',  'CIII',info_ranges[ll], ratios_range, None])
-        linesetlist_lya.append([infocol, None, 'SiIII', 'CIII',info_ranges[ll], ratios_range, None])
-        linesetlist_lya.append([infocol, None, 'OIII',  'CIII',info_ranges[ll], ratios_range, None])
-        linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
+    # for ll, infocol in enumerate(infocols):
+    #     linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
+    #     linesetlist_lya.append([infocol, None, 'CIV',   None ,info_ranges[ll], fluxes_range, None])
+    #     linesetlist_lya.append([infocol, None, 'OIII',  None ,info_ranges[ll], fluxes_range, None])
+    #     linesetlist_lya.append([infocol, None, 'HeII',  None ,info_ranges[ll], fluxes_range, None])
+    #     linesetlist_lya.append([infocol, None, 'MgII',  None ,info_ranges[ll], fluxes_range, None])
+    #     linesetlist_lya.append([infocol, None, 'SiIII', None ,info_ranges[ll], fluxes_range, None])
+    #     linesetlist_lya.append([infocol, None, 'NV',    None ,info_ranges[ll], fluxes_range, None])
+    #
+    #     linesetlist_lya.append([infocol, None, 'CIV',   'CIII',info_ranges[ll], ratios_range, None])
+    #     linesetlist_lya.append([infocol, None, 'HeII',  'CIII',info_ranges[ll], ratios_range, None])
+    #     linesetlist_lya.append([infocol, None, 'SiIII', 'CIII',info_ranges[ll], ratios_range, None])
+    #     linesetlist_lya.append([infocol, None, 'OIII',  'CIII',info_ranges[ll], ratios_range, None])
+    #     linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
     histaxes  = True
@@ -7264,8 +7264,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
     linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
-    linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    # No good values linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
     linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
 
@@ -7279,32 +7279,32 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist  = []
-    # linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
-    # linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range , 'Schmidt+17 fig. 7 center                  '])
-    # linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 bottom                  '])
-    # linesetlist.append(['SiIII','CIII','OIII','CIII',ratios_range,ratios_range,'Byler+20 fig. 3                           '])
-    # linesetlist.append(['HeII','CIII','OIII','CIII',ratios_range,ratios_range, 'Byler+20 fig. 4                           '])
-    # linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
-    # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
-    # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
-    # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
-    # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
-    # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
-    # linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
-    # linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
-    # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
-    # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
-    # linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
-    # linesetlist.append(['OIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
-    # linesetlist.append(['SiIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
-    # #
-    # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
-    # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIII','CIV','OIII','SiIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
+    linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range , 'Schmidt+17 fig. 7 center                  '])
+    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 bottom                  '])
+    linesetlist.append(['SiIII','CIII','OIII','CIII',ratios_range,ratios_range,'Byler+20 fig. 3                           '])
+    linesetlist.append(['HeII','CIII','OIII','CIII',ratios_range,ratios_range, 'Byler+20 fig. 4                           '])
+    linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
+    linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
+    linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
+    linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
+    linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
+    linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
+    linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
+    linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
+    linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
+    linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
+    linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    linesetlist.append(['OIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
+    linesetlist.append(['SiIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
     #
-    # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+    linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIII','CIV','OIII','SiIII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+
+    linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
     Nhistbins = 30
     histaxes  = False
@@ -8530,22 +8530,22 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
     if verbose: print(' - Defining plotting ranges and sets of parameters to plot ')
     if ylog:
-        EW0_range_y = [0.1,2000]
+        EW0_range_y = [0.1,90]
     else:
         EW0_range_y = [-5,42]
 
     if xlog:
-        EW0_range_x = [0.1,2000]
+        EW0_range_x = [0.1,90]
     else:
         EW0_range_x = [-5,42]
 
     if xlog:
-        LyaEW_range = [0.1,2000]
+        LyaEW_range = [0.1,90]
     else:
         LyaEW_range = [-100,320]
 
     if xlog:
-        LyaPS_range = [0.1,2000]
+        LyaPS_range = [0.1,90]
     else:
         LyaPS_range = [0,1000]
 
@@ -8591,12 +8591,12 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     histaxes  = True
     for lineset in linesetlist_EWs:
         plot_EW0estimates_wrapper(plotbasename,EW0dat,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                  ErrNsigma=ErrNsigma,point_text=point_text,vshiftmax=vshiftmax,
+                                  ErrNsigma=ErrNsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                   xlog=xlog,ylog=ylog,showlimits=showlimits,overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhistbins,cdatvec,cdattype,
-                              photoionizationplotparam=None,point_text=None,showlimits=True,
+                              photoionizationplotparam=None,point_text=None,showlimits=True,performlinearfit=False,
                               xlog=True,ylog=True,overwrite=False,ErrNsigma=1.0,vshiftmax=1e4,verbose=True):
     """
     Wrapper to define input data and excecute plot command
@@ -8700,6 +8700,28 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
+    if performlinearfit:
+        plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
+
+        if ylog:
+            yval_fit = np.log10(yvalues)
+            yerr_fit = 0.434 * yerr/yvalues  # https://faculty.washington.edu/stuve/log_error.pdf
+        else:
+            yval_fit = yvalues
+            yerr_fit = yerr
+
+        if xlog:
+            xval_fit = np.log10(xvalues)
+            xerr_fit = 0.434 * xerr/xvalues  # https://faculty.washington.edu/stuve/log_error.pdf
+        else:
+            xval_fit = xvalues
+            xerr_fit = xerr
+
+        fitresults = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                       initguess = [1.,1.],verbose=verbose,
+                                                                       fitfunction='linear',plotresults=plotname)
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def linenameUVES2NEOGAL(uvesname):
     """
