@@ -14460,8 +14460,8 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     cmap    = plt.cm.viridis_r
     cdatvec = fluxdat['redshift'][goodent]
     clabel  = '$z$'
-    cmin    = 0.01 # 0.0, 1.4
-    cmax    = 7.5 # 10.2, 6.2
+    cmin    = 1.5 #0.01 # 0.0, 1.4
+    cmax    = 4.0 #7.5 # 10.2, 6.2
     cextend = 'neither'
 
     colnorm = matplotlib.colors.Normalize(vmin=cmin,vmax=cmax)
