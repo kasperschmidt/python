@@ -5136,6 +5136,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
                 cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
                 cextend = 'neither'
+            elif colortype.lower() == 'ew0_ciii':
+                clabel  = 'EW$_0$(CIII)'
+                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                cextend = 'neither'
             elif colortype in summarydat.dtype.names:
                 # if colortype == 'Fratio_spec': pdb.set_trace()
                 clabel  = colortype.replace('_','\_')
@@ -13967,7 +13972,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     if xlog:
         xrange = [0.01,10.0]
     else:
-        xrange = [-0.3,7.5]
+        xrange = [-0.3,5.2]
     Zrange = [6.5,8.9]
 
     # - - - - - - Si3O3C3 vs He2O3C3     - - - - - -
@@ -13978,6 +13983,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     yerr       = Z_He2O3C3_err_uves[bothest_ent_He2O3C3_uves_Z]
     IDsALL     = bothest_id_uves
     cdatvec    = fdat_uves['redshift'][bothest_ent_uves]
+    # cdatvec    = fdat_uves['EW0_CIII'][bothest_ent_uves]
     point_text = None #bothest_id_uves.astype(str)
 
     if withliterature:
@@ -13988,11 +13994,13 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         yerr       = np.append(yerr,       Z_He2O3C3_err_lit[bothest_ent_He2O3C3_lit_Z])
         IDsALL     = np.append(IDsALL,     bothest_id_lit)
         cdatvec    = np.append(cdatvec,    fdat_lit['redshift'][bothest_ent_lit])
+        # cdatvec    = np.append(cdatvec,    fdat_lit['EW0_CIII'][bothest_ent_lit])
         point_text = None #np.append(point_text, bothest_id_lit.astype(str))
 
     xlabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1883, OIII1666 and CIII1908}'
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
     colortype  = 'redshift'
+    # colortype  = 'EW0_CIII'
     colorcode  = True
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
@@ -14010,7 +14018,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     xerr       = [None]*len(Z_Si3O3C3_uves)
     yerr       = Z_Si3O3C3_err_uves
     IDsALL     = id_Si3O3C3_uves
-    cdatvec    = xvalues # fdat_uves['f_CIII'][ent_Si3O3C3_uves]
+    cdatvec    = fdat_uves['EW0_CIII'][ent_Si3O3C3_uves]
     point_text = None
 
     if withliterature:
@@ -14020,12 +14028,14 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         xerr       = np.append(xerr,     [None]*len(Z_Si3O3C3_lit))
         yerr       = np.append(yerr,     Z_Si3O3C3_err_lit)
         IDsALL     = np.append(IDsALL,   id_Si3O3C3_lit)
-        cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_Si3O3C3_lit]) #fdat_lit['f_CIII'][ent_Si3O3C3_lit])
+        # cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_Si3O3C3_lit]) #fdat_lit['f_CIII'][ent_Si3O3C3_lit])
+        cdatvec    = np.append(cdatvec,  fdat_lit['EW0_CIII'][ent_Si3O3C3_lit]) #fdat_lit['f_CIII'][ent_Si3O3C3_lit])
         point_text = None
 
     xlabel     = '$z$'
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from SiIII1883, OIII1666 and CIII1908}'
-    colortype  = 'redshift' #'f(CIII) [1e-20 erg/s/cm$^2$]'
+    # colortype  = 'redshift' #'f(CIII) [1e-20 erg/s/cm$^2$]'
+    colortype  = 'EW0_CIII'
     colorcode  = True
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
@@ -14044,7 +14054,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     xerr       = [None]*len(Z_He2O3C3_uves)
     yerr       = Z_He2O3C3_err_uves
     IDsALL     = id_He2O3C3_uves
-    cdatvec    = xvalues # fdat_uves['f_CIII'][ent_He2O3C3_uves]
+    cdatvec    = fdat_uves['EW0_CIII'][ent_He2O3C3_uves]
     point_text = None
 
     if withliterature:
@@ -14054,12 +14064,15 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         xerr       = np.append(xerr,     [None]*len(Z_He2O3C3_lit))
         yerr       = np.append(yerr,     Z_He2O3C3_err_lit)
         IDsALL     = np.append(IDsALL,   id_He2O3C3_lit)
-        cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_He2O3C3_lit]) #fdat_lit['f_CIII'][ent_He2O3C3_lit])
+        # cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_He2O3C3_lit]) #fdat_lit['f_CIII'][ent_He2O3C3_lit])
+        cdatvec    = np.append(cdatvec,  fdat_lit['EW0_CIII'][ent_He2O3C3_lit]) #fdat_lit['f_CIII'][ent_He2O3C3_lit])
         point_text = None
 
     xlabel     = '$z$'
     ylabel     = '12 + log$_{10}$([O/H]) \n\small{from HeII1640, OIII1666 and CIII1908}'
-    colortype  = 'redshift' # 'f(CIII) [1e-20 erg/s/cm$^2$]'
+    # colortype  = 'redshift' # 'f(CIII) [1e-20 erg/s/cm$^2$]'
+    colortype  = 'EW0_CIII'
+
     colorcode  = True
 
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
@@ -15000,6 +15013,13 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                            np.isfinite(dat_uves['vshift_MgII']) & (infodat['leadline'] == 'Lya'))[0]
     dv_MgII_LAE      = dat_uves['vshift_MgII'][dv_MgII_ent_LAE]
 
+    # - - - - - - - Special cases - - - - - - -
+    dv_CIIICIV_ent  = np.intersect1d(dv_CIV_ent,dv_CIII_ent)
+    dv_CIIICIV      = dat_uves['vshift_CIII'][dv_CIIICIV_ent] - dat_uves['vshift_CIV'][dv_CIIICIV_ent]
+
+    # print('CIV-CIII offsets:'+str(dv_CIIICIV))
+    # print('And corresponding IDs:'+str(dat_uves['id'][dv_CIIICIV_ent]))
+
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plot of lead line offsets intra-object comparison')
     plotname = outputdir+'evaluate_voffsets_intraobject_comparison_all.pdf'
@@ -15114,12 +15134,12 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plots of lead line offsets ')
 
-    linename   = linenamelist+linenamelist
-    zranges    = zlineranges+zlineranges
-    leadline   = ['lead line']*Nlines + ['Lya']*Nlines
-    dvs_ent    = [dv_NV_ent,dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent]+\
+    linename   = linenamelist+['CIV']+linenamelist
+    zranges    = zlineranges+[[2.0,3.95]]+zlineranges
+    leadline   = ['lead line']*Nlines + ['CIII'] + ['Lya']*Nlines
+    dvs_ent    = [dv_NV_ent,dv_CIV_ent,dv_HeII_ent,dv_OIII_ent,dv_SiIII_ent,dv_CIII_ent,dv_MgII_ent,dv_CIIICIV_ent]+\
                  [dv_NV_ent_LAE,dv_CIV_ent_LAE,dv_HeII_ent_LAE,dv_OIII_ent_LAE,dv_SiIII_ent_LAE,dv_CIII_ent_LAE]#,dv_MgII_ent_LAE]
-    dvs        = [dv_NV,dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII]+\
+    dvs        = [dv_NV,dv_CIV,dv_HeII,dv_OIII,dv_SiIII,dv_CIII,dv_MgII,dv_CIIICIV]+\
                  [dv_NV_LAE,dv_CIV_LAE,dv_HeII_LAE,dv_OIII_LAE,dv_SiIII_LAE,dv_CIII_LAE]#,dv_MgII_LAE]
 
     for vv, dv in enumerate(dvs):
@@ -15129,6 +15149,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
         if leadline[vv] == 'Lya':
             llstring = 'Ly$\\alpha$'
+        elif leadline[vv] == 'CIII':
+            llstring = 'CIII'
         else:
             llstring = leadline[vv]
         ylabel    = '$\Delta v$('+llstring+' - '+linename[vv]+') [km/s]'
