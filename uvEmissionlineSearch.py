@@ -5317,7 +5317,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         tot_maxval = np.max([xmaxsys, ymaxsys])
         tot_minval = np.min([xminsys, yminsys])
         if linetype == 'horizontal':
-            plt.plot([-1e10,1e10],[0,0],'--',color='black',lw=lthick,zorder=10)
+            plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
         elif linetype == 'horizontalWlya':
             plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
             plt.plot([2.9,2.9],[yminsys,ymaxsys],'--',color='gray',lw=lthick,zorder=10)
@@ -5387,6 +5387,23 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             x = np.array([0,xmaxsys])
             y = 670.0 - 8.9 * x
             plt.plot(x,y,':',color='gray',lw=lthick,zorder=10)
+        elif linetype == 'CM18_wHorizontal':
+            plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
+
+            x = np.arange(xminsys,xmaxsys,0.01)
+            for zvals in [[2.0,':','tab:orange'],[7.0,'-.','tab:blue']]:
+                zfct, lstyle, lcolor = zvals
+
+                gamma_trans = -20 - 0.26*zfct
+                ent_low     = np.where(x < gamma_trans)[0] # gamma = -0.7
+                ent_high    = np.where(x > gamma_trans)[0] # gamma = -0.3
+
+                gammas = [-0.7,-0.3]
+                for ee, ent in enumerate([ent_low,ent_high]):
+                    gamma = gammas[ee]
+                    Dv    = 10.0 ** (0.32*gamma*(x[ent] + 20.0 + 0.26*zfct) + 2.34)
+                    plt.plot(x[ent],Dv,lstyle,color=lcolor,lw=lthick,zorder=10)
+
         elif (str(linetype).lower == 'none') or (linetype is None) :
             pass
         else:
@@ -15338,6 +15355,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         linetype='AV18_peaksep_wHorizontal'
                     elif colname == 'lyafwhm_kms':
                         linetype='AV18_fwhm_wHorizontal'
+                    elif 'absmagUV' in colname:
+                        linetype = 'CM18_wHorizontal'
                     else:
                         linetype='horizontal'
                     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
