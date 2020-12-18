@@ -221,7 +221,7 @@ def referencedictionary(verbose=False):
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Tang+20b OIII5007 emitters with UV spectroscopy
+    # Tang+20a OIII5007 emitters with UV spectroscopy
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # missing from Matthee+17 compilation
     # -------------------------------------------------
