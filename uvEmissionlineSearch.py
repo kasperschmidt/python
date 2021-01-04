@@ -5390,19 +5390,33 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
         elif linetype == 'CM18_wHorizontal':
             plt.plot([xminsys,xmaxsys],[0,0],'--',color='black',lw=lthick,zorder=10)
 
-            x = np.arange(xminsys,xmaxsys,0.01)
-            for zvals in [[2.0,':','tab:orange'],[7.0,'-.','tab:blue']]:
-                zfct, lstyle, lcolor = zvals
+            plotTabulatedcurves = True
+            if plotTabulatedcurves:
+                CM18tabulated = np.genfromtxt('/Users/kschmidt/work/catalogs/Mason18_DV_Muv_z.txt',
+                                              skip_header=1,comments='#',dtype=None,names=True)
 
-                gamma_trans = -20 - 0.26*zfct
-                ent_low     = np.where(x < gamma_trans)[0] # gamma = -0.7
-                ent_high    = np.where(x > gamma_trans)[0] # gamma = -0.3
+                CM18_MUV      = CM18tabulated['Muv']
+                zvec          = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0]
+                for zz, zvalue in enumerate(zvec):
+                    lcolor  = cmap(colnorm(zvalue))
+                    CM18_Dv = CM18tabulated['DvATz'+str(int(zvalue))]
+                    plt.plot(CM18_MUV,CM18_Dv,'--',color=lcolor,lw=lthick,zorder=10)
 
-                gammas = [-0.7,-0.3]
-                for ee, ent in enumerate([ent_low,ent_high]):
-                    gamma = gammas[ee]
-                    Dv    = 10.0 ** (0.32*gamma*(x[ent] + 20.0 + 0.26*zfct) + 2.34)
-                    plt.plot(x[ent],Dv,lstyle,color=lcolor,lw=lthick,zorder=10)
+            plotEq3curves = False
+            if plotEq3curves:
+                x = np.arange(xminsys,xmaxsys,0.01)
+                for zvals in [[2.0,':','tab:orange'],[7.0,'-.','tab:blue']]:
+                    zfct, lstyle, lcolor = zvals
+
+                    gamma_trans = -20 - 0.26*zfct
+                    ent_low     = np.where(x < gamma_trans)[0] # gamma = -0.7
+                    ent_high    = np.where(x > gamma_trans)[0] # gamma = -0.3
+
+                    gammas = [-0.7,-0.3]
+                    for ee, ent in enumerate([ent_low,ent_high]):
+                        gamma = gammas[ee]
+                        Dv    = 10.0 ** (0.32*gamma*(x[ent] + 20.0 + 0.26*zfct) + 2.34)
+                        plt.plot(x[ent],Dv,lstyle,color=lcolor,lw=lthick,zorder=10)
 
         elif (str(linetype).lower == 'none') or (linetype is None) :
             pass
