@@ -14249,7 +14249,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     fluxdat = fluxdat[fluxdat['duplicationID'] == 0]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    T_e_fix_vals = {'3k':1.e3, '4k':1.e4, '5k':1.e5}
+    T_e_fix_vals = {'5k':5.e3, '10k':1.e4, '20k':2.e4}
     yvals_curve  = np.arange(0.0,2.0,curveresolution)
     if verbose: print('--- Estimating n_e from a single fluxratio ---')
 
@@ -14289,9 +14289,9 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             plt.close('all')
         #------------------------------------------------------------------------------
 
-        n_e_Te3 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1661, wave2=1666)
-        n_e_Te4 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1661, wave2=1666)
-        n_e_Te5 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1661, wave2=1666)
+        n_e_Te3 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'],  wave1=1661, wave2=1666)
+        n_e_Te4 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['10k'], wave1=1661, wave2=1666)
+        n_e_Te5 = O3.getTemDen(yvals_curve, tem=T_e_fix_vals['20k'], wave1=1661, wave2=1666)
 
         for TeKey in T_e_fix_vals:
             T_e_fix = T_e_fix_vals[TeKey]
@@ -14307,7 +14307,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
                 ylabel     = 'OIII1661/OIII1666'
                 plotname   = outputfile.replace('.txt','_OIII_ne_estimates_Te'+TeKey+'.pdf')
 
-                uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e_O3,n_e_min_O3,n_e_max_O3,
+                uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,FRerr,n_e_O3,n_e_min_O3,n_e_max_O3,
                                   fluxdat,goodent_O3,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
 
 
@@ -14343,9 +14343,9 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             plt.clf()
             plt.close('all')
         #------------------------------------------------------------------------------
-        n_e_Te3 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1548, wave2=1551)
-        n_e_Te4 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1548, wave2=1551)
-        n_e_Te5 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1548, wave2=1551)
+        n_e_Te3 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'],  wave1=1548, wave2=1551)
+        n_e_Te4 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['10k'], wave1=1548, wave2=1551)
+        n_e_Te5 = C4.getTemDen(yvals_curve, tem=T_e_fix_vals['20k'], wave1=1548, wave2=1551)
 
         for TeKey in T_e_fix_vals:
             T_e_fix = T_e_fix_vals[TeKey]
@@ -14361,7 +14361,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
                 ylabel   = 'CIV1548/CIV1551'
                 plotname = outputfile.replace('.txt','_CIV_ne_estimates_Te'+TeKey+'.pdf')
 
-                uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e_C4,n_e_min_C4,n_e_max_C4,
+                uves.plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,FRerr,n_e_C4,n_e_min_C4,n_e_max_C4,
                                   fluxdat,goodent_C4,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -14397,9 +14397,9 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
         plt.clf()
         plt.close('all')
     #------------------------------------------------------------------------------
-    n_e_Te3_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1883, wave2=1892)
-    n_e_Te4_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1883, wave2=1892)
-    n_e_Te5_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1883, wave2=1892)
+    n_e_Te3_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'],  wave1=1883, wave2=1892)
+    n_e_Te4_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['10k'], wave1=1883, wave2=1892)
+    n_e_Te5_Si3 = Si3.getTemDen(yvals_curve, tem=T_e_fix_vals['20k'], wave1=1883, wave2=1892)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     FR_C3 = 'FR_CIII1CIII2'
@@ -14432,9 +14432,9 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
         plt.clf()
         plt.close('all')
     #------------------------------------------------------------------------------
-    n_e_Te3_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['3k'], wave1=1907, wave2=1909)
-    n_e_Te4_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['4k'], wave1=1907, wave2=1909)
-    n_e_Te5_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'], wave1=1907, wave2=1909)
+    n_e_Te3_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['5k'],  wave1=1907, wave2=1909)
+    n_e_Te4_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['10k'], wave1=1907, wave2=1909)
+    n_e_Te5_C3 = C3.getTemDen(yvals_curve, tem=T_e_fix_vals['20k'], wave1=1907, wave2=1909)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Calculating and plotting electron densitites')
@@ -14460,7 +14460,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
 
             ylabel   = 'SiIII1883/SiIII1892'
             plotname = outputfile.replace('.txt','_SiIII_ne_estimates_Te'+TeKey+'.pdf')
-            uves.plot_neForFR(plotname,fout,T_e_fix,FR_Si3,ylabel,FRval_Si3,n_e_Si3,n_e_min_Si3,n_e_max_Si3,
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR_Si3,ylabel,FRval_Si3,FRerr_Si3,n_e_Si3,n_e_min_Si3,n_e_max_Si3,
                               fluxdat,goodent_Si3,yvals_curve,n_e_Te3_Si3,n_e_Te4_Si3,n_e_Te5_Si3,verbose=True)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -14483,7 +14483,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
 
             ylabel   = 'CIII1907/CIII1909'
             plotname = outputfile.replace('.txt','_CIII_ne_estimates_Te'+TeKey+'.pdf')
-            uves.plot_neForFR(plotname,fout,T_e_fix,FR_C3,ylabel,FRval_C3,n_e_C3,n_e_min_C3,n_e_max_C3,
+            uves.plot_neForFR(plotname,fout,T_e_fix,FR_C3,ylabel,FRval_C3,FRerr_C3,n_e_C3,n_e_min_C3,n_e_max_C3,
                               fluxdat,goodent_C3,yvals_curve,n_e_Te3_C3,n_e_Te4_C3,n_e_Te5_C3,verbose=True)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -14554,7 +14554,7 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
+def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,FRvalerr,n_e,n_e_min,n_e_max,
                  fluxdat,goodent,yvals_curve,n_e_Te3,n_e_Te4,n_e_Te5,verbose=True):
     """
     Function to generate plots of n_e. Used in uves.perform_PyNeb_calc_main()
@@ -14573,7 +14573,7 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
 
     Fsize    = 12
     lthick   = 1.0
-    marksize = 6
+    marksize = 12
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif',size=Fsize)
     plt.rc('xtick', labelsize=Fsize)
@@ -14582,9 +14582,9 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     plt.ioff()
     #plt.title(inforstr[:-2],fontsize=Fsize)
 
-    plt.plot(n_e_Te5,yvals_curve,color='darkred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^5$K)')
-    plt.plot(n_e_Te4,yvals_curve,color='indianred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^4$K)')
-    plt.plot(n_e_Te3,yvals_curve,color='salmon',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10$^3$K)')
+    plt.plot(n_e_Te5,yvals_curve,color='darkred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 20000K)')
+    plt.plot(n_e_Te4,yvals_curve,color='indianred',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 10000K)')
+    plt.plot(n_e_Te3,yvals_curve,color='salmon',zorder=5,lw=lthick,label='n$_\\textrm{e}$(T$_\\textrm{e}$ = 5000K)')
 
     #----------------------------
     cmap    = plt.cm.viridis_r
@@ -14618,7 +14618,8 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
     plt.xscale('log')
     plt.ylabel(ylabel)
     plt.xlabel('n$_\\textrm{e}$ [cm$^{-3}$]')
-    plt.xlim([1e1,1e7])
+    plt.xlim([1e2,8e6])
+    plt.ylim([-0.1,2.2])
 
     limsizefrac = 0.05
     xvalues     = n_e
@@ -14634,15 +14635,17 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
         xvalshow = n_e[nn]
 
         if ~np.isfinite(n_e_min[nn]) & ~np.isfinite(n_e_max[nn]):
-            n_e[nn]     = 9e6
-            n_e_min[nn] = +99
-            n_e_max[nn] = +99
-            xuplims     = True
+            n_e[nn]     = 7e6
+            n_e_min[nn] = 0
+            n_e_max[nn] = 0
+            xuplims     = False
 
             vallim[nn]  = 1
             dlog     = np.abs(np.diff(np.log10(plt.xlim()))) * limsizefrac
             xvalshow = n_e[nn]#/Nsigma * 1.0
-            xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+            xerrshow = 0.0#np.abs(xvalshow - 10.**(np.log10(xvalshow)-dlog))
+
+            mfc         = 'None'
 
         elif ~np.isfinite(n_e_min[nn]):
             n_e[nn]     = n_e_max[nn]
@@ -14667,18 +14670,18 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,n_e,n_e_min,n_e_max,
             xerrshow = np.abs(xvalshow - 10.**(np.log10(xvalshow)+dlog))
 
 
-        yvalshow = FRval[goodent][nn] + voffsets_indices[str(FRval[goodent][nn])]
-        voffsets_indices[str(FRval[goodent][nn])] = voffsets_indices[str(FRval[goodent][nn])] + 0.03
+        yvalshow = FRval[goodent][nn] #+ voffsets_indices[str(FRval[goodent][nn])]
+        #voffsets_indices[str(FRval[goodent][nn])] = voffsets_indices[str(FRval[goodent][nn])] + 0.03
 
         # if yvalshow ==  1.5: pdb.set_trace()
         plt.errorbar(xvalshow,yvalshow,
                      xerr=[xerrshow],
-                     # yerr=FRerr[goodent][nn],
+                     yerr=FRvalerr[goodent][nn],
                      uplims=False,lolims=False,
                      xuplims=xuplims,xlolims=xlolims,
                      marker='.',lw=lthick, markersize=marksize,alpha=1.0,
-                     markerfacecolor=mfc,ecolor=mfc,
-                     markeredgecolor=mfc,zorder=10)
+                     markerfacecolor=mfc,ecolor=colvec[nn],
+                     markeredgecolor=colvec[nn],zorder=10)
 
         fout.write(str(fluxdat['id'][goodent][nn])+'  '+
                    str("%15.2f" % n_e[nn])+'  '+str("%15.2f" % n_e_min[nn])+'  '+str("%15.2f" % n_e_max[nn])+'  '+
