@@ -67,11 +67,13 @@ if sys.version_info[0] == 2:
 
 ### ASTROPY ###
 from astropy.coordinates import SkyCoord
-from astropy import units as u
+import astropy.units as u
 import astropy.table as atab
 from astropy.cosmology import FlatLambdaCDM, z_at_value
 import astropy.io.fits as afits
 from astropy import wcs
+import astropy.coordinates as acoord
+import astropy.cosmology as acosmo
 
 if sys.version_info[0] == 2:
     ### IMAGE REGISTRATION ###
@@ -202,13 +204,19 @@ def getAv(RA,DEC,filter):
         gall        = []
         galb        = []
         for ii in Nvals: # looping over RA and Decs and converting to galactic coordiantes
-            gcoords = coords.ICRSCoordinates(RA[ii],DEC[ii]).convert(coords.GalacticCoordinates)
-            gall.append(gcoords.l.degrees)
-            galb.append(gcoords.b.degrees)
+            gcoords = acoord.SkyCoord(ra=RA[ii]*u.degree, dec=DEC[ii]*u.degree, frame='icrs').galactic
+            gall.append(gcoords.l.value)
+            galb.append(gcoords.b.value)
+            # gcoords = coords.ICRSCoordinates(RA[ii],DEC[ii]).convert(coords.GalacticCoordinates)
+            # gall.append(gcoords.l.degrees)
+            # galb.append(gcoords.b.degrees)
     else:
-        gcoords = coords.ICRSCoordinates(RA,DEC).convert(coords.GalacticCoordinates)
-        gall = gcoords.l.degrees
-        galb = gcoords.b.degrees
+        gcoords = acoord.SkyCoord(ra=RA*u.degree, dec=DEC*u.degree, frame='icrs').galactic
+        gall = gcoords.l.value
+        galb = gcoords.b.value
+        # gcoords = coords.ICRSCoordinates(RA,DEC).convert(coords.GalacticCoordinates)
+        # gall = gcoords.l.degrees
+        # galb = gcoords.b.degrees
 
     #dustmaps    = '/Users/kasperborelloschmidt/work/python/progs/dust_getvalV0p1/fits/SFD_dust_4096_%s.fits'
     dustmaps    = '/Users/kschmidt/work/dustmaps/SFD_dust_4096_%s.fits'
@@ -366,16 +374,17 @@ def magapp2abs(Mapp,zobj,RA,DEC,Av=-99,band='Jbradley2012',cos='WMAP7BAOH0'):
     if band == 'Jbradley2012':
         Mabs          = np.array([Mapp - 47.14])
     else:
-        cosmo = choose_cosmology(cos)
-        Dlum          = coords.funcs.cosmo_z_to_dist(zobj, zerr=None, disttype='luminosity')*1e6 # luminosity distance in pc
+        cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+        Dlum     = cosmo.luminosity_distance(zobj).to(u.pc).value
+        # cosmo = choose_cosmology(cos)
+        # Dlum          = coords.funcs.cosmo_z_to_dist(zobj, zerr=None, disttype='luminosity')*1e6 # luminosity distance in pc
         Kcorrection   = (2.5 * np.log10(1.0 + zobj)) # assumes source has flat (beta = -2) SED.  
                                                      # A bluer beta will likely give you an additional
                                                      # correction of about ~0.1 mag or so.
         if isinstance(Mapp,types.FloatType) and Av == -99: # if Av is -99, calculate it
             Av, Ebv = getAv(RA,DEC,band) 
-            Mabs    = Mapp - 5*np.log10(Dlum)+5 + Kcorrection - Av # corrected absolut magnitude of objects
-        else:
-            Mabs    = None
+
+        Mabs    = float(Mapp) - 5*np.log10(Dlum)+5 + Kcorrection - Av
     return Mabs
 #-------------------------------------------------------------------------------------------------------------
 def magabs2app(Mabs,zobj,RA,DEC,Av=-99,band=None,cos='WMAP7BAOH0'):
