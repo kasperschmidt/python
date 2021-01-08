@@ -53,8 +53,9 @@ def generate_literature_fitscatalog(verbose=True):
     Ncols        = len(fluxratiodic.keys())
     if verbose: print('   The output file will contain '+str(Ncols)+' columns ')
     fout.write('# This file contains the following '+str(Ncols)+' columns:\n')
-    fout.write('# id                                  name   reference'+
+    fout.write('# id                                  name   reference   '+
                ' '.join([str("%20s" % colname) for colname in list(fluxratiodic.keys())[3:]])+'  \n')
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Collecting literature data arrays and appending them')
     refdic                 = lce.referencedictionary()
@@ -65,12 +66,13 @@ def generate_literature_fitscatalog(verbose=True):
             fctlist.append(fct)
 
     for datafunction in fctlist:
-        dataref, dataarray     = getattr(lce, datafunction)(verbose=False)
-        try:
-            outputdataarray        = np.append(outputdataarray,dataarray)
-        except:
-            outputdataarray        = dataarray
-        if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
+        if datafunction.split('_')[-1] in refdic.keys(): # only including data listed in referencedictionary
+            dataref, dataarray     = getattr(lce, datafunction)(verbose=False)
+            try:
+                outputdataarray        = np.append(outputdataarray,dataarray)
+            except:
+                outputdataarray        = dataarray
+            if verbose: print('   Added data from   '+refdic[dataarray['reference'][0].decode('UTF-8')][1])
 
     if verbose: print('\n - Hence the total number of objects in the literture collection is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -87,66 +89,6 @@ def generate_literature_fitscatalog(verbose=True):
     if verbose: print('\n - Creating fits version of output: \n   '+outputfile.replace('.txt','.fits'))
     fitsformat = ['K','30A','20A'] + ['D']*(Ncols-3)
     fitsoutput = ascii2fits(outputfile,asciinames=True,skip_header=5,fitsformat=fitsformat,verbose=False)
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def emissionlinelist(verbose=True):
-    """
-
-    """
-    linelistdic = MiGs.linelistdic(listversion='full')
-    if verbose: print(' - Loaded the line dictionary from MiGs containing:\n   '+linelistdic.keys())
-    return linelistdic
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def get_reference_fromID(idlist,verbose=True):
-    """
-    Function to return the reference(s) given a list of literature IDs
-
-    --- INPUT ---
-    idlist       List of "literature ids". They should be 11 digits long where the first 3 digits refers
-                 to the reference the IDs belong to as provided by lce.referencedictionary()
-    verbose      Toggle verbosity of function
-
-    --- EXAMPLE OF USE ---
-    import literaturecollection_emissionlinestrengths as lce
-
-    idlist     = [10000001024,10000001036,20022480005]
-    references = lce.get_reference_fromID(idlist)
-    """
-    refdic     = lce.referencedictionary()
-    returnrefs = []
-
-    if type(idlist) is not list:
-        idlist = [int(idlist)]
-
-    if verbose: print(' - Looping over the '+str(len(idlist))+' IDs provide in list\n')
-    for id in idlist:
-        idstr  = str(id)
-        if (len(idstr) < 10) or idstr.startswith('0'):
-            if verbose: print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
-                              '            The id '+idstr+' has less than 10 digitsis which \n            '
-                                                          'does not match any object from the literature collection')
-        else:
-            baseid = int(idstr[:-9].ljust(len(idstr),'0'))
-
-            foundref = False
-            for key in refdic.keys():
-                if int(refdic[key][0]) == baseid:
-                    returnrefs.append([idstr,key,refdic[key][0],refdic[key][1],refdic[key][2]])
-                    foundref = True
-
-            if not foundref:
-                print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
-                      '            The id '+idstr+' has no match in literature collection. '
-                      'Setting marker for plots to "$??$"')
-
-
-                returnrefs.append([idstr,'NoRef',baseid,'NoRef','$??$'])
-
-    if len(idlist) != len(returnrefs):
-        sys.exit('The provided ID list and the found references have different lengths:\n   len(idlist) = '+str(len(idlist))+':\n  '+str(idlist)+'\n   len(references) = '+str(len(returnrefs))+':\n   '+str(returnrefs)+'\n')
-    if len(idlist) == 1:
-        return returnrefs[0]
-    else:
-        return returnrefs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def referencedictionary(verbose=False):
     """
@@ -223,6 +165,8 @@ def referencedictionary(verbose=False):
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Tang+20a OIII5007 emitters with UV spectroscopy
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Jiang+20(21) Nature Astronomy of CIII and OIII in GNZ11
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # missing from Matthee+17 compilation
     # -------------------------------------------------
     # Ding+17: Five Lya-CIII emitters
@@ -280,6 +224,66 @@ def referencedictionary(verbose=False):
 
 
     return refdic
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_reference_fromID(idlist,verbose=True):
+    """
+    Function to return the reference(s) given a list of literature IDs
+
+    --- INPUT ---
+    idlist       List of "literature ids". They should be 11 digits long where the first 3 digits refers
+                 to the reference the IDs belong to as provided by lce.referencedictionary()
+    verbose      Toggle verbosity of function
+
+    --- EXAMPLE OF USE ---
+    import literaturecollection_emissionlinestrengths as lce
+
+    idlist     = [10000001024,10000001036,20022480005]
+    references = lce.get_reference_fromID(idlist)
+    """
+    refdic     = lce.referencedictionary()
+    returnrefs = []
+
+    if type(idlist) is not list:
+        idlist = [int(idlist)]
+
+    if verbose: print(' - Looping over the '+str(len(idlist))+' IDs provide in list\n')
+    for id in idlist:
+        idstr  = str(id)
+        if (len(idstr) < 10) or idstr.startswith('0'):
+            if verbose: print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
+                              '            The id '+idstr+' has less than 10 digitsis which \n            '
+                                                          'does not match any object from the literature collection')
+        else:
+            baseid = int(idstr[:-9].ljust(len(idstr),'0'))
+
+            foundref = False
+            for key in refdic.keys():
+                if int(refdic[key][0]) == baseid:
+                    returnrefs.append([idstr,key,refdic[key][0],refdic[key][1],refdic[key][2]])
+                    foundref = True
+
+            if not foundref:
+                print(' - WARNING: literaturecollection_emissionlinestrenths.get_reference_fromID():\n'
+                      '            The id '+idstr+' has no match in literature collection. '
+                      'Setting marker for plots to "$??$"')
+
+
+                returnrefs.append([idstr,'NoRef',baseid,'NoRef','$??$'])
+
+    if len(idlist) != len(returnrefs):
+        sys.exit('The provided ID list and the found references have different lengths:\n   len(idlist) = '+str(len(idlist))+':\n  '+str(idlist)+'\n   len(references) = '+str(len(returnrefs))+':\n   '+str(returnrefs)+'\n')
+    if len(idlist) == 1:
+        return returnrefs[0]
+    else:
+        return returnrefs
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def emissionlinelist(verbose=True):
+    """
+
+    """
+    linelistdic = MiGs.linelistdic(listversion='full')
+    if verbose: print(' - Loaded the line dictionary from MiGs containing:\n   '+linelistdic.keys())
+    return linelistdic
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def lineinfo(verbose=True):
     """
@@ -551,12 +555,14 @@ def build_master_datadictionary(verbose=True):
     Defining the master dictionary to fill with data from the literature
     """
     datadictionary = collections.OrderedDict()
-    datadictionary['id']        = np.array([])
-    datadictionary['name']      = np.array([])
-    datadictionary['reference'] = np.array([])
-    datadictionary['ra']        = np.array([])
-    datadictionary['dec']       = np.array([])
-    datadictionary['redshift']  = np.array([])
+    datadictionary['id']          = np.array([])
+    datadictionary['name']        = np.array([])
+    datadictionary['reference']   = np.array([])
+    datadictionary['ra']          = np.array([])
+    datadictionary['dec']         = np.array([])
+    datadictionary['redshift']    = np.array([])
+    datadictionary['magabsUV']    = np.array([])
+    datadictionary['magabsUVerr'] = np.array([])
 
     linetypedic, linelistdic, componentlist = lineinfo(verbose=verbose)
 
@@ -1753,7 +1759,11 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([5.55])
     datadic['reference'] = [catreference]*len(datadic['id'])
-
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = np.array([])
+    datadic['vshifterr_Lya'] = np.array([])
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
@@ -1829,7 +1839,11 @@ def data_mat17(fluxscale=1e3,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([5.676, 6.532, 6.604, 6.59])
     datadic['reference'] = [catreference]*len(datadic['id'])
-
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # L_Lya    = np.array([2.5, 2.4, 1.3])*1e43*u.erg/u.s
@@ -1929,7 +1943,11 @@ def data_shi18(fluxscale=1e3,verbose=True):
                                      5.7, 5.7, 5.7, 5.7,
                                      5.7, 5.7, 5.7, 5.7, 5.7])
     datadic['reference'] = [catreference]*len(datadic['id'])
-
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
@@ -1989,7 +2007,11 @@ def data_van20(fluxscale=1e3,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([3.1169, 3.222, 3.2121])
     datadic['reference'] = [catreference]*len(datadic['id'])
-
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     Nsigcont = 5.0 # continuum S/N to use for EW error estimates
@@ -2119,8 +2141,13 @@ def data_rav20(fluxscale=1e5,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([0.165, 0.141, 0.262, 0.253, 0.241, 0.194, 0.196, 0.239, 0.263, 0.149])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['EW0_Lya']        = np.array([6, 68, 52, 8, 35, 28, 174, 34, 96, -4 ])
     datadic['EW0err_Lya']     = np.array([1, 4, 4, 1, 2, 2, 9, 2, 6, 1])
@@ -2171,8 +2198,13 @@ def data_mai20(fluxscale=1e3,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([1.579, 1.645, 1.720, 1.727 ])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['f_CIII']          = np.array([1.1   ,   10.9,     0.9,   1.7  ])
     datadic['ferr_CIII']       = np.array([+99.  ,   1.2 ,     0.2,   0.3  ])
@@ -2254,8 +2286,13 @@ def data_sen17(fluxscale=1e5,verbose=True):
     datadic['redshift']  = np.array([acoord.Distance(objdist, u.Mpc).compute_z(cosmology=acosmo.Planck15) for objdist in distances])
 
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['f_CIV1']       = np.array([0.20,3.3,1.6,1.92,0.20,0.79,2.0,1.54,1.0,3.1])
     datadic['ferr_CIV1']    = np.array([0.02,99,99,0.05,0.05,0.04,99,0.04,99,99])
@@ -2343,8 +2380,13 @@ def data_sen19(fluxscale=1e5,verbose=True):
     distances            = np.array([11,15,8 ,22,25,29])
     datadic['redshift']  = np.array([acoord.Distance(objdist, u.Mpc).compute_z(cosmology=acosmo.Planck15) for objdist in distances])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     datadic['f_CIV1']       = np.array([4.52,0.06,0.06,0.08,0.04,0.09])
     datadic['ferr_CIV1']    = np.array([0.05,99,99,99,99,99])
     datadic['EW0_CIV1']     = np.array([2.92,0.07,0.07,0.04,0.08,0.09])
@@ -2435,8 +2477,13 @@ def data_nan19(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([2.87, 2.69, 2.61, 2.68, 2.17, 3.07, 2.67, 2.2, 4.02, 2.11, 3.96, 3.1, 3.1])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['f_HeII']       = np.array([177., 142., 156., 290., 217., 213., 59., 54., 48., 306., 153., 161., 318.])
     datadic['ferr_HeII']    = np.array([52., 53., 58., 91., 79., 45., 12., 13., 12., 55., 33., 29., 39.])
@@ -2568,13 +2615,18 @@ def data_sch17(fluxscale=1e3,verbose=True):
     datadic['redshift']  = np.array([6.11])
 
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = np.array([-20.1])
+    datadic['magabsUVerr']   = np.array([0.2])
+    datadic['vshift_Lya']    = np.array([235.0]) # Mainali+17
+    datadic['vshifterr_Lya'] = np.array([0.0])   # Mainali+17
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
-    datadic['f_Lya']       = np.array([0.89])# Schmidt+17
-    datadic['ferr_Lya']    = np.array([0.24])# Schmidt+17
-    datadic['EW0_Lya']     = np.array([68.0])# Schmidt+17
-    datadic['EW0err_Lya']  = np.array([6.0])# Schmidt+17
+    datadic['f_Lya']          = np.array([0.89])# Schmidt+17
+    datadic['ferr_Lya']       = np.array([0.24])# Schmidt+17
+    datadic['EW0_Lya']        = np.array([68.0])# Schmidt+17
+    datadic['EW0err_Lya']     = np.array([6.0])# Schmidt+17
 
     datadic['f_NV']       = np.array([0.27]) # Mainali+17
     datadic['ferr_NV']    = np.array([99])
@@ -2660,8 +2712,13 @@ def data_rig14(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([1.6811,1.91921,1.7034,1.7034,1.7034,1.7034,1.82042,1.666])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['EW0_Lya']     = np.array([3.3,8.9,1.8,3.75,5.7,1.65,8.1,5.1])
     datadic['EW0err_Lya']  = np.array([0.4,0.6,99,99,99,99,1.2,99])
@@ -2719,8 +2776,13 @@ def data_rig15(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree[4:]
     datadic['redshift']  = np.array([1.703745,1.703884,1.70360 ,1.70385 ,1.6811  ,1.91021 ,1.82042 ,2.0315  ,2.38115 ,2.9227  ,2.8219  ,2.7604  ,2.8577  ,3.07331 ,0.021371,0.030224,0.030428,0.019417,0.029304,0.025978,0.020972,0.020748,0.024217,0.009453,0.023083,0.013473,0.013473,0.021371,0.058420,0.027809,0.002642,0.013540,0.046776,0.019113,0.013642,0.032989,0.046240,0.010641,0.002010,0.011970,0.006870,0.002031,0.016812,0.019127,0.002505,0.002505,0.002505,0.000347,0.000233,0.000445,0.000445,0.000445,0.010411,0.000970,0.000784,0.003566,0.002785,0.001614,0.001358,0.001358,0.001358,0.001358,0.001358,0.000804,0.000804,0.000804,0.005365,0.002031,0.026001,0.008000,0.058146])[4:]
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['EW0_Lya']     = np.array([-1.2,-1.1,-2.5,-3.8,-3.3,-8.9,-8.1,-7.0,-19.5,-8.3,-30.0,-13.0,-1.5,np.nan,-0.69,5.97,5.46,6.19,-3.95,8.19,-4.70,-70.2,2.64,-22.3,-38.2,-0.45,1.94,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-4.45,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-82.6,np.nan,np.nan])[4:]
     datadic['EW0err_Lya']  = np.array([-99.,-99.,-99.,-99.,0.4,0.6,1.2,0.5,2.0,0.5,3.0,1.0,0.15,np.nan,0.50,5.70,4.83,2.88,1.13,2.88,0.79,4.11,29.2,5.10,10.38,0.13,0.53,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,0.5,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,99.,np.nan,np.nan])[4:]
@@ -2759,8 +2821,13 @@ def data_erb10(fluxscale=1e3,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([2.3052])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = np.array([307.0])
+    datadic['vshifterr_Lya'] = np.array([3.0])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # Erb+2010 table 3
     datadic['EW0_Lya']       = np.array([54.0])
     datadic['EW0err_Lya']    = np.array([1.2])
@@ -2768,8 +2835,6 @@ def data_erb10(fluxscale=1e3,verbose=True):
     datadic['ferr_Lya']      = np.array([0.4])
     datadic['sigma_Lya']     = np.array([840.0]) / 2.355   * 1215.6701 / (astropy.constants.c.value/1000.)
     datadic['sigmaerr_Lya']  = np.array([17.0]) / 2.355    * 1215.6701 / (astropy.constants.c.value/1000.)
-    datadic['vshift_Lya']    = np.array([307.0])
-    datadic['vshifterr_Lya'] = np.array([3.0])
 
     datadic['EW0_CIII']      = np.array([7.1])
     datadic['EW0err_CIII']   = np.array([0.4])
@@ -2854,8 +2919,13 @@ def data_sta14(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([2.060,1.405,1.810,1.904,2.622,2.689,1.559,1.599,1.702,1.702,1.705,1.834,1.834,2.543,2.663,2.731,2.976])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     # Stark et al. (2014) table 2
     datadic['EW0_Lya']        = np.array([np.nan,np.nan,np.nan,np.nan,36.6,19.9*3./2.,np.nan,np.nan,76.0,163.8,35.7,73.1,50.0*3./2.,4.3,45.3,129.6,86.4])
@@ -2922,8 +2992,15 @@ def data_sta15(fluxscale=1.0,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([6.0294,7.213  ,6.75,8.15,7.043,5.828])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = np.array([-19.34,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['magabsUVerr']   = np.array([np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['vshift_Lya']    = np.array([120.0, np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['vshifterr_Lya'] = np.array([np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     datadic['f_Lya']          = np.array([11000    , 2500.0  , np.nan   , np.nan  , 2840.0  , 2500.0])
@@ -3009,7 +3086,7 @@ def data_mai18(fluxscale=1e2,verbose=True):
     Lya  info for EGS-zs8-1 from Oesch+15
     Lya  info for EGS-zs8-2 from Roberts-Borsani+16 and Stark+17
     Lya  info for EGSY8p7   from Zitrin+15
-    CIII info for EGS-zs8-1 from Stark+17
+    CIII info for EGS-zs8-1 from Stark+17 (and vshift_Lya)
     CIII info for EGS-zs8-2 from Stark+17
 
     Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
@@ -3033,8 +3110,14 @@ def data_mai18(fluxscale=1e2,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([8.683,7.730,7.477,6.031,5.576,5.576,5.426,6.7,6.7])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = np.array([np.nan,-22.1 ,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['magabsUVerr']   = np.array([np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['vshift_Lya']    = np.array([np.nan,340.0 ,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    datadic['vshifterr_Lya'] = np.array([np.nan, 30.0 ,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     #                               ['EGSY8p7','EGS-zs8-1','EGS-zs8-2','A383-2211','Abell2218-S3.a','Abell2218-S3.b','J14144+5446','Abell2218-C1.b','Abell2218-C1.c'])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3044,6 +3127,8 @@ def data_mai18(fluxscale=1e2,verbose=True):
     datadic['EW0err_Lya']    = np.array([0.0      ,  4.0      ,  1.4      ,  2.8      ,  25.0          ,  25.0          ,  0.0        ,  np.nan        ,  np.nan        ])
     datadic['sigma_Lya']     = np.array([np.nan   ,  13.0     ,  np.nan   ,  np.nan   ,  np.nan        ,  np.nan        ,  np.nan     ,  np.nan        ,  np.nan        ]) / 2.355
     datadic['sigmaerr_Lya']  = np.array([np.nan   ,  3.0      ,  np.nan   ,  np.nan   ,  np.nan        ,  np.nan        ,  np.nan     ,  np.nan        ,  np.nan        ]) / 2.355
+
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     datadic['f_NV1']         = np.array([np.nan   ,  6.0      ,  1.7      ,  3.8      ,  np.nan        ,  np.nan        ,  np.nan     ,  np.nan        ,  np.nan        ])
     datadic['ferr_NV1']      = np.array([np.nan   ,  +99      ,  +99      ,  +99      ,  np.nan        ,  np.nan        ,  np.nan     ,  np.nan        ,  np.nan        ])
@@ -3166,6 +3251,11 @@ def data_sha03(fluxscale=1.0,verbose=True):
     datadic['reference'] = [catreference]*len(datadic['id'])
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
 
     datadic['EW0_Lya']        = np.array([-14.92  ,  -1.10      ,  11.0          ,  52.63        ])
     datadic['EW0err_Lya']     = np.array([0.56    ,  0.38       ,  0.71          ,  2.74        ])
@@ -3209,8 +3299,13 @@ def data_bay14(fluxscale=1e2,verbose=True):
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
     datadic['redshift']  = np.array([3.6253])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['f_HeII']      = np.array([0.29   ])
     datadic['f_OIII1']     = np.array([0.10   ])
@@ -3301,8 +3396,13 @@ def data_sch16(fluxscale=1e3,verbose=True):
     datadic['dec']       = np.array([np.nan, -11.754209621, -7.693382243])
     datadic['redshift']  = np.array([7.2, 6.76, 8.10])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     # Fluxes used for estimating GLASS stack f_lya
     # f_lya  ferr_lya
@@ -3393,8 +3493,13 @@ def data_lef19(fluxscale=1e2,verbose=True):
     datadic['dec']       = np.array([np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
     datadic['redshift']  = np.array([3.0,3.0,3.0,3.0,2.5,3.5])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     # ----> Fluxes are relative to CIII which is set to one; guessing fluxes to be 1e-18 as that's what they are in Amorin+2017 <----
     # datadic['f_CIII']         =   np.array([  1.00  , 1.00    , 1.00    , 1.00  , 1.0     , 1.0     ])
@@ -3476,8 +3581,13 @@ def data_amo17(fluxscale=1e2,verbose=True):
     datadic['dec']       = np.array([np.nan]*11) # coordinates not public but see email 170207
     datadic['redshift']  = np.array([2.9635,3.0505,2.963 ,2.797,2.446,2.465 ,3.424,2.4141,2.8256,2.5539,np.nan])
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['EW0_Lya']        =   np.array([  111.0,   35.0,   56.0,  47.0,  168.0,  82.0,  89.0,  185.0,  261.0,  267.0,  131.0,   ])
     datadic['EW0err_Lya']     =   np.array([  16.0,   12.0,   12.0,  11.0,  10.0,  12.0,  10.0,  35.0,  30.0,  35.0,  11.0,   ])
@@ -3533,11 +3643,16 @@ def data_ber19(fluxscale=1e4,verbose=True):
     decsex               = np.array(['+14:00:28.29','+21:02:39.84','+54:15:51.05','+53:45:17.28','+10:33:14.04','+32:16:33.60','+57:03:58.68','+41:51:48.24','+15:59:34.44','+09:52:12.11','-01:32:51.94','+41:38:16.44','+37:31:46.20','+45:04:57.72','-07:23:43.98','-00:06:37.23','+13:46:45.84','+60:26:53.52','+52:34:07.32','+35:32:31.9','+03:53:13.1','+02:11:08.3','-03:40:02.4','-01:15:12.2','+37:24:36.5','+48:23:03.3'])
     datadic['ra']        = acoord.Angle(rasex, u.hour).degree
     datadic['dec']       = acoord.Angle(decsex, u.degree).degree
-    datadic['redshift']  = np.array(['0.021','0.009','0.012','0.003','0.010','0.012','0.006','0.012','0.023','0.005','0.022','0.005','0.033','0.009','0.004','0.012','0.011','0.014','0.008','0.003','0.013','0.003','0.009','0.007','0.040','0.030'])
+    datadic['redshift']  = np.array([0.021,0.009,0.012,0.003,0.010,0.012,0.006,0.012,0.023,0.005,0.022,0.005,0.033,0.009,0.004,0.012,0.011,0.014,0.008,0.003,0.013,0.003,0.009,0.007,0.040,0.030])
     datadic['reference'] = [catreference]*len(datadic['id'])
     # datadic['reference'] = ['ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber19','ber16','ber16','ber16','ber16','ber16','ber16','ber16']
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['EW0_CIV1']     = np.array([ 2.00,1.11,np.nan,1.89,3.68,1.93,3.03,np.nan,np.nan,0.76,3.37,np.nan,1.20,0.93,np.nan,np.nan,np.nan,np.nan,np.nan,1.06,6.17,np.nan,np.nan,np.nan,np.nan,1.51])
     datadic['EW0_CIV2']     = np.array([ 2.13,1.41,0.56,0.98,2.84,1.99,0.63,np.nan,np.nan,2.17,1.75,np.nan,0.84,0.86,np.nan,np.nan,1.44,np.nan,0.41,0.76,4.52,np.nan,np.nan,np.nan,np.nan,0.74])
@@ -3760,8 +3875,13 @@ def data_du20(fluxscale=1.0,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     datadic['reference'] = [catreference]*len(datadic['id'])
-    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
     # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
     datadic['EW0_Lya']        = np.array([5.3,2.7,np.nan,np.nan,0.8,-8.6,-7.1,19.4,32.1,np.nan,np.nan,22.2,33.1,np.nan,-24.3,12.5,10.4,-11.5,9.0,-0.8,7.9,131.6,17.7,22.7,51.5,3.9,22.1,3.4,3.3,15.4,np.nan,3.8,4.7,2.5,np.nan,37.6,6.3,12.4,-4.4,10.7,-0.8,8.0,np.nan,-5.4,-55.8,np.nan,np.nan,np.nan,1.4,13.8,-7.9,-5.2,35.8,3.2,np.nan])
     datadic['EW0err_Lya']     = np.array([1.7,2.2,np.nan,np.nan,1.6,4.2,3.2,10.6,5.2,np.nan,np.nan,1.3,3.8,np.nan,1.7,0.4,1.3,2.8,1.6,3.4,1.2,10.9,1.6,2.3,4.3,3.2,4.3,2.5,1.0,1.2,np.nan,6.4,1.9,1.5,np.nan,14.9,3.8,1.8,0.7,1.9,0.3,0.7,np.nan,2.0,22.8,np.nan,np.nan,np.nan,1.0,7.1,4.1,2.3,2.3,2.8,np.nan])
@@ -3909,7 +4029,11 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
     datadic['dec']       = dec_all
     datadic['redshift']  = z_all
     datadic['reference'] = [catreference]*len(datadic['id'])
-
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = datadic['redshift']*np.nan
+    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['vshift_Lya']    = datadic['redshift']*np.nan
+    datadic['vshifterr_Lya'] = datadic['redshift']*np.nan
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
