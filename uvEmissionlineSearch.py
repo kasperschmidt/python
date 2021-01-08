@@ -15374,8 +15374,13 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         linetype='AV18_fwhm_wHorizontal'
                     elif 'absmagUV' in colname:
                         linetype = 'CM18_wHorizontal'
+                        # full range of Mason+18 curves
+                        # xrange    = [-23.2,-16.7]
+                        yrange    = [-650,740]
                     else:
                         linetype='horizontal'
+
+
                     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
                                                                    'dummydat',linetype=linetype,title=None, #'this is title',
                                                                    ids=dat_uves['id'][dvs_ent[vv]],
