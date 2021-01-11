@@ -22,8 +22,9 @@ import kbsutilities as kbs
 import tdose_utilities as tu
 from astropy import wcs
 from astropy.coordinates import SkyCoord
+import astropy.cosmology as acosmo
 import astropy.coordinates as acoord
-from astropy import units as u
+import astropy.units as u
 import subprocess
 import collections
 import uvEmissionlineSearch as uves
@@ -15715,4 +15716,43 @@ def linenames():
                    'MgII'      :['MgII',          'TBD']}
     return linenames
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def mapp2mabs(mag_input,redshift,mapp2Mabs=True,verbose=True):
+    """
+    Converting apparent magnitudes into absolute magnitudes
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+    uves.mapp2mabs()
+
+    """
+    mag_input  = np.asarray(mag_input)
+    redshift   = np.asarray(redshift)
+    Nobj       = len(redshift)
+    if len(mag_input) != Nobj:
+        sys.exit('The number of magnitudes and redshifts provide do not match ('+str(len(mag_input))+' vs. '+str(Nobj)+')')
+    # uvesdir    = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
+    # infofile   = uvesdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
+    # infodat  = afits.open(infofile)[1].data
+    # infodat  = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+    Dlum     = cosmo.luminosity_distance(redshift).to(u.pc).value
+
+    # if isinstance(Mapp,types.FloatType) and Av == -99: # if Av is -99, calculate it
+    #     Av, Ebv = getAv(RA,DEC,band)
+
+    # Kcorrection   = (2.5 * np.log10(1.0 + redshift)) # assumes source has flat (beta = -2) SED.
+    #                                              # A bluer beta will likely give you an additional
+    #                                              # correction of about ~0.1 mag or so.
+
+    DM  = 5.*np.log10(Dlum)-5. # distance modulus
+    if mapp2Mabs:
+        if verbose: print(' - Converting the '+str(Nobj)+' provided apparant magnitudes to absolute magnitudes (mapp2Mabs=True)')
+        mag_output  = mag_input - DM #+ Kcorrection #- Av
+    else:
+        if verbose: print(' - Converting the '+str(Nobj)+' provided absolute magnitudes to apparant magnitudes (mapp2Mabs=False)')
+        mag_output  = mag_input + DM
+
+    return mag_output
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
