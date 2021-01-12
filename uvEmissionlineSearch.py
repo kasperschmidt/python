@@ -5224,8 +5224,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
                     markersym   = 'X'
                 elif (ids[ii] > 1e9): # Literature objects
-                    markersym   = lce.get_reference_fromID(ids[ii],verbose=False)[4]
-                    mfc         = False
+                    if ids[ii] == 990000000000:
+                        markersym   = '.'
+                    else:
+                        markersym   = lce.get_reference_fromID(ids[ii],verbose=False)[4]
+                        mfc         = False
                 else:
                     print(' WARNING - stopped as could not assing a marker symbol to the id '+str(ids[ii]))
                     pdb.set_trace()
@@ -15154,6 +15157,9 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     # print('CIV-CIII offsets:'+str(dv_CIIICIV))
     # print('And corresponding IDs:'+str(dat_uves['id'][dv_CIIICIV_ent]))
 
+    DvLyaLit_cat = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/vshift_Lya_and_MUV.txt'
+    DvLyaLit_dat = np.genfromtxt(DvLyaLit_cat,skip_header=0,names=True,dtype='40a,d,d,d,d,d,d,d,40a')
+
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plot of lead line offsets intra-object comparison')
     plotname = outputdir+'evaluate_voffsets_intraobject_comparison_all.pdf'
@@ -15367,6 +15373,10 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     else:
                         xerr     = infodat[infocols[colname][1]][dvs_ent[vv]]
 
+                    plot_dv      = dv
+                    plot_ids     = dat_uves['id'][dvs_ent[vv]]
+                    plot_cdatvec = dat_uves['redshift'][dvs_ent[vv]]
+
                     if 'EW' in xlabel:
                         linetype='horizontal_and_nakajima18EWvsDv'
                     elif colname == 'peaksep_kms':
@@ -15375,19 +15385,42 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         linetype='AV18_fwhm_wHorizontal'
                     elif 'absmagUV' in colname:
                         linetype = 'CM18_wHorizontal'
-                        # full range of Mason+18 curves
-                        # xrange    = [-23.2,-16.7]
+                        #xrange    = [-16.7,-24.4]
                         yrange    = [-650,740]
+
+                        # appending collection of Lya velocity offsets from literature
+                        goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['vshift_Lya']))[0]
+                        dv_lit       = DvLyaLit_dat['vshift_Lya'][goodent_lit]
+                        dv_err_lit   = DvLyaLit_dat['vshifterr_Lya'][goodent_lit]
+                        MUV_lit      = DvLyaLit_dat['magabsUV'][goodent_lit]
+                        MUVerr_lit   = DvLyaLit_dat['magabsUVerr'][goodent_lit]
+                        z_lit        = DvLyaLit_dat['redshift'][goodent_lit]
+                        #ids_lit      = np.asarray([7023430418]*len(z_lit))   # Erb+10 objects from lit collection to get square
+                        ids_lit      = np.asarray([990000000000]*len(z_lit))   # 990000000000 gives dot as symbol
+
+                        xvalues      = np.append(xvalues,MUV_lit)
+                        xerr         = np.append(xerr,MUVerr_lit)
+                        plot_dv      = np.append(plot_dv,dv_lit)
+                        yerr         = np.append(yerr,dv_err_lit)
+                        plot_cdatvec = np.append(plot_cdatvec,z_lit)
+                        plot_ids     = np.append(plot_ids,ids_lit)
+
+                        if len(xvalues) != len(plot_dv):
+                            pdb.set_trace()
+                        xlabel = 'M(UV)'
+                        ylabel = ylabel.replace(' - CIII','')
+
+                        yerr = None
+                        xerr = None
                     else:
                         linetype='horizontal'
 
-
-                    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
+                    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,plot_dv,xerr,yerr,xlabel,ylabel,
                                                                    'dummydat',linetype=linetype,title=None, #'this is title',
-                                                                   ids=dat_uves['id'][dvs_ent[vv]],
+                                                                   ids=plot_ids,
                                                                    ylog=False,xlog=False,yrange=yrange,xrange=xrange,
                                                                    colortype='redshift',colorcode=True,
-                                                                   cdatvec=dat_uves['redshift'][dvs_ent[vv]],
+                                                                   cdatvec=plot_cdatvec,
                                                                    point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
                                                                    photoionizationplotparam=None,
                                                                    histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
@@ -15723,7 +15756,10 @@ def mapp2mabs(mag_input,redshift,mapp2Mabs=True,verbose=True):
 
     --- EXAMPLE OF USE ---
     import uvEmissionlineSearch as uves
-    uves.mapp2mabs()
+
+    redshift=[2.2838,2.3135,2.2837,2.2776,2.2928,2.2930,2.2949,2.2742,2.2935,2.3100,2.3002,2.3254,2.3064,2.2942,2.3064,2.2903,2.3139,3.0690,3.0965,3.0788,3.0691,3.0692,3.0687,3.0902,3.0919,3.0631,3.0670,3.0666,3.0975,3.0551,3.0978,3.0645,3.1013,3.0845,3.0870,3.0873]
+    mag_input=[24.48,24.75,23.94,25.24,23.09,25.07,24.84,26.01,26.07,26.11,26.14,26.85,25.71,26.48,26.39,26.85,26.72,23.92,24.42,24.34,27.00,24.87,25.84,24.75,25.98,25.82,27.00,25.50,27.00,26.53,26.55,26.64,26.40,27.00,25.95,27.00]
+    mabs = uves.mapp2mabs(mag_input,redshift,mapp2Mabs=True)
 
     """
     mag_input  = np.asarray(mag_input)
