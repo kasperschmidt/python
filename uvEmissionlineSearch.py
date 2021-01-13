@@ -15348,7 +15348,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            'dummydat',linetype=linetype,title=None, #'this is title',
                                                            ids=dat_uves['id'][dvs_ent[vv]],
                                                            ylog=False,xlog=False,yrange=yrange,xrange=xrange,
-                                                           colortype='redshift',colorcode=True,
+                                                           colortype='zmanual',colorcode=True,
                                                            cdatvec=dat_uves['redshift'][dvs_ent[vv]],
                                                            point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
                                                            photoionizationplotparam=None,
@@ -15419,7 +15419,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                                    'dummydat',linetype=linetype,title=None, #'this is title',
                                                                    ids=plot_ids,
                                                                    ylog=False,xlog=False,yrange=yrange,xrange=xrange,
-                                                                   colortype='redshift',colorcode=True,
+                                                                   colortype=colortype,colorcode=True,
                                                                    cdatvec=plot_cdatvec,
                                                                    point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
                                                                    photoionizationplotparam=None,
@@ -15772,23 +15772,23 @@ def mapp2mabs(mag_input,redshift,mapp2Mabs=True,verbose=True):
     # infodat  = afits.open(infofile)[1].data
     # infodat  = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
 
-    cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+    #cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+    cosmo    = acosmo.FlatLambdaCDM(H0=69 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.29)
     Dlum     = cosmo.luminosity_distance(redshift).to(u.pc).value
 
     # if isinstance(Mapp,types.FloatType) and Av == -99: # if Av is -99, calculate it
     #     Av, Ebv = getAv(RA,DEC,band)
 
-    # Kcorrection   = (2.5 * np.log10(1.0 + redshift)) # assumes source has flat (beta = -2) SED.
-    #                                              # A bluer beta will likely give you an additional
-    #                                              # correction of about ~0.1 mag or so.
-
-    DM  = 5.*np.log10(Dlum)-5. # distance modulus
+    Kcorrection   = (2.5 * np.log10(1.0 + redshift)) # assumes source has flat (beta = -2) SED.
+                                                     #  A bluer beta will likely give you an additional
+                                                     # correction of about ~0.1 mag or so.
+    DM            = 5.*np.log10(Dlum)-5.             # distance modulus
     if mapp2Mabs:
         if verbose: print(' - Converting the '+str(Nobj)+' provided apparant magnitudes to absolute magnitudes (mapp2Mabs=True)')
-        mag_output  = mag_input - DM #+ Kcorrection #- Av
+        mag_output  = mag_input - DM + Kcorrection #- Av
     else:
         if verbose: print(' - Converting the '+str(Nobj)+' provided absolute magnitudes to apparant magnitudes (mapp2Mabs=False)')
-        mag_output  = mag_input + DM
+        mag_output  = mag_input + DM - Kcorrection
 
     return mag_output
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
