@@ -5219,16 +5219,21 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 mfc         = True
                 if (ids[ii] < 6e8): # CDFS and COSMOS
                     markersym   = 'o'
+                    markerzorder = 25
                 elif (ids[ii] < 7e8) & (ids[ii] > 6e8): # UDF
                     markersym   = 'D'
+                    markerzorder = 25
                 elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
                     markersym   = 'X'
+                    markerzorder = 25
                 elif (ids[ii] > 1e9): # Literature objects
                     if ids[ii] == 990000000000:
                         markersym   = '.'
+                        markerzorder = 20
                     else:
                         markersym   = lce.get_reference_fromID(ids[ii],verbose=False)[4]
                         mfc         = False
+                        markerzorder = 22
                 else:
                     print(' WARNING - stopped as could not assing a marker symbol to the id '+str(ids[ii]))
                     pdb.set_trace()
@@ -5270,7 +5275,6 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             ecol         = colvec[ii]
             mecol        = colvec[ii]
             fcol         = facecol[ii]
-            markerzorder = 20
 
             if (xerr is not None) & showgraylimits:
                 if x_uplimarr[ii].all() or x_lolimarr[ii].all():
@@ -8680,17 +8684,17 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
     if verbose: print(' - Defining plotting ranges and sets of parameters to plot ')
     if ylog:
-        EW0_range_y = [0.1,90]
+        EW0_range_y = [0.1,900]
     else:
         EW0_range_y = [-5,42]
 
     if xlog:
-        EW0_range_x = [0.1,90]
+        EW0_range_x = [0.1,900]
     else:
         EW0_range_x = [-5,42]
 
     if xlog:
-        LyaEW_range = [0.1,90]
+        LyaEW_range = [0.1,900]
     else:
         LyaEW_range = [-100,320]
 
@@ -12425,8 +12429,8 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
                            ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
                            ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
                            ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
-                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
-                           ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
+                           # ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))  |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
                             (masterdat['redshift'] >= 0.0) & (masterdat['duplicationID'] == 0.0) )[0]
 
     if verbose: print('   o LAEs ')
@@ -12495,8 +12499,8 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
     titletexts = ['HUDF Parallels and GOODS-S','COSMOS','The UDF mosaic and UDF10','MXDF']
 
     for ii, imagefile in enumerate(imagefiles):
-        if ii != 3: # only plotting MXDF
-            continue
+        # if ii != 3: # only plotting MXDF
+        #     continue
         plotname  = figbasename+'_'+fields[ii]+figext
         if showobjects:
             plotname  = plotname.replace(figext,'_withobj'+figext)
@@ -13715,7 +13719,7 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     linecolors = uves.linecolors(colormap='plasma')
     linenames  = uves.linenames()
 
-    ticknames = ['100 Fields','MUSE-Wide','UDF mosaic','UDF-10']
+    ticknames = ['All fields','MUSE-Wide','UDF mosaic','UDF-10']
 
     xvalues = np.array([10,35,55,75])
     ylabel  = '\% objects with UV line detection'
@@ -13782,7 +13786,7 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setting up and generating plot of histograms in same window')
     xoffset  = 2.5
-    errtype  = ''#'cp' #'binomvar'
+    errtype  = 'cp' #'binomvar'
     plotname = plotname.replace('.pdf','_sharedaxis_'+errtype+'.pdf')
     fig = plt.figure(figsize=(3, 7))
     fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.12, top=0.99)
@@ -14909,6 +14913,18 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
                                                        histaxes=True,Nbins=Nhistbins,
                                                        overwrite=overwrite,verbose=verbose)
 
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname.replace('.pdf','_EWxFlux.pdf'),
+                                                       xvalues,yvalues*10**(xvalues/-2.5),xerr,None,xlabel,ylabel+' x 10\^('+xlabel+'/-2.5)',
+                                                       'dummydat',linetype=None,title=None,ids=magdic[emline]['id'],
+                                                       ylog=True,xlog=False,
+                                                       yrange=[1e-11,1e-7],xrange=xrange,
+                                                       # yrange=[yrange[0]*10**(xrange[1]/-2.5),yrange[1]*10**(xrange[0]/-2.5)],xrange=xrange,
+                                                       colortype=colortype,colorcode=True,cdatvec=cdatvec,
+                                                       point_text=point_text,photoionizationplotparam=None,
+                                                       histaxes=True,Nbins=Nhistbins,
+                                                       overwrite=overwrite,verbose=verbose)
+
+
     #------------------------------------------------------------------------------
     linecolors  = uves.linecolors(colormap='plasma')
     if verbose: print(' - Setting up and generating plot of histograms in same window')
@@ -15283,6 +15299,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                  [dv_NV_LAE,dv_CIV_LAE,dv_HeII_LAE,dv_OIII_LAE,dv_SiIII_LAE,dv_CIII_LAE]#,dv_MgII_LAE]
 
     for vv, dv in enumerate(dvs):
+        # if not 'CIII' in linename[vv]: continue
         histaxes  = True
         Nhistbins = 50
         yrange    = [-990,990]
@@ -15377,16 +15394,19 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     plot_ids     = dat_uves['id'][dvs_ent[vv]]
                     plot_cdatvec = dat_uves['redshift'][dvs_ent[vv]]
 
+                    colortype = 'redshift'
                     if 'EW' in xlabel:
-                        linetype='horizontal_and_nakajima18EWvsDv'
+                        linetype  = 'horizontal_and_nakajima18EWvsDv'
+                        colortype = 'zmanual'
                     elif colname == 'peaksep_kms':
-                        linetype='AV18_peaksep_wHorizontal'
+                        linetype  = 'AV18_peaksep_wHorizontal'
                     elif colname == 'lyafwhm_kms':
-                        linetype='AV18_fwhm_wHorizontal'
+                        linetype  = 'AV18_fwhm_wHorizontal'
                     elif 'absmagUV' in colname:
                         linetype = 'CM18_wHorizontal'
                         #xrange    = [-16.7,-24.4]
-                        yrange    = [-650,740]
+                        xrange    = [-24.0,-17.1]
+                        yrange    = [-600,850]
 
                         # appending collection of Lya velocity offsets from literature
                         goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['vshift_Lya']))[0]
@@ -15410,8 +15430,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         xlabel = 'M(UV)'
                         ylabel = ylabel.replace(' - CIII','')
 
-                        yerr = None
-                        xerr = None
+                        # yerr = None
+                        # xerr = None
                     else:
                         linetype='horizontal'
 
@@ -15772,8 +15792,8 @@ def mapp2mabs(mag_input,redshift,mapp2Mabs=True,verbose=True):
     # infodat  = afits.open(infofile)[1].data
     # infodat  = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
 
-    #cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
-    cosmo    = acosmo.FlatLambdaCDM(H0=69 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.29)
+    cosmo    = acosmo.FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)
+    #cosmo    = acosmo.FlatLambdaCDM(H0=69 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.29) #Cosmology used in Erb+14
     Dlum     = cosmo.luminosity_distance(redshift).to(u.pc).value
 
     # if isinstance(Mapp,types.FloatType) and Av == -99: # if Av is -99, calculate it
