@@ -14259,10 +14259,61 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     fluxdat = afits.open(linefluxcatalog)[1].data
     fluxdat = fluxdat[fluxdat['duplicationID'] == 0]
 
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('--- Estimating n_e and T_e from set of flux ratios (running getCrossTemDen) ---')
+    FR_Si3 = 'FR_SiIII1SiIII2'
+    if verbose: print(' - using flux ratio '+FR_Si3)
+    FRval_Si3 = fluxdat[FR_Si3]
+    FRerr_Si3 = fluxdat[FR_Si3.replace('FR','FRerr')]*Nsigma
+
+    FR_C3    = 'FR_CIII1CIII2'
+    if verbose: print(' - using flux ratio '+FR_C3)
+    FRval_C3 = fluxdat[FR_C3]
+    FRerr_C3 = fluxdat[FR_C3.replace('FR','FRerr')]*Nsigma
+
+    Si3 = pn.Atom('Si', 3)
+    C3  = pn.Atom('C', 3)
+
+    diags = pn.Diagnostics(addAll=True)
+    diags.addDiag(label='SiIII 1883/1892', diag_tuple=('Si3', 'L(1883)/L(1892)', 'RMS([E(1883),E(1892)])') )
+
+    # for diag in np.sort(pn.diags_dict.keys()):
+    #     print('"{0}" : {1}'.format(diag, pn.diags_dict[diag]))
+
+    goodent_Si3  = np.where(np.isfinite(FRval_Si3) & (np.abs(FRerr_Si3) != 99))[0]
+    goodent_C3   = np.where(np.isfinite(FRval_C3) & (np.abs(FRerr_C3) != 99))[0]
+    goodentC3Si3 = np.intersect1d(goodent_C3,goodent_Si3).astype(int)
+
+    objids   = fluxdat['id'][goodentC3Si3]
+    FR_tem   = FRval_Si3[goodentC3Si3]  # Temperature sensitive
+    FR_den   = FRval_C3[goodentC3Si3]   # Densitiy sensitive
+
+    for oo, objid in enumerate(objids):
+        Te, Ne = diags.getCrossTemDen('SiIII 1883/1892', '[CIII] 1909/1907', FRval_Si3[goodentC3Si3][oo], 1./FRval_C3[goodentC3Si3][oo])
+                                      # guess_tem=1e4, tol_tem = 10., tol_den = 10., max_iter = 5,
+                                      # start_tem=5000, end_tem=20000, start_den=1e2, end_den=1e6)
+        if verbose: print('   '+str(objid)+' (Te,Ne) = '+str((Te,Ne))+
+                          '  for tem(SiIII1/SiIII2)='+str(FRval_Si3[goodentC3Si3][oo])+
+                          ' and den(CIII1/CIII2)='+str(FRval_C3[goodentC3Si3][oo]))
+
+    for oo, objid in enumerate(objids):
+        Te, Ne = diags.getCrossTemDen('[CIII] 1909/1907', 'SiIII 1883/1892', 1./FRval_C3[goodentC3Si3][oo], FRval_Si3[goodentC3Si3][oo])
+        #Te, Ne = diags.getCrossTemDen("[OIII] 4363/5007+", '[CIII] 1909/1907', 0.001,0.8)
+        if verbose: print('   '+str(objid)+' (Te,Ne) = '+str((Te,Ne))+
+                          '  for tem(CIII1/CIII2)='+str(FRval_C3[goodentC3Si3][oo])+
+                          ' and den(SiIII1/SiIII2)='+str(FRval_Si3[goodentC3Si3][oo]))
+    # FR1   = 'FR_CIII1CIII2'
+    # FR2   = 'FR_OIII1OIII2'
+    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
+    # Te, Ne = diags.getCrossTemDen('[NII] 5755/6548', '[SII] 6731/6716', 0.02, 1.0)
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('--- Estimating n_e from a single fluxratio (running getTemDen) ---')
     T_e_fix_vals = {'5k':5.e3, '10k':1.e4, '20k':2.e4}
     yvals_curve  = np.arange(0.0,2.0,curveresolution)
-    if verbose: print('--- Estimating n_e from a single fluxratio ---')
 
     if not skipOIIIandCIV:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -14540,23 +14591,6 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
     # C3_EG.plotContours(to_eval = 'L(1907)/L(1909)')
     #
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # diags = pn.Diagnostics()
-    # if verbose: print('--- Estimating n_e and T_e from set of flux ratios ---')
-    #
-    # FR1   =  XX # Temperature sensitive
-    # FR2   = 'FR_CIII1CIII2' # 'FR_SiIII1SiIII2' # densitiy sensitive
-    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
-    #
-    # Te, Ne = diags.getCrossTemDen('CIII 1907/1909', 'SiII 1883/1892', 0.02, 1.0)
-    #
-    #
-    # FR1   = 'FR_CIII1CIII2'
-    # FR2   = 'FR_OIII1OIII2'
-    # if verbose: print(' - using flux ratios '+FR1+' and '+FR2)
-    # Te, Ne = diags.getCrossTemDen('[NII] 5755/6548', '[SII] 6731/6716', 0.02, 1.0)
-    #
-    #
     # # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # # The complete list of the predefined diagnostics is stored in the pn.diags dictionary and can be listed with:
     # for diag in np.sort(pn.diags_dict.keys()):
