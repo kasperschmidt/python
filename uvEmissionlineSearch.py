@@ -15337,6 +15337,28 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
     for vv, dv in enumerate(dvs):
         if not 'CIII' in linename[vv]: continue
+        objids    = dat_uves['id'][dvs_ent[vv]]
+        zleadline = dat_uves['redshift'][dvs_ent[vv]]
+        # ------ Correct individual velocity shifts ------
+        idcorrect   = 603502226
+        objent      = np.where(objids.astype(int) == idcorrect)[0]
+        correction  = infodat['peak_sep_kms_jk100'][dvs_ent[vv]][objent]
+        print('   -> Correcting '+str(idcorrect)+' from '+str(dv[objent])+' to '+str(dv[objent]+correction))
+        dv[objent]  = dv[objent] + correction
+        znewlead    = correction/299792.458*(1+zleadline[objent])+[objent]
+        print('      Corresponding to changing lead line redshift from '+str(zleadline[objent])+' to '+str(znewlead))
+        zleadline[objent] = znewlead
+
+        idcorrect   = 604992563
+        objent      = np.where(objids.astype(int) == idcorrect)[0]
+        correction  = 299792.458  * (3.803569-zleadline[objent])/(1+zleadline[objent])
+        print('   -> Correcting '+str(idcorrect)+' from '+str(dv[objent])+' to '+str(dv[objent]+correction))
+        dv[objent]  = dv[objent] + correction
+        znewlead    = correction/299792.458*(1+zleadline[objent])+zleadline[objent]
+        print('      Corresponding to changing lead line redshift from '+str(zleadline[objent])+' to '+str(znewlead))
+        zleadline[objent] = znewlead
+        # ------------------------------------------------
+
         histaxes  = True
         Nhistbins = 50
         yrange    = [-990,990]
@@ -15388,11 +15410,10 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                 yerr = None
 
             xlabel   = '$\Delta v_\\textrm{Ly$\\alpha$}$ (Verhamme et al. (2018) approx.)'
-            xrange   = [-345,690]
-            yrangemanual = [-600,750]
+            xrange   = [100,690]
+            yrangemanual = [-400,750]
             plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSvoffsetVerhammeJK.pdf'
 
-            zleadline = dat_uves['redshift'][dvs_ent[vv]]
             zsys      = infodat[infocols['zsys'][0]][dvs_ent[vv]]
             zsys_err  = infodat[infocols['zsys'][1]][dvs_ent[vv]]
             xvalues   = 299792.458 * (zleadline-zsys)/(1.0+zsys) # cf. Erb+2014
@@ -15455,12 +15476,13 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     if 'EW' in xlabel:
                         linetype  = 'horizontal_and_nakajima18EWvsDv'
                         colortype = 'zmanual'
+                        yrange    = [-400,740]
                     elif colname == 'peaksep_kms':
                         linetype  = 'AV18_peaksep_wHorizontal'
                         xvalues   = 0.5 * xvalues
                         xlabel    = '1/2 $\\times$ '+xlabel
                         xrange    = [50,650]
-                        yrange    = [-600,1000]
+                        yrange    = [-400,1000]
                         xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
 
                         # appending collection of Lya velocity offsets from literature
@@ -15486,7 +15508,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     elif colname == 'lyafwhm_kms':
                         linetype  = 'AV18_fwhm_wHorizontal'
                         xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
-                        yrange    = [-600,740]
+                        yrange    = [-400,740]
 
                         # appending collection of Lya velocity offsets from literature
                         goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['FWHM_lya']))[0]
@@ -15512,7 +15534,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         linetype = 'CM18_wHorizontal'
                         #xrange    = [-16.7,-24.4]
                         xrange    = [-24.0,-17.1]
-                        yrange    = [-600,850]
+                        yrange    = [-400,850]
 
                         # appending collection of Lya velocity offsets from literature
                         goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['vshift_Lya']))[0]
