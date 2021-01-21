@@ -5115,7 +5115,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             elif colortype.lower() == 'vshift':
                 clabel  = 'Velocity shift (spec vs. template match) [km/s]'
                 cmin    = 0.0
-                cmax    = 200.0
+                cmax    = 1000.0
                 cextend = 'both'
             elif colortype == 'f(CIII) [1e-20 erg/s/cm$^2$]':
                 clabel  = colortype
@@ -8139,6 +8139,9 @@ def get_infodat_plotcols():
     colinfo['peaksep_A']       = ['peak_sep_A','peak_sep_A_err',                         'Peak separation [\AA]']
     colinfo['loglLlya']        = ['logLLya',None,                                        'log$_{10}$(L(Ly$\\alpha$)/[erg/s])']
     colinfo['R_e']             = ['R_e','R_e_error',                                     'R$_e$ [kpc]']
+    colinfo['zsysFWHM']        = ['red_vac_fwhm','red_vac_fwhm_err',                     '$z_\\textrm{sys}$ from FWHM(Ly$\\alpha$) ']
+    colinfo['zsysPS']          = ['red_vac_peak_sep','red_vac_peak_sep_err',             '$z_\\textrm{sys}$ from Ly$\\alpha$ Peak separation ']
+
 
     for key in colinfo.keys():
         for ent in [0,1]:
@@ -15174,7 +15177,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     # print('And corresponding IDs:'+str(dat_uves['id'][dv_CIIICIV_ent]))
 
     DvLyaLit_cat = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/vshift_Lya_and_MUV.txt'
-    DvLyaLit_dat = np.genfromtxt(DvLyaLit_cat,skip_header=0,names=True,dtype='40a,d,d,d,d,d,d,d,40a')
+    DvLyaLit_dat = np.genfromtxt(DvLyaLit_cat,skip_header=0,names=True,dtype='40a,d,d,d,d,d,d,d,d,d,d,d,40a')
 
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plot of lead line offsets intra-object comparison')
@@ -15299,7 +15302,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                  [dv_NV_LAE,dv_CIV_LAE,dv_HeII_LAE,dv_OIII_LAE,dv_SiIII_LAE,dv_CIII_LAE]#,dv_MgII_LAE]
 
     for vv, dv in enumerate(dvs):
-        # if not 'CIII' in linename[vv]: continue
+        if not 'CIII' in linename[vv]: continue
         histaxes  = True
         Nhistbins = 50
         yrange    = [-990,990]
@@ -15351,7 +15354,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                 yerr = None
 
             xlabel   = '$\Delta v_\\textrm{Ly$\\alpha$}$ (Verhamme et al. (2018) approx.)'
-            xrange   = [-100,690]
+            xrange   = [-345,690]
+            yrangemanual = [-600,750]
             plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSvoffsetVerhammeJK.pdf'
 
             zleadline = dat_uves['redshift'][dvs_ent[vv]]
@@ -15364,13 +15368,14 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
             uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
                                                            'dummydat',linetype=linetype,title=None, #'this is title',
                                                            ids=dat_uves['id'][dvs_ent[vv]],
-                                                           ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                           ylog=False,xlog=False,yrange=yrangemanual,xrange=xrange,
                                                            colortype='zmanual',colorcode=True,
                                                            cdatvec=dat_uves['redshift'][dvs_ent[vv]],
                                                            point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
                                                            photoionizationplotparam=None,
                                                            histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                            overwrite=overwrite,verbose=verbose)
+
             #-----------------------------------------------------------------------------------------
 
             for cc, colname in enumerate(infocols.keys()):
@@ -15394,14 +15399,81 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     plot_ids     = dat_uves['id'][dvs_ent[vv]]
                     plot_cdatvec = dat_uves['redshift'][dvs_ent[vv]]
 
+                    if colname == 'lyafwhm_kms':
+                        val_lyafwhm_kms       = xvalues
+                        val_lyafwhm_kms_err   = xerr
+                        val_lyafwhm_kms_dv    = plot_dv
+                        val_lyafwhm_kms_dverr = yerr
+
+                        plotdvversion = 'zsysFWHM'
+
+                    elif colname == 'peaksep_kms':
+                        val_peaksep_kms       = xvalues
+                        val_peaksep_kms_err   = xerr
+                        val_peaksep_kms_dv    = plot_dv
+                        val_peaksep_kms_dverr = yerr
+
+                        plotdvversion = 'zsysPS'
+                    else:
+                        plotdvversion = None
+
                     colortype = 'redshift'
                     if 'EW' in xlabel:
                         linetype  = 'horizontal_and_nakajima18EWvsDv'
                         colortype = 'zmanual'
                     elif colname == 'peaksep_kms':
                         linetype  = 'AV18_peaksep_wHorizontal'
+                        xvalues   = 0.5 * xvalues
+                        xlabel    = '1/2 $\\times$ '+xlabel
+                        xrange    = [50,650]
+                        yrange    = [-600,1000]
+                        xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
+
+                        # appending collection of Lya velocity offsets from literature
+                        goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['peaksep_lya']))[0]
+                        dv_lit       = DvLyaLit_dat['vshift_Lya'][goodent_lit]
+                        dv_err_lit   = DvLyaLit_dat['vshifterr_Lya'][goodent_lit]
+                        PS_lit       = DvLyaLit_dat['peaksep_lya'][goodent_lit]
+                        PSerr_lit    = DvLyaLit_dat['peaksep_lya_err'][goodent_lit]
+                        z_lit        = DvLyaLit_dat['redshift'][goodent_lit]
+                        ids_lit      = np.asarray([990000000000]*len(z_lit))   # 990000000000 gives dot as symbol
+
+                        xvalues      = np.append(xvalues,0.5 * PS_lit)
+                        xerr         = np.append(xerr,PSerr_lit)
+                        plot_dv      = np.append(plot_dv,dv_lit)
+                        yerr         = np.append(yerr,dv_err_lit)
+                        plot_cdatvec = np.append(plot_cdatvec,z_lit)
+                        plot_ids     = np.append(plot_ids,ids_lit)
+
+                        if len(xvalues) != len(plot_dv):
+                            pdb.set_trace()
+                        ylabel = ylabel.replace(' - CIII','')
+
                     elif colname == 'lyafwhm_kms':
                         linetype  = 'AV18_fwhm_wHorizontal'
+                        xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
+                        yrange    = [-600,740]
+
+                        # appending collection of Lya velocity offsets from literature
+                        goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['FWHM_lya']))[0]
+                        dv_lit       = DvLyaLit_dat['vshift_Lya'][goodent_lit]
+                        dv_err_lit   = DvLyaLit_dat['vshifterr_Lya'][goodent_lit]
+                        FWHM_lit     = DvLyaLit_dat['FWHM_lya'][goodent_lit]
+                        FWHMerr_lit  = DvLyaLit_dat['FWHM_lyaerr'][goodent_lit]
+                        z_lit        = DvLyaLit_dat['redshift'][goodent_lit]
+                        ids_lit      = np.asarray([990000000000]*len(z_lit))   # 990000000000 gives dot as symbol
+
+                        xvalues      = np.append(xvalues,FWHM_lit)
+                        xerr         = np.append(xerr,FWHMerr_lit)
+                        plot_dv      = np.append(plot_dv,dv_lit)
+                        yerr         = np.append(yerr,dv_err_lit)
+                        plot_cdatvec = np.append(plot_cdatvec,z_lit)
+                        plot_ids     = np.append(plot_ids,ids_lit)
+
+                        if len(xvalues) != len(plot_dv):
+                            pdb.set_trace()
+                        ylabel = ylabel.replace(' - CIII','')
+
                     elif 'absmagUV' in colname:
                         linetype = 'CM18_wHorizontal'
                         #xrange    = [-16.7,-24.4]
@@ -15430,10 +15502,11 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         xlabel = 'M(UV)'
                         ylabel = ylabel.replace(' - CIII','')
 
-                        # yerr = None
-                        # xerr = None
                     else:
                         linetype='horizontal'
+
+                    # yerr = None
+                    # xerr = None
 
                     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,plot_dv,xerr,yerr,xlabel,ylabel,
                                                                    'dummydat',linetype=linetype,title=None, #'this is title',
@@ -15445,6 +15518,61 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                                    photoionizationplotparam=None,
                                                                    histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                                    overwrite=overwrite,verbose=verbose)
+
+
+                    if plotdvversion is not None:
+                        zsyscol      = infodat[infocols[plotdvversion][0]][dvs_ent[vv]]
+                        zsyscol_err  = infodat[infocols[plotdvversion][1]][dvs_ent[vv]]
+                        xvalues      = 299792.458 * (zleadline-zsyscol)/(1.0+zsyscol) # cf. Erb+2014
+                        xerr         = np.abs(xvalues) * np.sqrt(2*(zsyscol_err/zsyscol)**2)
+
+                        xlabel    = infocols[plotdvversion][2].replace('$z_\\textrm{sys}$','$\Delta v$(Ly$\\alpha$) from ')
+                        uves.plot_mocspecFELISresults_summary_plotcmds(plotname.replace('.pdf','_dv.pdf'),
+                                                                       xvalues,val_lyafwhm_kms_dv,xerr,val_lyafwhm_kms_dverr,xlabel,ylabel,
+                                                                       'dummydat',linetype=linetype,title=None, #'this is title',
+                                                                       ids=plot_ids,
+                                                                       ylog=False,xlog=False,yrange=yrange,xrange=[-1000,1000],
+                                                                       colortype=colortype,colorcode=True,
+                                                                       cdatvec=plot_cdatvec,
+                                                                       point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                                       photoionizationplotparam=None,
+                                                                       histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                                       overwrite=overwrite,verbose=verbose)
+                        print('--------'+plotdvversion+'--------')
+                        print(dat_uves['id'][dvs_ent[vv]].astype(str))
+                        print(plot_dv)
+                        print(zsyscol)
+                        print(zsys)
+
+
+            plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'_FWHMvsPeakSep.pdf'
+            uves.plot_mocspecFELISresults_summary_plotcmds(plotname,val_peaksep_kms,val_lyafwhm_kms,val_peaksep_kms_err,val_lyafwhm_kms_err,
+                                                           infocols['peaksep_kms'][2],infocols['lyafwhm_kms'][2],
+                                                           'dummydat',linetype='onetoone',title=None, #'this is title',
+                                                           ids=plot_ids,
+                                                           ylog=False,xlog=False,yrange=None,xrange=None,
+                                                           colortype='vshift',colorcode=True,
+                                                           cdatvec=val_lyafwhm_kms_dv,
+                                                           point_text=dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                           photoionizationplotparam=None,
+                                                           histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                           overwrite=overwrite,verbose=verbose)
+
+            plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'_dvFWHMvsPeakSep.pdf'
+            uves.plot_mocspecFELISresults_summary_plotcmds(plotname,
+                                                           1.05*val_peaksep_kms/2.-12,
+                                                           0.9*val_lyafwhm_kms-34,
+                                                           None,None,
+                                                           'dv from '+infocols['peaksep_kms'][2],'dv from '+infocols['lyafwhm_kms'][2],
+                                                           'dummydat',linetype='onetoone',title=None, #'this is title',
+                                                           ids=plot_ids,
+                                                           ylog=False,xlog=False,yrange=None,xrange=None,
+                                                           colortype='vshift',colorcode=True,
+                                                           cdatvec=val_lyafwhm_kms_dv,
+                                                           point_text=dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                           photoionizationplotparam=None,
+                                                           histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                           overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile=None,generatePDFplots=False,
