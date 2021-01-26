@@ -906,7 +906,11 @@ def append_JK100fieldinfocat(objinfofile, overwrite=False, verbose=True):
         sys.exit('The output file '+out_file+' already exists and overwrite=False ')
 
     if verbose: print(' - Loading data ')
-    cat_jk     = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits'
+    # cat_jk     = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits'
+
+    cat_jk     = '/Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters210125_EWs_all_fields_v1.0.fits'
+
+
     hdu_jk     = afits.open(cat_jk)
     dat_jk     = hdu_jk[1].data
     col_jk     = hdu_jk[1].columns
@@ -8121,27 +8125,27 @@ def get_infodat_plotcols():
     # colinfo['redshift']      = ['redshift',None,                                       '$z$']
 
     # from JK's 100 field catalog: /Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits
-    colinfo['lyaew_JKmed']     = ['EW_0_beta_own_median','EW_0_beta_own_median_error',   'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.95$)']
-    colinfo['lyaew_b2']        = ['EW_0_beta_beta2','EW_0_beta_beta2_error',             'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
-    colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error', 'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
-    colinfo['lyafwhm_a']       = ['fwhm_a','fwhm_A_err',                                 'FWHM(Ly$\\alpha$) [\AA]']
-    colinfo['lyafwhm_kms']     = ['fwhm_kms','fwhm_kms_err',                             'FWHM(Ly$\\alpha$) [km/s]']
-    colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',           '$\\beta$ (linear multiband fit)']
-    colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2',None,                          'M(UV,1500) ($\\beta = -2$)']
-    colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many',None,                    'M(UV,1500) ($\\beta$ linear multiband fit)']
-    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median',None,                     'M(UV,1500) ($\\beta = -1.95$)']
-    colinfo['magUV_-2']        = ['mag_UV_cont_beta2',None,                              'm(UV,1500) ($\\beta = -2$)']
-    colinfo['magUV_many']      = ['mag_UV_cont_linear_many',None,                        'm(UV,1500) ($\\beta$ linear multiband fit)']
-    colinfo['magUV_median']    = ['mag_UV_cont_own_median',None,                         'm(UV,1500) ($\\beta = -1.95$)']
-    colinfo['zsys']            = ['red_vac','red_vac_err',                               '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
-    colinfo['lyaflux']         = ['line_flux','line_flux_error',                         'F(Ly$\\alpha$) [erg/s/cm$^2$]']
-    colinfo['peaksep_kms']     = ['peak_sep_kms','peak_sep_kms_err',                     'Peak separation [km/s]']
-    colinfo['peaksep_A']       = ['peak_sep_A','peak_sep_A_err',                         'Peak separation [\AA]']
-    colinfo['loglLlya']        = ['logLLya',None,                                        'log$_{10}$(L(Ly$\\alpha$)/[erg/s])']
-    colinfo['R_e']             = ['R_e','R_e_error',                                     'R$_e$ [kpc]']
-    colinfo['zsysFWHM']        = ['red_vac_fwhm','red_vac_fwhm_err',                     '$z_\\textrm{sys}$ from FWHM(Ly$\\alpha$) ']
-    colinfo['zsysPS']          = ['red_vac_peak_sep','red_vac_peak_sep_err',             '$z_\\textrm{sys}$ from Ly$\\alpha$ Peak separation ']
-
+    colinfo['lyaew_JKmed']     = ['EW_0_beta_own_median','EW_0_beta_own_median_error',               'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.97$)']
+    colinfo['lyaew_b2']        = ['EW_0_beta_beta2','EW_0_beta_beta2_error',                         'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
+    colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error',             'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
+    colinfo['lyafwhm_a']       = ['fwhm_a','fwhm_A_err',                                             'FWHM(Ly$\\alpha$) [\AA]']
+    colinfo['lyafwhm_kms']     = ['fwhm_kms','fwhm_kms_err',                                         'FWHM(Ly$\\alpha$) [km/s]']
+    colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',                       '$\\beta$ (linear multiband fit)']
+    colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2','abs_mag_UV_cont_beta2_error',             'M(UV,1500) ($\\beta = -2$)']
+    colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many','abs_mag_UV_cont_linear_many_error', 'M(UV,1500) ($\\beta$ linear multiband fit)']
+    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median','abs_mag_UV_cont_own_median_error',   'M(UV,1500) ($\\beta = -1.97$)']
+    colinfo['magUV_-2']        = ['mag_UV_cont_beta2','mag_UV_cont_beta2_error',                     'm(UV,1500) ($\\beta = -2$)']
+    colinfo['magUV_many']      = ['mag_UV_cont_linear_many','mag_UV_cont_linear_many_error',         'm(UV,1500) ($\\beta$ linear multiband fit)']
+    colinfo['magUV_median']    = ['mag_UV_cont_own_median','mag_UV_cont_own_median_error',           'm(UV,1500) ($\\beta = -1.97$)']
+    colinfo['zsys']            = ['z_vac','z_vac_err',                                               '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
+    colinfo['lyaflux']         = ['line_flux','line_flux_error',                'F(Ly$\\alpha$) [erg/s/cm$^2$]']
+    colinfo['peaksep_kms']     = ['peak_sep_kms','peak_sep_kms_err',            'Peak separation [km/s]']
+    colinfo['peaksep_A']       = ['peak_sep_A','peak_sep_A_err',                'Peak separation [\AA]']
+    colinfo['loglLlya']        = ['logLLya','logLLya_err',                      'log$_{10}$(L(Ly$\\alpha$)/[erg/s])']
+    colinfo['R_e']             = ['R_e','R_e_error',                            'R$_e$ [kpc]']
+    colinfo['zsysFWHM']        = ['z_vac_fwhm','z_vac_fwhm_err',                '$z_\\textrm{sys}$ from FWHM(Ly$\\alpha$) ']
+    colinfo['zsysPS']          = ['z_vac_peak_sep','z_vac_peak_sep_err',        '$z_\\textrm{sys}$ from Ly$\\alpha$ Peak separation ']
+    colinfo['zfit']            = ['z_vac_fit','z_vac_fit_err',                  '$z_\\textrm{Ly$\\alpha$ fit}$']
 
     for key in colinfo.keys():
         for ent in [0,1]:
@@ -8154,7 +8158,7 @@ def get_infodat_plotcols():
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=False, fixbeta=False,
-                 defaultbeta=-1.95, overwrite=False, s2nlimit=3.0,fcontverbose=False, verbose=True):
+                 defaultbeta=-1.97, overwrite=False, s2nlimit=3.0,fcontverbose=False, verbose=True):
     """
     Estimate the rest-frame EWs based on the the Kerutt+20 counterpart assignments and GALFIT magnitudes.
     For objects without matches to the Kerutt+20 catalog, 3D-HST or Rafelski photometry is used instead.
@@ -8184,7 +8188,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
     parentdir     = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/'
     lineratiofile = parentdir+'back2backAnalysis_200213/fluxratios_FELISmatch2all_200213_postFELISvetting.txt'
     infofile      = parentdir+'objectinfofile_zGT1p5_3timesUDFcats_JK100fieldinfocat.fits'
-    EW0data       = uves.estimate_EW0(lineratiofile,infofile,fixbeta=-1.95,vetfelis_included=True,overwrite=False)
+    EW0data       = uves.estimate_EW0(lineratiofile,infofile,fixbeta=-1.97,vetfelis_included=True,overwrite=False)
 
 
     """
@@ -15097,7 +15101,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     xlabel    = 'M$_\\textrm{UV,1500\AA}$'
     xvalues   = mag[np.isfinite(EW)]
     xerr      = None #magerr[np.isfinite(EW)]
-    ylabel    = 'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.95$)'
+    ylabel    = 'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.97$)'
     yvalues   = EW[np.isfinite(EW)]
     yerr      = EWerr[np.isfinite(EW)]
     cdatvec   = redshift[np.isfinite(EW)]
@@ -15340,23 +15344,32 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         objids    = dat_uves['id'][dvs_ent[vv]]
         zleadline = dat_uves['redshift'][dvs_ent[vv]]
         # ------ Correct individual velocity shifts ------
-        idcorrect   = 603502226
-        objent      = np.where(objids.astype(int) == idcorrect)[0]
-        correction  = infodat['peak_sep_kms_jk100'][dvs_ent[vv]][objent]
-        print('   -> Correcting '+str(idcorrect)+' from '+str(dv[objent])+' to '+str(dv[objent]+correction))
-        dv[objent]  = dv[objent] + correction
-        znewlead    = correction/299792.458*(1+zleadline[objent])+[objent]
-        print('      Corresponding to changing lead line redshift from '+str(zleadline[objent])+' to '+str(znewlead))
-        zleadline[objent] = znewlead
+        for oo, objid in enumerate(objids):
+            if zleadline[oo] > 2.9:
+                if not objid in [121033078, 601381485, 720470421, 722551008, 722731033, 723311101,           115003085]:
+                    znew        = infodat['z_vac_fit_jk100'][dvs_ent[vv]][oo]
+                    correction  = 299792.458  * (znew-zleadline[oo])/(1+zleadline[oo])
+                    print('   zdiff for '+str(objid)+': '+str(znew-zleadline[oo])+' corresponding to a correction of '+str(correction)+'km/s')
+                    dv[oo]        = dv[oo] + correction
+                    zleadline[oo] = znew
 
-        idcorrect   = 604992563
-        objent      = np.where(objids.astype(int) == idcorrect)[0]
-        correction  = 299792.458  * (3.803569-zleadline[objent])/(1+zleadline[objent])
-        print('   -> Correcting '+str(idcorrect)+' from '+str(dv[objent])+' to '+str(dv[objent]+correction))
-        dv[objent]  = dv[objent] + correction
-        znewlead    = correction/299792.458*(1+zleadline[objent])+zleadline[objent]
-        print('      Corresponding to changing lead line redshift from '+str(zleadline[objent])+' to '+str(znewlead))
-        zleadline[objent] = znewlead
+        # idcorrect   = 603502226
+        # objent      = np.where(objids.astype(int) == idcorrect)[0]
+        # correction  = infodat['peak_sep_kms_jk100'][dvs_ent[vv]][objent]
+        # print('   -> Correcting '+str(idcorrect)+' from '+str(dv[objent])+' to '+str(dv[objent]+correction))
+        # dv[objent]  = dv[objent] + correction
+        # znewlead    = correction/299792.458*(1+zleadline[objent])+[objent]
+        # print('      Corresponding to changing lead line redshift from '+str(zleadline[objent])+' to '+str(znewlead))
+        # zleadline[objent] = znewlead
+        #
+        # idcorrect   = 604992563
+        # objent      = np.where(objids.astype(int) == idcorrect)[0]
+        # correction  = 299792.458  * (3.803569-zleadline[objent])/(1+zleadline[objent])
+        # print('   -> Correcting '+str(idcorrect)+' from '+str(dv[objent])+' to '+str(dv[objent]+correction))
+        # dv[objent]  = dv[objent] + correction
+        # znewlead    = correction/299792.458*(1+zleadline[objent])+zleadline[objent]
+        # print('      Corresponding to changing lead line redshift from '+str(zleadline[objent])+' to '+str(znewlead))
+        # zleadline[objent] = znewlead
         # ------------------------------------------------
 
         histaxes  = True
@@ -15399,6 +15412,18 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                        histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                        overwrite=overwrite,verbose=verbose)
 
+        plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSredshiftLeadLineAndLyaFit.pdf'
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,zleadline,dv,xerr,yerr,xlabel,ylabel,
+                                                       'dummydat',linetype=linetype,title=None, #'this is title',
+                                                       ids=dat_uves['id'][dvs_ent[vv]],
+                                                       ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                       colortype='s2nfelis',colorcode=True,
+                                                       cdatvec=dat_uves['s2n_'+linename[vv]][dvs_ent[vv]],
+                                                       point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
+                                                       photoionizationplotparam=None,
+                                                       histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                       overwrite=overwrite,verbose=verbose)
+
         #---- vs LAE parameters ---
         if leadline[vv] == 'Lya':
             infocols = uves.get_infodat_plotcols()
@@ -15410,8 +15435,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                 yerr = None
 
             xlabel   = '$\Delta v_\\textrm{Ly$\\alpha$}$ (Verhamme et al. (2018) approx.)'
-            xrange   = [100,690]
-            yrangemanual = [-400,750]
+            xrange   = [50,440]
+            yrangemanual = [-300,710]
             plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSvoffsetVerhammeJK.pdf'
 
             zsys      = infodat[infocols['zsys'][0]][dvs_ent[vv]]
@@ -15430,7 +15455,6 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            photoionizationplotparam=None,
                                                            histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                            overwrite=overwrite,verbose=verbose)
-
             #-----------------------------------------------------------------------------------------
 
             for cc, colname in enumerate(infocols.keys()):
@@ -15452,22 +15476,18 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
                     plot_dv      = dv
                     plot_ids     = dat_uves['id'][dvs_ent[vv]]
-                    plot_cdatvec = dat_uves['redshift'][dvs_ent[vv]]
+                    plot_cdatvec = zleadline
+
+                    plot_dv_prelit      = plot_dv
+                    plot_dv_err_prelit  = yerr
 
                     if colname == 'lyafwhm_kms':
                         val_lyafwhm_kms       = xvalues
                         val_lyafwhm_kms_err   = xerr
-                        val_lyafwhm_kms_dv    = plot_dv
-                        val_lyafwhm_kms_dverr = yerr
-
                         plotdvversion = 'zsysFWHM'
-
                     elif colname == 'peaksep_kms':
                         val_peaksep_kms       = xvalues
                         val_peaksep_kms_err   = xerr
-                        val_peaksep_kms_dv    = plot_dv
-                        val_peaksep_kms_dverr = yerr
-
                         plotdvversion = 'zsysPS'
                     else:
                         plotdvversion = None
@@ -15482,8 +15502,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         xvalues   = 0.5 * xvalues
                         xlabel    = '1/2 $\\times$ '+xlabel
                         xrange    = [50,650]
-                        yrange    = [-400,1000]
-                        xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
+                        yrange    = [-30,950]
+                        # xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
 
                         # appending collection of Lya velocity offsets from literature
                         goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['peaksep_lya']))[0]
@@ -15507,8 +15527,9 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
                     elif colname == 'lyafwhm_kms':
                         linetype  = 'AV18_fwhm_wHorizontal'
-                        xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
-                        yrange    = [-400,740]
+                        # xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
+                        xrange    = [50,650]
+                        yrange    = [-200,740]
 
                         # appending collection of Lya velocity offsets from literature
                         goodent_lit  = np.where(np.isfinite(DvLyaLit_dat['FWHM_lya']))[0]
@@ -15584,8 +15605,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
                         xlabel    = infocols[plotdvversion][2].replace('$z_\\textrm{sys}$','$\Delta v$(Ly$\\alpha$) from ')
                         uves.plot_mocspecFELISresults_summary_plotcmds(plotname.replace('.pdf','_dv.pdf'),
-                                                                       xvalues,val_lyafwhm_kms_dv,xerr,val_lyafwhm_kms_dverr,xlabel,ylabel,
-                                                                       'dummydat',linetype=linetype,title=None, #'this is title',
+                                                                       xvalues,plot_dv_prelit,xerr,plot_dv_err_prelit,xlabel,ylabel,
+                                                                       'dummydat',linetype='onetoone',title=None, #'this is title',
                                                                        ids=plot_ids,
                                                                        ylog=False,xlog=False,yrange=yrange,xrange=[-1000,1000],
                                                                        colortype=colortype,colorcode=True,
@@ -15608,7 +15629,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            ids=plot_ids,
                                                            ylog=False,xlog=False,yrange=None,xrange=None,
                                                            colortype='vshift',colorcode=True,
-                                                           cdatvec=val_lyafwhm_kms_dv,
+                                                           cdatvec=plot_dv_prelit,
                                                            point_text=dat_uves['id'][dvs_ent[vv]].astype(str),
                                                            photoionizationplotparam=None,
                                                            histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
@@ -15624,7 +15645,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            ids=plot_ids,
                                                            ylog=False,xlog=False,yrange=None,xrange=None,
                                                            colortype='vshift',colorcode=True,
-                                                           cdatvec=val_lyafwhm_kms_dv,
+                                                           cdatvec=plot_dv_prelit,
                                                            point_text=dat_uves['id'][dvs_ent[vv]].astype(str),
                                                            photoionizationplotparam=None,
                                                            histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
