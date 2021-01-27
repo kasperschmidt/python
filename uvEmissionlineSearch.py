@@ -7267,12 +7267,12 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     FR_range        = [0.0,3.75]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lyaFR = []
-    # for ll, infocol in enumerate(infocols):
-    #     linesetlist_lyaFR.append([infocol, None, 'FR_NV1NV2',       None ,info_ranges[ll], FR_range, None])
-    #     linesetlist_lyaFR.append([infocol, None, 'FR_CIV1CIV2',     None ,info_ranges[ll], FR_range, None])
-    #     linesetlist_lyaFR.append([infocol, None, 'FR_OIII1OIII2',   None ,info_ranges[ll], FR_range, None])
-    #     linesetlist_lyaFR.append([infocol, None, 'FR_SIIII1SIIII2', None ,info_ranges[ll], FR_range, None])
-    #     linesetlist_lyaFR.append([infocol, None, 'FR_CIII1CIII2',   None ,info_ranges[ll], FR_range, None])
+    for ll, infocol in enumerate(infocols):
+        linesetlist_lyaFR.append([infocol, None, 'FR_NV1NV2',       None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_CIV1CIV2',     None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_OIII1OIII2',   None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_SIIII1SIIII2', None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_CIII1CIII2',   None ,info_ranges[ll], FR_range, None])
 
     Nhistbins = 30
     histaxes  = True
@@ -7284,20 +7284,20 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lya = []
-    # for ll, infocol in enumerate(infocols):
-    #     linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
-    #     linesetlist_lya.append([infocol, None, 'CIV',   None ,info_ranges[ll], fluxes_range, None])
-    #     linesetlist_lya.append([infocol, None, 'OIII',  None ,info_ranges[ll], fluxes_range, None])
-    #     linesetlist_lya.append([infocol, None, 'HeII',  None ,info_ranges[ll], fluxes_range, None])
-    #     # linesetlist_lya.append([infocol, None, 'MgII',  None ,info_ranges[ll], fluxes_range, None])
-    #     linesetlist_lya.append([infocol, None, 'SiIII', None ,info_ranges[ll], fluxes_range, None])
-    #     linesetlist_lya.append([infocol, None, 'NV',    None ,info_ranges[ll], fluxes_range, None])
-    #
-    #     linesetlist_lya.append([infocol, None, 'CIV',   'CIII',info_ranges[ll], ratios_range, None])
-    #     linesetlist_lya.append([infocol, None, 'HeII',  'CIII',info_ranges[ll], ratios_range, None])
-    #     linesetlist_lya.append([infocol, None, 'SiIII', 'CIII',info_ranges[ll], ratios_range, None])
-    #     linesetlist_lya.append([infocol, None, 'OIII',  'CIII',info_ranges[ll], ratios_range, None])
-    #     linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
+    for ll, infocol in enumerate(infocols):
+        linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'CIV',   None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'OIII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'HeII',  None ,info_ranges[ll], fluxes_range, None])
+        # linesetlist_lya.append([infocol, None, 'MgII',  None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'SiIII', None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'NV',    None ,info_ranges[ll], fluxes_range, None])
+
+        linesetlist_lya.append([infocol, None, 'CIV',   'CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'HeII',  'CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'SiIII', 'CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'OIII',  'CIII',info_ranges[ll], ratios_range, None])
+        linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
     histaxes  = True
@@ -7328,38 +7328,38 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_fluxes = []
-    # linesetlist_fluxes.append(['NV'   ,'s2n_NV'   ,None,None,fluxes_range, s2n_range,   None])
-    # linesetlist_fluxes.append(['CIV'  ,'s2n_CIV'  ,None,None,fluxes_range, s2n_range,   None])
-    # linesetlist_fluxes.append(['HeII' ,'s2n_HeII' ,None,None,fluxes_range, s2n_range,   None])
-    # linesetlist_fluxes.append(['OIII' ,'s2n_OIII' ,None,None,fluxes_range, s2n_range,   None])
-    # linesetlist_fluxes.append(['SiIII','s2n_SiIII',None,None,fluxes_range, s2n_range,   None])
-    # linesetlist_fluxes.append(['CIII' ,'s2n_CIII' ,None,None,fluxes_range, s2n_range,   None])
-    # linesetlist_fluxes.append(['MgII' ,'s2n_MgII' ,None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['NV'   ,'s2n_NV'   ,None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['CIV'  ,'s2n_CIV'  ,None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['HeII' ,'s2n_HeII' ,None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['OIII' ,'s2n_OIII' ,None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['SiIII','s2n_SiIII',None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['CIII' ,'s2n_CIII' ,None,None,fluxes_range, s2n_range,   None])
+    linesetlist_fluxes.append(['MgII' ,'s2n_MgII' ,None,None,fluxes_range, s2n_range,   None])
 
-    # linesetlist_fluxes.append(['CIII','CIV'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','CIV'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','OIII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+
+    linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
     #
-    # linesetlist_fluxes.append(['CIV','OIII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','HeII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','MgII'   ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','NV'     ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['CIV','SiIII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # #
-    # linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
-    # #
-    # linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','HeII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['OIII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    #
+    linesetlist_fluxes.append(['HeII','MgII'  ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['HeII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
     # No good values linesetlist_fluxes.append(['MgII','NV'    ,None,None,fluxes_range, fluxes_range,   None])
-    # linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
+    linesetlist_fluxes.append(['MgII','SiIII' ,None,None,fluxes_range, fluxes_range,   None])
     #
     linesetlist_fluxes.append(['NV','SiIII'   ,None,None,fluxes_range, fluxes_range,   None])
 
