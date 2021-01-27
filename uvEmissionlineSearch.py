@@ -8885,9 +8885,10 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
             xval_fit = xvalues
             xerr_fit = xerr
 
-        fitresults = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                       initguess = [1.,1.],verbose=verbose,
-                                                                       fitfunction='linear',plotresults=plotname)
+        fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                             initguess = [1.,1.],verbose=verbose,
+                                                                             fitfunction='linear',plotresults=plotname,
+                                                                             returnCorrelationCoeffs=True)
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -14148,12 +14149,13 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     # colortype  = 'EW0_CIII'
     colorcode  = True
 
+    Nbins   = 12 #np.ceil(np.sqrt(len(xvalues)))
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='onetooneWZsun',title=None,ids=IDsALL,
                                                    ylog=False,xlog=False,yrange=Zrange,xrange=Zrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=20,
+                                                   histaxes=True,Nbins=Nbins,
                                                    overwrite=overwrite,verbose=verbose)
 
     # - - - - - - Si3O3C3 vs redshift    - - - - - -
@@ -14183,12 +14185,13 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     colortype  = 'EW0_CIII'
     colorcode  = True
 
+    Nbins   = 12 #np.ceil(np.sqrt(len(xvalues)))
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='yZsun',title=None,ids=IDsALL,
                                                    ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=20,
+                                                   histaxes=True,Nbins=Nbins,
                                                    overwrite=overwrite,verbose=verbose)
 
 
@@ -14220,12 +14223,13 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
 
     colorcode  = True
 
+    Nbins   = 12 #np.ceil(np.sqrt(len(xvalues)))
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                    'dummydat',linetype='yZsun',title=None,ids=IDsALL,
                                                    ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=20,
+                                                   histaxes=True,Nbins=Nbins,
                                                    overwrite=overwrite,verbose=verbose)
 
     # - - - - - - Si3O3C3 vs EW(Lya)     - - - - - -
@@ -14742,7 +14746,10 @@ def plot_neForFR(plotname,fout,T_e_fix,FR,ylabel,FRval,FRvalerr,n_e,n_e_min,n_e_
 
     # - - - - - - Histogram of n_e  - - - - - -
     xminsys, xmaxsys = plt.xlim() # use to get automatically expanded axes if xmin = xmax
-    Nbins = 50
+    try:
+        Nbins   = np.ceil(np.sqrt(len(xvalshow)))
+    except:
+        Nbins = 10
     axHistx = plt.axes(rect_histx)
     axHistx.xaxis.set_major_formatter(NullFormatter())
 
@@ -14857,6 +14864,7 @@ def plot_neVSne(plotname,T_e_fix,
         print(' - Objectinfo (Nobj='+str(len(xvalshow_all))+') for plot:')
         print('   IDs: '+str(fluxdat['id'][goodent]))
 
+    Nhistbins   = np.ceil(np.sqrt(len(xvalshow_all)))
     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalshow_all,yvalshow_all,xerrshow_all,yerrshow_all,xlabel,ylabel,
                                                    'dummydat',linetype='onetoone',title=None, #'this is title',
                                                    ids=fluxdat['id'][goodent],
@@ -15373,7 +15381,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         # ------------------------------------------------
 
         histaxes  = True
-        Nhistbins = 50
+        #Nhistbins = 50
         yrange    = [-990,990]
 
         if leadline[vv] == 'Lya':
@@ -15401,6 +15409,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
             yerr = [100.0] * len(dvs_ent[vv])
         else:
             yerr = None
+
+        Nhistbins = np.ceil(np.sqrt(len(dat_uves['redshift'][dvs_ent[vv]])))
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname,dat_uves['redshift'][dvs_ent[vv]],dv,xerr,yerr,xlabel,ylabel,
                                                        'dummydat',linetype=linetype,title=None, #'this is title',
                                                        ids=dat_uves['id'][dvs_ent[vv]],
@@ -15412,6 +15422,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                        histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                        overwrite=overwrite,verbose=verbose)
 
+        Nhistbins = np.ceil(np.sqrt(len(zleadline)))
         plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'VSredshiftLeadLineAndLyaFit.pdf'
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname,zleadline,dv,xerr,yerr,xlabel,ylabel,
                                                        'dummydat',linetype=linetype,title=None, #'this is title',
@@ -15445,6 +15456,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
             xerr      = np.abs(xvalues) * np.sqrt(2*(zsys_err/zsys)**2)
 
             linetype='onetoone'
+            Nhistbins = np.ceil(np.sqrt(len(xvalues)))
             uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,dv,xerr,yerr,xlabel,ylabel,
                                                            'dummydat',linetype=linetype,title=None, #'this is title',
                                                            ids=dat_uves['id'][dvs_ent[vv]],
@@ -15453,7 +15465,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            cdatvec=dat_uves['redshift'][dvs_ent[vv]],
                                                            point_text=None, #dat_uves['id'][dvs_ent[vv]].astype(str),
                                                            photoionizationplotparam=None,
-                                                           histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                           histaxes=False,Nbins=Nhistbins, showgraylimits=True,
                                                            overwrite=overwrite,verbose=verbose)
             #-----------------------------------------------------------------------------------------
 
@@ -15584,7 +15596,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
                     # yerr = None
                     # xerr = None
-
+                    Nhistbins = np.ceil(np.sqrt(len(xvalues)))
                     uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,plot_dv,xerr,yerr,xlabel,ylabel,
                                                                    'dummydat',linetype=linetype,title=None, #'this is title',
                                                                    ids=plot_ids,
@@ -15604,6 +15616,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         xerr         = np.abs(xvalues) * np.sqrt(2*(zsyscol_err/zsyscol)**2)
 
                         xlabel    = infocols[plotdvversion][2].replace('$z_\\textrm{sys}$','$\Delta v$(Ly$\\alpha$) from ')
+                        Nhistbins = np.ceil(np.sqrt(len(plot_dv_prelit)))
                         uves.plot_mocspecFELISresults_summary_plotcmds(plotname.replace('.pdf','_dv.pdf'),
                                                                        xvalues,plot_dv_prelit,xerr,plot_dv_err_prelit,xlabel,ylabel,
                                                                        'dummydat',linetype='onetoone',title=None, #'this is title',
@@ -15623,7 +15636,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         print(zsys)
 
 
-            plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'_FWHMvsPeakSep.pdf'
+            plotname  = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'_FWHMvsPeakSep.pdf'
+            Nhistbins = np.ceil(np.sqrt(len(val_peaksep_kms)))
             uves.plot_mocspecFELISresults_summary_plotcmds(plotname,val_peaksep_kms,val_lyafwhm_kms,val_peaksep_kms_err,val_lyafwhm_kms_err,
                                                            infocols['peaksep_kms'][2],infocols['lyafwhm_kms'][2],
                                                            'dummydat',linetype='onetoone',title=None, #'this is title',
@@ -15636,7 +15650,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                            overwrite=overwrite,verbose=verbose)
 
-            plotname = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'_dvFWHMvsPeakSep.pdf'
+            plotname  = outputdir+'evaluate_voffsets_'+leadline[vv].replace(' ','')+'-'+linename[vv]+'_dvFWHMvsPeakSep.pdf'
+            Nhistbins = np.ceil(np.sqrt(len(val_peaksep_kms)))
             uves.plot_mocspecFELISresults_summary_plotcmds(plotname,
                                                            1.05*val_peaksep_kms/2.-12,
                                                            0.9*val_lyafwhm_kms-34,
