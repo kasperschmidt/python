@@ -15617,7 +15617,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                                        overwrite=overwrite,verbose=verbose)
                         print('--------'+plotdvversion+'--------')
                         print(dat_uves['id'][dvs_ent[vv]].astype(str))
-                        print(plot_dv)
+                        print(plot_dv_prelit)
+                        print(plot_dv_err_prelit)
                         print(zsyscol)
                         print(zsys)
 
