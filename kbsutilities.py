@@ -1558,7 +1558,8 @@ def odr_fitfunction_quad(p, x):
     a, b, c = p
     return a * x*x + b*x + c
 def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=None, verbose=True,
-                                                  fitfunction='linear',plotresults='./ODRfit2data.pdf'):
+                                                  fitfunction='linear',plotresults='./ODRfit2data.pdf',
+                                                  returnCorrelationCoeffs=False):
     """
     Use scipy's Orthogonal Distance Regression (ODR) to fit a function to data with errors on both axes.
     Essential a 2D leas squares, where the diagonal convariance matrices of the data is accounted for.
@@ -1635,6 +1636,11 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=
     for i in range(len(popt)):
         if verbose: print('   '+str(popt[i])+' +/- '+str(perr[i]))
 
+    if returnCorrelationCoeffs:
+        if verbose: print(' - Determining Pearson correlation coefficient and p-value ')
+        r_pearson, pvalue_pearson   = ss.pearsonr(xval,yval)
+        r_spearman, pvalue_spearman = ss.spearmanr(xval,yval)
+
     if plotresults:
         nstd = 3. # to draw 3-sigma intervals
         popt_up = popt + nstd * perr
@@ -1688,9 +1694,22 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=
         leg = plt.legend(fancybox=True, loc='lower right',prop={'size':Fsize},ncol=1,numpoints=1)
         leg.get_frame().set_alpha(0.7)
 
+        if returnCorrelationCoeffs:
+            xminsys, xmaxsys = plt.xlim()
+            yminsys, ymaxsys = plt.ylim()
+            plt.text(xminsys+np.abs(xmaxsys-xminsys)*0.05,yminsys+np.abs(ymaxsys-yminsys)*0.95,
+                     'Pearson Coeff (linear+Gauss): r\_P = '+str("%.4f" % r_pearson),fontsize=Fsize-3, color='green', ha='left', va='bottom')
+
+            plt.text(xminsys+np.abs(xmaxsys-xminsys)*0.05,yminsys+np.abs(ymaxsys-yminsys)*0.92,
+                     'Spearman Coeff (monotonic)  : r\_S = '+str("%.4f" % r_spearman),fontsize=Fsize-3, color='green', ha='left', va='bottom')
+
+
         plt.savefig(plotresults)
         if verbose: print(' - Saved plot to '+plotresults)
-    return fitresults
+    if returnCorrelationCoeffs:
+        return fitresults, r_pearson, r_spearman
+    else:
+        return fitresults
 #-------------------------------------------------------------------------------------------------------------
 def UniverseEpochsInFractionsOfHumaLifetime(humanlifetime=80,zevaluate=["MACS J1149",0.54],H0=70, Omega_m0=0.3, T_CMB0=2.725):
     """
