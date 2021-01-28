@@ -7769,8 +7769,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             xval_fit = xvalues
             xerr_fit = xerr
 
-        fitresults = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                       fitfunction='linear',plotresults=plotname)
+        fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                             fitfunction='linear',plotresults=plotname,
+                                                                             returnCorrelationCoeffs=True)
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
@@ -8102,8 +8104,9 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
             xval_fit = xvalues
             xerr_fit = 0.434 * xerr/xvalues  # https://faculty.washington.edu/stuve/log_error.pdf
 
-        fitresults = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                       fitfunction='linear',plotresults=plotname)
+        fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                             fitfunction='linear',plotresults=plotname,
+                                                                             returnCorrelationCoeffs=True)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_infodat_plotcols():
