@@ -25,6 +25,7 @@ from astropy.coordinates import SkyCoord
 import astropy.cosmology as acosmo
 import astropy.coordinates as acoord
 import astropy.units as u
+from astropy.convolution import Gaussian2DKernel, convolve_fft
 import subprocess
 import collections
 import uvEmissionlineSearch as uves
@@ -7259,8 +7260,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     s2n_range       = [2.0,55.]
     if addliteraturevalues:
-        # fluxes_range    = [10,9e7]
-        fluxes_range    = [10,8e3]
+        fluxes_range    = [10,9e7]
+        # fluxes_range    = [10,8e3]
     else:
         fluxes_range    = [10,8e3]
     ratios_range    = [1e-4,1e3]
@@ -12409,7 +12410,7 @@ def object_region_files(basename='/Users/kschmidt/work/MUSE/uvEmissionlineSearch
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,objectsAsDots=False,
-                  usehighresimages=True,pointingswithnumbers=True,verbose=True):
+                  usehighresimages=True,pointingswithnumbers=True,convolveimg=False,verbose=True):
     """
     Generata plot of CDFS and COSMOS region with UVES samples overplotted
 
@@ -12426,6 +12427,10 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
     # more publication friendly:
     figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV_pubfriendly'
     uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=True,objectsAsDots=True,pointingswithnumbers=False,verbose=True)
+
+    # Figure with pointing qualtiy summary shown:
+    figbasename = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/MUSE-Wide_FoV_pubfriendly_quality'
+    uves.plot_uves_FoV(figbasename,mastercat,infofile,showobjects=False,objectsAsDots=False,pointingswithnumbers=True,verbose=True)
 
     """
     agn, agncand = uves.get_AGN_ids()
@@ -12507,6 +12512,11 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
                            '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings_nonumbers.reg',
                            '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/FoVfigures/candels_udf_pointings_nonumbers.reg']
 
+    PSFcat = '/Users/kschmidt/work/MUSE/MUSEWide_PSFs/MUSEWide_PSF_Catalog_180723.fits'
+    PSFdat = afits.open(PSFcat)[1].data
+    QRcat  = '/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE-Wide_pointings-qualtiy_info.txt'
+    QRdat  = np.genfromtxt(QRcat,names=True,skip_header=2,dtype=('40a','40a','40a','40a','d','d','d','d'),comments='#')
+
     titletexts = ['HUDF Parallels and GOODS-S','COSMOS','The UDF mosaic and UDF10','MXDF']
 
     for ii, imagefile in enumerate(imagefiles):
@@ -12560,8 +12570,15 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
         ax = plt.subplot(projection=hud_wcs, label='overlays')
         ax.set_title(titletexts[ii],fontsize=Fsize)
 
+        if convolveimg:
+            if verbose: print('   starting image convolution...')
+            gauss_kernel = Gaussian2DKernel(0.25)
+            img2show     = convolve_fft(hdu.data,gauss_kernel)
+            if verbose: print('   done; moving on.')
+        else:
+            img2show = hdu.data
         #ax.imshow(hdu.data, origin='lower', cmap='Greys', vmin=-0.001, vmax=0.05) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
-        ax.imshow(hdu.data, origin='lower', cmap='Greys', vmin=vmin, vmax=vmax, norm=LogNorm()) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
+        ax.imshow(img2show, origin='lower', cmap='Greys', vmin=vmin, vmax=vmax, norm=LogNorm()) #, vmin=-2.e-5, vmax=2.e-4,interpolation=None
 
         ax.coords.grid(True, color='black', ls='dotted')
         ax.coords[0].set_axislabel('Right Ascension (J2000)')
@@ -12587,6 +12604,15 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
         for pp in patch_list:
             ax.add_patch(pp)
         for tt in artist_list:
+            field = pointings.split('_')[1]+'-'+tt.get_text()
+            fieldent = np.where(PSFdat['field'] == field)[0]
+            if len(fieldent) == 1:
+                PSFfwhm = PSFdat['p0_sel_g'][fieldent]  # FWHM at 7050A         + PSFdat['p1_sel_g'] * (lambda - 7050)
+                # pointing_quality_text = '\\\\FWHM(PSF) = '+str("%.2f" % PSFfwhm)+"''"
+                pointing_quality_text = ': '+str("%.2f" % PSFfwhm)
+                tt.set_text(tt.get_text()+pointing_quality_text)
+                tt.set_fontsize(4)
+                tt.set_color('blue')
             ax.add_artist(tt)
 
         # regstr = 'box(53.1243740333,-27.8516127209,0.01666667,0.01666667,340.0) # color=blue width=3 font="times 10 bold roman" text={Testing box}'
@@ -12596,6 +12622,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
         # patch_list, artist_list = r2.get_mpl_patches_texts()
 
         if showobjects:
+            if verbose: print('   creating object patches...')
             for oo, objid in enumerate(masterdat['id']):
                 if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
                     if (str(objid)[0] == '2') or (int(str(objid)[0]) >= 6):
@@ -12658,6 +12685,7 @@ def plot_uves_FoV(figbasename,mastercat,infofile,figext='.pdf',showobjects=True,
 
                 ax.scatter(infodat['ra'][infoent],infodat['dec'][infoent], transform=ax.get_transform('fk5'), marker=plotmarker,
                            s=symsize, edgecolor=edgecolor, facecolor=facecolor, alpha=0.5, zorder=1e10, lw=0.5)
+            if verbose: print('   done; moving on.')
 
         xmin, xmax, ymin, ymax = ax.axis()
         if 'goodss_3dhst.v4.0.F125W_F140W_F160W_det' in imagefile:
