@@ -5098,10 +5098,14 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cdatvec = summarydat[colortype]
 
             if colortype.lower() == 'redshift':
+                # clabel  = '$z$'
+                # cmin    = 0.01 # 0.0, 1.4
+                # cmax    = 7.5 # 10.2, 6.2
+                # cextend = 'neither'
                 clabel  = '$z$'
-                cmin    = 0.01 # 0.0, 1.4
-                cmax    = 7.5 # 10.2, 6.2
-                cextend = 'neither'
+                cmin    = 1.5
+                cmax    = 6.6
+                cextend = 'both'
             elif colortype.lower() == 's2nfelis':
                 clabel  = 'S/N(FELIS)'
                 cmin    = 3.0
