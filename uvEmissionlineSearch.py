@@ -12823,6 +12823,51 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     detectiondic['udfmosaic_allobjUVrange_full'] = [int(Nmosaic)]
     detectiondic['udf10_allobjUVrange_full']     = [int(Nudf10)]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('   o Desert obj with at least one other detection')
+    selection = np.where(( ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
+                           ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                           ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                           ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))  |
+                           ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   ) &
+                            (masterdat['redshift'] >= 1.5) & (masterdat['redshift'] < 2.9) & (masterdat['duplicationID'] == 0.0) &
+                                 (masterdat['id'] != 158002004) &
+                                 (masterdat['id'] != 601931670) &
+                                 (masterdat['id'] != 208014258) &
+                                 (masterdat['id'] != 600341002) )[0]
+
+    selectionTOT = np.where((masterdat['redshift'] >= 1.5) & (masterdat['redshift'] < 2.9) &  (masterdat['duplicationID'] == 0.0) &
+                                 (masterdat['id'] != 158002004) &
+                                 (masterdat['id'] != 601931670) &
+                                 (masterdat['id'] != 208014258) &
+                                 (masterdat['id'] != 600341002) )[0]
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_DesertWithUVLineDetection.tex')
+    goodents.append(selection)
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+    Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+    Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+
+    Nwidetot   = str(len(masterdat['id'][selectionTOT][masterdat['id'][selectionTOT] < 5e8]))
+    Nmosaictot = str(len(masterdat['id'][selectionTOT][(masterdat['id'][selectionTOT] > 6e8) & (masterdat['id'][selectionTOT] < 7e8)]))
+    Nudf10tot  = str(len(masterdat['id'][selectionTOT][masterdat['id'][selectionTOT] > 7e8]))
+    if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+
+                      ' ('+str("%5.2f" % (float(Nwide)/float(Nwidetot)*100.))+
+                      '%/'+str("%5.2f" % (float(Nmosaic)/float(Nmosaictot)*100.))+
+                      '%/'+str("%5.2f" % (float(Nudf10)/float(Nudf10tot)*100.))+'%) '+
+                      'are in the Wide/Mosaic/UDF10 fields ')
+
+    if verbose:
+        tabstring = ' At least one detection (Desert) & XXzrangeXX & '\
+        +str(len(selection))+' & '+str(len(selectionTOT))+' & '+str("%5.2f" % (float(len(selection))/float(len(selectionTOT))*100.0))+'\% & '\
+        +str(Nwide)+         ' & '+str(Nwidetot)+         ' & '+str("%5.2f" % (float(Nwide)/float(Nwidetot)*100.))+'\% & '\
+        +str(Nmosaic)+       ' & '+str(Nmosaictot)+       ' & '+str("%5.2f" % (float(Nmosaic)/float(Nmosaictot)*100.))+'\% & '\
+        +str(Nudf10)+        ' & '+str(Nudf10tot)+        ' & '+str("%5.2f" % (float(Nudf10)/float(Nudf10tot)*100.))+'\% \\\\ '
+        print(tabstring)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('   o LAEs with at least one other detection')
     selection = np.where(( ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
                            ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
@@ -12875,6 +12920,7 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     detectiondic['musewide_allobjUVrange_LAEs']  = [int(Nwide)]
     detectiondic['udfmosaic_allobjUVrange_LAEs'] = [int(Nmosaic)]
     detectiondic['udf10_allobjUVrange_LAEs']     = [int(Nudf10)]
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('   o Carbon emitters (either CIII or CIV detected) ')
     selection = np.where(( ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV'])) |
@@ -12920,6 +12966,48 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
     detectiondic['musewide_CIIIorCIV_full']  = [int(Nwide)]
     detectiondic['udfmosaic_CIIIorCIV_full'] = [int(Nmosaic)]
     detectiondic['udf10_CIIIorCIV_full']     = [int(Nudf10)]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('   o Deserts with Carbon detection (either CIII or CIV detected)')
+    selection = np.where(( ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                           ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
+                            (masterdat['redshift'] >= 1.5) & (masterdat['redshift'] < 2.9) & (masterdat['duplicationID'] == 0.0) &
+                                 (masterdat['id'] != 158002004) &
+                                 (masterdat['id'] != 601931670) &
+                                 (masterdat['id'] != 208014258) &
+                                 (masterdat['id'] != 600341002) )[0]
+
+    selectionTOT = np.where((masterdat['redshift'] >= 1.5) & (masterdat['redshift'] < 2.9) &
+                                 (masterdat['id'] != 158002004) &
+                                 (masterdat['id'] != 601931670) &
+                                 (masterdat['id'] != 208014258) &
+                                 (masterdat['id'] != 600341002) &
+                            (masterdat['duplicationID'] == 0.0) )[0]
+
+    outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_DesertWithCarbonDetection.tex')
+    goodents.append(selection)
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+    Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+    Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+    Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+
+    Nwidetot   = str(len(masterdat['id'][selectionTOT][masterdat['id'][selectionTOT] < 5e8]))
+    Nmosaictot = str(len(masterdat['id'][selectionTOT][(masterdat['id'][selectionTOT] > 6e8) & (masterdat['id'][selectionTOT] < 7e8)]))
+    Nudf10tot  = str(len(masterdat['id'][selectionTOT][masterdat['id'][selectionTOT] > 7e8]))
+    if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+
+                      ' ('+str("%5.2f" % (float(Nwide)/float(Nwidetot)*100.))+
+                      '%/'+str("%5.2f" % (float(Nmosaic)/float(Nmosaictot)*100.))+
+                      '%/'+str("%5.2f" % (float(Nudf10)/float(Nudf10tot)*100.))+'%) '+
+                      'are in the Wide/Mosaic/UDF10 fields ')
+
+    if verbose:
+        tabstring = ' Cemitter (Desert) & XXzrangeXX & '\
+        +str(len(selection))+' & '+str(len(selectionTOT))+' & '+str("%5.2f" % (float(len(selection))/float(len(selectionTOT))*100.0))+'\% & '\
+        +str(Nwide)+         ' & '+str(Nwidetot)+         ' & '+str("%5.2f" % (float(Nwide)/float(Nwidetot)*100.))+'\% & '\
+        +str(Nmosaic)+       ' & '+str(Nmosaictot)+       ' & '+str("%5.2f" % (float(Nmosaic)/float(Nmosaictot)*100.))+'\% & '\
+        +str(Nudf10)+        ' & '+str(Nudf10tot)+        ' & '+str("%5.2f" % (float(Nudf10)/float(Nudf10tot)*100.))+'\% \\\\ '
+        print(tabstring)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('   o LAEs with Carbon detection (either CIII or CIV detected)')
@@ -13019,6 +13107,57 @@ def mastercat_latextable_wrappers(mastercatalog,infofile,sortcol='id',overwrite=
         detectiondic['musewide_'+linesel.split('_')[-1]+'_full']  = [int(Nwide)]
         detectiondic['udfmosaic_'+linesel.split('_')[-1]+'_full'] = [int(Nmosaic)]
         detectiondic['udf10_'+linesel.split('_')[-1]+'_full']     = [int(Nudf10)]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    f_linelist = ['ferr_'+rn for rn in rangename[4:10]]
+    f_zrange   = zranges[4:10]
+    for ll, linesel in enumerate(f_linelist):
+        linename = linesel.split('err_')[-1]
+        if linename == 'NV':
+            if verbose: print('   o Skipping '+linename+' doublet emitters for Desert objects ')
+            continue
+        if verbose: print('   o '+linename+' doublet emitters in z-desert (1.5<z<2.9)')
+        selection = np.where(((np.abs(masterdat[linesel])  != 99.0) & np.isfinite(masterdat[linesel])) &
+                                 (masterdat['id'] != 158002004) &
+                                 (masterdat['id'] != 601931670) &
+                                 (masterdat['id'] != 208014258) &
+                                 (masterdat['id'] != 600341002) &
+                                (masterdat['redshift'] >= 1.5) & (masterdat['redshift'] < 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
+
+        selectionTOT = np.where((masterdat['redshift'] >= f_zrange[ll][0]) & (masterdat['redshift'] <= f_zrange[ll][1]) &
+                                 (masterdat['id'] != 158002004) &
+                                 (masterdat['id'] != 601931670) &
+                                 (masterdat['id'] != 208014258) &
+                                 (masterdat['id'] != 600341002) &
+                                (masterdat['redshift'] >= 1.5) & (masterdat['redshift'] < 2.9) & (masterdat['duplicationID'] == 0.0) )[0]
+
+        if len(selection) > 0:
+            outname_bases.append('/Users/kschmidt/work/publications/MUSE_UVemissionlines/tables/mastercat_DesertWith'+
+                                 linename+'Detection.tex')
+            goodents.append(selection)
+        if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+        if verbose: print('     selection satisfied by '+str(len(selection))+' objects')
+        Nwide   = str(len(masterdat['id'][selection][masterdat['id'][selection] < 5e8]))
+        Nmosaic = str(len(masterdat['id'][selection][(masterdat['id'][selection] > 6e8) & (masterdat['id'][selection] < 7e8)]))
+        Nudf10  = str(len(masterdat['id'][selection][masterdat['id'][selection] > 7e8]))
+
+        Nwidetot   = str(len(masterdat['id'][selectionTOT][masterdat['id'][selectionTOT] < 5e8]))
+        Nmosaictot = str(len(masterdat['id'][selectionTOT][(masterdat['id'][selectionTOT] > 6e8) & (masterdat['id'][selectionTOT] < 7e8)]))
+        Nudf10tot  = str(len(masterdat['id'][selectionTOT][masterdat['id'][selectionTOT] > 7e8]))
+        if verbose: print('     Of these '+Nwide+'/'+Nmosaic+'/'+Nudf10+
+                          ' ('+str("%5.2f" % (float(Nwide)/float(Nwidetot)*100.))+
+                          '%/'+str("%5.2f" % (float(Nmosaic)/float(Nmosaictot)*100.))+
+                          '%/'+str("%5.2f" % (float(Nudf10)/float(Nudf10tot)*100.))+'%) '+
+                          'are in the Wide/Mosaic/UDF10 fields ')
+
+        if verbose:
+            tabstring = ' '+linesel+'(Desert) & '+str(f_zrange[ll])+' & '\
+            +str(len(selection))+' & '+str(len(selectionTOT))+' & '+str("%5.2f" % (float(len(selection))/float(len(selectionTOT))*100.0))+'\% & '\
+            +str(Nwide)+         ' & '+str(Nwidetot)+         ' & '+str("%5.2f" % (float(Nwide)/float(Nwidetot)*100.))+'\% & '\
+            +str(Nmosaic)+       ' & '+str(Nmosaictot)+       ' & '+str("%5.2f" % (float(Nmosaic)/float(Nmosaictot)*100.))+'\% & '\
+            +str(Nudf10)+        ' & '+str(Nudf10tot)+        ' & '+str("%5.2f" % (float(Nudf10)/float(Nudf10tot)*100.))+'\% \\\\ '
+            print(tabstring)
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     f_linelist = ['ferr_'+rn for rn in rangename[4:10]]
     f_zrange   = zranges[4:10]
