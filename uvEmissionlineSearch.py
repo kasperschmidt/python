@@ -7266,8 +7266,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     s2n_range       = [2.0,55.]
     if addliteraturevalues:
-        fluxes_range    = [10,9e7]
-        # fluxes_range    = [10,8e3]
+        # fluxes_range    = [10,9e7]
+        fluxes_range    = [10,8e3]
     else:
         fluxes_range    = [10,8e3]
     ratios_range    = [1e-4,1e3]
@@ -7759,7 +7759,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
-    if performlinearfit & (len(cdatvecALL) > 0):
+    if performlinearfit & (len(cdatvecALL) > 0) & (len(xvalues) > 2):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -8094,7 +8094,7 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
-    if performlinearfit & (len(cdatvecALL) > 0):
+    if performlinearfit & (len(cdatvecALL) > 0) & (len(xvalues) > 2):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -8878,7 +8878,7 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
-    if performlinearfit & (len(goodent) > 0):
+    if performlinearfit & (len(goodent) > 0) & (len(xvalues) > 2):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -15053,7 +15053,8 @@ def plot_neVSne(plotname,T_e_fix,
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CIV','HeII','OIII','SiIII','CIII'],
-                                EWlimprint=10.0, showlimits=False, verbose=True, overwrite=False, addidlabels=False):
+                                performlinearfit=True, EWlimprint=10.0, showlimits=False, verbose=True,
+                                overwrite=False, addidlabels=False):
     """
     Function to generate plots of two estimates of n_e. Used in uves.perform_PyNeb_calc_main()
 
@@ -15130,18 +15131,43 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         else:
             point_text = None
 
+        ylog = True
+        xlog = False
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,
                                                        'dummydat',linetype=None,title=None,ids=magdic[emline]['id'],
-                                                       ylog=True,xlog=False,yrange=yrange,xrange=xrange,
+                                                       ylog=ylog,xlog=xlog,yrange=yrange,xrange=xrange,
                                                        colortype=colortype,colorcode=True,cdatvec=cdatvec,
                                                        point_text=point_text,photoionizationplotparam=None,
                                                        histaxes=True,Nbins=Nhistbins,
                                                        overwrite=overwrite,verbose=verbose)
 
+        if performlinearfit:
+            plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
+
+            if ylog:
+                yval_fit = np.log10(yvalues)
+                yerr_fit = 0.434 * yerr/yvalues  # https://faculty.washington.edu/stuve/log_error.pdf
+            else:
+                yval_fit = yvalues
+                yerr_fit = yerr
+
+            if xlog:
+                xval_fit = np.log10(xvalues)
+                xerr_fit = 0.434 * xerr/xvalues  # https://faculty.washington.edu/stuve/log_error.pdf
+            else:
+                xval_fit = xvalues
+                xerr_fit = xerr
+
+            fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                                 fitfunction='linear',plotresults=plotname,
+                                                                                 returnCorrelationCoeffs=True)
+        yvaluesWflux     = yvalues*10**(xvalues/-2.5)
+        yvaluesWflux_err = np.abs(yvaluesWflux) * np.log(10)/2.5 * xerr
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname.replace('.pdf','_EWxFlux.pdf'),
-                                                       xvalues,yvalues*10**(xvalues/-2.5),xerr,None,xlabel,ylabel+' x 10\^('+xlabel+'/-2.5)',
+                                                       xvalues,yvaluesWflux,xerr,yvaluesWflux_err,
+                                                       xlabel,ylabel+' x 10\^('+xlabel+'/-2.5)',
                                                        'dummydat',linetype=None,title=None,ids=magdic[emline]['id'],
-                                                       ylog=True,xlog=False,
+                                                       ylog=ylog,xlog=xlog,
                                                        yrange=[1e-11,1e-7],xrange=xrange,
                                                        # yrange=[yrange[0]*10**(xrange[1]/-2.5),yrange[1]*10**(xrange[0]/-2.5)],xrange=xrange,
                                                        colortype=colortype,colorcode=True,cdatvec=cdatvec,
@@ -15149,7 +15175,26 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
                                                        histaxes=True,Nbins=Nhistbins,
                                                        overwrite=overwrite,verbose=verbose)
 
+        if performlinearfit:
+            plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
+            if ylog:
+                yval_fit = np.log10(yvaluesWflux)
+                yerr_fit = 0.434 * yvaluesWflux_err/yvaluesWflux  # https://faculty.washington.edu/stuve/log_error.pdf
+            else:
+                yval_fit = yvaluesWflux
+                yerr_fit = yvaluesWflux_err
 
+            if xlog:
+                xval_fit = np.log10(xvalues)
+                xerr_fit = 0.434 * xerr/xvalues  # https://faculty.washington.edu/stuve/log_error.pdf
+            else:
+                xval_fit = xvalues
+                xerr_fit = xerr
+
+
+            fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                                 fitfunction='linear',plotresults=plotname,
+                                                                                 returnCorrelationCoeffs=True)
     #------------------------------------------------------------------------------
     linecolors  = uves.linecolors(colormap='plasma')
     if verbose: print(' - Setting up and generating plot of histograms in same window')
