@@ -5068,9 +5068,11 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             fig = plt.figure(1, figsize=(6, 6))
             # partially based on https://matplotlib.org/examples/pylab_examples/scatter_hist.html
             # definitions for the axes
-            left, width = 0.15, 0.60
+            left, width = 0.20, 0.60
             bottom, height = 0.15, 0.60
-            bottom_h = left_h = left + width + 0.01
+
+            bottom_h = bottom + height + 0.01
+            left_h   = left + width + 0.01
 
             fig.subplots_adjust(wspace=0.1, hspace=0.1,left=left, right=left+width, bottom=bottom, top=bottom+height)
             rect_histx = [left, bottom_h, width, 0.2]
