@@ -5081,7 +5081,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             if photoionizationplotparam:
                 fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=1.2, bottom=0.15, top=0.93)
 
-        Fsize    = 14
+        Fsize    = 16
         lthick   = 2
         marksize = 6
         plt.rc('text', usetex=True)
@@ -7283,7 +7283,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     histaxes  = True
     for lineset in linesetlist_lyaFR:
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
-                                                         Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=False,
+                                                         Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                                          ylog=False,xlog=False,addliteraturevalues=addliteraturevalues,
                                                          overwrite=overwrite,verbose=verbose,showlimits=showlimits)
 
@@ -7308,7 +7308,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     histaxes  = True
     for lineset in linesetlist_lya:
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                                         Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=False,
+                                                         Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                                          ylog=True,xlog=False,addliteraturevalues=addliteraturevalues,
                                                          overwrite=overwrite,verbose=verbose,showlimits=showlimits)
 
@@ -7427,7 +7427,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
-                                                 literaturevaluesadded=addliteraturevalues,performlinearfit=False,
+                                                 literaturevaluesadded=addliteraturevalues,performlinearfit=True,
                                                  overwrite=overwrite,verbose=verbose,showlimits=showlimits,
                                                  photoionizationplotparam=photoionizationplotparam)
 
@@ -7757,7 +7757,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
-    if performlinearfit:
+    if performlinearfit & (len(cdatvecALL) > 0):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -8070,10 +8070,10 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
 
     if len(cdatvecALL) == 0:
         if verbose: print('\n - WARNING No good values found for the plot: \n           '+plotname.split('/')[-1]+'\n')
-        xvalues    = [1e10]*2
-        xerr       = [1.0]*2
-        yvalues    = [1e10]*2
-        yerr       = [1.0]*2
+        xvalues    = np.asarray([1e10]*2)
+        xerr       = np.asarray([1.0]*2)
+        yvalues    = np.asarray([1e10]*2)
+        yerr       = np.asarray([1.0]*2)
         cdatvecALL = np.asarray([0.0]*2)
         IDsALL     = np.asarray([0.0]*2)
 
@@ -8092,7 +8092,7 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
-    if performlinearfit:
+    if performlinearfit & (len(cdatvecALL) > 0):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -8133,7 +8133,7 @@ def get_infodat_plotcols():
     # colinfo['redshift']      = ['redshift',None,                                       '$z$']
 
     # from JK's 100 field catalog: /Users/kschmidt/work/catalogs/MUSE_GTO/kerutt_LAEparameters200709_EWs_all_fields_v0p9.fits
-    colinfo['lyaew_JKmed']     = ['EW_0_beta_own_median','EW_0_beta_own_median_error',               'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -1.97$)']
+    colinfo['lyaew_JKmed']     = ['EW_0_beta_own_median','EW_0_beta_own_median_error',               'EW$_0$(Ly$\\alpha$) [\AA]'] # ($\\beta = -1.97$)
     colinfo['lyaew_b2']        = ['EW_0_beta_beta2','EW_0_beta_beta2_error',                         'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta = -2$)']
     colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error',             'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
     colinfo['lyafwhm_a']       = ['fwhm_a','fwhm_A_err',                                             'FWHM(Ly$\\alpha$) [\AA]']
@@ -8141,10 +8141,10 @@ def get_infodat_plotcols():
     colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',                       '$\\beta$ (linear multiband fit)']
     colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2','abs_mag_UV_cont_beta2_error',             'M(UV,1500) ($\\beta = -2$)']
     colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many','abs_mag_UV_cont_linear_many_error', 'M(UV,1500) ($\\beta$ linear multiband fit)']
-    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median','abs_mag_UV_cont_own_median_error',   'M(UV,1500) ($\\beta = -1.97$)']
+    colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median','abs_mag_UV_cont_own_median_error',   'M(UV,1500)'] #($\\beta = -1.97$)
     colinfo['magUV_-2']        = ['mag_UV_cont_beta2','mag_UV_cont_beta2_error',                     'm(UV,1500) ($\\beta = -2$)']
     colinfo['magUV_many']      = ['mag_UV_cont_linear_many','mag_UV_cont_linear_many_error',         'm(UV,1500) ($\\beta$ linear multiband fit)']
-    colinfo['magUV_median']    = ['mag_UV_cont_own_median','mag_UV_cont_own_median_error',           'm(UV,1500) ($\\beta = -1.97$)']
+    colinfo['magUV_median']    = ['mag_UV_cont_own_median','mag_UV_cont_own_median_error',           'm(UV,1500)'] # ($\\beta = -1.97$)
     colinfo['zsys']            = ['z_vac','z_vac_err',                                               '$z_\\textrm{sys}$ (Verhamme et al. (2018) approx.)']
     colinfo['lyaflux']         = ['line_flux','line_flux_error',                'F(Ly$\\alpha$) [erg/s/cm$^2$]']
     colinfo['peaksep_kms']     = ['peak_sep_kms','peak_sep_kms_err',            'Peak separation [km/s]']
@@ -8338,7 +8338,7 @@ def estimate_EW0(lineratiofile,infofile,outputfile='default', vetfelis_included=
                     if (line_flux/line_fluxerr > s2nlimit) & (f_cont/f_cont_err > s2nlimit):
                         EW0array[ii,ff*sizeColSet]   = line_flux / f_cont_restframe
                         EW0array[ii,ff*sizeColSet+1] = np.sqrt((line_fluxerr/line_flux)**2 +
-                                                      (f_cont_err_restframe/f_cont_restframe)**2) * EW0array[ii,ff*3]
+                                                      (f_cont_err_restframe/f_cont_restframe)**2) * EW0array[ii,ff*sizeColSet]
                         EW0array[ii,ff*sizeColSet+3] = magAB
                         EW0array[ii,ff*sizeColSet+4] = magABerr
                     elif (line_flux/line_fluxerr <= s2nlimit) & (f_cont/f_cont_err > s2nlimit):
@@ -8876,7 +8876,7 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
-    if performlinearfit:
+    if performlinearfit & (len(goodent) > 0):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -15393,8 +15393,8 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     dv_CIIICIV_ent  = np.intersect1d(dv_CIV_ent,dv_CIII_ent)
     dv_CIIICIV      = dat_uves['vshift_CIII'][dv_CIIICIV_ent] - dat_uves['vshift_CIV'][dv_CIIICIV_ent]
 
-    # print('CIV-CIII offsets:'+str(dv_CIIICIV))
-    # print('And corresponding IDs:'+str(dat_uves['id'][dv_CIIICIV_ent]))
+    print('CIV-CIII offsets:'+str(dv_CIIICIV))
+    print('And corresponding IDs:'+str(dat_uves['id'][dv_CIIICIV_ent]))
 
     DvLyaLit_cat = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/vshift_Lya_and_MUV.txt'
     DvLyaLit_dat = np.genfromtxt(DvLyaLit_cat,skip_header=0,names=True,dtype='40a,d,d,d,d,d,d,d,d,d,d,d,40a')
@@ -15554,7 +15554,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         # zleadline[objent] = znewlead
         # ------------------------------------------------
 
-        histaxes  = True
+        histaxes  = False
         #Nhistbins = 50
         yrange    = [-990,990]
 
