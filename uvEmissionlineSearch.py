@@ -7274,12 +7274,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     FR_range        = [0.0,3.75]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lyaFR = []
-    for ll, infocol in enumerate(infocols):
-        linesetlist_lyaFR.append([infocol, None, 'FR_NV1NV2',       None ,info_ranges[ll], FR_range, None])
-        linesetlist_lyaFR.append([infocol, None, 'FR_CIV1CIV2',     None ,info_ranges[ll], FR_range, None])
-        linesetlist_lyaFR.append([infocol, None, 'FR_OIII1OIII2',   None ,info_ranges[ll], FR_range, None])
-        linesetlist_lyaFR.append([infocol, None, 'FR_SIIII1SIIII2', None ,info_ranges[ll], FR_range, None])
-        linesetlist_lyaFR.append([infocol, None, 'FR_CIII1CIII2',   None ,info_ranges[ll], FR_range, None])
+
 
     Nhistbins = 30
     histaxes  = True
@@ -7759,7 +7754,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
-    if performlinearfit & (len(cdatvecALL) > 0) & (len(xvalues) > 2):
+    if performlinearfit & (len(cdatvecALL) > 0) & (len(xvalues[np.isfinite(xvalues)]) > 2) & (len(yvalues[np.isfinite(yvalues)]) > 2):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -8094,7 +8089,7 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
 
-    if performlinearfit & (len(cdatvecALL) > 0) & (len(xvalues) > 2):
+    if performlinearfit & (len(cdatvecALL) > 0) & (len(xvalues[np.isfinite(xvalues)]) > 2) & (len(yvalues[np.isfinite(yvalues)]) > 2):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -8114,7 +8109,6 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
         fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
                                                                              fitfunction='linear',plotresults=plotname,
                                                                              returnCorrelationCoeffs=True)
-
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_infodat_plotcols():
     """
@@ -8878,7 +8872,7 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
                                                    point_text=point_text,photoionizationplotparam=photoionizationplotparam,
                                                    histaxes=histaxes,Nbins=Nhistbins,
                                                    overwrite=overwrite,verbose=verbose)
-    if performlinearfit & (len(goodent) > 0) & (len(xvalues) > 2):
+    if performlinearfit & (len(goodent) > 0) & (len(xvalues[np.isfinite(xvalues)]) > 2) & (len(yvalues[np.isfinite(yvalues)]) > 2):
         plotname   = plotname.replace('.pdf','_ODRfit2data.pdf')
 
         if ylog:
@@ -16253,4 +16247,112 @@ def mapp2mabs(mag_input,redshift,mapp2Mabs=True,verbose=True):
         mag_output  = mag_input + DM - Kcorrection
 
     return mag_output
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plotAndFit_parameterdist(masterfits, infofile, addliterature=True, paramtype='LineOverLya', verbose=True,
+                             xrange = None,
+                             outdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/paramdistributionFigures/'):
+    """
+    Function to plot and fit parameter distributions
+
+    --- INPUT ---
+
+
+    --- EXAMPLE OF USE ---
+    import uvEmissionlineSearch as uves
+
+
+    """
+    if verbose: print(' - Loading catalogs to extract data from ')
+    masterdat = afits.open(masterfits)[1].data
+    infodat   = afits.open(infofile)[1].data
+    infodat   = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    for ii, id in enumerate(masterdat['id']): # double checking that order of objects is the same
+        if infodat['id'][ii] != id:
+            sys.exit('There was a mismatch in ids for entry '+str(ii))
+
+    litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
+              'literaturecollection_emissionlinestrengths.fits'
+    litdat  = afits.open(litcat)[1].data
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    lines = ['NV','CIV','HeII','OIII','SiIII','CIII','MgII']
+    for line in lines:
+        if paramtype == 'LineOverLya':
+            xlabel   = 'EW$_0$('+line+') / EW$_0$(Ly$\\alpha$) [\AA]'
+            goodent  = np.where((np.abs(masterdat['ferr_'+line]) != 99) &
+                                (np.abs(masterdat['EW0err_'+line]) != 99) &
+                                (np.isfinite(masterdat['EW0_'+line])) &
+                                (masterdat['EW0_'+line] > 0) &
+                                (np.abs(infodat['EW_0_beta_own_median_error_jk100']) != 99)  &
+                                (np.isfinite(infodat['EW_0_beta_own_median_jk100'])) &
+                                (infodat['EW_0_beta_own_median_jk100'] > 0))[0]
+            paramval = masterdat['EW0_'+line][goodent]/infodat['EW_0_beta_own_median_jk100'][goodent]
+
+            if addliterature:
+                goodent_lit  = np.where((np.abs(litdat['EW0err_'+line] != 99)) &
+                                        (np.isfinite(litdat['EW0_'+line])) &
+                                        (np.abs(litdat['EW0err_Lya']  != 99)) &
+                                        (np.isfinite(litdat['EW0_Lya']))  )[0]
+                paramval_lit = litdat['EW0_'+line][goodent_lit]/litdat['EW0_Lya'][goodent_lit]
+
+                paramval = np.append(paramval,paramval_lit)
+                Nlit     = len(paramval_lit)
+                textaddition = '(incl. '+str(Nlit)+' literture values)'
+            else:
+                textaddition = '(no literature values incl.)'
+
+        Nparam = len(paramval)
+        if verbose: print('\n - Assembled '+str(Nparam)+' mesurements of the type '+paramtype.replace('Line',line)+' '+textaddition)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if xrange is not None:
+            cutent    = np.where((paramval >= xrange[0]) & (paramval <= xrange[1]))[0]
+            paramval  = paramval[cutent]
+            Ninit     = Nparam
+            Nparam    = len(paramval)
+            if verbose: print('   xrange='+str(xrange)+' provided so limiting to the '+str(Nparam)+' values in that range')
+            labeladdition = ' (of '+str(Ninit)+')'
+        else:
+            labeladdition = ' (all obj)'
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if len(paramval) > 2:
+            plotname = outdir+'parameterdistribution_'+(paramtype.replace('Line',line))+'.pdf'
+            if verbose: print(' - Setting up and generating plot')
+            fig = plt.figure(figsize=(5, 5))
+            fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.90)
+            Fsize    = 15
+            lthick   = 2
+            marksize = 4
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif',size=Fsize)
+            plt.rc('xtick', labelsize=Fsize)
+            plt.rc('ytick', labelsize=Fsize)
+            plt.clf()
+            plt.ioff()
+
+            xmin = np.min(paramval)
+            xmax = np.max(paramval)
+
+            Nbins   = np.ceil(np.sqrt(len(paramval)))
+            binwidth_x = np.diff([xmin,xmax])/Nbins
+            bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
+
+            hist = plt.hist(paramval,color="r",bins=bindefs,histtype="step",lw=1,label=r'Ntot='+str(Nparam)+labeladdition)
+
+            plt.xlabel(xlabel)
+            plt.ylabel(' Number of objects ')
+
+            titletext = paramtype.replace('Line',line)+': mean='+str("%.4f" % np.mean(paramval))+'; std='+str("%.4f" % np.std(paramval))
+            plt.title(titletext)
+
+            leg = plt.legend(fancybox=True, loc='upper right',prop={'size':Fsize/1.0},ncol=1,numpoints=1)
+            leg.get_frame().set_alpha(0.7)
+
+
+            if verbose: print('   Saving plot to '+plotname)
+            plt.savefig(plotname)
+            plt.clf()
+            plt.close('all')
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
