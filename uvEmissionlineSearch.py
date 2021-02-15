@@ -16354,5 +16354,95 @@ def plotAndFit_parameterdist(masterfits, infofile, addliterature=True, paramtype
             plt.close('all')
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillaryhist=False,
+                      outdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/paramdistributionFigures/'):
+    """
+    Function to plot the redshift distribution
+
+    """
+    masterdat = afits.open(masterfits)[1].data
+    selection_det = np.where(( ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
+                               ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                               ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                               ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                               ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                               ((np.abs(masterdat['ferr_MgII']) != 99.0) & np.isfinite(masterdat['ferr_MgII']))   |
+                               ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
+                                (masterdat['redshift'] >= 0.0) & (masterdat['redshift'] <= 6.4432) & (masterdat['duplicationID'] == 0.0) &
+                                (masterdat['id'] != 158002004) &
+                                (masterdat['id'] != 601931670) &
+                                (masterdat['id'] != 208014258) &
+                                (masterdat['id'] != 600341002) )[0]
+
+    selection_all = np.where( (masterdat['redshift'] >= 0.0) & (masterdat['redshift'] <= 6.4432) & (masterdat['duplicationID'] == 0.0) &
+                              (masterdat['id'] != 158002004) &
+                              (masterdat['id'] != 601931670) &
+                              (masterdat['id'] != 208014258) &
+                              (masterdat['id'] != 600341002) )[0]
+
+
+    redshift_det = masterdat['redshift'][selection_det]
+    redshift_all = masterdat['redshift'][selection_all]
+
+    if addliterature:
+        litcat  = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/' \
+                  'literaturecollection_emissionlinestrengths.fits'
+        litdat  = afits.open(litcat)[1].data
+        redshift_lit = litdat['redshift']
+
+    if verbose: print(' - N_all = '+str(len(redshift_all)))
+    if verbose: print(' - N_det = '+str(len(redshift_det)))
+    if verbose: print(' - N_lit = '+str(len(redshift_lit)))
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = outdir+'redshiftdistribution.pdf'
+    fig = plt.figure(figsize=(5, 6))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.99, bottom=0.12, top=0.70)
+    Fsize    = 17
+    lthick   = 2.5
+    marksize = 4
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif',size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+
+    xmin = 0.0
+    xmax = 8.0
+
+    # Nbins   = np.ceil(np.sqrt(len(paramval)))
+    binwidth_x = 0.3 #np.diff([xmin,xmax])/Nbins
+    bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
+
+    hist_all = plt.hist(redshift_all,color="r",bins=bindefs,histtype="step",lw=lthick,zorder=5,label='$z>1.5$ MUSE-Wide and MUSE-Deep LSDCat \nobjects (this work)')
+    hist_det = plt.hist(redshift_det,color="b",bins=bindefs,histtype="stepfilled",lw=lthick,zorder=8,label='$z>1.5$ MUSE objects with UV line detections \nfrom FELIS (this work)')
+    hist_lit = plt.hist(redshift_lit,color="k",bins=bindefs,histtype="step",lw=lthick,zorder=10,linestyle=':',label=r'Literature comparison sample')
+
+    if withancillaryhist:
+        inami_dat = afits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE_UDF_Inami17_combinedVizieR.fits')[1].data
+        hist_ina = plt.hist(inami_dat['zMuse'],color="orange",bins=bindefs,histtype="step",alpha=1.0,
+                            lw=0.5,label=r'MUSE-Deep Inami et al. (2017)',zorder=2)
+        if verbose: print(' - N_ina = '+str(len(inami_dat['zMuse'])))
+
+        mwdr1_dat = afits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/MW_44fields_main_table_v1.0.fits')[1].data
+        hist_urr = plt.hist(mwdr1_dat['Z'],color="green",bins=bindefs,histtype="step",alpha=1.0,
+                            lw=0.5,label=r'MUSE-Wide DR1 Urrutia et al. (2019)',zorder=2)
+        if verbose: print(' - N_urr = '+str(len(mwdr1_dat['Z'])))
+
+    plt.xlabel('Redshift')
+    plt.ylabel('Number of objects')
+
+    leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize/1.35},ncol=1,numpoints=1,
+                     bbox_to_anchor=(0.5, 1.0))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+
+
+    if verbose: print(' - Saving plot to '+plotname)
+    plt.savefig(plotname)
+    plt.clf()
+    plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
