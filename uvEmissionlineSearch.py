@@ -5135,9 +5135,14 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cextend = 'neither'
             elif colortype.lower() == 'zmanual':
                 clabel  = '$z$'
-                cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
-                cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
-                cextend = 'neither'
+                try:
+                    cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
+                    cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
+                    cextend = 'neither'
+                except:
+                    cmin    = 1.5
+                    cmax    = 6.6
+                    cextend = 'both'
             elif colortype.lower() == 'ew_0':
                 clabel  = 'EW$_0$(Ly$\\alpha$) [\AA]'
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
@@ -7302,9 +7307,9 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
-    histaxes  = True
+    histaxes  = False
     for lineset in linesetlist_lya:
-        uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
+        uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
                                                          Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                                          ylog=True,xlog=False,addliteraturevalues=addliteraturevalues,
                                                          overwrite=overwrite,verbose=verbose,showlimits=showlimits)
