@@ -15248,12 +15248,13 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plots for each emission line')
     Nhistbins = 30
-    xrange    = [19,30.5]
+    xrange    = [19,31.5]
     yrange    = [0.1,400]
     colortype = 'zmanual' # 'z' fixes redshift range in color
     for emline in magdic.keys():
         plotname   = outputdir+'magdist_'+emline+'.pdf'
-        xlabel     = 'EW$_0$ continuum AB magnitude ('+emline+')'
+        # xlabel     = 'EW$_0$ continuum AB magnitude ('+emline+')'
+        xlabel     = 'Continuum AB magnitude around '+emline
         xvalues    = magdic[emline]['mag']
         xerr       = magdic[emline]['magerr']
         ylabel     = 'EW$_0$('+emline+') [\AA]'
@@ -15370,7 +15371,8 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
             plt.hist(histdata, bins=bindefs,histtype='stepfilled',color=linecolors[emline],alpha=0.3,linestyle='-',label=emline)
 
         plt.ylabel('Number of objects')
-        plt.xlabel('EW$_0$ continuum AB magnitude')
+        # plt.xlabel('EW$_0$ continuum AB magnitude')
+        plt.xlabel('Continuum AB magnitude around line')
         plt.xlim(xrange)
         plt.ylim(0,11.0)
         leg = plt.legend(fancybox=True, loc='upper left',prop={'size':Fsize},ncol=1,numpoints=1)#,
@@ -15409,7 +15411,8 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         # bindefs    = np.logspace(np.log10(bindefs[0]),np.log10(bindefs[-1]),len(bindefs))
 
         axfull = fig.add_subplot(111)
-        axfull.set_xlabel('EW$_0$ continuum AB magnitude')
+        # axfull.set_xlabel('EW$_0$ continuum AB magnitude')
+        axfull.set_xlabel('Continuum AB magnitude around line')
         axfull.set_ylabel('Number of objects')
         # Turn off axis lines and ticks of the full window subplot
         axfull.spines['top'].set_color('none')
