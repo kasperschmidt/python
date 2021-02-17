@@ -483,6 +483,11 @@ def plot_stat(plotname, collectionstats, collectionscolors, verbose=True):
         else:
             xlog = False
 
+        if (key == 'Zgas'):
+            plt.plot([0.01524,0.01524],[yminsys,ymaxsys],linestyle='--',color='darkgray',zorder=markerzorder/2.)
+            plt.text(0.02,yminsys+(ymaxsys-yminsys)*0.9,'$Z_\odot$',color='darkgray',zorder=markerzorder/2.)
+
+        plt.ylim([yminsys,ymaxsys])
         #--------------------------- Estimate wheighted averages ---------------------------
 
         for xx, xvalue in enumerate(xvalues):
