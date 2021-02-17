@@ -14318,8 +14318,8 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         # cdatvec    = np.append(cdatvec,    fdat_lit['EW0_CIII'][bothest_ent_lit])
         point_text = None #np.append(point_text, bothest_id_lit.astype(str))
 
-    xlabel     = '12 + log$_{10}$(O/H) \n\small{from SiIII1883, OIII1666 and CIII1908}'
-    ylabel     = '12 + log$_{10}$(O/H) \n\small{from HeII1640, OIII1666 and CIII1908}'
+    xlabel     = '12 + log$_{10}$(O/H) \n\Large{from SiIII1883, OIII1666 and CIII1908}'
+    ylabel     = '12 + log$_{10}$(O/H) \n\Large{from HeII1640, OIII1666 and CIII1908}'
     colortype  = 'redshift'
     # colortype  = 'EW0_CIII'
     colorcode  = True
@@ -14355,7 +14355,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         point_text = None
 
     xlabel     = '$z$'
-    ylabel     = '12 + log$_{10}$(O/H) \n\small{from SiIII1883, OIII1666 and CIII1908}'
+    ylabel     = '12 + log$_{10}$(O/H) \n\Large{from SiIII1883, OIII1666 and CIII1908}'
     # colortype  = 'redshift' #'f(CIII) [1e-20 erg/s/cm$^2$]'
     colortype  = 'EW0_CIII'
     colorcode  = True
@@ -14392,7 +14392,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         point_text = None
 
     xlabel     = '$z$'
-    ylabel     = '12 + log$_{10}$(O/H) \n\small{from HeII1640, OIII1666 and CIII1908}'
+    ylabel     = '12 + log$_{10}$(O/H) \n\Large{from HeII1640, OIII1666 and CIII1908}'
     # colortype  = 'redshift' # 'f(CIII) [1e-20 erg/s/cm$^2$]'
     colortype  = 'EW0_CIII'
 
