@@ -16671,11 +16671,17 @@ def plot_photometrySEDs(infofile, plotsample='desert',verbose=True,
         for beta in betas:
             if beta == -1.97:
                 linewidth = 2.0
-            else:
+                linesetup = 'k-'
+            elif beta < -1.97:
                 linewidth = 1.0
+                linesetup = 'g--'
+            elif beta > -1.97:
+                linewidth = 1.0
+                linesetup = 'b:'
+
             yval     = wavevec**(beta)
             norment  = np.where( np.abs(wavevec-normwave) == np.min(np.abs(wavevec-normwave)) )[0]
-            plt.plot(wavevec,yval/yval[norment],'k--',linewidth=linewidth,zorder=5,label='$\\beta$='+str(beta))
+            plt.plot(wavevec,yval/yval[norment],linesetup,linewidth=linewidth,zorder=5,label='$\\beta$='+str(beta))
 
         yminsys, ymaxsys = plt.ylim()
         plt.plot([normwave,normwave],[yminsys, ymaxsys],'g:',linewidth=linewidth,zorder=5,label='$\\lambda$(Norm)')
