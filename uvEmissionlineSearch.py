@@ -8518,6 +8518,130 @@ def estimate_fcont(infofiledat,obj_infoent,wavelength,fixbeta=False,photmatchlim
         pdb.set_trace()
     return f_cont, photrefs, magABs
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_SED(infofiledat,objent,photmatchlim=0.5,
+            datSkeltonGS=None, datSkeltonCOS=None, datRafelski=None, # Enable providing data from outside function
+            verbose=True):
+    """
+    Return flux and ABmag SEDs from photometric catalogs of given object
+    Similar to uves.estimate_fcont() but returns all photometric values
+
+    """
+    objid         = infofiledat['id'][objent]
+
+    if datSkeltonGS is None:
+        catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+        datSkeltonGS  = afits.open(catSkeltonGS)[1].data
+
+    if datSkeltonCOS is None:
+        catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+        datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
+
+    if datRafelski is None:
+        catRafelski   = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
+        datRafelski   = afits.open(catRafelski)[1].data
+
+    bands         = ['F275W','F336W','F435W','F606W','F775W','F814W','F880LP','F105W','F125W','F160W']
+
+    f_out         = collections.OrderedDict()
+    photrefs      = ['']*len(bands)
+    magABs        = collections.OrderedDict()
+    for bb, band in enumerate(bands):
+        # if verbose: print(' - Getting flux estimate for band '+band)
+        if band in ['F105W','F125W','F160W']:
+            hstinst = 'wfc3'
+        else:
+            hstinst = 'acs'
+
+        try:
+            if infofiledat['use_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][objent][0]:
+                f_ref         = infofiledat[ 'flux_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][objent][0] * 1e20
+                f_ref_err     = infofiledat[ 'flux_error_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][objent][0] * 1e20
+                photrefs[bb]  = 'Kerutt'
+                magAB         = infofiledat[ 'mag_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][objent][0]
+                magABerr      = infofiledat[ 'mag_error_'+hstinst+'_'+band.lower()[1:]+'_jk100' ][objent][0]
+            else:
+                f_ref     = 0.0
+                f_ref_err = 0.0
+        except:
+            f_ref     = 0.0
+            f_ref_err = 0.0
+
+        # - - - - - if not there try to get flux from photometric catalogs - - - - -
+        if f_ref == 0.0:
+            # if verbose: print('   was not in the infofile; trying photometric catalogs')
+            if str(objid)[0] in ['6', '7']:
+                phot_id    = infofiledat['id_rafelski'][objent]
+                phot_match = infofiledat['sep_rafelski'][objent]
+                phot_ent   = np.where(datRafelski['id'] == phot_id)[0]
+
+                if phot_match <= photmatchlim:
+                    try:
+                        f_cont_jy     =  datRafelski['FLUX_'+band.upper()][phot_ent] * 1e-6
+                        f_cont_jy_err =  datRafelski['FLUXERR_'+band.upper()][phot_ent] * 1e-6
+
+                        # ------ from http://www.stsci.edu/~strolger/docs/UNITS.txt: ------
+                        # [Y Jy]            = 3.33564095E+04 * [X1 erg/cm^2/s/A] * [X2 A]^2
+                        # [Y erg/cm^2/s/A]  = 2.99792458E-05 * [X1 Jy] / [X2 A]^2
+                        f_ref     = f_cont_jy     * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                        f_ref_err = f_cont_jy_err * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                        photrefs[bb]  = 'Rafelski'
+                        magAB         =   datRafelski['MAG_'+band.upper()][phot_ent]
+                        magABerr      =   datRafelski['MAGERR_'+band.upper()][phot_ent]
+                    except:
+                        f_ref     = 0.0
+                        f_ref_err = 0.0
+            else:
+                if str(objid)[0] in ['1','3','4']:
+                    datSkel = datSkeltonGS
+                elif str(objid)[0] in ['2']:
+                    datSkel = datSkeltonCOS
+                else:
+                    sys.exit(' - No Skelton data for ID = '+str(objid))
+
+                phot_id    = infofiledat['id_skelton'][objent]
+                phot_match = infofiledat['sep_skelton'][objent]
+                phot_ent   = np.where(datSkel['id'] == phot_id)[0]
+
+                if phot_match <= photmatchlim:
+                    try:
+                        # magAB    = -2.5*log10(f_nu/Jy) + 8.90    <- https://en.wikipedia.org/wiki/AB_magnitude
+                        skelflux   = datSkel['f_'+band.lower()][phot_ent]
+                        skelerr    = datSkel['e_'+band.lower()][phot_ent]
+                        magAB      = 25.0-2.5*np.log10(skelflux)
+                        magABerr   = np.abs(-2.5* np.log10(np.e) / skelflux * skelerr)
+
+                        f_cont_jy      = 10**( (magAB-8.90)/-2.5 )
+                        f_cont_jy_err  = np.abs(10**((magAB-8.90)/-2.5) * np.log(10)/-2.5 * magABerr) # deriv. from Schaums 15.28
+                        # ------ from http://www.stsci.edu/~strolger/docs/UNITS.txt: ------
+                        # [Y Jy]            = 3.33564095E+04 * [X1 erg/cm^2/s/A] * [X2 A]^2
+                        # [Y erg/cm^2/s/A]  = 2.99792458E-05 * [X1 Jy] / [X2 A]^2
+                        f_ref     = f_cont_jy     * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                        f_ref_err = f_cont_jy_err * 2.99792458E-05 / uves.band_waveeff(band)**2.0 / 1e-20
+                        photrefs[bb]  = '3D-HST'
+                    except:
+                        f_ref     = 0.0
+                        f_ref_err = 0.0
+        else:
+            phot_match = 0.0
+            if verbose: print('   found flux estimate in infofile')
+        # - - - - - if still not available set to NaNs - - - - -
+        if f_ref == 0.0:
+            # if phot_match > photmatchlim:
+            #     if verbose: print('   Photometric match further than '+str(photmatchlim)+' arcsec from object coordinates.')
+            # else:
+            #     if verbose: print('   Hmm; no value in photometric catalogs either. Returning NaNs')
+            f_out[band]    = np.nan, np.nan
+            photrefs[bb]   = 'None'
+            magABs[band]   = np.nan, np.nan
+        else:
+            f_out[band]    = f_ref, f_ref_err
+            magABs[band]   = magAB, magABerr
+
+    if '' in photrefs:
+        print(' ---> There should not be empty "photrefs" entries; stopping to enable further investigation ')
+        pdb.set_trace()
+    return f_out, photrefs, magABs
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def band_waveeff(bandname):
     """
     Returning the effective wavelength of an HST band
@@ -8529,10 +8653,23 @@ def band_waveeff(bandname):
     #
     # effective wavelengths of ACS-WFC, WFC3-UVIS1 and WFC3-IR from
     # http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?mode=browse&gname=HST&gname2=ACS_WFC
-    bands_wavecen = {'F275W':2720.9	,'F336W':3359.4,
-                     'F435W':4341.9,'F606W':5810.8,'F775W':7652.5,'F814W':7972.9,'F880LP':9008.7,
-                     'F105W':10431.7,'F125W':12364.6,'F160W':15279.1}
-    return bands_wavecen[bandname.upper()]
+
+    bands_wavecen = collections.OrderedDict()
+    bands_wavecen['F275W' ] = 2720.9
+    bands_wavecen['F336W' ] = 3359.4
+    bands_wavecen['F435W' ] = 4341.9
+    bands_wavecen['F606W' ] = 5810.8
+    bands_wavecen['F775W' ] = 7652.5
+    bands_wavecen['F814W' ] = 7972.9
+    bands_wavecen['F880LP'] = 9008.7
+    bands_wavecen['F105W' ] = 10431.7
+    bands_wavecen['F125W' ] = 12364.6
+    bands_wavecen['F160W' ] = 15279.1
+
+    if bandname == 'all':
+        return bands_wavecen
+    else:
+        return bands_wavecen[bandname.upper()]
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_obj='EW_0', point_text=None, showlimits=True,
@@ -16449,5 +16586,114 @@ def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillar
     plt.clf()
     plt.close('all')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def plot_photometrySEDs(infofile, plotsample='desert',verbose=True,
+                        outdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/paramdistributionFigures/'):
+    """
+    Function to plot the redshift distribution
+
+    """
+    if verbose: print(' - Loading photometric catalogs')
+    catSkeltonGS  = '/Users/kschmidt/work/catalogs/skelton/goodss_3dhst.v4.1.cats/Catalog/goodss_3dhst.v4.1.cat.FITS'
+    datSkeltonGS  = afits.open(catSkeltonGS)[1].data
+
+    catSkeltonCOS = '/Users/kschmidt/work/catalogs/skelton/cosmos_3dhst.v4.1.cats/Catalog/cosmos_3dhst.v4.1.cat.FITS'
+    datSkeltonCOS = afits.open(catSkeltonCOS)[1].data
+
+    catRafelski   = '/Users/kschmidt/work/catalogs/rafelski/uvudf_rafelski_2015.fits'
+    datRafelski   = afits.open(catRafelski)[1].data
+
+    infofiledat   = afits.open(infofile)[1].data
+    infofiledat   = infofiledat[np.where((infofiledat['id']<4.9e8) | (infofiledat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    if verbose: print(' - Getting objects satisfying sample selection "'+plotsample+'"')
+    if plotsample == 'desert':
+        objentries = np.where((infofiledat['redshift'] > 1.5) & (infofiledat['redshift'] < 2.9))[0]
+    elif plotsample == 'laes':
+        objentries = np.where((infofiledat['redshift'] > 2.9) & (infofiledat['redshift'] < 6.5))[0]
+    elif plotsample == 'gt4':
+        objentries = np.where((infofiledat['redshift'] > 4.0))[0]
+    elif plotsample == 'lt2':
+        objentries = np.where((infofiledat['redshift'] < 2.0))[0]
+    else:
+        sys.exit('Invalid choice of plotsampl="'+plotsample+'"')
+
+    if verbose: print('   Found '+str(len(objentries))+' objects to plots SEDs for')
+    if len(objentries) > 0:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print(' - Plotting SEDs')
+        plotname = outdir+'photometricSED_'+plotsample+'.pdf'
+        fig = plt.figure(figsize=(5, 5))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.99, bottom=0.14, top=0.95)
+        Fsize    = 17
+        lthick   = 2.5
+        marksize = 4
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif',size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+
+        bandWeff = uves.band_waveeff('all')
+        normband = 'F606W'
+        normwave = bandWeff['F606W']
+
+        for objent in objentries:
+            photmatchlim=0.5
+            f_out, photrefs, magABs = uves.get_SED(infofiledat,objent,photmatchlim=photmatchlim,
+                                                   datSkeltonGS=datSkeltonGS, datSkeltonCOS=datSkeltonCOS, datRafelski=datRafelski)
+
+            xvalues = []
+            yvalues = []
+            yerr    = []
+
+            normflux = f_out[normband][0]
+
+            for key in bandWeff.keys():
+                xvalues.append(bandWeff[key])
+                yvalues.append(f_out[key][0] / normflux)
+                yerr.append(f_out[key][1])
+
+            objcol = 'red'
+            plt.errorbar(xvalues,yvalues,xerr=None,yerr=yerr,
+                         marker='o',lw=0.5, markersize=3.0,alpha=0.5,
+                         markerfacecolor=objcol,ecolor=objcol,color=objcol,
+                         markeredgecolor='k',zorder=10)
+
+        wavevec  = np.arange(4700,9400,10)
+        betas    = [-1.2,-1.6,-1.97,-2.2,-2.4]
+        for beta in betas:
+            if beta == -1.97:
+                linewidth = 2.0
+            else:
+                linewidth = 1.0
+            yval     = wavevec**(beta)
+            norment  = np.where( np.abs(wavevec-normwave) == np.min(np.abs(wavevec-normwave)) )[0]
+            plt.plot(wavevec,yval/yval[norment],'k--',linewidth=linewidth,zorder=5,label='$\\beta$='+str(beta))
+
+        yminsys, ymaxsys = plt.ylim()
+        plt.plot([normwave,normwave],[yminsys, ymaxsys],'g:',linewidth=linewidth,zorder=5,label='$\\lambda$(Norm)')
+
+        leg = plt.legend(fancybox=True,prop={'size':Fsize/1.35},ncol=1,numpoints=1) #, loc='upper right'
+
+        leg.get_frame().set_alpha(0.7)
+
+        plt.xlim([4000,11500])
+        plt.ylim([0.4,5.0])
+
+        plt.xscale('log')
+        plt.yscale('log')
+
+        plt.xlabel('$\\lambda$ [\AA]')
+        plt.ylabel('flux [1e-20 erg/s/cm$^2$/\AA]')
+
+        if verbose: print(' - Saving plot to '+plotname)
+        plt.savefig(plotname)
+        plt.clf()
+        plt.close('all')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
