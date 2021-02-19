@@ -1699,16 +1699,18 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=
             xminsys, xmaxsys = plt.xlim()
             yminsys, ymaxsys = plt.ylim()
             plt.text(xminsys+np.abs(xmaxsys-xminsys)*0.05,yminsys+np.abs(ymaxsys-yminsys)*0.95,
-                     'Pearson Coeff (linear+Gauss): r\_P = '+str("%.4f" % r_pearson),fontsize=Fsize-3, color='green', ha='left', va='bottom')
+                     'Pearson Coeff (linear+Gauss): r\_P = '+str("%.4f" % r_pearson)+'; p\_P = '+str("%.4f" % pvalue_pearson),
+                     fontsize=Fsize-3, color='green', ha='left', va='bottom')
 
             plt.text(xminsys+np.abs(xmaxsys-xminsys)*0.05,yminsys+np.abs(ymaxsys-yminsys)*0.92,
-                     'Spearman Coeff (monotonic)  : r\_S = '+str("%.4f" % r_spearman),fontsize=Fsize-3, color='green', ha='left', va='bottom')
+                     'Spearman Coeff (monotonic)  : r\_S = '+str("%.4f" % r_spearman)+'; p\_S = '+str("%.4f" % pvalue_spearman),
+                     fontsize=Fsize-3, color='green', ha='left', va='bottom')
 
 
         plt.savefig(plotresults)
         if verbose: print(' - Saved plot to '+plotresults)
     if returnCorrelationCoeffs:
-        return fitresults, r_pearson, r_spearman
+        return fitresults, r_pearson, pvalue_pearson, r_spearman, pvalue_spearman
     else:
         return fitresults
 #-------------------------------------------------------------------------------------------------------------
