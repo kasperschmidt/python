@@ -8759,6 +8759,13 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     LyaPeaksep    = np.zeros(len(fluxratiodat['id']))*np.nan
     LyaPeakseperr = np.zeros(len(fluxratiodat['id']))*np.nan
 
+    MUV           = np.zeros(len(fluxratiodat['id']))*np.nan
+    MUVerr        = np.zeros(len(fluxratiodat['id']))*np.nan
+    beta          = np.zeros(len(fluxratiodat['id']))*np.nan
+    betaerr       = np.zeros(len(fluxratiodat['id']))*np.nan
+    Llya          = np.zeros(len(fluxratiodat['id']))*np.nan
+    Llyaerr       = np.zeros(len(fluxratiodat['id']))*np.nan
+
     colinfo = uves.get_infodat_plotcols()
     for ii, id in enumerate(fluxratiodat['id']):
         infoent            = np.where(infofiledat['id'] == int(id))
@@ -8768,6 +8775,13 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
         LyaFWHMerr[ii]     = infofiledat[colinfo['lyafwhm_kms'][1]][infoent]
         LyaPeaksep[ii]     = infofiledat[colinfo['peaksep_kms'][0]][infoent]
         LyaPeakseperr[ii]  = infofiledat[colinfo['peaksep_kms'][1]][infoent]
+        MUV[ii]            = infofiledat[colinfo['absmagUV_median'][0]][infoent]
+        MUVerr[ii]         = infofiledat[colinfo['absmagUV_median'][1]][infoent]
+        beta[ii]           = infofiledat[colinfo['beta_many'][0]][infoent]
+        betaerr[ii]        = infofiledat[colinfo['beta_many'][1]][infoent]
+        Llya[ii]           = infofiledat[colinfo['loglLlya'][0]][infoent]
+        Llyaerr[ii]        = infofiledat[colinfo['loglLlya'][1]][infoent]
+
 
     if colorvar_obj in fluxratiodat.dtype.names:
         cdatvec   = fluxratiodat[colorvar_obj]
@@ -8861,6 +8875,21 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     else:
         LyaFWHM_range = [0,1000]
 
+    if xlog:
+        beta_range = [0.1,3]
+    else:
+        beta_range = [-4,3]
+
+    if xlog:
+        MUV_range = [10,25]
+    else:
+        MUV_range = [-25,-10]
+
+    if xlog:
+        Llya_range = [10,25]
+    else:
+        Llya_range = [39.8,43.8]
+
     linesetlist_EWs = []
 
     for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII', 'NV']:
@@ -8870,6 +8899,18 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
                                 yline   ,LyaFWHM_range, EW0_range_y,   None])
         linesetlist_EWs.append([['LyaPeaksep','Ly$\\alpha$ Peak Seperation [km/s]',LyaPeaksep,LyaPeakseperr],
                                 yline   ,LyaPS_range, EW0_range_y,   None])
+
+        if not addliteraturevalues:
+            cdattype = 'zmanual'
+            histaxes = False
+            linesetlist_EWs.append([['logLlya','log$_{10}$(L(Ly$\\alpha$)/[erg/s])',Llya,Llyaerr],
+                                    yline   ,Llya_range, EW0_range_y,   None])
+            linesetlist_EWs.append([['MUVlya','M(UV,1500)',MUV,MUVerr],
+                                    yline   ,MUV_range, EW0_range_y,   None])
+            linesetlist_EWs.append([['betalya','$\\beta$ (linear multiband fit)',beta,betaerr],
+                                    yline   ,beta_range, EW0_range_y,   None])
+        else:
+            histaxes  = True
 
     linesetlist_EWs.append(['CIII','CIV'   ,EW0_range_x, EW0_range_y,   None])
     linesetlist_EWs.append(['CIII','OIII'  ,EW0_range_x, EW0_range_y,   None])
@@ -8899,7 +8940,6 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     linesetlist_EWs.append(['NV','SiIII'   ,EW0_range_x, EW0_range_y,   None])
 
     Nhistbins = 30
-    histaxes  = True
     for lineset in linesetlist_EWs:
         plot_EW0estimates_wrapper(plotbasename,EW0dat,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                   ErrNsigma=ErrNsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
@@ -9034,6 +9074,7 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
         fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
                                                                              initguess = [1.,1.],verbose=verbose,
                                                                              fitfunction='linear',plotresults=plotname,
+                                                                             show3sigmainterval=True,
                                                                              returnCorrelationCoeffs=True)
 
 
@@ -16026,6 +16067,184 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                                                            photoionizationplotparam=None,
                                                            histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
                                                            overwrite=overwrite,verbose=verbose)
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def evaluate_FELISlinewidths(linefluxcatalog,infofile,outputdir='./linewidthFigures/',overwrite=False,verbose=True):
+    """
+    Function to evaluate and line widths from FELIS fits. Based on evluate_velocityoffsets
+
+    --- Example of use ---
+
+    """
+    agn, agncand = uves.get_AGN_ids()
+    dat_uves = afits.open(linefluxcatalog)[1].data
+    infodat  = afits.open(infofile)[1].data
+    infodat  = infodat[np.where((infodat['id']<4.9e8) | (infodat['id']>5.9e8))[0]] # ignoring UDF MW mock ids
+
+    for ii, id in enumerate(dat_uves['id']): # double checking that order of objects is the same
+        if infodat['id'][ii] != id:
+            sys.exit('There was a mismatch in ids for entry '+str(ii))
+
+    linenamelist = ['NV','CIV','HeII','OIII','SiIII','CIII','MgII']
+    Nlines       = len(linenamelist)
+    # zlineranges  = [[2.8918,6.4432],[2.1114,4.9699],[1.9379,4.6411],[1.8969,4.5632],[1.5514,3.9067],[1.5241,3.8548],[0.7174,2.3142]]
+    zlineranges  = [[2.86,6.5],[2.0,5.1],[1.7,4.8],[1.7,4.7],[1.4,3.95],[1.4,3.95],[0.7174,2.5]]
+    #\lya                		&  2.9729 -- 6.5958 	&
+
+    # - - - - - - - ALL lead lines - - - - - - -
+    sig_NV_ent    = np.where((dat_uves['sigma_NV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['sigma_NV']))[0]
+    sig_NV        = dat_uves['sigma_NV'][sig_NV_ent]
+
+    sig_CIV_ent   = np.where((dat_uves['sigma_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['sigma_CIV']))[0]
+    sig_CIV       = dat_uves['sigma_CIV'][sig_CIV_ent]
+
+    sig_HeII_ent  = np.where((dat_uves['sigma_HeII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_HeII']))[0]
+    sig_HeII      = dat_uves['sigma_HeII'][sig_HeII_ent]
+
+    sig_OIII_ent  = np.where((dat_uves['sigma_OIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_OIII']))[0]
+    sig_OIII      = dat_uves['sigma_OIII'][sig_OIII_ent]
+
+    sig_SiIII_ent = np.where((dat_uves['sigma_SiIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                            np.isfinite(dat_uves['sigma_SiIII']))[0]
+    sig_SiIII     = dat_uves['sigma_SiIII'][sig_SiIII_ent]
+
+    sig_CIII_ent  = np.where((dat_uves['sigma_CIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_CIII']))[0]
+    sig_CIII      = dat_uves['sigma_CIII'][sig_CIII_ent]
+
+    sig_MgII_ent  = np.where((dat_uves['sigma_MgII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_MgII']))[0]
+    sig_MgII      = dat_uves['sigma_MgII'][sig_MgII_ent]
+
+    # - - - - - - - Only Lya as lead line - - - - - - -
+    sig_NV_ent_LAE    = np.where((dat_uves['sigma_NV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['sigma_NV']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_NV_LAE        = dat_uves['sigma_NV'][sig_NV_ent_LAE]
+
+    sig_CIV_ent_LAE   = np.where((dat_uves['sigma_CIV'] != 99) & (dat_uves['duplicationID'] == 0) &
+                          np.isfinite(dat_uves['sigma_CIV']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_CIV_LAE       = dat_uves['sigma_CIV'][sig_CIV_ent_LAE]
+
+    sig_HeII_ent_LAE  = np.where((dat_uves['sigma_HeII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_HeII']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_HeII_LAE      = dat_uves['sigma_HeII'][sig_HeII_ent_LAE]
+
+    sig_OIII_ent_LAE  = np.where((dat_uves['sigma_OIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_OIII']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_OIII_LAE      = dat_uves['sigma_OIII'][sig_OIII_ent_LAE]
+
+    sig_SiIII_ent_LAE = np.where((dat_uves['sigma_SiIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                            np.isfinite(dat_uves['sigma_SiIII']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_SiIII_LAE     = dat_uves['sigma_SiIII'][sig_SiIII_ent_LAE]
+
+    sig_CIII_ent_LAE  = np.where((dat_uves['sigma_CIII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_CIII']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_CIII_LAE      = dat_uves['sigma_CIII'][sig_CIII_ent_LAE]
+
+    sig_MgII_ent_LAE  = np.where((dat_uves['sigma_MgII'] != 99) & (dat_uves['duplicationID'] == 0) &
+                           np.isfinite(dat_uves['sigma_MgII']) & (infodat['leadline'] == 'Lya'))[0]
+    sig_MgII_LAE      = dat_uves['sigma_MgII'][sig_MgII_ent_LAE]
+
+    #------------------------------------------------------------------------------
+    if verbose: print(' - Setting up and generating plots of lead line widths ')
+
+    linename   = linenamelist+linenamelist
+    zranges    = zlineranges+[[2.0,3.95]]+zlineranges
+    leadline   = ['lead line']*Nlines + ['Lya']*Nlines
+    sigs_ent    = [sig_NV_ent,sig_CIV_ent,sig_HeII_ent,sig_OIII_ent,sig_SiIII_ent,sig_CIII_ent,sig_MgII_ent]+\
+                 [sig_NV_ent_LAE,sig_CIV_ent_LAE,sig_HeII_ent_LAE,sig_OIII_ent_LAE,sig_SiIII_ent_LAE,sig_CIII_ent_LAE]#,sig_MgII_ent_LAE]
+    sigs        = [sig_NV,sig_CIV,sig_HeII,sig_OIII,sig_SiIII,sig_CIII,sig_MgII]+\
+                 [sig_NV_LAE,sig_CIV_LAE,sig_HeII_LAE,sig_OIII_LAE,sig_SiIII_LAE,sig_CIII_LAE]#,sig_MgII_LAE]
+
+    for ss, sig in enumerate(sigs):
+        # if not 'CIII' in linename[ss]: continue
+        objids    = dat_uves['id'][sigs_ent[ss]]
+        zleadline = dat_uves['redshift'][sigs_ent[ss]]
+
+        histaxes  = False
+        #Nhistbins = 50
+        yrange    = [0,1.3]
+
+        if leadline[ss] == 'Lya':
+            llstring = 'Ly$\\alpha$'
+        elif leadline[ss] == 'CIII':
+            llstring = 'CIII'
+        else:
+            llstring = leadline[ss]
+        ylabel    = linename[ss]+' FELIS line template width  [\AA]'
+
+        #---- vs redshift ---
+        plotname = outputdir+'evaluate_FELISlinewidths_'+leadline[ss].replace(' ','')+'-'+linename[ss]+'VSredshiftLeadLine.pdf'
+
+        xrange = zranges[ss]
+        if leadline[ss] == 'Lya':
+            xrange[0] = np.max([xrange[0],2.8])
+            linetype  = 'horizontal'
+        else:
+            xrange[0] = np.max([xrange[0],1.4])
+            linetype  = 'horizontalWlya'
+
+        xlabel   = '$z$('+llstring+')'
+        xerr     = None
+        yerr     = None
+
+        Nhistbins = np.ceil(np.sqrt(len(dat_uves['redshift'][sigs_ent[ss]])))
+        uves.plot_mocspecFELISresults_summary_plotcmds(plotname,dat_uves['redshift'][sigs_ent[ss]],sig,xerr,yerr,xlabel,ylabel,
+                                                       'dummydat',linetype=linetype,title=None, #'this is title',
+                                                       ids=dat_uves['id'][sigs_ent[ss]],
+                                                       ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                       colortype='s2nfelis',colorcode=True,
+                                                       cdatvec=dat_uves['s2n_'+linename[ss]][sigs_ent[ss]],
+                                                       point_text=None, #dat_uves['id'][sigs_ent[ss]].astype(str),
+                                                       photoionizationplotparam=None,
+                                                       histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                       overwrite=overwrite,verbose=verbose)
+
+        #---- vs LAE parameters ---
+        print(leadline[ss])
+        if leadline[ss] == 'Lya':
+            infocols = uves.get_infodat_plotcols()
+
+            for cc, colname in enumerate(infocols.keys()):
+                xlabel   = infocols[colname][2]
+                xrange   = None
+                plotname = outputdir+'evaluate_FELISlinewidths_'+leadline[ss].replace(' ','')+'-'+linename[ss]+'VS'+colname+'.pdf'
+
+                yerr = None
+
+                xvalues  = infodat[infocols[colname][0]][sigs_ent[ss]]
+                if len(xvalues[np.isfinite(xvalues)]) > 0:
+                    if infocols[colname][1] is None:
+                        xerr     = np.asarray([np.nan]*len(sigs_ent[ss]))
+                    else:
+                        xerr     = infodat[infocols[colname][1]][sigs_ent[ss]]
+
+                    plot_sig      = sig
+                    plot_ids     = dat_uves['id'][sigs_ent[ss]]
+                    plot_cdatvec = zleadline
+
+                    plot_sig_prelit      = plot_sig
+                    plot_sig_err_prelit  = yerr
+
+                    colortype = 'redshift'
+                    linetype='horizontal'
+
+                    # yerr = None
+                    # xerr = None
+                    Nhistbins = np.ceil(np.sqrt(len(xvalues)))
+                    uves.plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,plot_sig,xerr,yerr,xlabel,ylabel,
+                                                                   'dummydat',linetype=linetype,title=None, #'this is title',
+                                                                   ids=plot_ids,
+                                                                   ylog=False,xlog=False,yrange=yrange,xrange=xrange,
+                                                                   colortype=colortype,colorcode=True,
+                                                                   cdatvec=plot_cdatvec,
+                                                                   point_text=None, #dat_uves['id'][sigs_ent[ss]].astype(str),
+                                                                   photoionizationplotparam=None,
+                                                                   histaxes=histaxes,Nbins=Nhistbins, showgraylimits=True,
+                                                                   overwrite=overwrite,verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_param_for_photoionizationmodels(linefluxcatalog,outdir,Nsigma=1,infofile=None,generatePDFplots=False,
