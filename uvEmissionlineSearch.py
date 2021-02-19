@@ -15946,8 +15946,9 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                             pdb.set_trace()
                         ylabel = ylabel.replace(' - CIII','')
 
-                        r_pearson, pvalue_pearson   = ss.pearsonr(xvalues,plot_dv)
-                        r_spearman, pvalue_spearman = ss.spearmanr(xvalues,plot_dv)
+                        #peaksep relation: 1.05 * x - 12
+                        P1  = np.array([0.,-12.]) # lower  'endpoint' of correlation
+                        P2  = np.array([1000.,1038.]) # higher 'endpoint' of correlation
 
                     elif colname == 'lyafwhm_kms':
                         linetype  = 'AV18_fwhm_wHorizontal'
@@ -15975,9 +15976,9 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                             pdb.set_trace()
                         ylabel = ylabel.replace(' - CIII','')
 
-                        r_pearson, pvalue_pearson   = ss.pearsonr(xvalues,plot_dv)
-                        r_spearman, pvalue_spearman = ss.spearmanr(xvalues,plot_dv)
-
+                        # fwhm relation: 0.9 * x - 36
+                        P1  = np.array([0.,-36.]) # lower  'endpoint' of correlation
+                        P2  = np.array([1000.,864.]) # higher 'endpoint' of correlation
 
                     elif 'absmagUV' in colname:
                         linetype = 'CM18_wHorizontal'
@@ -16009,6 +16010,25 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
 
                     else:
                         linetype='horizontal'
+
+                    if ('lyafwhm_kms' in colname) or (colname == 'peaksep_kms'):
+                        if verbose: print(' - Estimating correlation coeffecients for "'+colname+'":')
+                        r_pearson, pvalue_pearson   = ss.pearsonr(xvalues,plot_dv)
+                        r_spearman, pvalue_spearman = ss.spearmanr(xvalues,plot_dv)
+                        if verbose: print('   r_pearson, pvalue_pearson   = '+str("%.4f" % r_pearson)+', '+str("%.4f" % pvalue_pearson))
+                        if verbose: print('   r_spearman, pvalue_spearman = '+str("%.4f" % r_spearman)+', '+str("%.4f" % pvalue_spearman))
+
+                        if verbose: print(' - Calculating the perpendicular euclidian distance '
+                                          'to the best-fit line from Verhamme+18 for "'+colname+'":')
+                        dists_perp = np.zeros(len(xvalues))
+                        for dd, dpoint_x in enumerate(xvalues):
+                            datapoint      = np.array([dpoint_x,plot_dv[dd]])
+                            dists_perp[dd] = np.abs(np.cross(P2-P1, P1-datapoint)) / np.linalg.norm(P2-P1)
+                        if verbose: print('   The distance array [km/s] looks like:\n'+str(dists_perp))
+                        if verbose: print('   The stats for those distances are:')
+                        if verbose: print('    mean    = '+str(np.mean(dists_perp)))
+                        if verbose: print('    median  = '+str(np.median(dists_perp)))
+                        if verbose: print('    std     = '+str(np.std(dists_perp)))
 
                     # yerr = None
                     # xerr = None
