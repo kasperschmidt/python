@@ -1559,7 +1559,7 @@ def odr_fitfunction_quad(p, x):
     return a * x*x + b*x + c
 def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=None, verbose=True,
                                                   fitfunction='linear',plotresults='./ODRfit2data.pdf',
-                                                  returnCorrelationCoeffs=False):
+                                                  show3sigmainterval=True,returnCorrelationCoeffs=False):
     """
     Use scipy's Orthogonal Distance Regression (ODR) to fit a function to data with errors on both axes.
     Essential a 2D leas squares, where the diagonal convariance matrices of the data is accounted for.
@@ -1685,7 +1685,8 @@ def fit_function_to_data_with_errors_on_both_axes(xval,yval,xerr,yerr,initguess=
         plt.title('Orthogonal Distance Regression fit to data: \n'+fitresultstring, fontsize=Fsize)
 
         plt.errorbar(xval, yval, yerr=yerr, xerr=xerr, ecolor='k', fmt='none', label='data')
-        plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
+        if show3sigmainterval:
+            plt.fill_between(x_fit, fit_up, fit_dw, alpha=0.25, label='3-sigma interval',color='red')
         plt.plot(x_fit, fit, 'r', lw=2, label='Best fit curve')
 
         plt.xlabel('x values', fontsize=Fsize)
