@@ -5,35 +5,38 @@ import pdb
 import os
 import sys
 import glob
-import astropy
+import subprocess
+import collections
+
+
 import scipy
-import MiGs
-import astropy.io.fits as afits
+import scipy.stats as ss
+
+
 import pyregion
 import pyfits as pyfitsOLD
 import datetime
 import numpy as np
+from uncertainties import unumpy
 import shutil
 import time
-import fits2ascii as f2a
-import MUSEWideUtilities as mu
-import MUSEWidePlots as mwp
-import kbsutilities as kbs
-import tdose_utilities as tu
+
+import astropy
+import astropy.io.fits as afits
 from astropy import wcs
 from astropy.coordinates import SkyCoord
 import astropy.cosmology as acosmo
 import astropy.coordinates as acoord
 import astropy.units as u
 from astropy.convolution import Gaussian2DKernel, convolve_fft
-import subprocess
-import collections
+
+import MiGs
+import fits2ascii as f2a
+import MUSEWideUtilities as mu
+import MUSEWidePlots as mwp
+import kbsutilities as kbs
+import tdose_utilities as tu
 import uvEmissionlineSearch as uves
-from uncertainties import unumpy
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-from matplotlib.ticker import NullFormatter
 import NEOGALmodels as nm
 import photoionizationPDFs as pp
 #import rxj2248_BooneBalestraSource as bbs
@@ -45,6 +48,11 @@ from itertools import combinations
 import pickle
 import re
 import pyneb as pn
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from matplotlib.ticker import NullFormatter
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def buildANDgenerate(clobber=True):
     """
@@ -7776,9 +7784,9 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             xval_fit = xvalues
             xerr_fit = xerr
 
-        fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                             fitfunction='linear',plotresults=plotname,
-                                                                             returnCorrelationCoeffs=True)
+        fitres,rp,pp,rs,ps = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                               fitfunction='linear',plotresults=plotname,
+                                                                               returnCorrelationCoeffs=True)
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -8111,9 +8119,9 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
             xval_fit = xvalues
             xerr_fit = 0.434 * xerr/xvalues  # https://faculty.washington.edu/stuve/log_error.pdf
 
-        fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                             fitfunction='linear',plotresults=plotname,
-                                                                             returnCorrelationCoeffs=True)
+        fitres,rp,pp,rs,ps = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                               fitfunction='linear',plotresults=plotname,
+                                                                               returnCorrelationCoeffs=True)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def get_infodat_plotcols():
     """
@@ -9071,11 +9079,11 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
             xval_fit = xvalues
             xerr_fit = xerr
 
-        fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                             initguess = [1.,1.],verbose=verbose,
-                                                                             fitfunction='linear',plotresults=plotname,
-                                                                             show3sigmainterval=True,
-                                                                             returnCorrelationCoeffs=True)
+        fitres,rp,pp,rs,ps = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                               initguess = [1.,1.],verbose=verbose,
+                                                                               fitfunction='linear',plotresults=plotname,
+                                                                               show3sigmainterval=True,
+                                                                               returnCorrelationCoeffs=True)
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -15336,9 +15344,9 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
                 xval_fit = xvalues
                 xerr_fit = xerr
 
-            fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                                 fitfunction='linear',plotresults=plotname,
-                                                                                 returnCorrelationCoeffs=True)
+            fitres,rp,pp,rs,ps = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                                   fitfunction='linear',plotresults=plotname,
+                                                                                   returnCorrelationCoeffs=True)
         yvaluesWflux     = yvalues*10**(xvalues/-2.5)
         yvaluesWflux_err = np.abs(yvaluesWflux) * np.log(10)/2.5 * xerr
         uves.plot_mocspecFELISresults_summary_plotcmds(plotname.replace('.pdf','_EWxFlux.pdf'),
@@ -15370,9 +15378,9 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
                 xerr_fit = xerr
 
 
-            fitres, r_p, r_s = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
-                                                                                 fitfunction='linear',plotresults=plotname,
-                                                                                 returnCorrelationCoeffs=True)
+            fitres,rp,pp,rs,ps = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
+                                                                                   fitfunction='linear',plotresults=plotname,
+                                                                                   returnCorrelationCoeffs=True)
     #------------------------------------------------------------------------------
     linecolors  = uves.linecolors(colormap='plasma')
     if verbose: print(' - Setting up and generating plot of histograms in same window')
@@ -15938,6 +15946,9 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                             pdb.set_trace()
                         ylabel = ylabel.replace(' - CIII','')
 
+                        r_pearson, pvalue_pearson   = ss.pearsonr(xvalues,plot_dv)
+                        r_spearman, pvalue_spearman = ss.spearmanr(xvalues,plot_dv)
+
                     elif colname == 'lyafwhm_kms':
                         linetype  = 'AV18_fwhm_wHorizontal'
                         # xerr      = np.sqrt(xerr) # errors are variances ???????????????????????????????????????
@@ -15963,6 +15974,10 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                         if len(xvalues) != len(plot_dv):
                             pdb.set_trace()
                         ylabel = ylabel.replace(' - CIII','')
+
+                        r_pearson, pvalue_pearson   = ss.pearsonr(xvalues,plot_dv)
+                        r_spearman, pvalue_spearman = ss.spearmanr(xvalues,plot_dv)
+
 
                     elif 'absmagUV' in colname:
                         linetype = 'CM18_wHorizontal'
