@@ -7388,32 +7388,32 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist  = []
-    # linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
-    # linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range , 'Schmidt+17 fig. 7 center                  '])
-    # linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 bottom                  '])
-    # linesetlist.append(['SiIII','CIII','OIII','CIII',ratios_range,ratios_range,'Byler+20 fig. 3                           '])
-    # linesetlist.append(['HeII','CIII','OIII','CIII',ratios_range,ratios_range, 'Byler+20 fig. 4                           '])
-    # linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
-    # linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
-    # linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
-    # linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
-    # linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
-    # linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
-    # linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
-    # linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
-    # linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
-    # linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
-    # linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
-    # linesetlist.append(['OIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
-    # linesetlist.append(['SiIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
-    # #
-    # linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
-    # linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIII','CIV','OIII','SiIII',ratios_range,ratios_range  , None])
-    # linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['CIV','CIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 top,   Feltre+16 fig A2a'])
+    linesetlist.append(['CIII','HeII','CIV','HeII',ratios_range,ratios_range , 'Schmidt+17 fig. 7 center                  '])
+    linesetlist.append(['CIV','OIII','CIV','HeII',ratios_range,ratios_range  , 'Schmidt+17 fig. 7 bottom                  '])
+    linesetlist.append(['SiIII','CIII','OIII','CIII',ratios_range,ratios_range,'Byler+20 fig. 3                           '])
+    linesetlist.append(['HeII','CIII','OIII','CIII',ratios_range,ratios_range, 'Byler+20 fig. 4                           '])
+    linesetlist.append(['OIII','CIII','CIV','OIII',ratios_range,ratios_range,  'Byler+20 fig. 5                           '])
+    linesetlist.append(['CIII','HeII','NV','HeII',ratios_range,ratios_range  ,'Plat+19 fig. 6d                           '])
+    linesetlist.append(['CIII','OIII','CIV','CIII',ratios_range,ratios_range ,'Plat+19 fig. 6f                           '])
+    linesetlist.append(['CIV','HeII','CIV','CIII',ratios_range,ratios_range  ,'Feltre+16 fig 5                           '])
+    linesetlist.append(['CIV','HeII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig 6                           '])
+    linesetlist.append(['NV','HeII','CIII','HeII',ratios_range,ratios_range  ,'Feltre+16 fig 8, fig A1b                  '])
+    linesetlist.append(['CIV','CIII','CIII','HeII',ratios_range,ratios_range ,'Feltre+16 fig A1a                         '])
+    linesetlist.append(['NV','CIV','CIII','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A1c                         '])
+    linesetlist.append(['NV','HeII','CIV','HeII',ratios_range,ratios_range   ,'Feltre+16 fig A2b                         '])
+    linesetlist.append(['NV','CIV','CIV','HeII',ratios_range,ratios_range    ,'Feltre+16 fig A2c                         '])
+    linesetlist.append(['OIII','HeII','CIV','HeII',ratios_range,ratios_range ,'Feltre+16 fig A2e                         '])
+    linesetlist.append(['OIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
+    linesetlist.append(['SiIII','HeII','CIII','HeII',ratios_range,ratios_range ,'Hirschmann+19 fig 6                         '])
     #
-    # linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+    linesetlist.append(['SiIII','HeII','CIV','HeII',ratios_range,ratios_range,'Feltre+16 fig A2i                         '])
+    linesetlist.append(['CIII','OIII','HeII','CIII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIII','CIV','OIII','HeII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIII','CIV','OIII','SiIII',ratios_range,ratios_range  , None])
+    linesetlist.append(['CIV','SiIII','OIII','HeII',ratios_range,ratios_range, None])
+
+    linesetlist.append(['MgII','SiIII','OIII','HeII',ratios_range,ratios_range, None])
 
     Nhistbins = 30
     histaxes  = False
@@ -7784,6 +7784,16 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             xval_fit = xvalues
             xerr_fit = xerr
 
+        if line1[:-1] == line2[:-1]:
+            if ylog & xlog:
+                ratios = 10**xval_fit/10**yval_fit
+            else:
+                ratios = xval_fit/yval_fit
+            meanval   = np.mean(ratios[np.isfinite(ratios)])
+            medianval = np.median(ratios[np.isfinite(ratios)])
+            stdval    = np.std(ratios[np.isfinite(ratios)])
+            if verbose: print('   ----> Ratio '+line1+'/'+line2+' (mean,median,std) = '+
+                              str("%.2f" % meanval)+','+str("%.2f" % medianval)+','+str("%.2f" % stdval))
         fitres,rp,pp,rs,ps = kbs.fit_function_to_data_with_errors_on_both_axes(xval_fit,yval_fit,xerr_fit,yerr_fit,
                                                                                fitfunction='linear',plotresults=plotname,
                                                                                returnCorrelationCoeffs=True)
