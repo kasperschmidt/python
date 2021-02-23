@@ -14098,9 +14098,11 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     linecolors = uves.linecolors(colormap='plasma')
     linenames  = uves.linenames()
 
-    ticknames = ['All fields','MUSE-Wide','UDF mosaic','UDF-10']
+    ticknames = ['All fields','1 hr\nMUSE-Wide','10 hrs\nUDF mosaic','31 hrs\nUDF-10']
+    ticknames = ['All fields','MUSE-Wide: 1hr','UDF mosaic: 10hrs','UDF-10: 31hrs']
 
-    xvalues = np.array([10,35,55,75])
+    xvalues = np.array([5,16,25,46])
+    xrange  = [0,50]
     ylabel  = '\% objects with UV line detection'
 
     # -------------------------- Full frame --------------------------
@@ -14119,7 +14121,7 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     ax = fig.add_subplot(2, 1, 1)
 
     for uvline in linecolors.keys():
-        if uvline != 'MgII': # not showing MgII for LAEs
+        if (uvline != 'MgII') & (uvline != 'CIIIorCIV'): # not showing MgII and CIIIorCIV panels
             yvalues  = allobjarr[arrayrows[uvline],:]
             linecol  = linecolors[uvline]
             plt.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10,label=linenames[uvline])
@@ -14136,7 +14138,7 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     ax = fig.add_subplot(2, 1, 2)
 
     for uvline in linecolors.keys():
-        if uvline != 'MgII': # not showing MgII for LAEs
+       if (uvline != 'MgII') & (uvline != 'CIIIorCIV'): # not showing MgII and CIIIorCIV panels
             yvalues  = laearr[arrayrows[uvline],:]
             linecol  = linecolors[uvline]
             plt.plot(xvalues,yvalues,'o',markersize=marksize,alpha=1.0,color=linecol,lw=lthick,zorder=10,label=linenames[uvline][0])
@@ -14164,11 +14166,11 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Setting up and generating plot of histograms in same window')
-    xoffset  = 2.5
+    xoffset  = 1.0
     errtype  = 'cp' #'binomvar'
     plotname = plotname.replace('.pdf','_sharedaxis_'+errtype+'.pdf')
     fig = plt.figure(figsize=(3, 7))
-    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.12, top=0.99)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.15, top=0.99)
 
     Fsize    = 10
     lthick   = 1.0
@@ -14193,7 +14195,7 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
 
     # - - - - - - - - - - - - - -
     for ee, emline in enumerate(linecolors.keys()):
-        if emline != 'MgII': # not showing MgII for LAEs
+        if (emline != 'MgII') & (emline != 'CIIIorCIV'): # not showing MgII and CIIIorCIV panels
             if ee == 0:
                 ax       = fig.add_subplot((len(linecolors.keys())-1)*100+11+ee)
             else:
@@ -14249,23 +14251,26 @@ def plot_detectionFractionsInFields(plotname,verbose=True):
             ymax     = np.max(allyvals)
             yrange   = [0.0-ymax*0.1,ymax+ymax*0.05]
 
+            ax.set_ylim(xrange)
             ax.set_ylim(yrange)
-            ax.plot([20,20],yrange,'-',color='black',alpha=1.0,zorder=1,lw=1)
-            ax.text(22,yrange[0]+(yrange[1]-yrange[0])*0.8,linenames[emline][0],fontsize=Fsize,ha='left',color=linecol)
+            ax.plot([0,50],[0,0],'--',color='black',alpha=1.0,zorder=1,lw=1)
+            ax.plot([10,10],yrange,'-',color='black',alpha=1.0,zorder=1,lw=1)
+            ax.text(14,yrange[0]+(yrange[1]-yrange[0])*0.8,linenames[emline][0],fontsize=Fsize,ha='left',color=linecol)
 
-    ax.set_xticklabels(ticknames, rotation=20, ha='right')
+    ax.set_xticklabels(ticknames, rotation=25, ha='right')
     # - - - - - - - - - - - - - -
     ax.plot([-10],[-10],'o',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='Full $z$-range')
     ax.plot([-10],[-10],'s',markersize=marksize,alpha=1.0,color='black',lw=lthick,zorder=10,label='LAEs ($z>2.9$)')
     leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize},ncol=2,numpoints=1,
-                     bbox_to_anchor=(0.4, -1.2),)  # add the legend
+                     bbox_to_anchor=(0.4, -1.4),)  # add the legend
     leg.get_frame().set_alpha(0.7)
     # - - - - - - - - - - - - - -
 
     for ax in fig.get_axes():
         ax.label_outer()
 
-    plt.xlim([0,85])
+    # plt.xlim([0,85])
+    plt.xlim(xrange)
 
     if verbose: print('   Saving plot to '+plotname)
     plt.savefig(plotname)
@@ -15463,7 +15468,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         plt.ioff()
         #plt.title(inforstr[:-2],fontsize=Fsize)
 
-        # - - - - - - Histogram of n_e  - - - - - -
+        # - - - - - - Histogram  - - - - - -
         xminsys, xmaxsys = xrange
         binwidth_x = np.diff([xminsys,xmaxsys])/Nhistbins
         bindefs    = np.arange(xminsys, xmaxsys+binwidth_x, binwidth_x)
@@ -16575,7 +16580,7 @@ def linecolors(colormap=None):
     linecolors  = collections.OrderedDict()
 
     linecolors['ANY']       = 'black'
-    linecolors['CIIIorCIV'] = 'gray'
+    #linecolors['CIIIorCIV'] = 'gray'
     linecolors['NV']        = 'purple'
     linecolors['CIV']       = 'blue'
     linecolors['HeII']      = 'cyan'
