@@ -5136,7 +5136,7 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 cmin    = 0.0
                 cmax    = 1000.0
                 cextend = 'both'
-            elif colortype == 'f(CIII) [1e-20 erg/s/cm$^2$]':
+            elif colortype == 'f(CIII) [10$^{-20}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]':
                 clabel  = colortype
                 cmin    = np.min(cdatvec[np.isfinite(cdatvec)])
                 cmax    = np.max(cdatvec[np.isfinite(cdatvec)])
@@ -7130,7 +7130,7 @@ def calc_lineratios_fromsummaryfiles(summaryfiles,lineindicators,outputfile, Nsi
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colorvar_obj='s2n_CIII', point_text=None,
                                      Nsigma=3.0, colorvar_pi='logUs', vshiftmax=1e5, obj2show='all', showlimits=True,
-                                     addliteraturevalues = False,
+                                     addliteraturevalues = False, litsymboldot=False,
                                      overwrite=False, verbose=True):
     """
     Function to plot the output containing flux ratios generated with uves.calc_lineratios_fromsummary()
@@ -7295,7 +7295,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
                                                          Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                                          ylog=False,xlog=False,addliteraturevalues=addliteraturevalues,
-                                                         overwrite=overwrite,verbose=verbose,showlimits=showlimits)
+                                                         overwrite=overwrite,verbose=verbose,showlimits=showlimits,litsymboldot=litsymboldot)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lya = []
@@ -7315,12 +7315,12 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
-    histaxes  = False
+    histaxes  = True
     for lineset in linesetlist_lya:
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
                                                          Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                                          ylog=True,xlog=False,addliteraturevalues=addliteraturevalues,
-                                                         overwrite=overwrite,verbose=verbose,showlimits=showlimits)
+                                                         overwrite=overwrite,verbose=verbose,showlimits=showlimits,litsymboldot=litsymboldot)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_fluxesFR = []
@@ -7339,7 +7339,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
                                                  ylog=True, xlog=True,
                                                  literaturevaluesadded=addliteraturevalues,performlinearfit=True,
-                                                 showlimits=showlimits,overwrite=overwrite,verbose=verbose)
+                                                 showlimits=showlimits,overwrite=overwrite,verbose=verbose,litsymboldot=litsymboldot)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_fluxes = []
@@ -7384,7 +7384,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
                                                  literaturevaluesadded=addliteraturevalues,performlinearfit=True,
-                                                 showlimits=showlimits,overwrite=overwrite,verbose=verbose)
+                                                 showlimits=showlimits,overwrite=overwrite,verbose=verbose,litsymboldot=litsymboldot)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist  = []
@@ -7439,13 +7439,13 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                                                  Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,
                                                  literaturevaluesadded=addliteraturevalues,performlinearfit=True,
                                                  overwrite=overwrite,verbose=verbose,showlimits=showlimits,
-                                                 photoionizationplotparam=photoionizationplotparam)
+                                                 photoionizationplotparam=photoionizationplotparam,litsymboldot=litsymboldot)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
                                              photoionizationplotparam=None,point_text=None,showlimits=True,
                                              literaturevaluesadded=False,performlinearfit=False, ylog=True, xlog=True,
-                                             overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True):
+                                             overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True,litsymboldot=False):
     """
     Wrapper to define input data and excecute plot command
 
@@ -7516,12 +7516,12 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
         if 's2n' in line1:
             xlabel   = 'S/N('+line1.split('_')[1]+')'
         else:
-            xlabel   = line1+' [1e-20erg/s/cm$^2$]'
+            xlabel   = line1+' [10$^{-20}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]'
 
         if 's2n' in line2:
             ylabel   = 'S/N('+line2.split('_')[1]+')'
         else:
-            ylabel   = line2+' [1e-20erg/s/cm$^2$]'
+            ylabel   = line2+' [10$^{-20}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]'
 
         if len(goodent) == 0:
             pass
@@ -7694,7 +7694,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                 yvalues    = np.append(yvalues,fluxratiodat[line2][litent])
                 yerr       = np.append(yerr,fluxratiodat[line2][litent]*np.nan)
                 cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+                if litsymboldot:
+                    IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent]*0.0+990000000000)
+                else:
+                    IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
                 if point_text is not None:
                     point_textALL = np.append(point_textALL,point_text[litent])
         else:
@@ -7718,7 +7721,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
                 yvalues    = np.append(yvalues,fluxratiodat['f_'+line2][litent])
                 yerr       = np.append(yerr,fluxratiodat['ferr_'+line2][litent])
                 cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+                if litsymboldot:
+                    IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent]*0.0+990000000000)
+                else:
+                    IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
                 if point_text is not None:
                     point_textALL = np.append(point_textALL,point_text[litent])
     else:
@@ -7741,7 +7747,10 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
             yvalues    = np.append(yvalues,fluxratiodat['FR_'+line3+line4][litent])
             yerr       = np.append(yerr,fluxratiodat['FRerr_'+line3+line4][litent])
             cdatvecALL = np.append(cdatvecALL,cdatvec[litent])
-            IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
+            if litsymboldot:
+                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent]*0.0+990000000000)
+            else:
+                IDsALL     = np.append(IDsALL,fluxratiodat['id'][litent])
             if point_text is not None:
                 point_textALL = np.append(point_textALL,point_text[litent])
 
@@ -7801,7 +7810,7 @@ def plot_lineratios_fromsummaryfiles_wrapper(plotbasename,fluxratiodat,lineset,h
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,cdattype,
-                                                addliteraturevalues=True,performlinearfit=False,
+                                                addliteraturevalues=True,performlinearfit=False, litsymboldot=False,
                                                 point_text=None,showlimits=True,ylog=False,xlog=False,
                                                 overwrite=False,Nsigma=3.0,vshiftmax=1e4,verbose=True):
     """
@@ -7860,7 +7869,7 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
             linename = line3.split('R_')[1].split('1')[0]
             ylabel   = linename+' doublet flux ratio'
         else:
-            ylabel   = line3+' [1e-20erg/s/cm$^2$]'
+            ylabel   = line3+' [10$^{-20}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]'
 
         if len(goodent) == 0:
             pass
@@ -8012,7 +8021,10 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                     yvalues    = np.append(yvalues,fluxratiodat_lit['f_'+line3][litent])
                     yerr       = np.append(yerr,fluxratiodat_lit['ferr_'+line3][litent])
                     cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
-                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if litsymboldot:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent]*0.0+990000000000)
+                    else:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
                     if point_text is not None:
                         point_textALL = np.append(point_textALL,point_text[litent])
             else:
@@ -8035,7 +8047,10 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                     yvalues    = np.append(yvalues,fluxratiodat_lit['FR_'+line3+line4][litent])
                     yerr       = np.append(yerr,fluxratiodat_lit['FRerr_'+line3+line4][litent])
                     cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
-                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if litsymboldot:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent]*0.0+990000000000)
+                    else:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
                     if point_text is not None:
                         point_textALL = np.append(point_textALL,point_text[litent])
         if ('redshift' in line1):
@@ -8060,7 +8075,10 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                     yvalues    = np.append(yvalues,fluxratiodat_lit['f_'+line3][litent])
                     yerr       = np.append(yerr,fluxratiodat_lit['ferr_'+line3][litent])
                     cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
-                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if litsymboldot:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent]*0.0+990000000000)
+                    else:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
                     if point_text is not None:
                         point_textALL = np.append(point_textALL,point_text[litent])
             else:
@@ -8082,7 +8100,10 @@ def plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,linese
                     yvalues    = np.append(yvalues,fluxratiodat_lit['FR_'+line3+line4][litent])
                     yerr       = np.append(yerr,fluxratiodat_lit['FRerr_'+line3+line4][litent])
                     cdatvecALL = np.append(cdatvecALL,cdatvec_lit[litent])
-                    IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
+                    if litsymboldot:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent]*0.0+990000000000)
+                    else:
+                        IDsALL     = np.append(IDsALL,fluxratiodat_lit['id'][litent])
                     if point_text is not None:
                         point_textALL = np.append(point_textALL,point_text[litent])
 
@@ -8692,7 +8713,7 @@ def band_waveeff(bandname):
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_obj='EW_0', point_text=None, showlimits=True,
                       addliteraturevalues=True, ErrNsigma=1.0, vshiftmax=1e5, obj2show='all', xlog=True, ylog=True,
-                      lyaEWtype='lyaew_b2', overwrite=False, verbose=True):
+                      lyaEWtype='lyaew_b2', overwrite=False, verbose=True, litsymboldot=False):
     """
     Function to plot the output containing EW0 estimates generated with uves.estimate_EW0()
 
@@ -8844,6 +8865,10 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
             for litcol in litdat.dtype.names:
                 if litcol in EW0dat.dtype.names:
                     litarr[litcol][lo] = litdat[litcol][lo]
+
+        if litsymboldot:
+            litarr['id'] = litarr['id']*0.0+990000000000
+
         EW0dat = np.hstack((EW0dat,litarr))
 
         LyaEW         = np.hstack((LyaEW,        litdat['EW0_Lya']))
@@ -15290,15 +15315,17 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     if verbose: print(' - Collecting indexes of magnitudes for line sets to plot ')
     magdic = collections.OrderedDict()
 
-    if showlimits:
+    if showlimits is True:
         limval = 0.0
     else:
         limval = 99
 
     for emline in emlinelist:
 
-        magAB_ent   = np.where((masterdat['contmagABerr_'+emline] != -99) & (masterdat['duplicationID'] == 0) &
+        magAB_ent   = np.where((masterdat['duplicationID'] == 0) &
+                               # (masterdat['contmagABerr_'+emline] != -99) & # ignore lower limits (upper limits on brightness)
                                (np.abs(masterdat['EW0err_'+emline]) != limval) & (masterdat['EW0_'+emline] != 0.0) &
+                               (masterdat['EW0err_'+emline] != 99) & # don't show upper limits on EW.
                                np.isfinite(masterdat['contmagABerr_'+emline]))[0]
         magAB       = masterdat['contmagAB_'+emline][magAB_ent]
         magABerr    = masterdat['contmagABerr_'+emline][magAB_ent]
@@ -16966,7 +16993,7 @@ def plot_photometrySEDs(infofile, plotsample='desert',verbose=True,
         plt.yscale('log')
 
         plt.xlabel('$\\lambda$ [\AA]')
-        plt.ylabel('flux [1e-20 erg/s/cm$^2$/\AA]')
+        plt.ylabel('flux [10$^{-20}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]')
 
         if verbose: print(' - Saving plot to '+plotname)
         plt.savefig(plotname)
