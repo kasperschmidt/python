@@ -15840,7 +15840,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
         # zleadline[objent] = znewlead
         # ------------------------------------------------
 
-        histaxes  = False
+        histaxes  = True
         #Nhistbins = 50
         yrange    = [-990,990]
 
@@ -16058,6 +16058,15 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                             pdb.set_trace()
                         xlabel = 'M(UV)'
                         ylabel = ylabel.replace(' - CIII','')
+
+                        removeerrbars = True
+                        if removeerrbars:
+                            print(' >> Removing errorbars: xerr (mean,median)='+
+                                  str((np.mean(xerr[np.isfinite(xerr)]),np.median(np.median(xerr[np.isfinite(xerr)])))))
+                            print(' >> Removing errorbars: yerr (mean,median)='+
+                                  str((np.mean(yerr[np.isfinite(yerr)]),np.median(np.median(yerr[np.isfinite(yerr)])))))
+                            xerr[np.abs(xerr) != 99] = 0.0
+                            yerr[np.abs(yerr) != 99] = 0.0
 
                     else:
                         linetype='horizontal'
