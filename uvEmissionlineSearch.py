@@ -15332,7 +15332,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     for emline in emlinelist:
 
         magAB_ent   = np.where((masterdat['duplicationID'] == 0) &
-                               # (masterdat['contmagABerr_'+emline] != -99) & # ignore lower limits (upper limits on brightness)
+                               (masterdat['contmagABerr_'+emline] != -99) & # ignore lower limits (upper limits on brightness)
                                (np.abs(masterdat['EW0err_'+emline]) != limval) & (masterdat['EW0_'+emline] != 0.0) &
                                (masterdat['EW0err_'+emline] != 99) & # don't show upper limits on EW.
                                np.isfinite(masterdat['contmagABerr_'+emline]))[0]
@@ -15350,7 +15350,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     Nhistbins = 30
     xrange    = [19,31.5]
     yrange    = [0.1,400]
-    colortype = 'zmanual' # 'z' fixes redshift range in color
+    colortype = 'redshift' #'zmanual' # 'z' fixes redshift range in color yyy
     for emline in magdic.keys():
         plotname   = outputdir+'magdist_'+emline+'.pdf'
         # xlabel     = 'EW$_0$ continuum AB magnitude ('+emline+')'
@@ -15491,7 +15491,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
         print('\n - WARNING: the plot '+plotname+' exists and overwrite=False so moving on \n')
     else:
         fig = plt.figure(figsize=(3, 5))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.2, right=0.97, bottom=0.1, top=0.99)
+        fig.subplots_adjust(wspace=0.1, hspace=0.2,left=0.2, right=0.97, bottom=0.1, top=0.99)
 
         Fsize    = 10
         lthick   = 1.0
