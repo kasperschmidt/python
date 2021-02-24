@@ -14428,7 +14428,7 @@ def estimateGasPhaseAbundanceFromBylerFittingFunctions(linefluxfile,verbose=True
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=False,verbose=True):
+def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=False,litsymboldot=False,verbose=True):
     """
     Plotting gas phase abundances estimate with uves.estimateGasPhaseAbundanceFromBylerFittingFunctions()
 
@@ -14539,7 +14539,10 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         yvalues    = np.append(yvalues,    Z_He2O3C3_lit[bothest_ent_He2O3C3_lit_Z])
         xerr       = np.append(xerr,       Z_Si3O3C3_err_lit[bothest_ent_Si3O3C3_lit_Z])
         yerr       = np.append(yerr,       Z_He2O3C3_err_lit[bothest_ent_He2O3C3_lit_Z])
-        IDsALL     = np.append(IDsALL,     bothest_id_lit)
+        if litsymboldot:
+            IDsALL     = np.append(IDsALL,bothest_id_lit*0.0+990000000000)
+        else:
+            IDsALL     = np.append(IDsALL,bothest_id_lit)
         cdatvec    = np.append(cdatvec,    fdat_lit['redshift'][bothest_ent_lit])
         # cdatvec    = np.append(cdatvec,    fdat_lit['EW0_CIII'][bothest_ent_lit])
         point_text = None #np.append(point_text, bothest_id_lit.astype(str))
@@ -14575,7 +14578,10 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         yvalues    = np.append(yvalues,  Z_Si3O3C3_lit)
         xerr       = np.append(xerr,     [None]*len(Z_Si3O3C3_lit))
         yerr       = np.append(yerr,     Z_Si3O3C3_err_lit)
-        IDsALL     = np.append(IDsALL,   id_Si3O3C3_lit)
+        if litsymboldot:
+            IDsALL     = np.append(IDsALL,id_Si3O3C3_lit*0.0+990000000000)
+        else:
+            IDsALL     = np.append(IDsALL,id_Si3O3C3_lit)
         # cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_Si3O3C3_lit]) #fdat_lit['f_CIII'][ent_Si3O3C3_lit])
         cdatvec    = np.append(cdatvec,  fdat_lit['EW0_CIII'][ent_Si3O3C3_lit]) #fdat_lit['f_CIII'][ent_Si3O3C3_lit])
         point_text = None
@@ -14612,7 +14618,10 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
         yvalues    = np.append(yvalues,  Z_He2O3C3_lit)
         xerr       = np.append(xerr,     [None]*len(Z_He2O3C3_lit))
         yerr       = np.append(yerr,     Z_He2O3C3_err_lit)
-        IDsALL     = np.append(IDsALL,   id_He2O3C3_lit)
+        if litsymboldot:
+            IDsALL     = np.append(IDsALL,id_He2O3C3_lit*0.0+990000000000)
+        else:
+            IDsALL     = np.append(IDsALL,id_He2O3C3_lit)
         # cdatvec    = np.append(cdatvec,  fdat_lit['redshift'][ent_He2O3C3_lit]) #fdat_lit['f_CIII'][ent_He2O3C3_lit])
         cdatvec    = np.append(cdatvec,  fdat_lit['EW0_CIII'][ent_He2O3C3_lit]) #fdat_lit['f_CIII'][ent_He2O3C3_lit])
         point_text = None
