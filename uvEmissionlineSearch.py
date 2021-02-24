@@ -5238,18 +5238,26 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
             x_lolimarr = x_uplimarr
 
         for ii,xval in enumerate(xvalues): # loop necessary for coloring and upper/lower limits markers
+            # change color of limits
+            ecol         = colvec[ii]
+            mecol        = colvec[ii]
+            fcol         = facecol[ii]
+
             # checking for upper/lower limits
             if ids is not None:
                 mfc         = True
                 if (ids[ii] < 6e8): # CDFS and COSMOS
                     markersym   = 'o'
                     markerzorder = 25
+                    mecol        = 'black'
                 elif (ids[ii] < 7e8) & (ids[ii] > 6e8): # UDF
                     markersym   = 'D'
                     markerzorder = 25
+                    mecol        = 'black'
                 elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
                     markersym   = 'X'
                     markerzorder = 25
+                    mecol        = 'black'
                 elif (ids[ii] > 1e9): # Literature objects
                     if ids[ii] == 990000000000:
                         markersym   = '.'
@@ -5294,11 +5302,6 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                         xerr[ii] = np.abs(xvalues[ii] - 10.**(np.log10(xvalues[ii])+dlog))
                     else:
                         xerr[ii] = np.abs(np.diff(plt.xlim())) * limsizefrac
-
-            # change color of limits
-            ecol         = colvec[ii]
-            mecol        = colvec[ii]
-            fcol         = facecol[ii]
 
             if (xerr is not None) & showgraylimits:
                 if x_uplimarr[ii].all() or x_lolimarr[ii].all():
