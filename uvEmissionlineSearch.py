@@ -10150,9 +10150,9 @@ def checkfluxscales(specWnoise=True):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' --------- Plotting overview: ----------')
     import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(6, 3))
-    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.1, right=0.97, bottom=0.10, top=0.95)
-    Fsize    = 12
+    fig = plt.figure(figsize=(6, 4))
+    fig.subplots_adjust(wspace=0.1, hspace=0.3,left=0.15, right=0.99, bottom=0.15, top=0.99)
+    Fsize    = 14
     lthick   = 2
     marksize = 4
     plt.rc('text', usetex=True)
@@ -10177,6 +10177,9 @@ def checkfluxscales(specWnoise=True):
 
     plt.plot(tempdat['wave'][tempent]*(1+zspec),template_scaled[tempent]/(1+zspec),color='red')
     plt.ylim([-50,140])
+
+    plt.xlabel('$\\lambda$ [\AA]')
+    plt.ylabel('flux [10$^{-20}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]')
 
     plotname = testdir+'fluxscalecheck_'+noisestr+'.pdf'
     plt.savefig(plotname)
