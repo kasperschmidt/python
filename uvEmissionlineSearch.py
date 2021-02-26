@@ -15356,7 +15356,7 @@ def plot_magnitudedistributions(outputdir,infofile,masterfits, emlinelist = ['CI
     Nhistbins = 30
     xrange    = [19,31.5]
     yrange    = [0.1,400]
-    colortype = 'redshift' #'zmanual' # 'z' fixes redshift range in color yyy
+    colortype = 'redshift' #'zmanual' # 'z' fixes redshift range in color
     for emline in magdic.keys():
         plotname   = outputdir+'magdist_'+emline+'.pdf'
         # xlabel     = 'EW$_0$ continuum AB magnitude ('+emline+')'
@@ -16878,26 +16878,33 @@ def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillar
     xmax = 8.0
 
     # Nbins   = np.ceil(np.sqrt(len(paramval)))
-    binwidth_x = 0.3 #np.diff([xmin,xmax])/Nbins
+    binwidth_x = 0.32 #np.diff([xmin,xmax])/Nbins
     bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
 
-    hist_all = plt.hist(redshift_all,color="r",bins=bindefs,histtype="step",lw=lthick,zorder=5,label='$z>1.5$ MUSE-Wide and MUSE-Deep LSDCat \nobjects (this work)')
-    hist_det = plt.hist(redshift_det,color="b",bins=bindefs,histtype="stepfilled",lw=lthick,zorder=8,label='$z>1.5$ MUSE objects with UV line detections \nfrom FELIS (this work)')
+    hist_all = plt.hist(redshift_all,color="forestgreen",bins=bindefs,histtype="step",lw=lthick,zorder=5,label='$z>1.5$ MUSE-Wide and MUSE-Deep LSDCat \nobjects (this work)')
+    hist_det = plt.hist(redshift_det,color="darkgreen",bins=bindefs,histtype="stepfilled",lw=lthick,zorder=8,label='$z>1.5$ MUSE objects with UV line detections \nfrom FELIS (this work)')
     hist_lit = plt.hist(redshift_lit,color="k",bins=bindefs,histtype="step",lw=lthick,zorder=10,linestyle=':',label=r'Literature comparison sample')
 
     if withancillaryhist:
         inami_dat = afits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/MUSE_UDF_Inami17_combinedVizieR.fits')[1].data
-        hist_ina = plt.hist(inami_dat['zMuse'],color="orange",bins=bindefs,histtype="step",alpha=1.0,
+        hist_ina = plt.hist(inami_dat['zMuse'],color="blue",bins=bindefs,histtype="step",alpha=1.0,
                             lw=0.5,label=r'MUSE-Deep Inami et al. (2017)',zorder=2)
         if verbose: print(' - N_ina = '+str(len(inami_dat['zMuse'])))
 
         mwdr1_dat = afits.open('/Users/kschmidt/work/catalogs/MUSE_GTO/MW_44fields_main_table_v1.0.fits')[1].data
-        hist_urr = plt.hist(mwdr1_dat['Z'],color="green",bins=bindefs,histtype="step",alpha=1.0,
+        hist_urr = plt.hist(mwdr1_dat['Z'],color="darkorange",bins=bindefs,histtype="step",alpha=1.0,
                             lw=0.5,label=r'MUSE-Wide DR1 Urrutia et al. (2019)',zorder=2)
         if verbose: print(' - N_urr = '+str(len(mwdr1_dat['Z'])))
 
     plt.xlabel('Redshift')
     plt.ylabel('Number of objects')
+
+    yrange = [0,460]
+    plt.ylim(yrange)
+    plt.fill_between([1.5,2.9],[yrange[0],yrange[0]],[yrange[1],yrange[1]],zorder=1,color='lightgray')
+    plt.text(2.2,380,'MUSE\nredshift\ndesert',color='dimgray',fontsize=Fsize/1.3,zorder=1,ha='center')
+    plt.text(1.35,435,'$\leftarrow$ [OII]',color='black',fontsize=Fsize/1.3,zorder=1,ha='right')
+    plt.text(3.05,435,'Ly$\\alpha$ $\\rightarrow$',color='black',fontsize=Fsize/1.3,zorder=1,ha='left')
 
     leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize/1.35},ncol=1,numpoints=1,
                      bbox_to_anchor=(0.5, 1.0))  # add the legend
