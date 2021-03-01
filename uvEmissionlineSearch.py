@@ -5047,7 +5047,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
                                               colortype=None,colorcode=True,cdatvec=None,point_text=None,ids=None,
-                                              overwrite=False,verbose=True,title=None,
+                                              overwrite=False,verbose=True,title=None,MUSEsymbolblackedge=False,
                                               photoionizationplotparam=None, showgraylimits=True,
                                               histaxes=False,Nbins=50):
     """
@@ -5249,15 +5249,18 @@ def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr
                 if (ids[ii] < 6e8): # CDFS and COSMOS
                     markersym   = 'o'
                     markerzorder = 25
-                    mecol        = 'black'
+                    if MUSEsymbolblackedge:
+                        mecol        = 'black'
                 elif (ids[ii] < 7e8) & (ids[ii] > 6e8): # UDF
                     markersym   = 'D'
                     markerzorder = 25
-                    mecol        = 'black'
+                    if MUSEsymbolblackedge:
+                        mecol        = 'black'
                 elif (ids[ii] < 9e8) & (ids[ii] > 7e8): # UDF10
                     markersym   = 'X'
                     markerzorder = 25
-                    mecol        = 'black'
+                    if MUSEsymbolblackedge:
+                        mecol        = 'black'
                 elif (ids[ii] > 1e9): # Literature objects
                     if ids[ii] == 990000000000:
                         markersym   = '.'
@@ -7276,7 +7279,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
                            'magUV_many']
 
         info_ranges     = info_ranges+[[-40,440],
-                           [-4,3],
+                           [-3,-1],#[-4,3],
                            [-25,-10],
                            [20,35]]
 
@@ -7288,18 +7291,6 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         fluxes_range    = [10,8e3]
     ratios_range    = [1e-4,1e3]
     FR_range        = [0.0,3.75]
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    linesetlist_lyaFR = []
-
-
-    Nhistbins = 30
-    histaxes  = True
-    for lineset in linesetlist_lyaFR:
-        uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
-                                                         Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
-                                                         ylog=False,xlog=False,addliteraturevalues=addliteraturevalues,
-                                                         overwrite=overwrite,verbose=verbose,showlimits=showlimits,litsymboldot=litsymboldot)
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lya = []
     for ll, infocol in enumerate(infocols):
@@ -7318,11 +7309,29 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
-    histaxes  = True
+    histaxes  = False
     for lineset in linesetlist_lya:
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
                                                          Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
                                                          ylog=True,xlog=False,addliteraturevalues=addliteraturevalues,
+                                                         overwrite=overwrite,verbose=verbose,showlimits=showlimits,litsymboldot=litsymboldot)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    linesetlist_lyaFR = []
+
+    for ll, infocol in enumerate(infocols):
+        linesetlist_lyaFR.append([infocol, None, 'FR_NV1NV2',       None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_CIV1CIV2',     None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_OIII1OIII2',   None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_SIIII1SIIII2', None ,info_ranges[ll], FR_range, None])
+        linesetlist_lyaFR.append([infocol, None, 'FR_CIII1CIII2',   None ,info_ranges[ll], FR_range, None])
+
+    Nhistbins = 30
+    histaxes  = False
+    for lineset in linesetlist_lyaFR:
+        uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
+                                                         Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
+                                                         ylog=False,xlog=False,addliteraturevalues=addliteraturevalues,
                                                          overwrite=overwrite,verbose=verbose,showlimits=showlimits,litsymboldot=litsymboldot)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -8181,7 +8190,7 @@ def get_infodat_plotcols():
     colinfo['lyaew_many']      = ['EW_0_beta_linear_many','EW_0_beta_linear_many_error',             'EW$_0$(Ly$\\alpha$) [\AA] ($\\beta$ linear multiband fit)']
     colinfo['lyafwhm_a']       = ['fwhm_a','fwhm_A_err',                                             'FWHM(Ly$\\alpha$) [\AA]']
     colinfo['lyafwhm_kms']     = ['fwhm_kms','fwhm_kms_err',                                         'FWHM(Ly$\\alpha$) [km/s]']
-    colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',                       '$\\beta$ (linear multiband fit)']
+    colinfo['beta_many']       = ['beta_linear_many','beta_linear_many_error',                       '$\\beta$'] # (linear multiband fit)
     colinfo['absmagUV_-2']     = ['abs_mag_UV_cont_beta2','abs_mag_UV_cont_beta2_error',             'M(UV,1500) ($\\beta = -2$)']
     colinfo['absmagUV_many']   = ['abs_mag_UV_cont_linear_many','abs_mag_UV_cont_linear_many_error', 'M(UV,1500) ($\\beta$ linear multiband fit)']
     colinfo['absmagUV_median'] = ['abs_mag_UV_cont_own_median','abs_mag_UV_cont_own_median_error',   'M(UV,1500)'] #($\\beta = -1.97$)
@@ -8924,7 +8933,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
     if xlog:
         beta_range = [0.1,3]
     else:
-        beta_range = [-4,3]
+        beta_range = [-3,-1] #[-4,3]
 
     if xlog:
         MUV_range = [10,25]
@@ -14446,6 +14455,9 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
     uves.plot_GasPhaseAbundances(masterfits,outputdir,overwrite=True,withliterature=False,verbose=True)
     uves.plot_GasPhaseAbundances(masterfits,overwrite=True,withliterature=True,verbose=True)
     """
+    if withliterature:
+         MUSEsymbolblackedge=True
+
     # - - - - - - get entries for UVES results - - - - - -
     if verbose: print('\n ----- Estimating abundances ----- ')
     if verbose: print(' - Estimate abundances for UVES detections ')
@@ -14565,7 +14577,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
                                                    ylog=False,xlog=False,yrange=Zrange,xrange=Zrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=Nbins,
+                                                   histaxes=True,Nbins=Nbins, MUSEsymbolblackedge=MUSEsymbolblackedge,
                                                    overwrite=overwrite,verbose=verbose)
 
     # - - - - - - Si3O3C3 vs redshift    - - - - - -
@@ -14604,7 +14616,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
                                                    ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=Nbins,
+                                                   histaxes=True,Nbins=Nbins, MUSEsymbolblackedge=MUSEsymbolblackedge,
                                                    overwrite=overwrite,verbose=verbose)
 
 
@@ -14645,7 +14657,7 @@ def plot_GasPhaseAbundances(masterfits,outputdir,withliterature=True,overwrite=F
                                                    ylog=False,xlog=xlog,yrange=Zrange,xrange=xrange,
                                                    colortype=colortype,colorcode=colorcode,cdatvec=cdatvec,
                                                    point_text=point_text,photoionizationplotparam=None,
-                                                   histaxes=True,Nbins=Nbins,
+                                                   histaxes=True,Nbins=Nbins, MUSEsymbolblackedge=MUSEsymbolblackedge,
                                                    overwrite=overwrite,verbose=verbose)
 
     # - - - - - - Si3O3C3 vs EW(Lya)     - - - - - -
