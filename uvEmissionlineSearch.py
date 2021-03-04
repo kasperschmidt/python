@@ -8962,7 +8962,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
                                     yline   ,Llya_range, EW0_range_y,   None])
             linesetlist_EWs.append([['MUVlya','M(UV,1500)',MUV,MUVerr],
                                     yline   ,MUV_range, EW0_range_y,   None])
-            linesetlist_EWs.append([['betalya','$\\beta$ (linear multiband fit)',beta,betaerr],
+            linesetlist_EWs.append([['betalya','$\\beta$',beta,betaerr],
                                     yline   ,beta_range, EW0_range_y,   None])
         else:
             histaxes  = True
@@ -15982,11 +15982,17 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     else:
                         plotdvversion = None
 
+                    histaxes  = True
                     colortype = 'redshift'
                     if 'EW' in xlabel:
                         linetype  = 'horizontal_and_nakajima18EWvsDv'
                         colortype = 'zmanual'
                         yrange    = [-400,740]
+                    elif colname == 'R_e':
+                        yrange    = [-200,740]
+                        colortype = 'zmanual'
+                        linetype  = 'horizontal'
+                        histaxes  = False
                     elif colname == 'peaksep_kms':
                         linetype  = 'AV18_peaksep_wHorizontal'
                         xvalues   = 0.5 * xvalues
@@ -16089,13 +16095,15 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
                     else:
                         linetype='horizontal'
 
-                    if ('lyafwhm_kms' in colname) or (colname == 'peaksep_kms'):
-                        if verbose: print(' - Estimating correlation coeffecients for "'+colname+'":')
-                        r_pearson, pvalue_pearson   = ss.pearsonr(xvalues,plot_dv)
-                        r_spearman, pvalue_spearman = ss.spearmanr(xvalues,plot_dv)
-                        if verbose: print('   r_pearson, pvalue_pearson   = '+str("%.4f" % r_pearson)+', '+str("%.4f" % pvalue_pearson))
-                        if verbose: print('   r_spearman, pvalue_spearman = '+str("%.4f" % r_spearman)+', '+str("%.4f" % pvalue_spearman))
+                    if verbose: print('\n - Estimating correlation coeffecients for "'+colname+'":')
+                    r_pearson, pvalue_pearson   = ss.pearsonr(xvalues[np.isfinite(xvalues) & np.isfinite(xvalues)],
+                                                              plot_dv[np.isfinite(xvalues) & np.isfinite(xvalues)])
+                    r_spearman, pvalue_spearman = ss.spearmanr(xvalues[np.isfinite(xvalues) & np.isfinite(xvalues)],
+                                                               plot_dv[np.isfinite(xvalues) & np.isfinite(xvalues)])
+                    if verbose: print('   r_pearson, pvalue_pearson   = '+str("%.4f" % r_pearson)+', '+str("%.4f" % pvalue_pearson))
+                    if verbose: print('   r_spearman, pvalue_spearman = '+str("%.4f" % r_spearman)+', '+str("%.4f" % pvalue_spearman)+'\n')
 
+                    if ('lyafwhm_kms' in colname) or (colname == 'peaksep_kms'):
                         if verbose: print(' - Calculating the perpendicular euclidian distance '
                                           'to the best-fit line from Verhamme+18 for "'+colname+'":')
                         dists_perp = np.zeros(len(xvalues))
