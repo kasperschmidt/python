@@ -15701,7 +15701,7 @@ def evaluate_velocityoffsets(linefluxcatalog,infofile,outputdir='./velocityoffse
     print('And corresponding IDs:'+str(dat_uves['id'][dv_CIIICIV_ent]))
 
     DvLyaLit_cat = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/vshift_Lya_and_MUV.txt'
-    DvLyaLit_dat = np.genfromtxt(DvLyaLit_cat,skip_header=0,names=True,dtype='40a,d,d,d,d,d,d,d,d,d,d,d,40a')
+    DvLyaLit_dat = np.genfromtxt(DvLyaLit_cat,skip_header=0,names=True,dtype='d,d,d,40a,d,d,d,d,d,d,d,d,d,d,d,40a')
 
     #------------------------------------------------------------------------------
     if verbose: print(' - Setting up and generating plot of lead line offsets intra-object comparison')
