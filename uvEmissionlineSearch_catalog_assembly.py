@@ -26,7 +26,7 @@ def assemble_catalogs(verbose=True):
 
     uca.uves_catalog_assemble(basename,verbose=verbose)
     uca.lit_catalog_assemble(basename,verbose=verbose)
-    # uca.dv_catalog_assemble(basename,verbose=verbose)
+    uca.dv_catalog_assemble(basename,verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def dv_catalog_assemble(basename,verbose=True):
     """
@@ -39,24 +39,33 @@ def dv_catalog_assemble(basename,verbose=True):
 
     """
     if verbose: print('========================================================\n - Assembling the dv_Lya literature catalog')
-    # id
-    # ra, dec
-    # name
-    # reference
-    # redshift
-    # magabs_uv
-    # magabs_uv_err
-    # magapp_uv
-    # magapp_uv_err
-    # vshift_lya
-    # vshifterr_lya
-    # fwhm_lya
-    # fwhm_lyaerr
-    # peaksep_lya
-    # peaksep_lya_err
+
+    dvcat = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/vshift_Lya_and_MUV.txt'
+    dvdat = np.genfromtxt(dvcat,skip_header=0,names=True,dtype='d,d,d,40a,d,d,d,d,d,d,d,d,d,d,d,40a')
+
+    collist_trans = {'id':'id','ra':'ra', 'dec':'dec','name':'objname','reference':'Reference','redshift':'redshift','magabs_uv':'magabsUV','magabs_uv_err':'magabsUVerr','magapp_uv':'magappUV','magapp_uv_err':'magappUVerr','vshift_lya':'vshift_Lya','vshifterr_lya':'vshifterr_Lya','fwhm_lya':'FWHM_lya','fwhm_lyaerr':'FWHM_lyaerr','peaksep_lya':'peaksep_lya','peaksep_lya_err':'peaksep_lya_err'}
+
+    collist_trans_back = {}
+    for key in collist_trans.keys():
+        collist_trans_back[collist_trans[key]] = key
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    collist_out  = []
+    colnames     = dvdat.dtype.names
+    for cc, colname in enumerate(colnames):
+        if colname in collist_trans_back.keys():
+            collist_out.append(collist_trans_back[colname])
+
+    dvdat['id'] = np.arange(1,len(dvdat['id'])+1,1)
+
+    ent_reorder       = [0, 1, 2, 3, len(collist_out)-1]+list(np.arange(4,len(collist_out)-1,1))
+    collist_reordered = [collist_out[i] for i in ent_reorder]
+
+
+    outarray = uca.build_dataarray(dvdat, collist_reordered, colnametranslation=collist_trans, verbose=True)
 
     outputfile = basename+'_dvLya_literature.txt'
-    write_catalogs_to_disk(outputfile, outputdataarray, literaturecontent=True, verbose=verbose)
+    write_catalogs_to_disk(outputfile, outarray, literaturecontent=True, verbose=verbose)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def lit_catalog_assemble(basename,verbose=True):
@@ -90,7 +99,7 @@ def lit_catalog_assemble(basename,verbose=True):
     outarray = uca.build_dataarray(litdat, collist_reordered, verbose=verbose)
 
     outputfile = basename+'_UVemissionlines_literature.txt'
-    write_catalogs_to_disk(outputfile, outarray, literaturecontent=True, verbose=verbose)
+    uca.write_catalogs_to_disk(outputfile, outarray, literaturecontent=True, verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def uves_catalog_assemble(basename,verbose=True):
     """
@@ -163,7 +172,7 @@ def uves_catalog_assemble(basename,verbose=True):
     outarray          = uca.build_dataarray(datarray_combined, collist_reordered, verbose=True)
 
     outputfile = basename+'_MUSE_source_catalog.txt'
-    write_catalogs_to_disk(outputfile, outarray, literaturecontent=False, verbose=verbose)
+    uca.write_catalogs_to_disk(outputfile, outarray, literaturecontent=False, verbose=verbose)
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def build_dataarray(dataarray, colnames, colnametranslation=None, verbose=True):
     """
@@ -199,6 +208,7 @@ def write_catalogs_to_disk(outputfile, outputdataarray, literaturecontent=True, 
     """
 
     """
+    outputdataarray = np.sort(outputdataarray, order='id') # sorting array by ID
     outputdir = '/Users/kschmidt/work/publications/MUSE_UVemissionlines/catalog_releases/'
     outtxt    = outputdir+outputfile
     outfits   = outputdir+outputfile.replace('.txt','.fits')
@@ -219,11 +229,11 @@ def write_catalogs_to_disk(outputfile, outputdataarray, literaturecontent=True, 
     Ncols        = len(colnames)
     if verbose: print('   The output files will contain '+str(Ncols)+' columns ')
     fout.write('# The catalog contains the following '+str(Ncols)+' columns:\n')
-    fout.write('# '+' '.join([str("%20s" % colname) for colname in list(colnames)])+'  \n')
+    fout.write('# '+(' '.join([str("%20s" % colname) for colname in list(colnames)])).replace('reference','                    reference')+'  \n')
     if verbose: print('   The total number of objects in the output is '+str(len(outputdataarray['id'])))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Writing output data array to ascii file \n   '+outputfile)
-    dtypetranslator = {'>i8':'%20i',  'float64':'%20.4f', '|S30':'%20s'}
+    dtypetranslator = {'>i8':'%20i',  'float64':'%20.4f', '|S30':'%30s'}
 
     for oo, id in enumerate(outputdataarray['id']):
         outstr = ' '
@@ -243,7 +253,7 @@ def write_catalogs_to_disk(outputfile, outputdataarray, literaturecontent=True, 
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print(' - Creating fits version of output: \n   '+outfits)
     if literaturecontent:
-        fitsformat = ['K','D','D','20A','20A','D'] + ['D']*(Ncols-6)
+        fitsformat = ['K','D','D','20A','30A','D'] + ['D']*(Ncols-6)
     else:
         fitsformat      = ['K','D','D','D','10A','K','K'] + ['D']*(Ncols-15) + ['K', 'D']*4
         fitsformat[-19] = 'K' # The Kerutt ID
