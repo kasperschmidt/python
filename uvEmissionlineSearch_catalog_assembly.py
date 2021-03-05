@@ -43,7 +43,7 @@ def dv_catalog_assemble(basename,verbose=True):
     dvcat = '/Users/kschmidt/work/catalogs/literaturecollection_emissionlinestrengths/vshift_Lya_and_MUV.txt'
     dvdat = np.genfromtxt(dvcat,skip_header=0,names=True,dtype='d,d,d,40a,d,d,d,d,d,d,d,d,d,d,d,40a')
 
-    collist_trans = {'id':'id','ra':'ra', 'dec':'dec','name':'objname','reference':'Reference','redshift':'redshift','magabs_uv':'magabsUV','magabs_uv_err':'magabsUVerr','magapp_uv':'magappUV','magapp_uv_err':'magappUVerr','vshift_lya':'vshift_Lya','vshifterr_lya':'vshifterr_Lya','fwhm_lya':'FWHM_lya','fwhm_lyaerr':'FWHM_lyaerr','peaksep_lya':'peaksep_lya','peaksep_lya_err':'peaksep_lya_err'}
+    collist_trans = {'id':'id','ra':'ra', 'dec':'dec','name':'objname','reference':'Reference','redshift':'redshift','magabs_uv':'magabsUV','magabserr_uv':'magabsUVerr','magapp_uv':'magappUV','magapp_uv_err':'magappUVerr','vshift_lya':'vshift_Lya','vshifterr_lya':'vshifterr_Lya','fwhm_lya':'FWHM_lya','fwhmerr_lya':'FWHM_lyaerr','peaksep_lya':'peaksep_lya','peakseperr_lya':'peaksep_lya_err'}
 
     collist_trans_back = {}
     for key in collist_trans.keys():
@@ -278,14 +278,49 @@ def write_catalogs_to_disk(outputfile, outputdataarray, literaturecontent=True, 
         fitsformat = np.asarray([fitsformat]*len(keys))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('   Writing to fits table')
-
     columndefs = []
     for kk, key in enumerate(keys):
-        columndefs.append(afits.Column(name=key  , format=fitsformat[kk], array=datadic[key]))
+        columndefs.append(afits.Column(name=key  , format=fitsformat[kk], unit=uca.get_unit(key), array=datadic[key]))
 
     cols     = afits.ColDefs(columndefs)
     tbhdu    = afits.BinTableHDU.from_columns(cols)  # creating table header
     hdu      = afits.PrimaryHDU()                    # creating primary (minimal) header
     thdulist = afits.HDUList([hdu, tbhdu])           # combine primary and table header to hdulist
     thdulist.writeto(outfits,overwrite=True)      # write fits file
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_unit(colname):
+    """
+    Returning units for fits table columns. Formats described in PDF linked from https://fits.gsfc.nasa.gov/fits_standard.html
+    """
+    unitdic = {'id':'','ra':'deg','dec':'deg','redshift':'','lead_line':'','name':'','reference':'',
+               'confidence':'','id_duplication':'','id_kerutt':'',
+               'f_lya':'10**-20 erg s-1 cm-2','ferr_lya':'10**-20 erg s-1 cm-2',
+               'ew0_lya':'Angstrom','ew0err_lya':'Angstrom',
+               'magabs_uv':'mag','magabserr_uv':'mag',
+               'fwhm_lya':'km s-1','fwhmerr_lya':'km s-1',
+               'peaksep_lya':'km s-1','peakseperr_lya':'km s-1',
+               'id_guo':'id_guo','sep_guo':'sep_guo',
+               'id_skelton':'','sep_skelton':'arcsec',
+               'id_rafelski':'','sep_rafelski':'arcsec',
+               'id_laigle':'','sep_laigle':'arcsec',
+               'contmagAB':'mag','contmagABerr':'mag',
+               'magapp_uv':'mag','magapp_uv_err':'mag','vshift_lya':'km s-1',
+               'vshifterr_lya':'km s-1'}
+
+    if colname in unitdic.keys():
+        returnunit = unitdic[colname]
+    elif colname.startswith('f_') or colname.startswith('ferr_'):
+        returnunit = '10**-20 erg s-1 cm-2'
+    elif colname.startswith('fr_') or colname.startswith('frerr_') or colname.startswith('s2n_') or colname.startswith('frs2n_') or\
+            colname.startswith('contband_') or colname.startswith('photref_'):
+        returnunit = ''
+    elif colname.startswith('ew0_') or colname.startswith('ew0err_') or colname.startswith('sigma_') or colname.startswith('sigmaerr_'):
+        returnunit = 'Angstrom'
+    elif colname.startswith('vshift_') or colname.startswith('vshifterr_'):
+        returnunit = 'km s-1'
+    else:
+        sys.exit("uca.get_unit() couldn't find a unit to return for '"+colname+"'")
+
+    return returnunit
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
