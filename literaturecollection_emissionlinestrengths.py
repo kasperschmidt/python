@@ -163,6 +163,8 @@ def referencedictionary(verbose=False):
     #  o    MUSE data
 
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    # Wofford+21
+    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Tang+20a OIII5007 emitters with UV spectroscopy
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Jiang+20(21) Nature Astronomy of CIII and OIII in GNZ11
@@ -1951,25 +1953,25 @@ def data_shi18(fluxscale=1e3,verbose=True):
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
-    datadic['f_NV']         = np.array([3/2 *0.81, 3/2 *0.53, 3/2 *0.71, 3/2 *0.56, 3/2 *0.75, 3/2 *0.64, 3/2 *0.55, 3/2 *0.66, 3/2 *0.67, 3/2 *0.92, 3/2 *0.64, 3/2 *0.70, 3/2 *0.62, 3/2 *0.15, 3/2 *0.59, 3/2 *0.26, 3/2 *0.45, 3/2 *0.72, 3/2 *1.05, 3/2 *1.24, 3/2 *0.43])
+    datadic['f_NV']         = np.array([3./2. *0.81, 3./2. *0.53, 3./2. *0.71, 3./2. *0.56, 3./2. *0.75, 3./2. *0.64, 3./2. *0.55, 3./2. *0.66, 3./2. *0.67, 3./2. *0.92, 3./2. *0.64, 3./2. *0.70, 3./2. *0.62, 3./2. *0.15, 3./2. *0.59, 3./2. *0.26, 3./2. *0.45, 3./2. *0.72, 3./2. *1.05, 3./2. *1.24, 3./2. *0.43])
     datadic['ferr_NV']      = np.asarray([+99]*len(datadic['f_NV']))
-    datadic['EW0_NV']       = np.array([3/2 *7.2, np.nan, np.nan, np.nan, np.nan, 3/2 *6.6, np.nan, np.nan, np.nan, 3/2 *8.2, 3/2 *11, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['EW0_NV']       = np.array([3./2. *7.2, np.nan, np.nan, np.nan, np.nan, 3./2. *6.6, np.nan, np.nan, np.nan, 3./2. *8.2, 3./2. *11, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['EW0err_NV']    = np.array([+99, np.nan, np.nan, np.nan, np.nan, +99, np.nan, np.nan, np.nan, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-    datadic['f_CIV']        = np.array([3/2 *0.13, np.nan, 3/2 *0.81, 3/2 *0.77, np.nan, 3/2 *0.07, np.nan, np.nan, 1.15, 3/2 *0.30, 3/2 *0.08, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['f_CIV']        = np.array([3./2. *0.13, np.nan, 3./2. *0.81, 3./2. *0.77, np.nan, 3./2. *0.07, np.nan, np.nan, 1.15, 3./2. *0.30, 3./2. *0.08, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['ferr_CIV']     = np.array([+99, np.nan, +99, +99, np.nan, +99, np.nan, np.nan, 1.15 / 3.0, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-    datadic['EW0_CIV']      = np.array([3/2 *1.8, np.nan, np.nan, np.nan, np.nan, 3/2 *1.1, np.nan, np.nan, 3/2 *42, 3/2 *4.2, 3/2 *2.1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['EW0_CIV']      = np.array([3./2. *1.8, np.nan, np.nan, np.nan, np.nan, 3./2. *1.1, np.nan, np.nan, 3./2. *42, 3./2. *4.2, 3./2. *2.1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['EW0err_CIV']   = np.array([+99, np.nan, np.nan, np.nan, np.nan, +99, np.nan, np.nan, -99, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-    datadic['f_HeII']       = np.array([ 3/2 *0.35, np.nan, 3/2 *1.06, 3/2 *1.20, np.nan, 3/2 *0.05, np.nan, np.nan, 3/2 *0.16, 3/2 *0.39, 3/2 *0.12, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['f_HeII']       = np.array([ 3./2. *0.35, np.nan, 3./2. *1.06, 3./2. *1.20, np.nan, 3./2. *0.05, np.nan, np.nan, 3./2. *0.16, 3./2. *0.39, 3./2. *0.12, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['ferr_HeII']    = np.array([+99, np.nan, +99, +99, np.nan, +99, np.nan, np.nan, +99, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-    datadic['EW0_HeII']     = np.array([3/2 *5.4, np.nan, np.nan, np.nan, np.nan, 0.91, np.nan, np.nan, np.nan, 3/2 *6.1, 3/2 *3.5, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['EW0_HeII']     = np.array([3./2. *5.4, np.nan, np.nan, np.nan, np.nan, 0.91, np.nan, np.nan, np.nan, 3./2. *6.1, 3./2. *3.5, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['EW0err_HeII']  = np.array([+99, np.nan, np.nan, np.nan, np.nan, 0.91 / 3.0, np.nan, np.nan, np.nan, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-    datadic['f_OIII']       = np.array([ 3/2 *0.22, np.nan, 3/2 *1.55, 3/2 *1.95, np.nan, 3/2 *0.16, np.nan, np.nan, 3/2 *0.09, 3/2 *0.06, 3/2 *0.13, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['f_OIII']       = np.array([ 3./2. *0.22, np.nan, 3./2. *1.55, 3./2. *1.95, np.nan, 3./2. *0.16, np.nan, np.nan, 3./2. *0.09, 3./2. *0.06, 3./2. *0.13, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['ferr_OIII']    = np.array([+99, np.nan, +99, +99, np.nan, +99, np.nan, np.nan, +99, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-    datadic['EW0_OIII']     = np.array([3/2 *3.5, np.nan, np.nan, np.nan, np.nan, 3/2 *3.0, np.nan, np.nan, np.nan, 3/2 *1.0, 3/2 *3.9, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    datadic['EW0_OIII']     = np.array([3./2. *3.5, np.nan, np.nan, np.nan, np.nan, 3./2. *3.0, np.nan, np.nan, np.nan, 3./2. *1.0, 3./2. *3.9, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['EW0err_OIII']  = np.array([+99, np.nan, np.nan, np.nan, np.nan, +99, np.nan, np.nan, np.nan, +99, +99, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
     datadic['f_Lya']        = np.array([16.0, 8.20, 6.74, 3.98, 6.14, 7.94, 6.07, 2.45, 13.5, 12.5, 13.6, 12.7, 7.04, 5.48, 4.55, 4.90, 3.59, 5.10, 5.34, 7.19, 4.17])
     datadic['ferr_Lya']     = np.array([0.12, 0.05, 0.03, 0.06, 0.13, 0.10, 0.05, 0.03, 0.03, 0.07, 0.10, 0.09, 0.06, 0.02, 0.05, 0.03, 0.02, 0.03, 0.05, 0.13, 0.03])
-    datadic['EW0_Lya']      = np.array([98.6, 80.8, 3/2 * 57.3, 3/2 * 30.8, 61.1, 3/2 * 107.0, 3/2 * 51.5, 3/2 * 14.4, 3/2 * 256.4, 107.4, 216.6, 73.5, 207.3, 69.5, 17.2, 53.6, 42.7, 115.6, 3/2 * 160.8, 210.3, 70.5])
+    datadic['EW0_Lya']      = np.array([98.6, 80.8, 3./2. * 57.3, 3./2. * 30.8, 61.1, 3./2. * 107.0, 3./2. * 51.5, 3./2. * 14.4, 3./2. * 256.4, 107.4, 216.6, 73.5, 207.3, 69.5, 17.2, 53.6, 42.7, 115.6, 3./2. * 160.8, 210.3, 70.5])
     datadic['EW0err_Lya']   = np.array([32.7, 33.4, -99, -99, 18.9, -99, -99, -99, -99, 21.4, 88.5, 10.7, 87.2, 21.9, 1.8, 11.8, 13.1, 37.1, -99, 88.8, 17.1])
 
     # ---------------------------------------------------------------------------------
