@@ -5,7 +5,7 @@
 import pdb
 import asciitable
 import sys
-import pyfits
+import astropy.io.fits as afits
 import numpy as np
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def fits2ascii(fitsfile,outpath=None,columns=['all'],verbose=True):
@@ -21,7 +21,7 @@ def fits2ascii(fitsfile,outpath=None,columns=['all'],verbose=True):
     """
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print(' - Loading fits file '+fitsfile)
-    datfits  = pyfits.open(fitsfile)
+    datfits  = afits.open(fitsfile)
     fitstab  = datfits[1].data
     fitscol  = fitstab.columns
 
@@ -97,17 +97,16 @@ def ascii2fits(asciifile,asciinames=True,skip_header=0,outpath=None,fitsformat='
     columndefs = []
     for kk, key in enumerate(keys):
         try:
-            columndefs.append(pyfits.Column(name=key  , format=fitsformat[kk], array=datadic[key]))
+            columndefs.append(afits.Column(name=key  , format=fitsformat[kk], array=datadic[key]))
         except:
             print(' ----ERROR---- in defining columns for fits file --> stopping with pdb.set_trace() to invest')
             pdb.set_trace()
 
-
-    cols     = pyfits.ColDefs(columndefs)
-    tbhdu    = pyfits.new_table(cols)          # creating table header
-    hdu      = pyfits.PrimaryHDU()             # creating primary (minimal) header
-    thdulist = pyfits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
-    thdulist.writeto(outputfile,clobber=True)  # write fits file (clobber=True overwrites excisting file)
+    cols     = afits.ColDefs(columndefs)
+    tbhdu    = afits.BinTableHDU.from_columns(cols)          # creating table header
+    hdu      = afits.PrimaryHDU()             # creating primary (minimal) header
+    thdulist = afits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
+    thdulist.writeto(outputfile,overwrite=True)  # write fits file (clobber=True overwrites excisting file)
     #-------------------------------------------------------------------------------------------------------------
     if verbose: print(' - Wrote the data to: '+outputfile)
     return outputfile
