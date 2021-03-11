@@ -22,7 +22,7 @@ from matplotlib.ticker import NullFormatter
 import literaturecollection_emissionlinestrengths as lce
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def generate_literature_fitscatalog(quickcheck=True,verbose=True):
+def generate_literature_fitscatalog(quickcheck=False,verbose=True):
     """
     Collecting literature values and storing them in a single file
 
@@ -138,8 +138,8 @@ def referencedictionary(verbose=False):
     refdic['mat17'] = [99,    'Matthee et al. (2017)',                         (5, 2, 180)   , '\citep{2017MNRAS.472..772M}']  # 5-point asterisk
     refdic['jia20'] = [99,    'Jiang et al. (2020)',                           (6, 2, 180)   , '\citep{2020NatAs.tmp..246J}']  # 6-point asterisk
     refdic['wof21'] = [99,    'Wofford et al. (2021)',                          '8'          , '\citep{2021MNRAS.500.2908W}']
-    refdic['tan21'] = [99,    'Tang et al. (2021)',                             r'$\otimes$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\ominus$']
+    refdic['tan21'] = [99,    'Tang et al. (2021)',                             r'$\otimes$' , '\citep{2021MNRAS.501.3238T}']
+    refdic['din17'] = [99,    'Ding et al. (2017)',                             r'$\ominus$' , '\citep{2017ApJ...838L..22D}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\oplus$']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\oslash$']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\odot$']
@@ -158,23 +158,8 @@ def referencedictionary(verbose=False):
         refdic[key][0] = baseid
         if verbose: print('   '+str("%12i" % refdic[key][0])+'    '+refdic[key][1])
 
-    #bow ties and half moons as symbols...
-
-    # --- MUSE-Wide def: ---
-    # CDFS and COSMOS:  'o'
-    # UDF:              'D'
-    # UDF10:            'X'
-
-    # --- potentially outer symbols def: ---
-    #  D    GLASS
-    #  s    stack/composite
-    #  *    AGN
-    #  o    MUSE data
-
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # missing from Matthee+17 compilation
-    # -------------------------------------------------
-    # Ding+17: Five Lya-CIII emitters
     # -------------------------------------------------
     # Hutchison+19 CIII at redshift 7.5 (Finkelstein's pet object); FIGS_GN1_1292   7.51  Finkelstein et al. (2013); Tilvi et al. (2016)
     # -------------------------------------------------
@@ -4422,4 +4407,55 @@ def data_tan21(fluxscale=1e2,verbose=True):
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_din17(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Shapley+2003
+
+    Setting MUV error to 0.01 manually
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'din17'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['Ding17_1','Ding17_2','Ding17_3','Ding17_4', 'Ding17_5'])
+    datadic['id']        = np.array([1,2,3,4,5]) + baseid
+    rasex                = np.array(['13:24:16.13','02:17:47.32','02:17:45.03','02:17:50.00','02:17:49.13'])
+    decsex               = np.array(['27:44:11.62','-05:26:48.0','-05:28:42.5','-05:27:08.2','-05:28:54.2'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([5.70,5.69,5.75,5.69,5.70])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = np.array([-22.17,-22.20,-20.86,-20.54,-20.48])
+    datadic['magabsUVerr']   = np.array([0.01,0.01,0.01,0.01,0.01])
+    # ---------------------------------------------------------------------------------
+    datadic['EW0_Lya']       = np.array([21,np.nan,61.6,106.4,79.3])
+    datadic['EW0err_Lya']    = np.array([2.5,np.nan,17.45,73.65,18.15])
+    datadic['EW0_CIII']      = np.array([6.57,4.47,15.09,19.95,29.70])
+    datadic['EW0err_CIII']   = np.array([+99,+99,+99,+99,+99])
+    datadic['f_CIII']        = np.array([5.43,3.36,3.30,3.12,3.93])
+    datadic['ferr_CIII']     = np.array([+99,+99,+99,+99,+99])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
