@@ -22,11 +22,12 @@ from matplotlib.ticker import NullFormatter
 import literaturecollection_emissionlinestrengths as lce
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def generate_literature_fitscatalog(verbose=True):
+def generate_literature_fitscatalog(quickcheck=True,verbose=True):
     """
     Collecting literature values and storing them in a single file
 
     --- INPUT ---
+    quickcheck   If true, time-consuming additions are ignored. Useufl for checking addiotn of new measurements.
 
     --- EXAMPLE OF USE ---
     import literaturecollection_emissionlinestrengths as lce
@@ -57,14 +58,22 @@ def generate_literature_fitscatalog(verbose=True):
                ' '.join([str("%20s" % colname) for colname in list(fluxratiodic.keys())[3:]])+'  \n')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('\n - Collecting literature data arrays and appending them')
+    if verbose: print('\n - Collecting literature data arrays')
     refdic                 = lce.referencedictionary()
 
     fctlist = []
     for fct in dir(lce):
         if ('data_' in fct) & (fct != 'data_TEMPLATE'):
-            fctlist.append(fct)
+            if quickcheck:
+                quicktestlist = ['data_ric20']
+                if fct in quicktestlist:
+                    pass
+                else:
+                    fctlist.append(fct)
+            else:
+                fctlist.append(fct)
 
+    if verbose: print('\n - Appending them to output data array ')
     for datafunction in fctlist:
         if datafunction.split('_')[-1] in refdic.keys(): # only including data listed in referencedictionary
             dataref, dataarray     = getattr(lce, datafunction)(verbose=False)
@@ -127,7 +136,7 @@ def referencedictionary(verbose=False):
     refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                   (7, 1, 0)     , '\citep{2016ApJ...827..126B,2019ApJ...878L...3B,2019ApJ...874...93B}']  # 7-point star
     refdic['amo17'] = [99,    'Amorin et al. (2017)',                          (5, 0, 180)   , '\citep{2017NatAs...1E..52A}']  # pentagon rotated 180deg
     refdic['mat17'] = [99,    'Matthee et al. (2017)',                         (5, 2, 180)   , '\citep{2017MNRAS.472..772M}']  # 5-point asterisk
-    # refdic['dum99'] = [99,    'dummy',                                         (6, 2, 180)]   # 6-point asterisk
+    refdic['jia20'] = [99,    'Jiang et al. (2020)',                           (6, 2, 180)   , '\citep{2020NatAs.tmp..246J}']  # 6-point asterisk
     # refdic['dum99'] = [99,    'dummy',                                         '8']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\otimes$']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\ominus$']
@@ -166,8 +175,6 @@ def referencedictionary(verbose=False):
     # Wofford+21
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Tang+20a OIII5007 emitters with UV spectroscopy
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Jiang+20(21) Nature Astronomy of CIII and OIII in GNZ11
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # missing from Matthee+17 compilation
     # -------------------------------------------------
@@ -497,7 +504,7 @@ def build_dataarray(catreference, datadic, S2Nlim=np.nan, verbose=True):
         if datacol in masterdic.keys():
             dataarray[datacol] = datadic[datacol]
         else:
-            print('   WARNING: The data dictionary column "'+datacol+'" not found in master dic. so not stored in outut.')
+            print('   WARNING:'+catreference+': The data dictionary column "'+datacol+'" not found in master dic. so not stored in outut.')
 
     if verbose: print('   Estimating further entries based on data from literature')
     for ii, id in enumerate(dataarray['id']):
@@ -4065,6 +4072,77 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
     #     if key.startswith('EW0'):
     #         datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99] / \
     #                                                    (1 + datadic['redshift'][np.abs(datadic[key]) != 99])
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_jia20(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Jiang+2020 Nature astro on GNz11
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'jia20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['GNz11'])
+    datadic['id']        = np.array([9999]) + baseid
+    rasex                = np.array(['12:36:25.46'])
+    decsex               = np.array(['+62:14:31.4'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([10.957])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    # ---------------------------------------------------------------------------------
+    # datadic['magabsUV']      = datadic['redshift']*np.nan
+    # datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    # datadic['vshift_Lya']    = np.array([])
+    # datadic['vshifterr_Lya'] = np.array([])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+    datadic['f_CIII1']        = np.array([1.5])
+    datadic['ferr_CIII1']     = np.array([0.6])
+    datadic['EW0_CIII1']      = np.array([12])
+    datadic['EW0err_CIII1']   = np.array([5])
+
+    datadic['f_CIII2']        = np.array([3.5])
+    datadic['ferr_CIII2']     = np.array([0.7])
+#    datadic['sigma_CIII2']    = np.array([28km/s]) / 2.355 # in Angstrom
+#    datadic['sigmaerr_CIII2'] = np.array([5km/s]) / 2.355 # in Angstrom
+    datadic['EW0_CIII2']      = np.array([28])
+    datadic['EW0err_CIII2']   = np.array([5])
+
+    datadic['f_OIII2']        = np.array([1.7])
+    datadic['ferr_OIII2']     = np.array([0.5])
+    datadic['EW0_OIII2']      = np.array([10])
+    datadic['EW0err_OIII2']   = np.array([3])
+
+    linename = 'CIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
