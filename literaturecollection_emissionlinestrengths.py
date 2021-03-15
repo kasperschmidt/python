@@ -34,7 +34,7 @@ def generate_literature_fitscatalog(quickcheck=False,verbose=True):
     lce.generate_literature_fitscatalog()
 
     # updating plots
-    lce.plot_literature_fitscatalog_legend(legendshape=(13.0, 3.0),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2021)','MUSE UDF mosaic (Schmidt et al. 2021)', 'MUSE UDF10 (Schmidt et al. 2021)'],extra_symlist=['o','D','X'],showkeynames=False)
+    lce.plot_literature_fitscatalog_legend(legendshape=(13.0, 3.5),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2021)','MUSE UDF mosaic (Schmidt et al. 2021)', 'MUSE UDF10 (Schmidt et al. 2021)'],extra_symlist=['o','D','X'],showkeynames=False)
     lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=True,shownames=False)
 
     """
@@ -131,8 +131,8 @@ def referencedictionary(verbose=False):
     refdic['mai20'] = [99,    'Mainali et al. (2020)',                         'D'           , '\citep{2020MNRAS.494..719M}']
     refdic['du20']  = [99,    'Du et al. (2020)',                              r'$\bowtie$'  , '\citep{2020ApJ...890...65D}']
     refdic['shi18'] = [99,    'Shibuya et al. (2018)',                         r'$\clubsuit$', '\citep{2018PASJ...70S..15S}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\spadesuit$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\heartsuit$' , '\citep{}']
+    refdic['sch18'] = [99,    'Schaerer et al. (2018) & Izotov et al. (2018)', r'$\spadesuit$', '\citep{2018A&A...616L..14S,2018MNRAS.474.4514I}']
     refdic['sch16'] = [99,    'Schmidt et al. (2016)',                         (4, 1, 0)     , '\citep{2016ApJ...818...38S}']  # 4-point star
     refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)', (4, 1, 45)    , '\citep{2017ApJ...839...17S,2017ApJ...836L..14M}']  # 4-point star
     refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                   (7, 1, 0)     , '\citep{2016ApJ...827..126B,2019ApJ...878L...3B,2019ApJ...874...93B}']  # 7-point star
@@ -143,9 +143,9 @@ def referencedictionary(verbose=False):
     refdic['din17'] = [99,    'Ding et al. (2017)',                             r'$\ominus$' , '\citep{2017ApJ...838L..22D}']
     refdic['mar19'] = [99,    'Marques-Chaves et al. (2019)',                   r'$\oplus$'  , '\citep{2020MNRAS.492.1257M}']
     refdic['wof21'] = [99,    'Wofford et al. (2021)',                          r'$\oslash$' , '\citep{2021MNRAS.500.2908W}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\obslash' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\rsub' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\dsub' , '\citep{}']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\obslash$' , '\citep{}']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\rsub$' , '\citep{}']
+    # refdic['dum99'] = [99,    'dummy',                                         r'$\dsub$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\boxtimes$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\boxminus$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\boxplus$' , '\citep{}']
@@ -191,9 +191,14 @@ def referencedictionary(verbose=False):
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Vanzella et al. (2020) - MACS0416 objects
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Rigby+18, Steidel+16, Christensen+12   <--- Byler+20
+    # Rigby+18b stack, Steidel+16, Christensen+12   <--- Byler+20
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Plat et al. (2019) compilation... check
+    # -> Berg+18
+    # -> Giavalisco+96
+    # -> Lopez-Sanchez+10
+    # -> Nakajima+18
+    # -> Laporte+17
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Huang et al. (2016b)
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -203,19 +208,13 @@ def referencedictionary(verbose=False):
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Nakajima+2017/18 Composite spectra
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Harikane+2017 have a predicted model for EWCIII vs EWLYA...
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Berg, Brammer 18: Lensed source
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Schaerer+18 single obj from Izotov with CIII
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Marchi+19 Vandels CIII vs Lya EWs -> but no catlog or measurements provided in paper
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Yang+19 Two z~7 LAGER confirmations with UV line upper limits
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Saxena+19 VANDELS HeII emitters
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Alendroff+13 type 2 QSO candidates
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Herenz+20 Lya blob with Lya, HeII and CIV(limit) detections at three locations
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -3973,7 +3972,7 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
     linedic['HeII']     =  'HeII1640'
     linedic['CIII1']    =  'CIII1907'
     linedic['CIII2']    =  'CIII1909'
-    linedic['CIV1']     =  'CIV11548'
+    linedic['CIV1']     =  'CIV1548'
     linedic['CIV2']     =  'CIV1551'
     linedic['NV1']      =  'NV1238'
     linedic['NV2']      =  'NV1243'
@@ -4067,7 +4066,6 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
     if verbose: print('   Returning catalog reference and data array')
     return catreference, dataarray
-
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 def data_jia20(fluxscale=1e2,verbose=True):
@@ -4555,6 +4553,72 @@ def data_mar19(fluxscale=1e4,verbose=True):
                                                    EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
                                                    EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
 
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sch18(fluxscale=1e4,verbose=True):
+    """
+    Data collected from Schaerer+2018; STIS follow up on Izotov source; rest of Izotov papers just have lines red-wards of MgII
+
+    Fesc and Lya EW for this LyC leaker estimated in Izotov+18a. No error provided to added sqrt(EW(Lya)) as error on EW(Lya)
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sch18'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['J1154+2443'])
+    datadic['id']        = np.array([1]) + baseid
+    rasex                = np.array(['11:54:48.85'])
+    decsex               = np.array(['+24:43:33.03'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([0.369])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = np.array([21.57]) # Using GALEX NUV (1750-2800A) as 1500A rest is at 2053A at z=0.0369
+    datadic['magabsUVerr']   = np.array([0.34])
+    # datadic['vshift_Lya']    = np.array([])
+    # datadic['vshifterr_Lya'] = np.array([])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+    datadic['f_Lya']         = np.array([92.64])
+    datadic['ferr_Lya']      = np.array([3.80])
+    datadic['EW0_Lya']       = np.array([133.])
+    datadic['EW0err_Lya']    = np.array([11.5])
+
+    datadic['f_HeII']        = np.array([0.68*3.0])
+    datadic['ferr_HeII']     = np.array([+99])
+    datadic['EW0_HeII']      = np.array([2.9*3.0])
+    datadic['EW0err_HeII']   = np.array([+99])
+
+    datadic['f_OIII']        = np.array([4.34])
+    datadic['ferr_OIII']     = np.array([0.73])
+    datadic['EW0_OIII']      = np.array([5.8])
+    datadic['EW0err_OIII']   = np.array([2.9])
+
+    datadic['f_CIII']        = np.array([6.57])
+    datadic['ferr_CIII']     = np.array([0.38])
+    datadic['EW0_CIII']      = np.array([11.7])
+    datadic['EW0err_CIII']   = np.array([2.9])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
