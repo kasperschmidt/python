@@ -144,7 +144,7 @@ def referencedictionary(verbose=False):
     refdic['din17'] = [99,    'Ding et al. (2017)',                             r'$\ominus$' , '\citep{2017ApJ...838L..22D}']
     refdic['mar19'] = [99,    'Marques-Chaves et al. (2019)',                   r'$\oplus$'  , '\citep{2020MNRAS.492.1257M}']
     refdic['wof21'] = [99,    'Wofford et al. (2021)',                          r'$\oslash$' , '\citep{2021MNRAS.500.2908W}']
-    # refdic['dum99'] = [99,    'dummy)',                                        r'$\obslash$' , '\citep{}']
+    refdic['chr12'] = [99,    'Christensen et al. (2012)',                      r'$\obslash$', '\citep{2012MNRAS.427.1953C}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\rsub$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\dsub$' , '\citep{}']
     refdic['lap17'] = [99,    'Laporte et al. (2017)',                            r'$\boxminus$' , '\citep{2017ApJ...851...40L}']
@@ -173,8 +173,6 @@ def referencedictionary(verbose=False):
         refdic[key][0] = baseid
         if verbose: print('   '+str("%12i" % refdic[key][0])+'    '+refdic[key][1])
 
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Christensen+12 Two LAEs with UV lines
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Smit et al. (2017) - Lya and CIV from lensed arc
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -1745,8 +1743,8 @@ def data_TEMPLATE(fluxscale=1.0,verbose=True):
     datadic['redshift']  = np.array([5.55])
     datadic['reference'] = [catreference]*len(datadic['id'])
     # ---------------------------------------------------------------------------------
-    datadic['magabsUV']      = datadic['redshift']*np.nan
-    datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    datadic['magabsUV']      = np.array([])
+    datadic['magabsUVerr']   = np.array([])
     datadic['vshift_Lya']    = np.array([])
     datadic['vshifterr_Lya'] = np.array([])
     # ---------------------------------------------------------------------------------
@@ -4901,6 +4899,112 @@ def data_mal96(fluxscale=1e4,verbose=True):
     datadic['EW0err_OIII']    = np.array([1.0])
     datadic['EW0err_SiIII']   = np.array([1.0])
     datadic['EW0err_CIII']    = np.array([1.2])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_chr12(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Christensen+12 LAEs with UV lines
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'chr12'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['A1689arc31.1','M0304arc1.1','M2031arc'])
+    datadic['id']        = np.array([1689311,304,2031]) + baseid
+    rasex                = np.array(['13:11:30.42','03:04:20.29','20:31:52.89'])
+    decsex               = np.array(['-01:19:51.5','-44:02:27.8','-40:37:32.6'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([1.8339,1.9634,3.5073])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    # ---------------------------------------------------------------------------------
+    datadic['magabsUV']      = np.array([-19.76,-22.46,-23.30])
+    datadic['magabsUVerr']   = np.array([0.41,0.20,0.45])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+    datadic['f_Lya']          = np.array([72.7,np.nan,173.7])
+    datadic['ferr_Lya']       = np.array([0.7,np.nan,0.5])
+    datadic['EW0_Lya']        = np.array([40.0,np.nan,np.nan])
+    datadic['EW0err_Lya']     = np.array([np.nan,np.nan,np.nan])
+
+    datadic['f_CIV1']         = np.array([4.3,np.nan,np.nan])
+    datadic['ferr_CIV1']      = np.array([0.4,np.nan,np.nan])
+    datadic['EW0_CIV1']       = np.array([np.nan,np.nan,np.nan])
+    datadic['EW0err_CIV1']    = np.array([np.nan,np.nan,np.nan])
+
+    datadic['f_CIV2']         = np.array([4.7,np.nan,np.nan])
+    datadic['ferr_CIV2']      = np.array([0.3,np.nan,np.nan])
+    datadic['EW0_CIV2']       = np.array([np.nan,np.nan,np.nan])
+    datadic['EW0err_CIV2']    = np.array([np.nan,np.nan,np.nan])
+
+    datadic['f_OIII1']        = np.array([3.2,7.1,2.9])
+    datadic['ferr_OIII1']     = np.array([0.4,1.6,0.6])
+    datadic['EW0_OIII1']      = np.array([np.nan,np.nan,np.nan])
+    datadic['EW0err_OIII1']   = np.array([np.nan,np.nan,np.nan])
+
+    datadic['f_OIII2']        = np.array([7.4,11.4,8.8])
+    datadic['ferr_OIII2']     = np.array([0.3,1.9,0.7])
+    datadic['EW0_OIII2']      = np.array([np.nan,np.nan,np.nan])
+    datadic['EW0err_OIII2']   = np.array([np.nan,np.nan,np.nan])
+
+    datadic['f_CIII1']        = np.array([9.1,np.nan,12.0])
+    datadic['ferr_CIII1']     = np.array([0.4,np.nan,0.5])
+    datadic['EW0_CIII1']      = np.array([np.nan,np.nan,np.nan])
+    datadic['EW0err_CIII1']   = np.array([np.nan,np.nan,np.nan])
+
+    datadic['f_CIII2']        = np.array([4.7,np.nan,8.4])
+    datadic['ferr_CIII2']     = np.array([0.4,np.nan,0.9])
+    datadic['EW0_CIII2']      = np.array([np.nan,np.nan,np.nan])
+    datadic['EW0err_CIII2']   = np.array([np.nan,np.nan,np.nan])
+
+    linename = 'CIV'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    linename = 'OIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    linename = 'CIII'
+    datadic['f_'+linename], datadic['ferr_'+linename], \
+    datadic['FR_'+linename+'1'+linename+'2'], datadic['FRerr_'+linename+'1'+linename+'2'], \
+    datadic['EW0_'+linename], datadic['EW0err_'+linename] = \
+        lce.calc_doubletValuesFromSingleComponents(datadic['f_'+linename+'1'],datadic['ferr_'+linename+'1'],
+                                                   datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
+                                                   EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
+                                                   EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
