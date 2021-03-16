@@ -131,9 +131,9 @@ def referencedictionary(verbose=False):
     refdic['mai20'] = [99,    'Mainali et al. (2020)',                         'D'           , '\citep{2020MNRAS.494..719M}']
     refdic['du20']  = [99,    'Du et al. (2020)',                              r'$\bowtie$'  , '\citep{2020ApJ...890...65D}']
     refdic['shi18'] = [99,    'Shibuya et al. (2018)',                         r'$\clubsuit$', '\citep{2018PASJ...70S..15S}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\heartsuit$' , '\citep{}']
+    refdic['sax20'] = [99,    'Saxena et al. (2020)',                          (4, 1, 0)     , '\citep{2020A&A...636A..47S}']
     refdic['sch18'] = [99,    'Schaerer et al. (2018) & Izotov et al. (2018)', r'$\spadesuit$', '\citep{2018A&A...616L..14S,2018MNRAS.474.4514I}']
-    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                         (4, 1, 0)     , '\citep{2016ApJ...818...38S}']  # 4-point star
+    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                         r'$\heartsuit$', '\citep{2016ApJ...818...38S}']
     refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)', (4, 1, 45)    , '\citep{2017ApJ...839...17S,2017ApJ...836L..14M}']  # 4-point star
     refdic['ber19'] = [99,    'Berg et al. (2016, 2019a,b)',                   (7, 1, 0)     , '\citep{2016ApJ...827..126B,2019ApJ...878L...3B,2019ApJ...874...93B}']  # 7-point star
     refdic['amo17'] = [99,    'Amorin et al. (2017)',                          (5, 0, 180)   , '\citep{2017NatAs...1E..52A}']  # pentagon 180deg
@@ -214,11 +214,7 @@ def referencedictionary(verbose=False):
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Yang+19 Two z~7 LAGER confirmations with UV line upper limits
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Saxena+19 VANDELS HeII emitters
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Herenz+20 Lya blob with Lya, HeII and CIV(limit) detections at three locations
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Guo+20 MUSE AGN with CIV, CIII and HeII but only Ly fluxes provided - they show L(CIV) so maybe ask... or check when published
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 
@@ -4619,6 +4615,74 @@ def data_sch18(fluxscale=1e4,verbose=True):
     datadic['ferr_CIII']     = np.array([0.38])
     datadic['EW0_CIII']      = np.array([11.7])
     datadic['EW0err_CIII']   = np.array([2.9])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_sax20(fluxscale=1e2,verbose=True):
+    """
+    Data collected from Saxena+2020; VANDELS HeII emitters with OIII and CIII
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'sax20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['CDFS015347','CDFS023170','CDFS023527','CDFS113062','CDFS126819',
+                                     'UDS013586','UDS019505','UDS281893','CDFS009705','CDFS229681','UDS137388'])
+    datadic['id']        = np.array([15347,23170,23527,113062,126819,13586,19505,281893,9705,229681,137388]) + baseid
+    rasex                = np.array(['03:32:13.2','03:32:37.8','03:32:18.8','03:32:02.6','03:31:55.7',
+                                     '02:17:52.5','02:17:45.9','02:17:11.3','03:32:20.9','03:31:59.4','02:17:12.2'])
+    decsex               = np.array(['-27:46:42.6','-27:42:32.5','-27:42:48.1','-27:52:23.7','-27:45:33.1','-05:12:04.8',
+                                     '-05:10:09.1','-05:22:17.6','-27:49:16.1','-27:45:46.5','-05:22:31.5'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([3.514,2.977,3.108,2.695,2.818,2.581,2.865,2.697,2.484,3.331,2.598])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    # ---------------------------------------------------------------------------------
+    # datadic['magabsUV']      = datadic['redshift']*np.nan
+    # datadic['magabsUVerr']   = datadic['redshift']*np.nan
+    # datadic['vshift_Lya']    = np.array([])
+    # datadic['vshifterr_Lya'] = np.array([])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+    datadic['f_HeII']          = np.array([1.3,2.8,1.5,4.0,9.5,3.1,2.1,2.9,2.2,1.2,23.1])
+    datadic['ferr_HeII']       = np.array([0.7,1.5,0.9,2.0,3.0,1.9,1.5,1.4,0.5,0.9,10.5])
+    datadic['sigma_HeII']      = np.array([240,455,260,640,860,335,530,660,510,520,1420]) / 2.355 * 1640.420  / (astropy.constants.c.value/1000.)
+    datadic['sigmaerr_HeII']   = np.array([145,110,55,275,110,100,275,220,130,280,500]) / 2.355 * 1640.420  / (astropy.constants.c.value/1000.)
+    datadic['EW0_HeII']        = np.array([1.9,1.1,0.9,1.4,8.0,0.6,0.7,1.1,1.3,1.9,4.6])
+    datadic['EW0err_HeII']     = np.array([1.3,0.6,0.4,0.7,2.0,0.4,0.5,0.6,0.4,1.5,3.5])
+
+    datadic['f_OIII']        = np.array([1.,1.3,2.6,2.4,2.4,2.8,2.2,2.1,np.nan,np.nan,np.nan])
+    datadic['ferr_OIII']     = np.array([1.4,1.1,1.4,1.8,1.8,2.4,2.0,1.1,np.nan,np.nan,np.nan])
+    datadic['sigma_OIII']    = np.array([250,315,270,450,220,400,420,450,np.nan,np.nan,np.nan]) / 2.355*1663.5/(astropy.constants.c.value/1000.)
+    datadic['sigmaerr_OIII'] = np.array([150,300,110,225,170,130,140,70,np.nan,np.nan,np.nan]) / 2.355*1663.5/(astropy.constants.c.value/1000.)
+    datadic['EW0_OIII']      = np.array([3.2,0.7,1.6,0.9,2.4,0.6,0.9,0.9,np.nan,np.nan,np.nan])
+    datadic['EW0err_OIII']   = np.array([2.8,0.6,0.9,0.7,1.8,0.5,0.8,0.5,np.nan,np.nan,np.nan])
+
+    datadic['f_CIII']        = np.array([3.1,6.5,8.7,12.3,9.9,12.0,8.3,7.1,8.6,3.9,16.0])
+    datadic['ferr_CIII']     = np.array([2.4,2.4,3.1,2.2,4.0,3.1,2.4,1.3,1.1,2.7,6.3])
+    datadic['sigma_CIII']    = np.array([510,850,580,630,820,800,860,600,820,600,1100]) / 2.355*1907.705/(astropy.constants.c.value/1000.)
+    datadic['sigmaerr_CIII'] = np.array([300,150,110,50,150,100,120,60,50,290,280]) / 2.355*1907.705/(astropy.constants.c.value/1000.)
+    datadic['EW0_CIII']      = np.array([6.5,3.2,6.9,5.6,8.0,3.3,4.5,4.1,6.3,8.6,5.0])
+    datadic['EW0err_CIII']   = np.array([5.0,0.4,2.4,1.0,3.2,0.8,1.3,0.2,0.8,6.0,2.0])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
