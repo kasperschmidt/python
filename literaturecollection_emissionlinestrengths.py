@@ -139,11 +139,12 @@ def referencedictionary(verbose=False):
     refdic['amo17'] = [99,    'Amorin et al. (2017)',                          (5, 0, 180)   , '\citep{2017NatAs...1E..52A}']  # pentagon 180deg
     refdic['mat17'] = [99,    'Matthee et al. (2017)',                         (5, 2, 180)   , '\citep{2017MNRAS.472..772M}']  # 5-point ast
     refdic['jia20'] = [99,    'Jiang et al. (2020)',                           (6, 2, 180)   , '\citep{2020NatAs.tmp..246J}']  # 6-point asterisk
+    refdic['mal96'] = [99,    'Malkan et al. (1996)',                           r'$\hourglass$', '\citep{1996ApJ...468L...9M}']
     refdic['tan21'] = [99,    'Tang et al. (2021)',                             r'$\otimes$' , '\citep{2021MNRAS.501.3238T}']
     refdic['din17'] = [99,    'Ding et al. (2017)',                             r'$\ominus$' , '\citep{2017ApJ...838L..22D}']
     refdic['mar19'] = [99,    'Marques-Chaves et al. (2019)',                   r'$\oplus$'  , '\citep{2020MNRAS.492.1257M}']
     refdic['wof21'] = [99,    'Wofford et al. (2021)',                          r'$\oslash$' , '\citep{2021MNRAS.500.2908W}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\obslash$' , '\citep{}']
+    # refdic['dum99'] = [99,    'dummy)',                                        r'$\obslash$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\rsub$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\dsub$' , '\citep{}']
     refdic['lap17'] = [99,    'Laporte et al. (2017)',                            r'$\boxminus$' , '\citep{2017ApJ...851...40L}']
@@ -161,7 +162,6 @@ def referencedictionary(verbose=False):
     # refdic['dum99'] = [99,    'dummy',                                         r'$\circleddash$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\circledvert$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\circlehbar$' , '\citep{}']
-    # refdic['ber18'] = [99,    'dummy)',                                        r'$\hourglass$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\odot$' , '\citep{}']
 
     # see /usr/local/texlive/2015/texmf-dist/tex/latex/stix/stix.sty for more LaTeX symbols
@@ -173,8 +173,6 @@ def referencedictionary(verbose=False):
         refdic[key][0] = baseid
         if verbose: print('   '+str("%12i" % refdic[key][0])+'    '+refdic[key][1])
 
-    # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    # Malkan et al. (1996) z=2.5 galaxy with Lya, CIII and a bunch of limits
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     # Christensen+12 Two LAEs with UV lines
     # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -4836,6 +4834,73 @@ def data_lap17(fluxscale=1e2,verbose=True):
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
                                                    EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
                                                    EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_mal96(fluxscale=1e4,verbose=True):
+    """
+    Data collected from  Malkan et al. (1996) z=2.5 galaxy with Lya, CIII and a bunch of limits
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'mal96'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['MTM-095355-545428'])
+    datadic['id']        = np.array([95355]) + baseid
+    rasex                = np.array(['09:53:55.5'])
+    decsex               = np.array(['+54:54:28'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([2.498])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+
+    datadic['f_Lya']          = np.array([3.3])
+    datadic['f_NV']           = np.array([0.014])* datadic['f_Lya']
+    datadic['f_CIV']          = np.array([0.079])* datadic['f_Lya']
+    datadic['f_HeII']         = np.array([0.038])* datadic['f_Lya']
+    datadic['f_OIII']         = np.array([0.008])* datadic['f_Lya']
+    datadic['f_SiIII']        = np.array([0.004])* datadic['f_Lya']
+    datadic['f_CIII']         = np.array([0.697])* datadic['f_Lya']
+    datadic['ferr_Lya']       = np.array([0.006])
+    datadic['ferr_NV']        = np.array([+99.])
+    datadic['ferr_CIV']       = np.array([+99.])
+    datadic['ferr_HeII']      = np.array([+99.])
+    datadic['ferr_OIII']      = np.array([+99.])
+    datadic['ferr_SiIII']     = np.array([+99.])
+    datadic['ferr_CIII']      = np.array([0.006])
+    datadic['EW0_Lya']        = np.array([np.nan])
+    datadic['EW0_NV']         = np.array([1.7])
+    datadic['EW0_CIV']        = np.array([21.4])
+    datadic['EW0_HeII']       = np.array([7.1])
+    datadic['EW0_OIII']       = np.array([4.0])
+    datadic['EW0_SiIII']      = np.array([2.1])
+    datadic['EW0_CIII']       = np.array([10.0])
+    datadic['EW0err_Lya']     = np.array([np.nan])
+    datadic['EW0err_NV']      = np.array([0.6])
+    datadic['EW0err_CIV']     = np.array([1.6])
+    datadic['EW0err_HeII']    = np.array([1.1])
+    datadic['EW0err_OIII']    = np.array([1.0])
+    datadic['EW0err_SiIII']   = np.array([1.0])
+    datadic['EW0err_CIII']    = np.array([1.2])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
