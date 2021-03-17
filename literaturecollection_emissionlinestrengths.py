@@ -34,7 +34,7 @@ def generate_literature_fitscatalog(quickcheck=False,verbose=True):
     lce.generate_literature_fitscatalog()
 
     # updating plots
-    lce.plot_literature_fitscatalog_legend(legendshape=(13.0, 3.8),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2021)','MUSE UDF mosaic (Schmidt et al. 2021)', 'MUSE UDF10 (Schmidt et al. 2021)'],extra_symlist=['o','D','X'],showkeynames=False)
+    lce.plot_literature_fitscatalog_legend(legendshape=(13.2, 3.8),ncol=3,extra_textlist=['MUSE-Wide (Schmidt et al. 2021)','MUSE UDF mosaic (Schmidt et al. 2021)', 'MUSE UDF10 (Schmidt et al. 2021)'],extra_symlist=['o','D','X'],showkeynames=False)
     lce.plot_literature_fitscatalog(showphotoionizationmodels=False,secondarydat_fits=None,logaxes=True,shownames=False)
 
     """
@@ -116,18 +116,19 @@ def referencedictionary(verbose=False):
     refdic['amo17'] = [99,    'Amorin et al. (2017)',                          (5, 0, 180)     , '\citep{2017NatAs...1E..52A}']
     refdic['ber19'] = [99,    'Berg et al. (2016, 2018, 2019a,b)',             (7, 1, 0)       , '\citep{2016ApJ...827..126B,2018ApJ...859..164B,2019ApJ...878L...3B,2019ApJ...874...93B}']
     refdic['bay14'] = [99,    'Bayliss et al. (2014)',                         'H'             , '\citep{2014ApJ...790..144B}']
-    refdic['chr12'] = [99,    'Christensen et al. (2012)',                     r'$\obslash$'   , '\citep{2012MNRAS.427.1953C}']
-    refdic['din17'] = [99,    'Ding et al. (2017)',                            r'$\ominus$'    , '\citep{2017ApJ...838L..22D}']
+    refdic['chr12'] = [99,    'Christensen et al. (2012)',                     '$\obslash$'    , '\citep{2012MNRAS.427.1953C}']
+    refdic['din17'] = [99,    'Ding et al. (2017)',                            '$\ominus$'     , '\citep{2017ApJ...838L..22D}']
     refdic['du20']  = [99,    'Du et al. (2020)',                              r'$\bowtie$'    , '\citep{2020ApJ...890...65D}']
     refdic['erb10'] = [99,    'Erb et al. (2010)',                             's'             , '\citep{2010ApJ...719.1168E}']
-    refdic['hut19'] = [99,    'Hutchison et al. (2019) & Jung et al. (2019)',  r'$\circledvert$', '\citep{2019ApJ...879...70H,2019ApJ...877..146J}']
+    refdic['her20'] = [99,    'Herenz et al. (2020)',                          r'$\boxplus$'   , '\citep{2020A&A...642A..55H}']
+    refdic['hut19'] = [99,    'Hutchison et al. (2019) & Jung et al. (2019)',  '$\circledvert$', '\citep{2019ApJ...879...70H,2019ApJ...877..146J}']
     refdic['jia20'] = [99,    'Jiang et al. (2020)',                           (6, 2, 180)     , '\citep{2020NatAs.tmp..246J}']
     refdic['lap17'] = [99,    'Laporte et al. (2017)',                         r'$\boxminus$'  , '\citep{2017ApJ...851...40L}']
     refdic['lef19'] = [99,    'Le Fevre et al. (2019)',                        'x'             , '\citep{2019A&A...625A..51L}']
     refdic['mai18'] = [99,    'Mainali et al. (2018) & Stark et al. (2017)',   (4, 1, 45)      , '\citep{2018MNRAS.479.1180M}']
     refdic['mai20'] = [99,    'Mainali et al. (2020)',                         'D'             , '\citep{2020MNRAS.494..719M}']
-    refdic['mal96'] = [99,    'Malkan et al. (1996)',                          r'$\hourglass$' , '\citep{1996ApJ...468L...9M}']
-    refdic['mar19'] = [99,    'Marques-Chaves et al. (2019)',                   r'$\oplus$'    , '\citep{2020MNRAS.492.1257M}']
+    refdic['mal96'] = [99,    'Malkan et al. (1996)',                          '$\hourglass$'  , '\citep{1996ApJ...468L...9M}']
+    refdic['mar19'] = [99,    'Marques-Chaves et al. (2019)',                  '$\oplus$'      , '\citep{2020MNRAS.492.1257M}']
     refdic['mat17'] = [99,    'Matthee et al. (2017)',                         (5, 2, 180)     , '\citep{2017MNRAS.472..772M}']
     refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                      '>'             , '\citep{2019A&A...624A..89N}']
     refdic['rav20'] = [99,    'Ravindranath et al. (2020)',                    '+'             , '\citep{2020ApJ...896..170R}']
@@ -135,41 +136,24 @@ def referencedictionary(verbose=False):
     refdic['rig14'] = [99,    'Rigby et al. (2014)',                           '^'             , '\citep{2014ApJ...790...44R}']
     refdic['rig15'] = [99,    'Rigby et al. (2015)',                           'v'             , '\citep{2015ApJ...814L...6R}']
     refdic['sax20'] = [99,    'Saxena et al. (2020)',                          (4, 1, 0)       , '\citep{2020A&A...636A..47S}']
-    refdic['sch18'] = [99,    'Schaerer et al. (2018) & Izotov et al. (2018)', r'$\spadesuit$' , '\citep{2018A&A...616L..14S,2018MNRAS.474.4514I}']
-    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                         r'$\heartsuit$' , '\citep{2016ApJ...818...38S}']
+    refdic['sch18'] = [99,    'Schaerer et al. (2018) & Izotov et al. (2018)', '$\spadesuit$'  , '\citep{2018A&A...616L..14S,2018MNRAS.474.4514I}']
+    refdic['sch16'] = [99,    'Schmidt et al. (2016)',                         '$\heartsuit$'  , '\citep{2016ApJ...818...38S}']
     refdic['sch17'] = [99,    'Schmidt et al. (2017) & Mainali et al. (2017)', '*'             , '\citep{2017ApJ...839...17S,2017ApJ...836L..14M}']
     refdic['sen17'] = [99,    'Senchyna et al. (2017)',                        r'$\boxdiag$'   , '\citep{2017MNRAS.472.2608S}']
     refdic['sen19'] = [99,    'Senchyna et al. (2019)',                        r'$\boxbslash$' , '\citep{2019MNRAS.488.3492S}']
     refdic['sha03'] = [99,    'Shapley et al. (2003)',                         'h'             , '\citep{2003ApJ...588...65S}']
-    refdic['shi18'] = [99,    'Shibuya et al. (2018)',                         r'$\clubsuit$'  , '\citep{2018PASJ...70S..15S}']
+    refdic['shi18'] = [99,    'Shibuya et al. (2018)',                         '$\clubsuit$'   , '\citep{2018PASJ...70S..15S}']
     refdic['smi17'] = [99,    'Smit et al. (2017)',                            r'$\boxbar$'    , '\citep{2017MNRAS.467.3306S}']
     refdic['sta14'] = [99,    'Stark et al. (2014)',                           'p'             , '\citep{2014MNRAS.445.3200S}']
     refdic['sta15'] = [99,    'Stark et al. (2015a,b, 2017)',                  'P'             , '\citep{2017MNRAS.464..469S,2015MNRAS.454.1393S,2015MNRAS.450.1846S}']
-    refdic['tan21'] = [99,    'Tang et al. (2021)',                             r'$\otimes$'   , '\citep{2021MNRAS.501.3238T}']
+    refdic['tan21'] = [99,    'Tang et al. (2021)',                            r'$\rightmoon$'  , '\citep{2021MNRAS.501.3238T}']
     refdic['van20'] = [99,    'Vanzella et al. (2016, 2017, 2020)',            '<'             , '\citep{2016ApJ...821L..27V,2017ApJ...842...47V,2020MNRAS.491.1093V}']
-    refdic['wof21'] = [99,    'Wofford et al. (2021)',                          r'$\oslash$'   , '\citep{2021MNRAS.500.2908W}']
+    refdic['wof21'] = [99,    'Wofford et al. (2021)',                         '$\oslash$'     , '\citep{2021MNRAS.500.2908W}']
 
-
-    # see /usr/local/texlive/2015/texmf-dist/tex/latex/stix/stix.sty for more LaTeX symbols
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxplus$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxdot$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxast$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         (3, 1, 165) , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         (3, 1, 15)  , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxcircle$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\boxbox$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\circledast$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\circledcirc' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\circleddash$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\circlehbar$' , '\citep{}']
-    # refdic['dum99'] = [99,    'dummy',                                         r'$\odot$' , '\citep{}']
-
-    # vvvvvvvvvvvvvvvv Not great for current symbol size vvvvvvvvvvvvvvvv
+    # see the stix.sty for more LaTeX markers (http://mirrors.ibiblio.org/CTAN/fonts/stix/doc/stix.pdf)
     # refdic['dum99'] = [99,    'dummy',                                         r'$\boxtimes$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\dsub$' , '\citep{}']
     # refdic['dum99'] = [99,    'dummy',                                         r'$\rsub$' , '\citep{}']
-
-
 
     if verbose: print(' --- Assigning base IDs to literature collections --- ')
     if verbose: print(' #   baseid        reference ')
@@ -1163,7 +1147,8 @@ def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist
     #fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
     Fsize         = 14.0
     lthick        = 2.0
-    marksize      = 6.0
+    marksize      = 8.0
+    markeredgewidth = 1.5
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{stix}') # Accessing extensive library of math symbols
     plt.rc('font', family='serif',size=Fsize)
@@ -1191,11 +1176,11 @@ def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist
             label = key+': '+label
 
         ax.errorbar(-5000,-5000,xerr=None,yerr=1,marker=refdic[key][2],lw=0, markersize=marksize,alpha=1.0,
-                    markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label=label)
+                    markerfacecolor='None',ecolor='k',markeredgecolor='black',zorder=1,label=label,mew=markeredgewidth)
 
     for ee, etl in enumerate(extra_textlist):
         ax.errorbar(-5000,-5000,xerr=None,yerr=1,marker=extra_symlist[ee],lw=0, markersize=marksize,alpha=1.0,
-                    markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label=etl)
+                    markerfacecolor='k',ecolor='k',markeredgecolor='black',zorder=1,label=etl,mew=markeredgewidth)
 
     leg = ax.legend(fancybox=True, loc='upper center',prop={'size':Fsize/1.0},ncol=ncol,numpoints=1,
                     bbox_to_anchor=(0.48, 1.1),)  # add the legend
@@ -5137,6 +5122,56 @@ def data_hut19(fluxscale=1e2,verbose=True):
                                                    datadic['f_'+linename+'2'],datadic['ferr_'+linename+'2'],
                                                    EW1=datadic['EW0_'+linename+'1'], EW1err=datadic['EW0err_'+linename+'1'],
                                                    EW2=datadic['EW0_'+linename+'2'], EW2err=datadic['EW0err_'+linename+'2'])
+
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
+    for key in datadic.keys():
+        if key.startswith('f'):
+            datadic[key][np.abs(datadic[key]) != 99] = datadic[key][np.abs(datadic[key]) != 99]*fluxscale
+
+    dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
+    if verbose: print('   Returning catalog reference and data array')
+    return catreference, dataarray
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def data_her20(fluxscale=1e3,verbose=True):
+    """
+    Data collected from Herenz+20; Lya blob with Lya, HeII and CIV(limit) detections at three locations
+
+    Non-existing data is provided as NaNs, 3-sigma upper/lower limits are given in flux columns with errors of +/-99
+
+    --- INPUT ---
+    fluxscale   Flux scale to bring fluxes and flux errors to 1e-20 erg/s/cm2
+    verbose     Toggle verbosity
+
+    """
+    catreference        = 'her20'
+    # ---------------------------- GENERAL SETUP --------------------------------------
+    refdic              = lce.referencedictionary()
+    if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
+    baseid              = lce.referencedictionary()[catreference][0]
+    datadic = {}
+    datadic['name']      = np.array(['SSA22a-LAB-S','SSA22a-LAB-N','SSA22a-LAB-8'])
+    datadic['id']        = np.array([1,2,3]) + baseid
+    rasex                = np.array(['22:17:25.89','22:17:26.01','22:17:26.12'])
+    decsex               = np.array(['00:12:35.3','00:12:42.2','00:12:54.1'])
+    datadic['ra']        = acoord.Angle(rasex, u.hour).degree
+    datadic['dec']       = acoord.Angle(decsex, u.degree).degree
+    datadic['redshift']  = np.array([3.1,3.1,3.1])
+    datadic['reference'] = [catreference]*len(datadic['id'])
+    # ---------------------------------------------------------------------------------
+    datadic['vshift_Lya']    = np.array([13.,-42.,-109.])
+    datadic['vshifterr_Lya'] = np.array([68.,51.,22.])
+    # ---------------------------------------------------------------------------------
+    if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
+    datadic['f_Lya']          = np.array([17.0,10.0,6.1])
+    datadic['ferr_Lya']       = np.array([0.1,0.1,0.1])
+
+    datadic['f_HeII']        = np.array([1.05,0.72,0.67])
+    datadic['ferr_HeII']     = np.array([0.18,0.11,0.09])
+
+    datadic['f_CIV']        = np.array([1.1,1.0,0.61])
+    datadic['ferr_CIV']     = np.array([+99.,+99.,+99.])
 
     # ---------------------------------------------------------------------------------
     if verbose: print('   Converting fluxes to 1e-20 erg/s/cm2 using fluxscale = '+str(fluxscale))
