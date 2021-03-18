@@ -22,7 +22,7 @@ def assemble_catalogs(verbose=True):
 
     """
     if verbose: print(' - Assembling the catalogs to acompony Schmidt et al. (2021)')
-    basename = 'Schmidt_etal_2021_AandA_XXXX_YYYY'
+    basename = 'Schmidt_etal_2021_AandA_v210318'
 
     uca.uves_catalog_assemble(basename,verbose=verbose)
     uca.lit_catalog_assemble(basename,verbose=verbose)
