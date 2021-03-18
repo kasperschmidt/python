@@ -599,23 +599,23 @@ def plot_literature_fitscatalog(secondarydat_fits=None,logaxes=True, shownames=F
     input_lists = []
 
     # ------------------------------------ Flux vs Flux plots ------------------------------------
-    input_lists.append(['f_Lya','f_NV','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(NV) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-    input_lists.append(['f_Lya','f_CIV', 'f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-    input_lists.append(['f_Lya','f_CIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIII) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-    input_lists.append(['f_Lya','f_HeII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-    input_lists.append(['f_Lya','f_OIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(OIII) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-    input_lists.append(['f_Lya','f_SiIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(SiIII) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-
-    input_lists.append(['f_CIII','f_CIV','f(CIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
-    input_lists.append(['f_OIII','f_HeII','f(OIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
-                        fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_Lya','f_NV','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(NV) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_Lya','f_CIV', 'f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_Lya','f_CIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIII) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_Lya','f_HeII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_Lya','f_OIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(OIII) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_Lya','f_SiIII','f(Ly$\\alpha$) [1e-20 erg/s/cm$^2$/\AA]', 'f(SiIII) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    #
+    # input_lists.append(['f_CIII','f_CIV','f(CIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(CIV) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
+    # input_lists.append(['f_OIII','f_HeII','f(OIII) [1e-20 erg/s/cm$^2$/\AA]', 'f(HeII) [1e-20 erg/s/cm$^2$/\AA]',
+    #                     fluxes_range, fluxes_range, 'redshift',  ''])
 
     # ------------------------------------ EW vs EW plots ------------------------------------
     input_lists.append(['EW0_Lya','EW0_CIII','EW$_0$(Ly$\\alpha$) [\AA]', 'EW$_0$(CIII) [\AA]',
@@ -822,7 +822,7 @@ def plot_literature_fitscatalog_cmd(plotname,
 
         Fsize         = 14.0
         lthick        = 2.0
-        marksize      = 6.0
+        marksize      = 8.0
         plt.rc('text', usetex=True)
         plt.rc('text.latex', preamble=r'\usepackage{stix}') # Accessing extensive library of math symbols
         plt.rc('font', family='serif',size=Fsize)
@@ -907,11 +907,12 @@ def plot_literature_fitscatalog_cmd(plotname,
             facecol  = [fixcolor]*len(xval)
 
         #--------- RANGES ---------
+        logfactor = 3.0
         if not xrange:
             if xlog:
                 xmin   = np.min(xval[np.isfinite(xval) & (xval > 0)])
                 xmax   = np.max(xval[np.isfinite(xval) & (xval > 0)])
-                xrange = [float(str("%.e" % xmin)),float(str("%.e" % xmax))*10.]
+                xrange = [float(str("%.e" % xmin))/logfactor,float(str("%.e" % xmax))*logfactor]
             else:
                 xmin   = np.min(xval[np.isfinite(xval)])
                 xmax   = np.max(xval[np.isfinite(xval)])
@@ -925,7 +926,7 @@ def plot_literature_fitscatalog_cmd(plotname,
             if ylog:
                 ymin   = np.min(yval[np.isfinite(yval)])
                 ymax   = np.max(yval[np.isfinite(yval)])
-                yrange = [float(str("%.e" % ymin)),float(str("%.e" % ymax))*10.]
+                yrange = [float(str("%.e" % ymin))/logfactor,float(str("%.e" % ymax))*logfactor]
             else:
                 ymin   = np.min(yval[np.isfinite(yval)])
                 ymax   = np.max(yval[np.isfinite(yval)])
@@ -1147,7 +1148,7 @@ def plot_literature_fitscatalog_legend(legendshape=(10, 3),ncol=5,extra_textlist
     #fig.subplots_adjust(wspace=0.1, hspace=0.1,left=0.15, right=0.97, bottom=0.15, top=0.95)
     Fsize         = 14.0
     lthick        = 2.0
-    marksize      = 8.0
+    marksize      = 12.0
     markeredgewidth = 1.5
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{stix}') # Accessing extensive library of math symbols
@@ -2742,10 +2743,10 @@ def data_rig15(fluxscale=1.0,verbose=True):
     # ---------------------------------------------------------------------------------
     if verbose: print('   Putting together measurements from '+str(len(datadic['id']))+' objects ')
 
-    datadic['EW0_Lya']     = np.array([-1.2,-1.1,-2.5,-3.8,-3.3,-8.9,-8.1,-7.0,-19.5,-8.3,-30.0,-13.0,-1.5,np.nan,-0.69,5.97,5.46,6.19,-3.95,8.19,-4.70,-70.2,2.64,-22.3,-38.2,-0.45,1.94,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-4.45,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-82.6,np.nan,np.nan])[4:]
+    datadic['EW0_Lya']     = (-1.0)*np.array([-1.2,-1.1,-2.5,-3.8,-3.3,-8.9,-8.1,-7.0,-19.5,-8.3,-30.0,-13.0,-1.5,np.nan,-0.69,5.97,5.46,6.19,-3.95,8.19,-4.70,-70.2,2.64,-22.3,-38.2,-0.45,1.94,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-4.45,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,-82.6,np.nan,np.nan])[4:]
     datadic['EW0err_Lya']  = np.array([-99.,-99.,-99.,-99.,0.4,0.6,1.2,0.5,2.0,0.5,3.0,1.0,0.15,np.nan,0.50,5.70,4.83,2.88,1.13,2.88,0.79,4.11,29.2,5.10,10.38,0.13,0.53,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,0.5,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,99.,np.nan,np.nan])[4:]
 
-    datadic['EW0_CIII']     = np.array([-2.0,-2.4,-3.0,-2.2,-0.45,-1.9,-3.2,-0.45,-2.2,-0.2,-0.1,-0.7,-2.0,-0.3,-0.11,-1.9,-3.1,0.04,-0.54,-0.31,-1.1,-14.,-3.2,-4.0,-1.7,-3.5,-3.5,-1.9,-2.6,-1.3,-2.5,-0.3,-0.4,-0.7,-3.1,-5.2,-1.2,-1.0,-0.5,-1.5,-8.3,-0.2,-1.8,-8.0,-4.2,-1.3,-4.4,-0.46,-18.7,-0.87,-1.40,-0.875,0.13,-0.23,-0.11,-0.68,-8.1,0.71,-7.5,-8.5,-2.3,0.10,0.17,-1.4,-6.4,-0.033,-0.069,-2.9,-27.,-6.2,-1.5])[4:]
+    datadic['EW0_CIII']     = (-1.0)*np.array([-2.0,-2.4,-3.0,-2.2,-0.45,-1.9,-3.2,-0.45,-2.2,-0.2,-0.1,-0.7,-2.0,-0.3,-0.11,-1.9,-3.1,0.04,-0.54,-0.31,-1.1,-14.,-3.2,-4.0,-1.7,-3.5,-3.5,-1.9,-2.6,-1.3,-2.5,-0.3,-0.4,-0.7,-3.1,-5.2,-1.2,-1.0,-0.5,-1.5,-8.3,-0.2,-1.8,-8.0,-4.2,-1.3,-4.4,-0.46,-18.7,-0.87,-1.40,-0.875,0.13,-0.23,-0.11,-0.68,-8.1,0.71,-7.5,-8.5,-2.3,0.10,0.17,-1.4,-6.4,-0.033,-0.069,-2.9,-27.,-6.2,-1.5])[4:]
     datadic['EW0err_CIII']  = np.array([0.14,0.14,0.53,-99.,0.14,0.14,0.42,0.1,0.3,0.2,0.2,0.1,-99.,-99.,0.3,1.5,1.8,0.3,0.4,0.3,0.3,1.8,6.0,0.7,2.85,0.2,0.2,0.1,0.1,0.4,0.1,0.1,0.1,0.1,0.2,0.3,0.1,0.1,0.1,0.3,0.5,0.1,0.1,0.5,0.5,0.1,0.5,0.06,1.6,0.08,0.07,0.06,0.03,0.02,0.015,0.07,1.0,0.14,0.8,0.9,0.2,0.013,0.03,0.1,1.2,0.011,0.009,0.3,13.,0.9,0.1])[4:]
 
     dataarray = lce.build_dataarray(catreference, datadic, S2Nlim=3.0,verbose=False)
