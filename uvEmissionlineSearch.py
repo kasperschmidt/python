@@ -16923,7 +16923,7 @@ def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillar
     plt.ylim(yrange)
     plt.fill_between([1.5,2.9],[yrange[0],yrange[0]],[yrange[1],yrange[1]],zorder=1,color='lightgray')
     plt.text(2.2,380,'MUSE\nredshift\ndesert',color='dimgray',fontsize=Fsize/1.3,zorder=1,ha='center')
-    plt.text(1.35,435,'$\leftarrow$ [OII]',color='black',fontsize=Fsize/1.3,zorder=1,ha='right')
+    plt.text(1.35,435,'[OII]',color='black',fontsize=Fsize/1.3,zorder=1,ha='right')
     plt.text(3.05,435,'Ly$\\alpha$ $\\rightarrow$',color='black',fontsize=Fsize/1.3,zorder=1,ha='left')
 
     leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize/1.35},ncol=1,numpoints=1,
