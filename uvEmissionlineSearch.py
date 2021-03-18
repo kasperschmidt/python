@@ -5047,7 +5047,7 @@ def plot_mocspecFELISresults_summary(summaryfile,plotbasename,colortype='lineS2N
 def plot_mocspecFELISresults_summary_plotcmds(plotname,xvalues,yvalues,xerr,yerr,xlabel,ylabel,summarydat,
                                               yrange=None,xrange=None,linetype='onetoone',ylog=False,xlog=False,
                                               colortype=None,colorcode=True,cdatvec=None,point_text=None,ids=None,
-                                              overwrite=False,verbose=True,title=None,MUSEsymbolblackedge=False,
+                                              overwrite=False,verbose=True,title=None,MUSEsymbolblackedge=True,
                                               photoionizationplotparam=None, showgraylimits=True,
                                               histaxes=False,Nbins=50):
     """
