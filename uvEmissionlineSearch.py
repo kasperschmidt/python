@@ -7294,8 +7294,8 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     linesetlist_lya = []
     for ll, infocol in enumerate(infocols):
-        linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
         linesetlist_lya.append([infocol, None, 'CIV',   None ,info_ranges[ll], fluxes_range, None])
+        linesetlist_lya.append([infocol, None, 'CIII',  None ,info_ranges[ll], fluxes_range, None])
         linesetlist_lya.append([infocol, None, 'OIII',  None ,info_ranges[ll], fluxes_range, None])
         linesetlist_lya.append([infocol, None, 'HeII',  None ,info_ranges[ll], fluxes_range, None])
         # linesetlist_lya.append([infocol, None, 'MgII',  None ,info_ranges[ll], fluxes_range, None])
@@ -7309,7 +7309,7 @@ def plot_lineratios_fromsummaryfiles(lineratiofile, plotbasename, infofile, colo
         linesetlist_lya.append([infocol, None, 'NV',    'CIII',info_ranges[ll], ratios_range, None])
 
     Nhistbins = 30
-    histaxes  = False
+    histaxes  = True
     for lineset in linesetlist_lya:
         uves.plot_lineratios_fromsummaryfiles_vsInfofile(plotbasename,fluxratiodat,lineset,histaxes,Nhistbins,cdatvec,'zmanual',
                                                          Nsigma=Nsigma,point_text=point_text,vshiftmax=vshiftmax,performlinearfit=True,
@@ -8947,7 +8947,7 @@ def plot_EW0estimates(lineratiofile, plotbasename, infofile, EW0file, colorvar_o
 
     linesetlist_EWs = []
 
-    for yline in ['CIII','CIV', 'OIII', 'HeII', 'MgII', 'SiIII', 'NV']:
+    for yline in ['MgII', 'CIII','CIV', 'OIII', 'HeII', 'SiIII', 'NV']:
         linesetlist_EWs.append([['LyaEW',     'EW$_0$(Ly$\\alpha$) [\AA]',LyaEW,LyaEWerr],
                                 yline   ,LyaEW_range, EW0_range_y,   None])
         linesetlist_EWs.append([['LyaFWHM',   'FWHM(Ly$\\alpha$) [km/s]',LyaFWHM,LyaFWHMerr],
@@ -9097,6 +9097,27 @@ def plot_EW0estimates_wrapper(plotbasename,EWdat,fluxratiodat,EWset,histaxes,Nhi
     if ('lya' in str1.lower()) or ('lya' in str2.lower()):
         if 'EW' in xlabel:
             lines2show = 'onethreeten'
+
+            if verbose:
+                print(' - Ratio ('+ylabel+'/'+xlabel+')    [xlog='+str(xlog)+'; ylog='+str(ylog)+']')
+                goodval = np.where((np.abs(xerr) != 99) & (np.abs(yerr) != 99) &
+                                   np.isfinite(xvalues) & np.isfinite(yvalues) &
+                                   (xvalues != 0) & (yvalues != 0))[0]
+                yxratio = yvalues[goodval]/xvalues[goodval]
+                print('   all       (mean,median,std) = '+str((np.mean(yxratio),np.median(yxratio),np.std(yxratio))))
+
+                goodval = np.where((np.abs(xerr) != 99) & (np.abs(yerr) != 99) &
+                                   np.isfinite(xvalues) & np.isfinite(yvalues) &
+                                   (xvalues != 0) & (yvalues != 0) & (yvalues<xvalues))[0]
+                yxratio = yvalues[goodval]/xvalues[goodval]
+                print('   y<x       (mean,median,std) = '+str((np.mean(yxratio),np.median(yxratio),np.std(yxratio))))
+
+                goodval = np.where((np.abs(xerr) != 99) & (np.abs(yerr) != 99) &
+                                   np.isfinite(xvalues) & np.isfinite(yvalues) &
+                                   (xvalues != 0) & (yvalues != 0) & (xvalues<yvalues))[0]
+                yxratio = yvalues[goodval]/xvalues[goodval]
+                print('   x<y       (mean,median,std) = '+str((np.mean(yxratio),np.median(yxratio),np.std(yxratio))))
+
         else:
             lines2show = None
     else:
