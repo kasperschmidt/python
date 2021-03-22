@@ -16861,7 +16861,7 @@ def plotAndFit_parameterdist(masterfits, infofile, addliterature=True, paramtype
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillaryhist=False,
+def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillaryhist=False, ylog=False,
                       outdir='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/paramdistributionFigures/'):
     """
     Function to plot the redshift distribution
@@ -16919,8 +16919,11 @@ def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillar
     xmax = 8.0
 
     # Nbins   = np.ceil(np.sqrt(len(paramval)))
-    binwidth_x = 0.32 #np.diff([xmin,xmax])/Nbins
-    bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)
+    binwidth_x = 0.28 # 0.32 #np.diff([xmin,xmax])/Nbins
+    bindefs    = np.arange(xmin, xmax+binwidth_x, binwidth_x)+0.1
+    bindefs[0] = 0.0
+    bindefs[1] = 0.3
+    bindefs[2] = 0.63
 
     hist_all = plt.hist(redshift_all,color="forestgreen",bins=bindefs,histtype="step",lw=lthick,zorder=5,label='$z>1.5$ MUSE-Wide and MUSE-Deep LSDCat \nobjects (this work)')
     hist_det = plt.hist(redshift_det,color="darkgreen",bins=bindefs,histtype="stepfilled",lw=lthick,zorder=8,label='$z>1.5$ MUSE objects with UV line detections \nfrom FELIS (this work)')
@@ -16940,12 +16943,25 @@ def plot_redshiftdist(masterfits, addliterature=True, verbose=True, withancillar
     plt.xlabel('Redshift')
     plt.ylabel('Number of objects')
 
-    yrange = [0,460]
+    if ylog:
+        plt.yscale('log')
+        yrange = [1.0,1000]
+        ydesert = 300.
+        yoii    = 600.
+        ylya    = 600.
+        plotname = plotname.replace('.pdf','_ylog.pdf')
+    else:
+        yrange = [0,460]
+        ydesert = 380.
+        yoii    = 435.
+        ylya    = 435.
+
     plt.ylim(yrange)
     plt.fill_between([1.5,2.9],[yrange[0],yrange[0]],[yrange[1],yrange[1]],zorder=1,color='lightgray')
-    plt.text(2.2,380,'MUSE\nredshift\ndesert',color='dimgray',fontsize=Fsize/1.3,zorder=1,ha='center')
-    plt.text(1.35,435,'[OII]',color='black',fontsize=Fsize/1.3,zorder=1,ha='right')
-    plt.text(3.05,435,'Ly$\\alpha$ $\\rightarrow$',color='black',fontsize=Fsize/1.3,zorder=1,ha='left')
+    plt.text(2.2,ydesert,'MUSE\nredshift\ndesert',color='dimgray',fontsize=Fsize/1.3,zorder=1,ha='center')
+    plt.text(1.35,yoii,'[OII]',color='black',fontsize=Fsize/1.3,zorder=1,ha='right')
+    plt.text(3.05,ylya,'Ly$\\alpha$ $\\rightarrow$',color='black',fontsize=Fsize/1.3,zorder=1,ha='left')
+
 
     leg = plt.legend(fancybox=True, loc='lower center',prop={'size':Fsize/1.35},ncol=1,numpoints=1,
                      bbox_to_anchor=(0.5, 1.0))  # add the legend
