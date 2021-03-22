@@ -300,7 +300,7 @@ def get_unit(colname):
                'magabs_uv':'mag','magabserr_uv':'mag',
                'fwhm_lya':'km s-1','fwhmerr_lya':'km s-1',
                'peaksep_lya':'km s-1','peakseperr_lya':'km s-1',
-               'id_guo':'id_guo','sep_guo':'sep_guo',
+               'id_guo':'','sep_guo':'arcsec',
                'id_skelton':'','sep_skelton':'arcsec',
                'id_rafelski':'','sep_rafelski':'arcsec',
                'id_laigle':'','sep_laigle':'arcsec',
