@@ -17090,3 +17090,71 @@ def plot_photometrySEDs(infofile, plotsample='desert',verbose=True,
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def get_nondetectionIDs(masterfits,outname='sources_extracted_using_pointsource_model.txt',verbose=True):
+    """
+    Function returning file with list of IDs of sources treated as object wihtout counterparts in the extractions
+
+    """
+    nondetdir = '/Users/kschmidt/work/MUSE/uvEmissionlineSearch/tdose_extraction_MWuves_100fields_maxdepth190808/tdose_nondetection_lists/'
+
+    outfill_all     = nondetdir+outname
+    outfill_wUVline = (nondetdir+outname).replace('.txt','_wUVlines.txt')
+
+    nondetlists = glob.glob(nondetdir+'uves_nondetections*txt')
+    if verbose: print(' - Getting the object ids of sources treated as nondetection in TDOSE extractions ')
+    if verbose: print(' - Will store outputfiles ('+outname.replace('.txt','*')+') in\n   '+nondetdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Nnondet = 0
+    fout = open(outfill_all,'w')
+    fout.write('# The ids of objects treated as nondetections (no counterparts) in TDOSE extractions; i.e. with point source models\n')
+    fout.write('# id\n')
+
+    for nondetlist in nondetlists:
+        if (not 'summary' in nondetlist.split('/')[-1]) & (not 'udf-0' in nondetlist.split('/')[-1]) & \
+                (not 'skeltonbased' in nondetlist.split('/')[-1]):
+            ids = np.atleast_1d(np.genfromtxt(nondetlist,dtype=None,comments='#'))
+            if len(ids) > 0:
+                for id in ids:
+                    fout.write(str(id)+'\n')
+                    Nnondet = Nnondet+1.0
+    fout.write('# So that was '+str(Nnondet)+' objects IDs (with duplications)\n')
+    fout.close()
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    nondetids = np.genfromtxt(outfill_all,dtype=None,comments='#',skip_header=1)
+
+    masterdat = afits.open(masterfits)[1].data
+
+    selection_det = np.where(( ((np.abs(masterdat['ferr_NV'])    != 99.0) & np.isfinite(masterdat['ferr_NV']))    |
+                               ((np.abs(masterdat['ferr_CIV'])   != 99.0) & np.isfinite(masterdat['ferr_CIV']))   |
+                               ((np.abs(masterdat['ferr_HeII'])  != 99.0) & np.isfinite(masterdat['ferr_HeII']))  |
+                               ((np.abs(masterdat['ferr_OIII'])  != 99.0) & np.isfinite(masterdat['ferr_OIII']))  |
+                               ((np.abs(masterdat['ferr_SiIII']) != 99.0) & np.isfinite(masterdat['ferr_SiIII'])) |
+                               ((np.abs(masterdat['ferr_MgII'])  != 99.0) & np.isfinite(masterdat['ferr_MgII']))   |
+                               ((np.abs(masterdat['ferr_CIII'])  != 99.0) & np.isfinite(masterdat['ferr_CIII']))   ) &
+                                (masterdat['redshift'] >= 0.0) & (masterdat['redshift'] <= 6.4432) & (masterdat['duplicationID'] == 0.0) &
+                                (masterdat['id'] != 158002004) &
+                                (masterdat['id'] != 601931670) &
+                                (masterdat['id'] != 208014258) &
+                                (masterdat['id'] != 600341002) )[0]
+
+    UVlineids = masterdat['id'][selection_det]
+    if verbose: print(' - Checking how many of these are among the '+str(len(UVlineids))+' objects with at least one UV line detection ')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Nuvnondet = 0
+    fout = open(outfill_wUVline,'w')
+    fout.write('# The ids of objects with at least one UV emission line treated as nondetections (no counterparts) in TDOSE extractions; i.e. with point source models\n')
+    fout.write('# id\n')
+
+    nondetids = np.genfromtxt(outfill_all,dtype=None,names=True,comments='#',skip_header=1)['id']
+    for nondetid in nondetids:
+        if nondetid in UVlineids:
+            objent = np.where(masterdat['id'] == nondetid)[0]
+            # fout.write(str(nondetid)+' # '+str(masterdat[objent])+'\n')
+            fout.write(str(nondetid)+'\n')
+            Nuvnondet = Nuvnondet+1.0
+
+    fout.write('# So that was '+str(Nuvnondet)+' objects IDs (no duplications)\n')
+    fout.close()
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
