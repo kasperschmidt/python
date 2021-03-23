@@ -22,7 +22,7 @@ def assemble_catalogs(verbose=True):
 
     """
     if verbose: print(' - Assembling the catalogs to acompony Schmidt et al. (2021)')
-    basename = 'Schmidt_etal_2021_AandA_v210318'
+    basename = 'Schmidt_etal_2021_AandA_v210323'
 
     uca.uves_catalog_assemble(basename,verbose=verbose)
     uca.lit_catalog_assemble(basename,verbose=verbose)
@@ -143,7 +143,7 @@ def uves_catalog_assemble(basename,verbose=True):
     collist_m       = ['f','ferr','s2n','sigma','vshift',
                        'fr','frerr','frs2n',
                        'ew0','ew0err',
-                       'contband','contmagAB','contmagABerr','photref']
+                       'contband','contmagab','contmagaberr','photref']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     collist_i_out  = []
@@ -304,7 +304,6 @@ def get_unit(colname):
                'id_skelton':'','sep_skelton':'arcsec',
                'id_rafelski':'','sep_rafelski':'arcsec',
                'id_laigle':'','sep_laigle':'arcsec',
-               'contmagAB':'mag','contmagABerr':'mag',
                'magapp_uv':'mag','magapp_uv_err':'mag','vshift_lya':'km s-1',
                'vshifterr_lya':'km s-1'}
 
@@ -319,6 +318,8 @@ def get_unit(colname):
         returnunit = 'Angstrom'
     elif colname.startswith('vshift_') or colname.startswith('vshifterr_'):
         returnunit = 'km s-1'
+    elif colname.startswith('contmagab'):
+        returnunit = 'mag'
     else:
         sys.exit("uca.get_unit() couldn't find a unit to return for '"+colname+"'")
 
