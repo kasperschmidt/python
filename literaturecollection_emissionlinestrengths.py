@@ -65,7 +65,7 @@ def generate_literature_fitscatalog(quickcheck=False,verbose=True):
     for fct in dir(lce):
         if ('data_' in fct) & (fct != 'data_TEMPLATE'):
             if quickcheck:
-                quicktestlist = ['data_ric20']
+                quicktestlist = ['data_ric21']
                 if fct in quicktestlist:
                     pass
                 else:
@@ -132,7 +132,7 @@ def referencedictionary(verbose=False):
     refdic['mat17'] = [99,    'Matthee et al. (2017)',                         (5, 2, 180)     , '\citep{2017MNRAS.472..772M}']
     refdic['nan19'] = [99,    'Nanaykkara et al. (2019)',                      '>'             , '\citep{2019A&A...624A..89N}']
     refdic['rav20'] = [99,    'Ravindranath et al. (2020)',                    '+'             , '\citep{2020ApJ...896..170R}']
-    refdic['ric20'] = [99,    'Richard et al. (2020)',                         'd'             , '\citep{2020arXiv200909784R}']
+    refdic['ric21'] = [99,    'Richard et al. (2021)',                         'd'             , '\citep{2021A&A...646A..83R}']
     refdic['rig14'] = [99,    'Rigby et al. (2014)',                           '^'             , '\citep{2014ApJ...790...44R}']
     refdic['rig15'] = [99,    'Rigby et al. (2015)',                           'v'             , '\citep{2015ApJ...814L...6R}']
     refdic['sax20'] = [99,    'Saxena et al. (2020)',                          (4, 1, 0)       , '\citep{2020A&A...636A..47S}']
@@ -3956,7 +3956,7 @@ def data_du20(fluxscale=1.0,verbose=True):
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/richard20/',verbose=True):
+def data_ric21(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/richard20/',verbose=True):
     """
     Data collected from Richard et al. (2020) MUSE cluster lensing catalogs
 
@@ -4023,7 +4023,7 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
     for zz, zcat in enumerate(cat_z):
         dat_z     = afits.open(zcat)[1].data
         cluster   = zcat.split('/')[-1].split('_')[0]
-        if verbose: print(' - ric20: Storing line data for ('+str(zz+1)+'/13) '+cluster+"'s "+str(len(dat_z['iden']))+' cataloged objects ')
+        if verbose: print(' - ric21: Storing line data for ('+str(zz+1)+'/13) '+cluster+"'s "+str(len(dat_z['iden']))+' cataloged objects ')
 
         dat_lines = afits.open(cat_lines[zz])[1].data
         for objid in dat_z['iden']:
@@ -4031,7 +4031,7 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
                 lineent = np.where((dat_lines['iden'] == objid) & (dat_lines['LINE'] == linedic[linekey]) &
                                    (dat_lines['FAMILY'] != 'abs') & (dat_lines['FLUX']/dat_lines['FLUX_ERR'] >= 3.0))[0]
                 if len(lineent) > 0:
-                    # if verbose: print(' - ric20: Storing line data for '+cluster+' '+str(objid)+' '+linedic[linekey]+' ')
+                    # if verbose: print(' - ric21: Storing line data for '+cluster+' '+str(objid)+' '+linedic[linekey]+' ')
                     if len(lineent) > 1:
                         if verbose: print('        WARNING: Found '+str(len(lineent))+' (non-abs) matches for '+
                                           cluster+' '+str(objid)+' '+linedic[linekey]+'         -> Using the first entry found... ')
@@ -4050,7 +4050,7 @@ def data_ric20(fluxscale=1.0,catalogdirectory='/Users/kschmidt/work/catalogs/ric
     ra_all          = ra_all[goodent]
     dec_all         = dec_all[goodent]
 
-    catreference    = 'ric20'
+    catreference    = 'ric21'
     # ---------------------------- GENERAL SETUP --------------------------------------
     refdic              = lce.referencedictionary()
     if verbose: print('\n - Assembling the data from '+refdic[catreference][1])
