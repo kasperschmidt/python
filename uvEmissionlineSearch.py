@@ -17158,3 +17158,40 @@ def get_nondetectionIDs(masterfits,outname='sources_extracted_using_pointsource_
     fout.close()
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def count_EWlimits(masterfits='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits'):
+    """
+
+    """
+    masterdat = afits.open(masterfits)[1].data
+
+    for emline in ['NV','CIV','HeII','OIII','SiIII','CIII']:
+        alldet_ent        = np.where(((np.abs(masterdat['ferr_'+emline]) != 99.0) & np.isfinite(masterdat['ferr_'+emline])) &
+                                     (masterdat['redshift'] >= 0.0) & (masterdat['redshift'] <= 6.4432) & (masterdat['duplicationID'] == 0.0) &
+                                     (masterdat['id'] != 158002004) &
+                                     (masterdat['id'] != 601931670) &
+                                     (masterdat['id'] != 208014258) &
+                                     (masterdat['id'] != 600341002) )[0]
+
+        contmag_limit_ent = np.where(((np.abs(masterdat['ferr_'+emline]) != 99.0) & np.isfinite(masterdat['ferr_'+emline])) &
+                                     (masterdat['contmagABerr_'+emline] == -99) & # include lower limits (upper limits on brightness)
+                                     (masterdat['redshift'] >= 0.0) & (masterdat['redshift'] <= 6.4432) & (masterdat['duplicationID'] == 0.0) &
+                                     (masterdat['id'] != 158002004) &
+                                     (masterdat['id'] != 601931670) &
+                                     (masterdat['id'] != 208014258) &
+                                     (masterdat['id'] != 600341002) )[0]
+
+        EW0_limit_ent     = np.where(((np.abs(masterdat['ferr_'+emline]) != 99.0) & np.isfinite(masterdat['ferr_'+emline])) &
+                                     ((np.abs(masterdat['EW0err_'+emline]) == 99) | (masterdat['EW0_'+emline] == 0.0)) &
+                                     (masterdat['redshift'] >= 0.0) & (masterdat['redshift'] <= 6.4432) & (masterdat['duplicationID'] == 0.0) &
+                                     (masterdat['id'] != 158002004) &
+                                     (masterdat['id'] != 601931670) &
+                                     (masterdat['id'] != 208014258) &
+                                     (masterdat['id'] != 600341002) )[0]
+
+        print(' - For '+emline+' there are the following:')
+        print('   N(alldetections) = '+str(len(alldet_ent)))
+        print('   N(contmaglimits) = '+str(len(contmag_limit_ent)))
+        print('   N(EW0limits)     = '+str(len(EW0_limit_ent)))
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
