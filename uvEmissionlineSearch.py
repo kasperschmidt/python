@@ -17193,5 +17193,120 @@ def count_EWlimits(masterfits='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/ba
         print('   N(contmaglimits) = '+str(len(contmag_limit_ent)))
         print('   N(EW0limits)     = '+str(len(EW0_limit_ent)))
 
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+def count_S2N(masterfits='/Users/kschmidt/work/MUSE/uvEmissionlineSearch/back2backAnalysis_200213/results_master_catalog_version200213.fits',zdesert=False):
+    """
+
+    """
+
+    if zdesert:
+        zmin = 1.5
+        zmax = 2.9
+    else:
+        zmin = 0.0
+        zmax = 6.4432
+
+    masterdat = afits.open(masterfits)[1].data
+
+    SN5total = 0
+    SN3total = 0
+    for emline in ['NV','CIV','HeII','OIII','SiIII','CIII']:
+        alldet_entSN5        = np.where(((np.abs(masterdat['ferr_'+emline]) != 99.0) & np.isfinite(masterdat['ferr_'+emline]) &
+                                         (np.abs(masterdat['s2n_'+emline]) >= 5.0)) &
+                                        (masterdat['redshift'] >= zmin) & (masterdat['redshift'] <= zmax) &
+                                        (masterdat['duplicationID'] == 0.0) &
+                                        (masterdat['id'] != 158002004) &
+                                        (masterdat['id'] != 601931670) &
+                                        (masterdat['id'] != 208014258) &
+                                        (masterdat['id'] != 600341002) )[0]
+
+        alldet_entSN3        = np.where(((np.abs(masterdat['ferr_'+emline]) != 99.0) & np.isfinite(masterdat['ferr_'+emline]) &
+                                         (np.abs(masterdat['s2n_'+emline]) >= 3.0)) &
+                                        (masterdat['redshift'] >= zmin) & (masterdat['redshift'] <= zmax) &
+                                        (masterdat['duplicationID'] == 0.0) &
+                                        (masterdat['id'] != 158002004) &
+                                        (masterdat['id'] != 601931670) &
+                                        (masterdat['id'] != 208014258) &
+                                        (masterdat['id'] != 600341002) )[0]
+
+        print(' - For '+emline+' there are the following:')
+        print('   N(S/N>5)   = '+str(len(alldet_entSN5)))
+        print('   N(S/N>3)   = '+str(len(alldet_entSN3)))
+        print('   N(3<S/N<5) = '+str(len(alldet_entSN3)-len(alldet_entSN5)))
+
+
+        SN5total = SN5total + int(len(alldet_entSN5))
+        SN3total = SN3total + int(len(alldet_entSN3))
+
+
+    selcountSN5 = np.where(( ((np.abs(masterdat['ferr_NV'])   != 99.0) & np.isfinite(masterdat['ferr_NV']))   & (np.abs(masterdat['s2n_NV'])   >=5.0) |
+                             ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV']))  & (np.abs(masterdat['s2n_CIV'])  >=5.0) |
+                             ((np.abs(masterdat['ferr_HeII']) != 99.0) & np.isfinite(masterdat['ferr_HeII'])) & (np.abs(masterdat['s2n_HeII']) >=5.0) |
+                             ((np.abs(masterdat['ferr_OIII']) != 99.0) & np.isfinite(masterdat['ferr_OIII'])) & (np.abs(masterdat['s2n_OIII']) >=5.0) |
+                             ((np.abs(masterdat['ferr_SiIII'])!= 99.0) & np.isfinite(masterdat['ferr_SiIII']))& (np.abs(masterdat['s2n_SiIII']) >=5.0) |
+                             ((np.abs(masterdat['ferr_MgII']) != 99.0) & np.isfinite(masterdat['ferr_MgII'])) & (np.abs(masterdat['s2n_MgII']) >=5.0) |
+                             ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) & (np.abs(masterdat['s2n_CIII']) >=5.0)  ) &
+                           (masterdat['redshift'] >= zmin) & (masterdat['redshift'] <= zmax) & (masterdat['duplicationID'] == 0.0) &
+                           (masterdat['id'] != 158002004) &
+                           (masterdat['id'] != 601931670) &
+                           (masterdat['id'] != 208014258) &
+                           (masterdat['id'] != 600341002) )[0]
+
+    selcountSN3 = np.where(( ((np.abs(masterdat['ferr_NV'])   != 99.0) & np.isfinite(masterdat['ferr_NV']))   & (np.abs(masterdat['s2n_NV'])   >=3.0) |
+                             ((np.abs(masterdat['ferr_CIV'])  != 99.0) & np.isfinite(masterdat['ferr_CIV']))  & (np.abs(masterdat['s2n_CIV'])  >=3.0) |
+                             ((np.abs(masterdat['ferr_HeII']) != 99.0) & np.isfinite(masterdat['ferr_HeII'])) & (np.abs(masterdat['s2n_HeII']) >=3.0) |
+                             ((np.abs(masterdat['ferr_OIII']) != 99.0) & np.isfinite(masterdat['ferr_OIII'])) & (np.abs(masterdat['s2n_OIII']) >=3.0) |
+                             ((np.abs(masterdat['ferr_SiIII'])!= 99.0) & np.isfinite(masterdat['ferr_SiIII']))& (np.abs(masterdat['s2n_SiIII']) >=3.0) |
+                             ((np.abs(masterdat['ferr_MgII']) != 99.0) & np.isfinite(masterdat['ferr_MgII'])) & (np.abs(masterdat['s2n_MgII']) >=3.0) |
+                             ((np.abs(masterdat['ferr_CIII']) != 99.0) & np.isfinite(masterdat['ferr_CIII'])) & (np.abs(masterdat['s2n_CIII']) >=3.0)  ) &
+                           (masterdat['redshift'] >= zmin) & (masterdat['redshift'] <= zmax) & (masterdat['duplicationID'] == 0.0) &
+                           (masterdat['id'] != 158002004) &
+                           (masterdat['id'] != 601931670) &
+                           (masterdat['id'] != 208014258) &
+                           (masterdat['id'] != 600341002) )[0]
+
+    print(' - In total there are the following number of total detections in the objects:')
+    print('   N(S/N>5)   = '+str(SN5total))
+    print('   N(S/N>3)   = '+str(SN3total))
+    print('   N(3<S/N<5) = '+str(SN3total-SN5total))
+
+    print(' - In total there are the following number of objects with at least one line:')
+    print('   N(S/N>5)   = '+str(len(selcountSN5)))
+    print('   N(S/N>3)   = '+str(len(selcountSN3)))
+    print('   N(3<S/N<5) = '+str(len(selcountSN3)-len(selcountSN5)))
+
+
+    print('-----> Counting these number of detections per objects')
+    Nsingleline         = 0
+    Nsingleline_withSN5 = 0
+    Nmorelines          = 0
+    Nmorelines_withSN5  = 0
+    for ii, objid in enumerate(masterdat['id'][selcountSN3]):
+        SNarr = np.array([masterdat['s2n_NV'][selcountSN3][ii], masterdat['s2n_CIV'][selcountSN3][ii],
+                          masterdat['s2n_HeII'][selcountSN3][ii], masterdat['s2n_OIII'][selcountSN3][ii],
+                          masterdat['s2n_SiIII'][selcountSN3][ii], masterdat['s2n_MgII'][selcountSN3][ii],
+                          masterdat['s2n_CIII'][selcountSN3][ii]])
+
+        # pdb.set_trace()
+        NSN3lines = len(np.where(SNarr > 3.0)[0])
+        if NSN3lines == 1:
+            Nsingleline = Nsingleline + 1
+            print(SNarr)
+            if len(np.where(SNarr >= 5.0)[0]) == 1:
+                Nsingleline_withSN5 = Nsingleline_withSN5 + 1
+        elif NSN3lines > 1:
+            Nmorelines  = Nmorelines + 1
+            if len(np.where(SNarr >= 5.0)[0]) >= 1:
+                Nmorelines_withSN5 = Nmorelines_withSN5 + 1
+
+        NlowSN      = len(np.where((SNarr > 3.0) & (SNarr < 5.0))[0])
+        NhighSN     = len(np.where(SNarr >= 5.0)[0])
+
+    print(' - Of the objects there are the following:')
+    print('   N(objects with  1 line with S/N>3)                   = '+str(Nsingleline))
+    print('   of these objects with at least one S/N>=5 line are   = '+str(Nsingleline_withSN5))
+    print('   N(objects with >1 line with S/N>3)                   = '+str(Nmorelines))
+    print('   of these objects with at least one S/N>=5 line are   = '+str(Nmorelines_withSN5))
+
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
