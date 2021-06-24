@@ -14971,6 +14971,15 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             n_e_min_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]+Nsigma*FRerr_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
             n_e_max_Si3  = Si3.getTemDen(FRval_Si3[goodent_Si3]-Nsigma*FRerr_Si3[goodent_Si3], tem=T_e_fix, wave1=1883, wave2=1892)
 
+            s2nvalues_Si3 = fluxdat[FR_Si3.replace('FR','s2n').split('1')[0]][goodent_Si3]
+            if verbose: print(' - Number of S/N(FELIS) as a double check: '+str(len(s2nvalues_Si3 )))
+            if verbose: print(' - S/N(FELIS): (mean.median,min,max,std) = '+
+                              str(np.mean(s2nvalues_Si3))+','+
+                              str(np.median(s2nvalues_Si3))+','+
+                              str(np.min(s2nvalues_Si3))+','+
+                              str(np.max(s2nvalues_Si3))+','+
+                              str(np.std(s2nvalues_Si3)))
+
             if verbose:
                 for gg, gent in enumerate(goodent_Si3):
                     print('   Te='+str(TeKey)+' goodent='+str(gent)+'='+str(fluxdat['id'][gent])+
@@ -14993,6 +15002,15 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
             n_e_C3     = C3.getTemDen(FRval_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
             n_e_min_C3 = C3.getTemDen(FRval_C3[goodent_C3]+Nsigma*FRerr_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
             n_e_max_C3 = C3.getTemDen(FRval_C3[goodent_C3]-Nsigma*FRerr_C3[goodent_C3], tem=T_e_fix, wave1=1907, wave2=1909)
+
+            s2nvalues_C3 = fluxdat[FR_C3.replace('FR','s2n').split('1')[0]][goodent_C3]
+            if verbose: print(' - Number of S/N(FELIS) as a double check: '+str(len(s2nvalues_C3 )))
+            if verbose: print(' - S/N(FELIS): (mean,median,min,max,std) = '+
+                              str(np.mean(s2nvalues_C3))+','+
+                              str(np.median(s2nvalues_C3))+','+
+                              str(np.min(s2nvalues_C3))+','+
+                              str(np.max(s2nvalues_C3))+','+
+                              str(np.std(s2nvalues_C3)))
 
             if verbose:
                 for gg, gent in enumerate(goodent_C3):
@@ -15025,6 +15043,23 @@ def perform_PyNeb_calc_main(linefluxcatalog,outputfile='./pyneb_calculations_res
                          n_e_min_Si3[n_e_goodentC3Si3_Si3.astype(int)],
                          n_e_max_Si3[n_e_goodentC3Si3_Si3.astype(int)],ylabel,
                          fluxdat,goodentC3Si3,verbose=True,overwrite=overwrite)
+
+
+        if verbose: print(' - Number of S/N(FELIS) as a double check: '+str(len(s2nvalues_Si3[n_e_goodentC3Si3_Si3.astype(int)])))
+        if verbose: print(' - S/N(FELIS): (mean,median,min,max,std) = '+
+                          str(np.mean(s2nvalues_Si3[n_e_goodentC3Si3_Si3.astype(int)]))+','+
+                          str(np.median(s2nvalues_Si3[n_e_goodentC3Si3_Si3.astype(int)]))+','+
+                          str(np.min(s2nvalues_Si3[n_e_goodentC3Si3_Si3.astype(int)]))+','+
+                          str(np.max(s2nvalues_Si3[n_e_goodentC3Si3_Si3.astype(int)]))+','+
+                          str(np.std(s2nvalues_Si3[n_e_goodentC3Si3_Si3.astype(int)])))
+
+        if verbose: print(' - Number of S/N(FELIS) as a double check: '+str(len(s2nvalues_C3[n_e_goodentC3Si3_C3.astype(int)])))
+        if verbose: print(' - S/N(FELIS): (mean,median,min,max,std) = '+
+                          str(np.mean(s2nvalues_C3[n_e_goodentC3Si3_C3.astype(int)]))+','+
+                          str(np.median(s2nvalues_C3[n_e_goodentC3Si3_C3.astype(int)]))+','+
+                          str(np.min(s2nvalues_C3[n_e_goodentC3Si3_C3.astype(int)]))+','+
+                          str(np.max(s2nvalues_C3[n_e_goodentC3Si3_C3.astype(int)]))+','+
+                          str(np.std(s2nvalues_C3[n_e_goodentC3Si3_C3.astype(int)]))+'\n\n')
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -15230,8 +15265,9 @@ def plot_neVSne(plotname,T_e_fix,
 
     """
     Nhistbins    = 50
-    xrange       = [1e1,1e7]
-    yrange       = xrange
+    # xrange       = [1e1,1e7]
+    xrange       = [1e2,8e6]
+    yrange       = [1e2,1e6]
     limsizefrac  = 0.05
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -15318,7 +15354,7 @@ def plot_neVSne(plotname,T_e_fix,
                                                    'dummydat',linetype='onetoone',title=None, #'this is title',
                                                    ids=fluxdat['id'][goodent],
                                                    ylog=True,xlog=True,yrange=yrange,xrange=xrange,
-                                                   colortype='redshift',colorcode=True,cdatvec=fluxdat['redshift'][goodent],
+                                                   colortype='zmanual',colorcode=True,cdatvec=fluxdat['redshift'][goodent],
                                                    point_text=None, #fluxdat['id'][goodent].astype(str),
                                                    photoionizationplotparam=None,
                                                    histaxes=False,Nbins=Nhistbins, showgraylimits=False,
