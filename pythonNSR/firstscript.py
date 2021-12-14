@@ -5,7 +5,13 @@ import pdb
 import matplotlib.pylab as plt
 import numpy as np
 
-def test(verbose=True):
+def test():
+    """
+    Just an overall test script with some plotting
+    Returns
+    -------
+
+    """
     print('hello world')
     for ii, number in enumerate(np.array([10, 20, 30, 40])):
         print('This is just a test '+str(number)+'  and then the index '+str(ii))
@@ -74,5 +80,16 @@ def test(verbose=True):
 
     plt.clf()
     plt.close('all')
+#-----------------------------------------------------------------------------------------------------------------------
+def returnvalues(inputval):
+    """
 
+    Function testing the PyCharm setup
 
+    Returns
+    -------
+
+    """
+    outval = inputval * 2.
+    return outval
+#-----------------------------------------------------------------------------------------------------------------------
