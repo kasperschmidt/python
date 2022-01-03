@@ -6,10 +6,10 @@ import odbc_basicSQLextract as obe
 from importlib import reload
 
 #-----------------------------------------------------------------------------------------------------------------------
-def runSQL(SQLquery, server='sv1391', database='Databank_COMPLIANCE', savefilename=None, overwrite=False, verbose=True):
+def returndatapull(SQLquery, server='sv1391', database='Databank_COMPLIANCE', savefilename=None, overwrite=False, verbose=True):
     """
-    Simple function to pull out data from LPR# provided and SQL code
-    The code will be sent to
+    Simple function to pull out data from LPR3 provided and SQL code
+    The code will be sent to server and database given in parameters
 
     Parameters
     ----------
