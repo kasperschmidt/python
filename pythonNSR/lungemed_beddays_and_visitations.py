@@ -55,114 +55,129 @@ def getdata(verbose=True):
     return dataframe_days, dataframe_vis
 
 # -----------------------------------------------------------------------------------------------------------------------
-def count_occurrences_per_day(measurehour=23, untiltoday=False, verbose=True):
+def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, overwrite=False, verbose=True):
     """
     Function to count occurrences per day for various parameters used for bed occupancy and patient statistics
 
     Example of use
     -------
     import lungemed_beddays_and_visitations as lbv
-    df_results = lbv.count_occurrences_per_day()
+    df_results = lbv.count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, overwrite=False)
 
     """
+    savepath = 'O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'
+    filename = 'lungemedLPR3dataframe.csv'
+    if os.path.isfile(savepath+filename) and savedatafile and not overwrite:
+        sys.exit(' Was asked to store data but overwrite=False and file already exists... hence exiting')
+
     if verbose: print(' - Getting the data to look at ')
     dataframe_days, dataframe_vis = lbv.getdata(verbose=verbose)
+    outdic = {}
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    start_day   = datetime.datetime.strptime("02-02-2019 "+str(measurehour)+":00:00", "%d-%m-%Y %H:%M:%S")
-    if untiltoday:
-        end_day = datetime.datetime.strptime(str(datetime.datetime.today()).split('.')[0], "%Y-%m-%d %H:%M:%S")
-    else:
-        end_day = datetime.datetime.strptime("02-05-2019 " + str(measurehour) + ":00:00", "%d-%m-%Y %H:%M:%S")
-    date_list   = [start_day + datetime.timedelta(days=x) for x in range(0, (end_day - start_day).days)]
-
-    if verbose: print(' - Will count how many patients are in beds at any given day between '+
-                      start_day.strftime("%d-%m-%Y")+' and '+end_day.strftime("%d-%m-%Y")+' at '+str(measurehour)+" o'clock")
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('---- "Counting parameters from "bed days data frame" ----')
-    count_cpr  = [0] * len(date_list)
-    occupancy_available  = [0] * len(date_list)
-    occupancy_actual     = [0] * len(date_list)
-
-    for pp, patient in enumerate(dataframe_days['CPR']):
-        intime  = dataframe_days['INDTIDSPUNKT_DRGKONTAKT'][pp]
-        outtime = dataframe_days['UDTIDSPUNKT_DRGKONTAKT'][pp]
-
-        for dd, datecheck in enumerate(np.asarray(date_list)):
-            if verbose:
-                infostr = '   Checking the date '+datecheck.strftime("%d-%m-%Y")+' for patient number '+str(pp+1)
-                sys.stdout.write("%s\r" % infostr)
-                sys.stdout.flush()
-
-            if (intime <= datecheck) and (datecheck <= outtime):
-                count_cpr[dd] = count_cpr[dd] + 1
-
-    if verbose: print('\n - Estimating the occupancy in the available and actual beds ')
-    for dd, datecheck in enumerate(np.asarray(date_list)):
-        if datecheck < datetime.datetime.strptime("10-06-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
-            occupancy_available[dd] = count_cpr[dd] / 24. * 100
+    for measurehour in measurehours:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        start_day   = datetime.datetime.strptime("02-02-2019 "+str(measurehour)+":00:00", "%d-%m-%Y %H:%M:%S")
+        if untiltoday:
+            end_day = datetime.datetime.strptime(str(datetime.datetime.today()).split(' ')[0]+' '+str(measurehour)+":00:00", "%Y-%m-%d %H:%M:%S")
         else:
-            occupancy_available[dd] = count_cpr[dd] / 16. * 100
+            end_day = datetime.datetime.strptime("02-05-2019 " + str(measurehour) + ":00:00", "%d-%m-%Y %H:%M:%S")
+        date_list   = [start_day + datetime.timedelta(days=x) for x in range(0, (end_day - start_day).days)]
 
-        if datecheck < datetime.datetime.strptime("01-03-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
-            occupancy_actual[dd] = count_cpr[dd] / 24. * 100
-        else:
-            occupancy_actual[dd] = count_cpr[dd] / 16. * 100
+        if verbose: print(' - Will count how many patients are in beds at any given day between '+
+                          start_day.strftime("%d-%m-%Y")+' and '+end_day.strftime("%d-%m-%Y")+' at '+str(measurehour)+" o'clock")
 
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print('---- "Counting parameters from "bed days data frame" ----')
+        count_cpr  = [0] * len(date_list)
+        occupancy_available  = [0] * len(date_list)
+        occupancy_actual     = [0] * len(date_list)
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print('---- "Counting parameters from "visitations data frame" ----')
-    count_vis_aka       = [0] * len(date_list)
-    count_vis_lungNAE   = [0] * len(date_list)
-    count_vis_lungSLA   = [0] * len(date_list)
-    count_vis_other     = [0] * len(date_list)
+        for pp, patient in enumerate(dataframe_days['CPR']):
+            intime  = dataframe_days['INDTIDSPUNKT_DRGKONTAKT'][pp]
+            outtime = dataframe_days['UDTIDSPUNKT_DRGKONTAKT'][pp]
 
-    for pp, patient in enumerate(dataframe_vis['CPR']):
-        intime = dataframe_vis['INDTIDSPUNKT_DRGKONTAKT'][pp]
-        outtime = dataframe_vis['UDTIDSPUNKT_DRGKONTAKT'][pp]
+            for dd, datecheck in enumerate(np.asarray(date_list)):
+                if verbose:
+                    infostr = '   Checking the date '+datecheck.strftime("%d-%m-%Y")+' for patient number '+str(pp+1)
+                    sys.stdout.write("%s\r" % infostr)
+                    sys.stdout.flush()
 
+                if (intime <= datecheck) and (datecheck <= outtime):
+                    count_cpr[dd] = count_cpr[dd] + 1
+
+        if verbose: print('\n - Estimating the occupancy in the available and actual beds ')
         for dd, datecheck in enumerate(np.asarray(date_list)):
-            if verbose:
-                infostr = '   Checking the date ' + datecheck.strftime(
-                    "%d-%m-%Y") + ' for patient number ' + str(pp + 1)
-                sys.stdout.write("%s\r" % infostr)
-                sys.stdout.flush()
+            if datecheck < datetime.datetime.strptime("10-06-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
+                occupancy_available[dd] = count_cpr[dd] / 24. * 100
+            else:
+                occupancy_available[dd] = count_cpr[dd] / 16. * 100
 
-            if (intime <= datecheck) and (datecheck <= outtime):
-                if 'akut' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower():
-                    count_vis_aka[dd] = count_vis_aka[dd] + 1
-                elif ('lungemed. sengeafs., nae' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()) or \
-                        ('med. lunge sengeafs., nae' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
-                    count_vis_lungNAE[dd] = count_vis_lungNAE[dd] + 1
-                elif ('med. lunge sengeafs., sla' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
-                    count_vis_lungSLA[dd] = count_vis_lungSLA[dd] + 1
-                else:
-                    count_vis_other[dd] = count_vis_other[dd] + 1
+            if datecheck < datetime.datetime.strptime("01-03-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
+                occupancy_actual[dd] = count_cpr[dd] / 24. * 100
+            else:
+                occupancy_actual[dd] = count_cpr[dd] / 16. * 100
 
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print('---- "Counting parameters from "visitations data frame" ----')
+        count_vis_aka       = [0] * len(date_list)
+        count_vis_lungNAE   = [0] * len(date_list)
+        count_vis_lungSLA   = [0] * len(date_list)
+        count_vis_other     = [0] * len(date_list)
+
+        for pp, patient in enumerate(dataframe_vis['CPR']):
+            intime = dataframe_vis['INDTIDSPUNKT_DRGKONTAKT'][pp]
+            outtime = dataframe_vis['UDTIDSPUNKT_DRGKONTAKT'][pp]
+
+            for dd, datecheck in enumerate(np.asarray(date_list)):
+                if verbose:
+                    infostr = '   Checking the date ' + datecheck.strftime(
+                        "%d-%m-%Y") + ' for patient number ' + str(pp + 1)
+                    sys.stdout.write("%s\r" % infostr)
+                    sys.stdout.flush()
+
+                if (intime <= datecheck) and (datecheck <= outtime):
+                    if 'akut' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower():
+                        count_vis_aka[dd] = count_vis_aka[dd] + 1
+                    elif ('lungemed. sengeafs., nae' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()) or \
+                            ('med. lunge sengeafs., nae' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
+                        count_vis_lungNAE[dd] = count_vis_lungNAE[dd] + 1
+                    elif ('med. lunge sengeafs., sla' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
+                        count_vis_lungSLA[dd] = count_vis_lungSLA[dd] + 1
+                    else:
+                        count_vis_other[dd] = count_vis_other[dd] + 1
+
+        if verbose: print(' - Adding results to output dictionary')
+        outdic['dates_'+str(measurehour)]                =  date_list
+        outdic['count_cpr_'+str(measurehour)]            =  count_cpr
+        outdic['occupancy_available_'+str(measurehour)]  =  occupancy_available
+        outdic['occupancy_actual_'+str(measurehour)]     =  occupancy_actual
+        outdic['count_vis_aka_'+str(measurehour)]        =  count_vis_aka
+        outdic['count_vis_lungNAE_'+str(measurehour)]    =  count_vis_lungNAE
+        outdic['count_vis_lungSLA_'+str(measurehour)]    =  count_vis_lungSLA
+        outdic['count_vis_other_'+str(measurehour)]      =  count_vis_other
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Building data frame and returning count of patients and stats')
-    dict = {'dates':date_list,
-            'count_cpr':count_cpr,
-            'occupancy_available':occupancy_available,
-            'occupancy_actual':occupancy_actual,
-            'count_vis_aka':count_vis_aka,
-            'count_vis_lungNAE':count_vis_lungNAE,
-            'count_vis_lungSLA':count_vis_lungSLA,
-            'count_vis_other':count_vis_other}
-    df_results = pd.DataFrame(dict)
+    df_results = pd.DataFrame(outdic)
+
+    if savedatafile:
+        gdf.savefile(df_results, savepath+filename, format='CSV', overwrite=overwrite, verbose=verbose)
 
     return df_results
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_perday_occupancy(measurehours=[23], verbose=True, untiltoday=True, plotdir='O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'):
+def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.csv', verbose=True, untiltoday=True, plotdir='O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'):
     """
 
     Parameters
     ----------
-    verbose     Toggle verbosity
-    untiltoday  Grab data from 02-02-2019 (start of LPR3) until today. If False only a short period after LPR3 start
-                is considered for testing.
-    plotdir     Directory to put plots in
+    measurehours   The hours at which the occupancy should be evaluated
+    loaddatafile   If loaddatafile is not None, the script will attempt to load the data from a csv file instead of
+                   pulling it from LPR3 via SQL and performing the calculations. The file is assumed to be loaceted in
+                   plotdir
+    verbose        Toggle verbosity
+    untiltoday     Grab data from 02-02-2019 (start of LPR3) until today. If False only a short period after LPR3 start
+                   is considered for testing.
+    plotdir        Directory to put plots in
 
     Returns
     -------
@@ -171,16 +186,20 @@ def plot_perday_occupancy(measurehours=[23], verbose=True, untiltoday=True, plot
     Example of use
     -------
     import lungemed_beddays_and_visitations as lbv
-    lbv.plot_perday_occupancy(measurehour=[15,23],untiltoday=True)
+    lbv.plot_perday_occupancy(measurehours=[8, 15, 23], untiltoday=True, loaddatafile='lungemedLPR3dataframe.csv')
 
     """
-    for measurehour in measurehours:
-        if verbose: print(' - Generating data for plot')
-        df_results = lbv.count_occurrences_per_day(measurehour=measurehour, untiltoday=untiltoday, verbose=verbose)
+    if verbose: print(' - Generating data for plots')
+    if loaddatafile is None:
+        df_results = lbv.count_occurrences_per_day(measurehour=measurehours, untiltoday=untiltoday, verbose=verbose)
+    else:
+        df_results = gdf.loadCSV(plotdir+loaddatafile)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for measurehour in measurehours:
         if verbose: print(' - calculating moving average ')
-        df_results['occupancy_available_movingavg'] = df_results['occupancy_available'].rolling(window=30).mean()
-        df_results['occupancy_actual_movingavg'] = df_results['occupancy_actual'].rolling(window=30).mean()
+        df_results['occupancy_available_movingavg_'+str(measurehour)] = df_results['occupancy_available_'+str(measurehour)].rolling(window=30).mean()
+        df_results['occupancy_actual_movingavg_'+str(measurehour)] = df_results['occupancy_actual_'+str(measurehour)].rolling(window=30).mean()
         #df_results['occupancy_available_movingavg'] = df_results.iloc[:, 1].rolling(window=30).mean()
 
         plotname = 'occupancy_kl'+str(measurehour)+'.pdf'
@@ -199,7 +218,7 @@ def plot_perday_occupancy(measurehours=[23], verbose=True, untiltoday=True, plot
         plt.ioff()
         # plt.title(inforstr[:-2],fontsize=Fsize)
 
-        xvalues = df_results['dates']
+        xvalues = df_results['dates_'+str(measurehour)]
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d-%Y'))
         plt.gca().xaxis.set_major_locator(mdates.YearLocator())
 
@@ -221,24 +240,24 @@ def plot_perday_occupancy(measurehours=[23], verbose=True, untiltoday=True, plot
 
         # --------- POINT AND CURVES ---------
         pointcolor = cmap(colnorm(30))
-        plt.errorbar(xvalues, df_results['occupancy_actual'], xerr=xerr, yerr=yerr,
+        plt.errorbar(xvalues, df_results['occupancy_actual_'+str(measurehour)], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=8.,
                      label='"Reelle" sengekapacitet')
-        plt.errorbar(xvalues, df_results['occupancy_actual_movingavg'], xerr=xerr, yerr=yerr,
+        plt.errorbar(xvalues, df_results['occupancy_actual_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
                      marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=18.,
                      label='30 dage glidende gennemsnit')
 
         pointcolor = cmap(colnorm(80))
-        plt.errorbar(xvalues, df_results['occupancy_available'], xerr=xerr, yerr=yerr,
+        plt.errorbar(xvalues, df_results['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=10,
                      label='Disponible senge')
-        plt.errorbar(xvalues, df_results['occupancy_available_movingavg'], xerr=xerr, yerr=yerr,
+        plt.errorbar(xvalues, df_results['occupancy_available_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
                      marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=20.,
@@ -292,5 +311,21 @@ def plot_perday_occupancy(measurehours=[23], verbose=True, untiltoday=True, plot
         plt.clf()
         plt.close('all')
     if verbose: print('   Saved plot(s) to \n   ' + plotdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #Figure plotting moving averages of different measurement hours together
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #Figure plotting number of visitations as a function of bed occupancy; trends between these?
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # Function loading SP data and plotting it against the LPR3 data for comparison.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 #=======================================================================================================================
 
