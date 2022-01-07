@@ -81,7 +81,7 @@ def savefile(dataframe,out_file,format='CSV',overwrite=False,verbose=True):
 
     if verbose: print(' - Storing DataFrame in '+out_file)
     if format.lower() == 'csv':
-        dataframe.to_csv("foo.csv", overwrite=overwrite)
+        dataframe.to_csv(out_file)
     elif format.lower() == 'excel':
         dataframe.to_excel(out_file, sheet_name="data output", overwrite=overwrite)
 #=======================================================================================================================
@@ -95,6 +95,7 @@ def loadCSV(csvfile,verbose=True):
     verbose      Toggle verbosity
     """
     if verbose: print(' - Loading CSV data file '+csvfile+' into Pandas DataFrame')
-    pd.read_csv(csvfile)
+    dataframe = pd.read_csv(csvfile)
+    return dataframe
 #=======================================================================================================================
 
