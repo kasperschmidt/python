@@ -55,7 +55,7 @@ def getdata(verbose=True):
     return dataframe_days, dataframe_vis
 
 # -----------------------------------------------------------------------------------------------------------------------
-def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, overwrite=False, verbose=True):
+def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, savetype='excel', overwrite=False, verbose=True):
     """
     Function to count occurrences per day for various parameters used for bed occupancy and patient statistics
 
@@ -66,7 +66,7 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
 
     """
     savepath = 'O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'
-    filename = 'lungemedLPR3dataframe.csv'
+    filename = 'lungemedLPR3dataframe'
     if os.path.isfile(savepath+filename) and savedatafile and not overwrite:
         sys.exit(' Was asked to store data but overwrite=False and file already exists... hence exiting')
 
@@ -156,16 +156,31 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
         outdic['count_vis_lungNAE_'+str(measurehour)]    =  count_vis_lungNAE
         outdic['count_vis_lungSLA_'+str(measurehour)]    =  count_vis_lungSLA
         outdic['count_vis_other_'+str(measurehour)]      =  count_vis_other
+
+
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Building data frame and returning count of patients and stats')
     df_results = pd.DataFrame(outdic)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - calculating moving average ')
+    Ndaysavg = 30
+    for measurehour in measurehours:
+        df_results['occupancy_available_movingavg_' + str(measurehour)] = \
+            df_results['occupancy_available_' + str(measurehour)].rolling(window=Ndaysavg).mean()
+        df_results['occupancy_actual_movingavg_' + str(measurehour)] = \
+            df_results['occupancy_actual_' + str(measurehour)].rolling(window=Ndaysavg).mean()
+
     if savedatafile:
-        gdf.savefile(df_results, savepath+filename, format='CSV', overwrite=overwrite, verbose=verbose)
+        if savetype == 'excel':
+            gdf.savefile(df_results, savepath + filename, format='excel', overwrite=overwrite, verbose=verbose)
+        else:
+            gdf.savefile(df_results, savepath + filename, format='csv', overwrite=overwrite, verbose=verbose)
 
     return df_results
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.csv', verbose=True, untiltoday=True, plotdir='O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'):
+def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.xlsx', verbose=True, untiltoday=True, plotdir='O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'):
     """
 
     Parameters
@@ -186,22 +201,17 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     Example of use
     -------
     import lungemed_beddays_and_visitations as lbv
-    lbv.plot_perday_occupancy(measurehours=[8, 15, 23], untiltoday=True, loaddatafile='lungemedLPR3dataframe.csv')
+    lbv.plot_perday_occupancy(measurehours=[8, 15, 23], untiltoday=True, loaddatafile='lungemedLPR3dataframe.xlsx')
 
     """
     if verbose: print(' - Generating data for plots')
     if loaddatafile is None:
-        df_results = lbv.count_occurrences_per_day(measurehour=measurehours, untiltoday=untiltoday, verbose=verbose)
+        df_results = lbv.count_occurrences_per_day(measurehours=measurehours, untiltoday=untiltoday, verbose=verbose,savedatafile=False)
     else:
-        df_results = gdf.loadCSV(plotdir+loaddatafile)
+        df_results = gdf.loadExcel(plotdir+loaddatafile)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for measurehour in measurehours:
-        if verbose: print(' - calculating moving average ')
-        df_results['occupancy_available_movingavg_'+str(measurehour)] = df_results['occupancy_available_'+str(measurehour)].rolling(window=30).mean()
-        df_results['occupancy_actual_movingavg_'+str(measurehour)] = df_results['occupancy_actual_'+str(measurehour)].rolling(window=30).mean()
-        #df_results['occupancy_available_movingavg'] = df_results.iloc[:, 1].rolling(window=30).mean()
-
         plotname = 'occupancy_kl'+str(measurehour)+'.pdf'
         if verbose: print(' - Initiating '+plotname)
 
