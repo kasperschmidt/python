@@ -157,8 +157,6 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
         outdic['count_vis_lungSLA_'+str(measurehour)]    =  count_vis_lungSLA
         outdic['count_vis_other_'+str(measurehour)]      =  count_vis_other
 
-
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Building data frame and returning count of patients and stats')
     df_results = pd.DataFrame(outdic)
@@ -320,11 +318,92 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         plt.savefig(plotdir+plotname)
         plt.clf()
         plt.close('all')
-    if verbose: print('   Saved plot(s) to \n   ' + plotdir)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #Figure plotting moving averages of different measurement hours together
+    plotname = 'occupancy_movingaverages.pdf'
+    if verbose: print(' - Initiating '+plotname)
+
+    fig = plt.figure(figsize=(9, 6))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.10, top=0.90)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    xvalues = df_results['dates_'+str(measurehour)]
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d-%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+
+    xerr = None
+    yerr = None
+
+    plt.grid(linestyle=':', linewidth=lthick/2.)
+    # --------- RANGES ---------
+    ymin = 0.0
+    ymax = 130.0
+    dy   = ymax - ymin
+    plt.ylim([ymin,ymax])
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    #cmap = plt.cm.get_cmap('plasma')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+    #cb = plt.colorbar(m)
+    #cb.set_label('belægningsprocent')
+
+    # --------- POINT AND CURVES ---------
+    colvallist = np.arange(cmin, cmax, cmax/len(measurehours))
+    for mm, measurehour in enumerate(measurehours):
+        pointcolor = cmap(colnorm(colvallist[mm]))
+        plt.errorbar(xvalues, df_results['occupancy_available_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=20.,
+                     label='30 dage glidende gennemsnit (kl '+str(measurehour)+')')
+
+    plt.plot(xvalues, np.zeros(len(xvalues)) + 100, '--', color='black', lw=lthick, zorder=5)
+    plt.plot(xvalues, np.zeros(len(xvalues)) + 85, ':', color='black', lw=lthick, zorder=5)
+
+    lineymin = ymin + dy*0.24
+    lineymax = ymin + dy*0.40
+    textymin = ymin + dy*0.05
+    textymax = ymin + dy*0.10
+    plt.plot([datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), datetime.datetime.strptime("10-06-2021", "%d-%m-%Y")],
+             [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+    plt.text(datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), textymin, '10-06-2021', fontsize=Fsize, rotation=90, color='gray',
+             horizontalalignment='center', verticalalignment='bottom')
+
+    plt.plot([datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
+             [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+    plt.text(datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), textymin, '01-03-2021', fontsize=Fsize, rotation=90, color='gray',
+             horizontalalignment='center', verticalalignment='bottom')
+
+    # --------- LABELS ---------
+    plt.xlabel('Dato for måling')
+    plt.ylabel('Belægningsprocent Lungemedicin Næstved')
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
+                     bbox_to_anchor=(0.5, 1.12), )  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+
+    plt.savefig(plotdir+plotname)
+    plt.clf()
+    plt.close('all')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -336,6 +415,6 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     # Function loading SP data and plotting it against the LPR3 data for comparison.
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
+    if verbose: print('   Plots saved to \n   ' + plotdir)
 #=======================================================================================================================
 
