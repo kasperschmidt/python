@@ -41,15 +41,16 @@ def getdata(verbose=True):
     dataframe_days, dataframe_vis = lbv.getdata()
 
     """
+    savepath = 'O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'
 
     if verbose: print(' - Getting LPR3 data from parsing SQL query for "bed days" ')
-    savefilename_days  = None
-    overwrite_days     = False
+    savefilename_days  = savepath+'lungemedLPR3_SQLbeddays.xlsx'
+    overwrite_days     = True
     dataframe_days     = gdf.returndatapull(lbv.loadSQL_beddays(), verbose=verbose, savefilename=savefilename_days, overwrite=overwrite_days)
 
     if verbose: print(' - Getting LPR3 data from parsing SQL query for "visitations" ')
-    savefilename_vis   = None
-    overwrite_vis      = False
+    savefilename_vis   = savepath+'lungemedLPR3_SQLvisitations.xlsx'
+    overwrite_vis      = True
     dataframe_vis      = gdf.returndatapull(lbv.loadSQL_visitations(), verbose=verbose, savefilename=savefilename_vis, overwrite=overwrite_vis)
 
     return dataframe_days, dataframe_vis
@@ -136,13 +137,15 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
                     sys.stdout.write("%s\r" % infostr)
                     sys.stdout.flush()
 
-                if (intime <= datecheck) and (datecheck <= outtime):
-                    if 'akut' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower():
-                        count_vis_aka[dd] = count_vis_aka[dd] + 1
-                    elif ('lungemed. sengeafs., nae' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()) or \
-                            ('med. lunge sengeafs., nae' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
+                if intime.strftime("%d-%m-%Y") == datecheck.strftime("%d-%m-%Y"):
+                    if ('Akut Afd. 1.sal, Sengeafs., SLA'.lower() in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()) or \
+                       ('Akut Afd., Skadestue, SLA'.lower()       in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()) or \
+                       ('Akut Afd.stuen, Sengeafs., SLA'.lower()  in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
+                            count_vis_aka[dd] = count_vis_aka[dd] + 1
+                    elif ('Lungemed. Sengeafs., NAE'.lower()  in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()) or \
+                         ('Med. Lunge Sengeafs., NAE'.lower() in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
                         count_vis_lungNAE[dd] = count_vis_lungNAE[dd] + 1
-                    elif ('med. lunge sengeafs., sla' in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
+                    elif ('Med. Lunge Sengeafs., SLA'.lower() in dataframe_vis['SOR_KONTAKT_SP_Afsnit'][pp].lower()):
                         count_vis_lungSLA[dd] = count_vis_lungSLA[dd] + 1
                     else:
                         count_vis_other[dd] = count_vis_other[dd] + 1
@@ -177,6 +180,7 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
             gdf.savefile(df_results, savepath + filename, format='csv', overwrite=overwrite, verbose=verbose)
 
     return df_results
+
 # -----------------------------------------------------------------------------------------------------------------------
 def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.xlsx', verbose=True, untiltoday=True, plotdir='O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'):
     """
@@ -580,7 +584,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                  marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                  markerfacecolor=pointcolor, ecolor=pointcolor,
                  markeredgecolor=pointcolor, zorder=20.,
-                 label='Lungemde. SLA (glidende sum over '+str(Ndayssum)+' dage)')
+                 label='Lungemed. SLA (glidende sum over '+str(Ndayssum)+' dage)')
 
     pointcolor = cmap(colnorm(85))
     plt.errorbar(xvalues, df_results['count_vis_other_23_movingsum'], xerr=xerr, yerr=yerr,
@@ -650,6 +654,9 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     dy   = ymax - ymin
     plt.ylim([ymin,ymax])
 
+    #plt.xscale('log')
+    #plt.yscale('log')
+
     # --------- COLORMAP ---------
     cmap = plt.cm.get_cmap('viridis')
     #cmap = plt.cm.get_cmap('plasma')
@@ -664,15 +671,42 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     #cb.set_label('belægningsprocent')
 
     # --------- POINT AND CURVES ---------
-    plt.errorbar(df_results['count_vis_aka_23_movingsum'],     df_results['occupancy_actual_movingavg_23'], xerr=xerr, yerr=yerr,
-                 marker='o', lw=0, markersize=marksize, alpha=1.0, color=pointcolor,
+    pointcolor  = cmap(colnorm(10))
+    measurehour = 23
+    plt.errorbar(df_results['count_vis_aka_23_movingsum'],     df_results['occupancy_actual_movingavg_'+str(measurehour)],
+                 xerr=xerr, yerr=yerr,
+                 marker='o', lw=0, markersize=marksize, alpha=0.5, color=pointcolor,
                  markerfacecolor=pointcolor, ecolor=pointcolor,
                  markeredgecolor=pointcolor, zorder=20.,
                  label='Akut afdelingen (glidende sum over '+str(Ndayssum)+' dage)')
 
+    pointcolor = cmap(colnorm(35))
+    plt.errorbar(df_results['count_vis_lungNAE_23_movingsum'],     df_results['occupancy_actual_movingavg_'+str(measurehour)],
+                 xerr=xerr, yerr=yerr,
+                 marker='o', lw=0, markersize=marksize, alpha=0.5, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20.,
+                 label='Lungemed NAE (egen afd.; glidende sum over '+str(Ndayssum)+' dage)')
+
+    pointcolor = cmap(colnorm(60))
+    plt.errorbar(df_results['count_vis_lungSLA_23_movingsum'],     df_results['occupancy_actual_movingavg_'+str(measurehour)],
+                 xerr=xerr, yerr=yerr,
+                 marker='o', lw=0, markersize=marksize, alpha=0.5, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20.,
+                 label='Lungemed. SLA (glidende sum over '+str(Ndayssum)+' dage)')
+
+    pointcolor = cmap(colnorm(85))
+    plt.errorbar(df_results['count_vis_other_23_movingsum'],     df_results['occupancy_actual_movingavg_'+str(measurehour)],
+                 xerr=xerr, yerr=yerr,
+                 marker='o', lw=0, markersize=marksize, alpha=0.5, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=10.,
+                 label='Andre afdelinger (glidende sum over '+str(Ndayssum)+' dage)')
+
     # --------- LABELS ---------
     plt.xlabel('Henvisninger til Lungemedicin Næstved')
-    plt.ylabel('Belægningsprocent Lungemedicin Næstved (kl. 23)')
+    plt.ylabel('Belægningsprocent Lungemedicin Næstved (kl. 15)')
 
     # --------- LEGEND ---------
     leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
