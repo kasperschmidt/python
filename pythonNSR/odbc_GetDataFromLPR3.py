@@ -2,7 +2,7 @@ import sys
 import os
 import pyodbc
 import pandas as pd
-import odbc_basicSQLextract as obe
+import odbc_GetDataFromLPR3 as gdf
 from importlib import reload
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ def returndatapull(SQLquery, server='sv1391', database='Databank_COMPLIANCE', sa
     # --------------------------------------------------------------------------------
     if savefilename is not None:
         if verbose: print(' - Saving extracted SQL data in Pandas DataFrame to file')
-        obe.savefile(dataframe, savefilename, overwrite=overwrite, verbose=verbose)
+        gdf.savefile(dataframe, savefilename, format='excel', overwrite=overwrite, verbose=verbose)
 
     #--------------------------------------------------------------------------------
     if verbose: print(' - Returning pulled SQL data')
