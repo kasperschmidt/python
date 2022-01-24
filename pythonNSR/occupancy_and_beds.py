@@ -15,7 +15,7 @@ import occupancy_and_beds as oab
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def generate_datastructure(verbose=True):
+def generate_datastructure(filename  = 'Belægningshistorik_alle_afdelinger_220124.xlsx',verbose=True):
     """
     Function to generate the pivor data structure to use for plotting
     Example of use
@@ -26,12 +26,12 @@ def generate_datastructure(verbose=True):
     """
     if verbose: print(' - Loading data from excel sheet Belægningshistorik_alle_afdelinger_2018til2022.xlsx')
     filepath  = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Belægningsprocenter/'
-    filename  = 'Belægningshistorik_alle_afdelinger_2018til2022.xlsx'
+    #filename  = 'Belægningshistorik_alle_afdelinger_2018til2022.xlsx'
     dataframe = pd.read_excel(filepath+filename, sheet_name='Belægningsoversigt')
-
+    if verbose: print('   ... done')
     return dataframe
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_beds(datemin='01-01-2018',datemax='01-01-2022',hour2show=23,SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'] ,verbose=True):
+def plot_beds(dataframe,datemin='01-01-2018',datemax='01-02-2022', plotname='disponiblesenge.pdf', hour2show=23,SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'] ,verbose=True):
     """
 
     Parameters
@@ -44,23 +44,22 @@ def plot_beds(datemin='01-01-2018',datemax='01-01-2022',hour2show=23,SORsections
     Example of use
     -------
     import occupancy_and_beds as oab
-    oab.plot_beds(SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'])
-    oab.plot_beds(SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE', 'SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA', 'SJ SLAANINT, INTENSIV SENGEAFS., SLA', 'SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'])
+    dataframe = oab.generate_datastructure(verbose=verbose)
+    oab.plot_beds(dataframe,SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'])
+    oab.plot_beds(dataframe,SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE', 'SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA', 'SJ SLAANINT, INTENSIV SENGEAFS., SLA', 'SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'])
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    dataframe = oab.generate_datastructure(verbose=verbose)
     datemin = datetime.datetime.strptime(datemin, "%d-%m-%Y")
     datemax = datetime.datetime.strptime(datemax, "%d-%m-%Y")
 
     ptable = pd.pivot_table(dataframe, values='Belægning disponible senge', index=['Belægning tidspunkt'],
-                            columns=['Ophold afsnit navn'], aggfunc=np.mean)
+                            columns=['Ophold afsnit navn'], aggfunc=np.mean, dropna=False)
 
     if SORsections == 'all':
         SORsectionlist = ptable.columns.tolist()
     else:
         SORsectionlist = SORsections
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plotname = 'disponiblesenge.pdf'
     if verbose: print(' - Initiating '+plotname)
 
     fig = plt.figure(figsize=(15, 6))
@@ -129,28 +128,31 @@ def plot_beds(datemin='01-01-2018',datemax='01-01-2022',hour2show=23,SORsections
                      label=SORsection)
 
 
+        if SORsections != 'all':
+            legscale   = 1.0
+            diffvals   = np.diff(values2plot.values)
+            changeent  = np.where(np.abs(diffvals) > 0)[0]
+            if len(changeent) > 0:
+                changeval  = diffvals[changeent]
+                changedate = [datetime.datetime.strptime(str(dd).split(' ')[0], "%Y-%m-%d") for dd in values2plot.index[changeent]]
 
-    lineymin = ymax - dy*0.40
-    lineymax = ymax - dy*0.28
-    textymin = ymax - dy*0.25
-    textymax = ymin - dy*0.10
-    if 'SJ NAELUIN, LUNGEMED. SENGEAFS., NAE' in SORsectionlist:
-        plt.plot([datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), datetime.datetime.strptime("10-06-2021", "%d-%m-%Y")],
-                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
-        plt.text(datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), textymin, '10-06-2021', fontsize=Fsize, rotation=90, color='gray',
-                 horizontalalignment='center', verticalalignment='bottom')
-
-        plt.plot([datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
-                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
-        plt.text(datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), textymin, '01-03-2021', fontsize=Fsize, rotation=90, color='gray',
-                 horizontalalignment='center', verticalalignment='bottom')
+                lineymin = ymax - dy*0.60
+                lineymax = ymax - dy*0.48
+                textymin = ymax - dy*0.45
+                for cc, cval in enumerate(changeval):
+                    plt.plot([changedate[cc], changedate[cc]],[lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+                    cvalstring = changedate[cc].strftime("%d-%m-%Y")+' ('+str(cval)+' senge)'
+                    plt.text(changedate[cc], textymin, cvalstring,
+                             fontsize=Fsize-2, rotation=90, color='gray', horizontalalignment='center', verticalalignment='bottom')
+        else:
+            legscale = 2.0
 
     # --------- LABELS ---------
     plt.xlabel('Dato')
     plt.ylabel('Antal disponible senge')
 
     # --------- LEGEND ---------
-    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=3, numpoints=1,
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / legscale}, ncol=3, numpoints=1,
                      bbox_to_anchor=(0.5, 1.32), )  # add the legend
     leg.get_frame().set_alpha(0.7)
     # --------------------------
@@ -160,5 +162,42 @@ def plot_beds(datemin='01-01-2018',datemax='01-01-2022',hour2show=23,SORsections
     plt.clf()
     plt.close('all')
     if verbose: print(' - Saved figure to \n  '+outputfig)
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_beds_insets(verbose=True):
+    """
+    Function to wrap around plotting to generate
+    """
+    dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220124.xlsx', verbose=verbose)
+    oab.plot_beds(dataframe, SORsections='all',                                            plotname = 'disponiblesenge_alle.pdf')
+    # - - - - - - - - - - - - - -Order from Excel sheet - - - - - - - - - - - - - - - - - -
+    oab.plot_beds(dataframe, SORsections=['SJ SLAAKI1, AKUT AFD.STUEN, SENGEAFS., SLA'],   plotname = 'disponiblesenge_SLAAKI1.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAAKI2, AKUT AFD. 1.SAL, SENGEAFS., SLA'],  plotname = 'disponiblesenge_SLAAKI2.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLALUI, MED. LUNGE SENGEAFS., SLA'],         plotname = 'disponiblesenge_SLALUI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAMGIS, MED. GASTRO. SENGEAFS., SLA'],      plotname = 'disponiblesenge_SLAMGIS.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],       plotname = 'disponiblesenge_SLAKAI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAENIMS, HORMON-MULTISGD. SENGEAFS., SLA'], plotname = 'disponiblesenge_SLAENIMS.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAMSID, MULTISYGDOM DAGAFSNIT, SLA'],       plotname = 'disponiblesenge_SLAMSID.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAENI, ENDOKRINOL. SENGEAFS., SLA'],        plotname = 'disponiblesenge_SLANEI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAGEIG1, GERIATRISK SENGEAFS. G1, SLA'],    plotname = 'disponiblesenge_SLAGEIG1.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAGEIG2, GERIATRISK SENGEAFS. G2, SLA'],    plotname = 'disponiblesenge_SLAGEIG2.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAPÆI, PÆD. SENGEAFS., SLA'],               plotname = 'disponiblesenge_SLAPÆI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAPÆIN, PÆD. NEO SENGEAFS., SLA'],          plotname = 'disponiblesenge_SLAPÆIN.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA'],   plotname = 'disponiblesenge_SLAOKIOT.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAGYI, GYN. SENGEAFSNIT, SLA'],             plotname = 'disponiblesenge_SLAGYI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAOBI, OBST. MOR-BARN SENGEAFS., SLA'],     plotname = 'disponiblesenge_SLAOBI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAOBISV, OBST. GRAVIDITETSAFSNIT, SLA'],    plotname = 'disponiblesenge_SLAOBISV.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAOBIFØMO, OBST. FØDEMODT. SENGEAFS., SLA'],plotname = 'disponiblesenge_SLAOBIFØMO.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAKGI, KIRURGISK SENGEAFSNIT, SLA'],        plotname = 'disponiblesenge_SLAKGI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'],     plotname = 'disponiblesenge_SLAANITM.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLAANINT, INTENSIV SENGEAFS., SLA'],         plotname = 'disponiblesenge_SLAANINT.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'],         plotname = 'disponiblesenge_NAELUIN.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ NAENEACNN, CENTER NEUROREHAB. AMB, NAE'],    plotname = 'disponiblesenge_NAENEACNN.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE'],   plotname = 'disponiblesenge_NAEOKI8.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    oab.plot_beds(dataframe, SORsections=['SJ NAENEACN, CENTER NEUROREHAB. AMB., NAE'],    plotname = 'disponiblesenge_NAENEACN.pdf')
+
+
+
 #=======================================================================================================================
 
