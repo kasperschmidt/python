@@ -15,6 +15,22 @@ import datetime
 #sys.path.append('C:/Users/kaschm/GitHub/python/pythonNSR/')
 import occupancy_and_beds as oab
 import lungemed_contactdays_updates as lcu
+import lungemed_beddays_and_visitations as lbv
+
+# -----------------------------------------------------------------------------------------------------------------------
+def runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True):
+    """
+    simple wrapper to re-generate plots after adding data updates to
+    O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/månedligetræk fra SP/
+
+    lcu.runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True)
+
+    """
+    lbv.plot_perday_occupancy(measurehours=[23], include_updates=True, loaddatafile='lungemedLPR3dataframe.xlsx', datemin_mostrecent=datemin_mostrecent)
+    lcu.evaluate_beddays_boxplot(datemin_mostrecent=datemin_mostrecent, verbose=verbose)
+    lcu.beddays_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
+    lcu.diagnoses_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True, datemin_mostrecent=datemin_mostrecent, verbose=verbose)
 
 # -----------------------------------------------------------------------------------------------------------------------
 def load_dataframes_from_excel(verbose=True):
@@ -284,7 +300,7 @@ def evaluate_beddays_boxplot(datemin_mostrecent='01-01-2022',verbose=True):
 
     # plt.plot([datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
     #          [ymin, ymax], '--', color='green', lw=lthick, zorder=5)
-    plt.plot([33.5, 33.5], [ymin, ymax], '--', color='gray', lw=lthick, zorder=5)
+    plt.plot([34.5, 34.5], [ymin, ymax], '--', color='gray', lw=lthick, zorder=5)
 
 
     # --------- LABELS ---------
@@ -475,9 +491,10 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print('\n - Build numpy array with diagnose stats')
-    df_lastmonth    = df_updates.drop(df_baseline.index[dropval])
+    df_lastmonth    = df_updates.drop(df_updates.index[dropval])
     diaglist        = np.sort(np.unique(np.asarray(df_baseline['DIA01'].values.tolist()+ df_updates['Aktionsdiagnosekode'].values.tolist())))
     Ndiag           = len(diaglist)
+
     if verbose: print(' - Found '+str(Ndiag)+' diagnoses to group data by')
     Nbaseline   = len(df_baseline['DIA01'])
     Nupdates    = len(df_updates['Aktionsdiagnosekode'])
@@ -835,11 +852,129 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # -----------------------------------------------------------------------------------------------------------------------
-def heatmap_diagnosisVSbeddays(verbose=True):
+def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-2022',verbose=True):
     """
-    lcu.beddays_distributions()
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True)
     """
+    plotdir = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/'
+    df_baseline, df_updates = lcu.load_dataframes_from_excel(verbose=verbose)
 
+    datemin     = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
+    dropval     = np.where(df_updates['Kontakt startdato Dato-tid'] < datemin)[0]
+
+    df_lastmonth    = df_updates.drop(df_updates.index[dropval])
+
+    diaglist        = np.sort(np.unique(np.asarray(df_baseline['DIA01'].values.tolist() + df_updates['Aktionsdiagnosekode'].values.tolist())))
+
+    if groupdiagnoses:
+        Ncharacters = 4
+        diaggroup   = np.sort(np.unique(np.asarray([diag[:Ncharacters] for diag in diaglist])))
+        diaglist    = diaggroup
+    else:
+        Ncharacters = 10
+
+    diag_datavalues_list = [df_baseline['DIA01'].values,
+                            df_updates['Aktionsdiagnosekode'].values,
+                            df_lastmonth['Aktionsdiagnosekode'].values]
+    days_datavalues_list = [df_baseline['KONTAKTDAGE'].values,
+                            df_updates['Forskel på kontakt start og slut (antal dage)'].values,
+                            df_lastmonth['Forskel på kontakt start og slut (antal dage)'].values]
+    colormap_list        = ['Blues', 'Greens', 'Greys']
+    plotname_text        = ['baseline', 'updates', 'lastmonth']
+    title_text           = ['Baseline (2019-2021)', 'Forløb siden 01-12-2021', 'Forøb siden '+datemin_mostrecent]
+
+    for dent, diag_datavalues in enumerate(diag_datavalues_list):
+        # diag_datavalues[diag_datavalues == np.nan] = 'tom'
+        df_diaglist = np.asarray([str(diag)[:Ncharacters] for diag in diag_datavalues])
+        Ncontacts   = len(df_diaglist)
+
+        Ndiag        = len(diaglist)
+        entarray     = np.arange(Ndiag)
+        Nkontaktdage = 25
+        kontaktdage_list = np.arange(Nkontaktdage)
+        if verbose: print(' - Number of diagnoses to show: ' + str(Ndiag))
+
+        if verbose: print(' - building array to use for heatmap')
+        map2d = np.zeros([Ndiag, Nkontaktdage])
+        for kk in np.arange(Nkontaktdage):
+            for dd, diag in enumerate(diaglist):
+                Ninstances = len( np.where((np.asarray(days_datavalues_list[dent]) == kk) & (df_diaglist == diag))[0])
+                map2d[dd, kk] = Ninstances / Ncontacts
+
+        max_instances = np.max(map2d)
+        #map2d[np.where(map2d == 0)] = np.nan
+
+        if verbose: print('   Maximum fraction of instances (to normalize heatmap to): '+str(max_instances))
+        df_map = pd.DataFrame(map2d, index=diaglist, columns=(np.arange(Nkontaktdage)))
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        plotname = 'heatmap_diagnosisVSbeddays_'+plotname_text[dent]+'.pdf'
+        if verbose: print(' - Initiating '+plotname)
+
+        fig = plt.figure(figsize=(7, 20))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.95, bottom=0.03, top=1.12)
+        Fsize = 10
+        lthick = 2
+        marksize = 4
+        plt.rc('text', usetex=False)
+        plt.rc('font', family='serif', size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        plt.title(title_text[dent]+'; '+str(Ncontacts)+' forløb', fontsize=Fsize)
+
+
+        # --------- COLOR MAP ---------
+        #cmap = plt.cm.get_cmap('viridis')
+        cmap = plt.cm.get_cmap(colormap_list[dent])
+        cmin = 0.005
+        cmax = 0.025
+
+        colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+        cmaparr = np.linspace(cmin, cmax, num=50)
+        m = plt.cm.ScalarMappable(cmap=cmap)
+        m.set_array(cmaparr)
+
+        # --------- COLOR BAR ---------
+        clabel      = 'Brøkdel af forløb'
+        colshrink   = 1.0
+        colaspect   = 80
+        colanchor   = (0.5, 2.9)
+        cextend     = 'neither'
+        colbarscale = 2.1
+        colaspect   = colaspect / colbarscale
+
+        cb = plt.colorbar(m, extend=cextend, orientation='horizontal', location='top', # anchor=colanchor,
+                          pad=0.02, aspect=colaspect, shrink=colshrink, use_gridspec=False)
+        cb.set_label(clabel)
+
+        # --------- DRAW AND ADD AXIS ---------
+        #seaborn.heatmap(ptable)
+        plt.pcolormesh(df_map, cmap=cmap, norm=colnorm)
+
+        plt.xticks(np.arange(0.5, len(df_map.columns), 1), kontaktdage_list)
+        if len(diaglist) > 250:
+            yfontsize = 2
+        elif len(diaglist) > 50:
+            yfontsize = 5
+        else:
+            yfontsize = Fsize
+
+        if groupdiagnoses:
+            plt.yticks(np.arange(0.5, len(diaglist), 1), [dstr+'*' for dstr in diaglist], fontsize=yfontsize)
+            plt.ylabel('Aktionsdiagnosekodegrupper (DIA01)')
+        else:
+            plt.yticks(np.arange(0.5, len(diaglist), 1), diaglist, fontsize=yfontsize)
+            plt.ylabel('Aktionsdiagnosekoder (DIA01)')
+
+        plt.xlabel('Kontaktdage')
+
+        plt.savefig(plotdir+plotname)
+        plt.clf()
+        plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - saved plots to '+plotdir)
 
 #=======================================================================================================================
 
