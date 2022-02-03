@@ -2,7 +2,7 @@
 import pdb
 import sys
 import os
-
+import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -285,7 +285,29 @@ def plot_beddays(loaddatafile='lungemedLPR3_SQLbeddays.xlsx', verbose=True,
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.xlsx', verbose=True, untiltoday=True, plotdir='O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'):
+def load_occupancy_updates(verbose=True):
+    """
+
+    """
+    path_updates = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/månedligetræk fra SP/'
+    updatenames = 'belægning_lungemed_NAE_*.xlsx'
+    filelist_updates  = glob.glob(path_updates + updatenames)
+    updates_framelist = []
+    if verbose: print(' - loading and concatenating '+str(len(updates_framelist))+' dataframes with updates from ' + updatenames)
+    for file_update in filelist_updates:
+        if verbose: print('    - including '+file_update.split('/')[-1])
+        df_update = pd.read_excel(file_update, sheet_name='Belægningsprocenter')
+        updates_framelist = updates_framelist + [df_update]
+
+    df_updates = pd.concat(updates_framelist, ignore_index=True)
+
+    if verbose: print(' - returning dataframes for updates')
+    return df_updates
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.xlsx', verbose=True, untiltoday=True, include_updates=True,
+                          plotdir='O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/',
+                          datemin_mostrecent = '01-01-2022'):
     """
 
     Parameters
@@ -311,9 +333,43 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     """
     if verbose: print(' - Generating data for plots')
     if loaddatafile is None:
-        df_results = lbv.count_occurrences_per_day(measurehours=measurehours, untiltoday=untiltoday, verbose=verbose,savedatafile=False)
+        df_results = lbv.count_occurrences_per_day(measurehours=measurehours, untiltoday=untiltoday, verbose=verbose, savedatafile=False)
     else:
         df_results = gdf.loadExcel(plotdir+loaddatafile)
+
+    if verbose: print(' - Removing incomplete data in baseline data frame')
+    datemin    = datetime.datetime.strptime('01-11-2021', "%d-%m-%Y")
+    dropval    = np.where(df_results['dates_23'] > datemin)[0]
+    df_results = df_results.drop(df_results.index[dropval])
+
+    if include_updates:
+        df_updates     = load_occupancy_updates()
+        udates         = np.unique(df_updates['Belægning kalenderdato'].values)
+        days_updates   = np.sort(udates[~np.isnan(udates)])
+        datemin        = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
+        dropval        = np.where(df_updates['Belægning kalenderdato'] < datemin)[0]
+        df_lastmonth   = df_updates.drop(df_updates.index[dropval])
+        udates         = np.unique(df_lastmonth['Belægning kalenderdato'].values)
+        days_lastmonth = np.sort(udates[~np.isnan(udates)])
+
+        occupancy_updates = {}
+        occupancy_updates_movingavg = {}
+        occupancy_lastmonth = {}
+        for measurehour in measurehours:
+            Ndaysavg = 30
+            hourstr = str("%.2d" % measurehour)+':00'
+
+            datestrarr = np.asarray([dstr[11:16] for dstr in np.asarray(df_updates['Belægning tidspunkt'].values).astype(str)])
+            occupdates            = df_updates['Belægning i %'].values[datestrarr == hourstr]
+            occupancy_updates['occupancy_updates_' + str(measurehour)] = occupdates[~np.isnan(occupdates)]
+
+            occupancy_updates_movingavg['updates_movingavg_'+str(measurehour)] = pd.DataFrame(occupancy_updates['occupancy_updates_'+str(measurehour)]).rolling(window=Ndaysavg).mean()
+
+            datestrarr = np.asarray([dstr[11:16] for dstr in np.asarray(df_lastmonth['Belægning tidspunkt'].values).astype(str)])
+            occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)]     = df_lastmonth['Belægning i %'].values[datestrarr == hourstr]
+            occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)] = \
+            occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)][
+                ~np.isnan(occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)])]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for measurehour in measurehours:
@@ -339,6 +395,11 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
         xerr = None
         yerr = None
+        # --------- RANGES ---------
+        ymin = 10.0
+        ymax = 150.0
+        dy = ymax - ymin
+        plt.ylim([ymin, ymax])
 
         # --------- COLORMAP ---------
         cmap = plt.cm.get_cmap('viridis')
@@ -355,6 +416,18 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
         # --------- POINT AND CURVES ---------
         pointcolor = cmap(colnorm(30))
+        plt.errorbar(xvalues, df_results['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                     marker='o', lw=0, markersize=marksize, alpha=0.5,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=10,
+                     label='Baseline (2019-2021)')
+        plt.errorbar(xvalues, df_results['occupancy_available_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=20.,
+                     label='30 dage glidende gennemsnit')
+
+        pointcolor = cmap(colnorm(40))
         plt.errorbar(xvalues, df_results['occupancy_actual_'+str(measurehour)], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
@@ -366,26 +439,46 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                      markeredgecolor=pointcolor, zorder=18.,
                      label='30 dage glidende gennemsnit')
 
-        pointcolor = cmap(colnorm(80))
-        plt.errorbar(xvalues, df_results['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
-                     marker='o', lw=0, markersize=marksize, alpha=0.5,
-                     markerfacecolor=pointcolor, ecolor=pointcolor,
-                     markeredgecolor=pointcolor, zorder=10,
-                     label='Disponible senge')
-        plt.errorbar(xvalues, df_results['occupancy_available_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
-                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
-                     markerfacecolor=pointcolor, ecolor=pointcolor,
-                     markeredgecolor=pointcolor, zorder=20.,
-                     label='30 dage glidende gennemsnit')
+        if include_updates:
+            pointcolor = cmap(colnorm(70))
+            plt.errorbar(days_updates, occupancy_updates['occupancy_updates_' + str(measurehour)],
+                         xerr=xerr, yerr=yerr, marker='o', lw=0, markersize=marksize, alpha=0.5,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=8.,
+                         label='Belægning siden 01-12-2021')
+            plt.errorbar(days_updates, occupancy_updates_movingavg['updates_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=18.)#,
+                         #label='30 dage glidende gennemsnit')
+
+            pointcolor = 'black'
+            plt.errorbar(days_lastmonth, occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='o', lw=0, markersize=marksize, alpha=0.5,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=30.,
+                         label='Seneste måned (siden '+datemin_mostrecent+')')
 
         plt.plot(xvalues, np.zeros(len(xvalues)) + 100, '--', color='black', lw=lthick, zorder=5)
         plt.plot(xvalues, np.zeros(len(xvalues)) + 85, ':', color='black', lw=lthick, zorder=5)
 
-        plt.plot([datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), datetime.datetime.strptime("10-06-2021", "%d-%m-%Y")],
-                 [10, 40], '-', color='gray', lw=lthick, zorder=5)
+        lineymin = ymin + dy * 0.24
+        lineymax = ymin + dy * 0.40
+        textymin = ymin + dy * 0.05
+        textymax = ymin + dy * 0.10
+        plt.plot([datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"),
+                  datetime.datetime.strptime("10-06-2021", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.text(datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), textymin, '10-06-2021', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
 
-        plt.plot([datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
-                 [10, 40], '-', color='gray', lw=lthick, zorder=5)
+        plt.plot([datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"),
+                  datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.text(datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), textymin, '01-03-2021', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
@@ -402,7 +495,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
         #plt.xlim([xmin - dx * 0.05, xmax + dx * 0.05])
         #plt.ylim([ymin - dy * 0.05, ymax + dy * 0.05])
-        plt.ylim([0,150])
+        #plt.ylim([0,150])
 
         # if logx:
         #     plt.xscale('log')
@@ -417,8 +510,8 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         #plt.errorbar(-5000, -5000, xerr=None, yerr=None, marker='D', lw=0, markersize=marksize, alpha=1.0,
         #             markerfacecolor='None', ecolor='None', markeredgecolor='black', zorder=1, label='AGN candidate')
 
-        leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
-                         bbox_to_anchor=(0.5, 1.12), )  # add the legend
+        leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=3, numpoints=1,
+                         bbox_to_anchor=(0.47, 1.12), )  # add the legend
         leg.get_frame().set_alpha(0.7)
         # --------------------------
 
@@ -752,8 +845,8 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
     plt.grid(linestyle=':', linewidth=lthick/2.)
     # --------- RANGES ---------
-    ymin = 0.0
-    ymax = 130.0
+    ymin = 55.0
+    ymax = 135.0
     dy   = ymax - ymin
     plt.ylim([ymin,ymax])
 
@@ -809,7 +902,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
     # --------- LABELS ---------
     plt.xlabel('Henvisninger til Lungemedicin Næstved')
-    plt.ylabel('Belægningsprocent Lungemedicin Næstved (kl. 15)')
+    plt.ylabel('Belægningsprocent Lungemedicin Næstved (kl. '+str(measurehour)+')')
 
     # --------- LEGEND ---------
     leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
