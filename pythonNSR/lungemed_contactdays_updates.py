@@ -30,7 +30,7 @@ def runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True):
     lcu.evaluate_beddays_boxplot(datemin_mostrecent=datemin_mostrecent, verbose=verbose)
     lcu.beddays_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
     lcu.diagnoses_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
-    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True, datemin_mostrecent=datemin_mostrecent, verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True, datemin_mostrecent=datemin_mostrecent, fileformat='png', verbose=verbose)
 
 # -----------------------------------------------------------------------------------------------------------------------
 def load_dataframes_from_excel(verbose=True):
@@ -373,17 +373,17 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
     distcolor = cmap(colnorm(30))
     seaborn.histplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=0.3,
                      kde=True, binwidth=1, discrete=True, stat=normalization, common_norm=False,
-                     label='Baseline (2019-2021)')
+                     label='Baseline (2019-2021)'+'; '+str(len(df_baseline))+' forløb')
 
     distcolor = cmap(colnorm(70))
     seaborn.histplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
                      kde=True, binwidth=1, discrete=True, stat=normalization, common_norm=False,
-                     label='Forløb siden 01-12-2021')
+                     label='Forløb siden 01-12-2021'+'; '+str(len(df_updates))+' forløb')
 
     distcolor = 'black'
     seaborn.histplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
                      kde=True, binwidth=1, discrete=True, stat=normalization, common_norm=False,
-                     label='Forløb siden '+datemin_mostrecent)
+                     label='Forløb siden '+datemin_mostrecent+'; '+str(len(df_updates.drop(df_baseline.index[dropval])))+' forløb')
 
     # --------- LABELS ---------
     plt.xlabel('Kontaktdage')
@@ -394,7 +394,7 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
 
     # --------- LEGEND ---------
     leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=1, numpoints=1,
-                     bbox_to_anchor=(0.7, 0.95))  # add the legend
+                     bbox_to_anchor=(0.55, 0.95))  # add the legend
     leg.get_frame().set_alpha(0.7)
     # --------------------------
 
@@ -852,7 +852,7 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # -----------------------------------------------------------------------------------------------------------------------
-def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-2022',verbose=True):
+def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-2022',fileformat='pdf',verbose=True):
     """
     lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True)
     """
@@ -908,12 +908,12 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         df_map = pd.DataFrame(map2d, index=diaglist, columns=(np.arange(Nkontaktdage)))
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plotname = 'heatmap_diagnosisVSbeddays_'+plotname_text[dent]+'.pdf'
+        plotname = 'heatmap_diagnosisVSbeddays_'+plotname_text[dent]+'.'+fileformat
         if verbose: print(' - Initiating '+plotname)
 
-        fig = plt.figure(figsize=(7, 20))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.95, bottom=0.03, top=1.12)
-        Fsize = 10
+        fig = plt.figure(figsize=(7, 30))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.13, right=0.95, bottom=0.03, top=1.13)
+        Fsize = 18
         lthick = 2
         marksize = 4
         plt.rc('text', usetex=False)
@@ -937,7 +937,7 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         m.set_array(cmaparr)
 
         # --------- COLOR BAR ---------
-        clabel      = 'Brøkdel af forløb'
+        clabel      = 'Andel af forløb'
         colshrink   = 1.0
         colaspect   = 80
         colanchor   = (0.5, 2.9)
@@ -945,19 +945,23 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         colbarscale = 2.1
         colaspect   = colaspect / colbarscale
 
+
         cb = plt.colorbar(m, extend=cextend, orientation='horizontal', location='top', # anchor=colanchor,
-                          pad=0.02, aspect=colaspect, shrink=colshrink, use_gridspec=False)
-        cb.set_label(clabel)
+                          pad=0.02, aspect=colaspect, shrink=colshrink, use_gridspec=False, format=lambda x, _: f"{x:.2%}")
+        cb.set_label(clabel, fontsize=Fsize)
+        cb.ax.tick_params(labelsize=12)
 
         # --------- DRAW AND ADD AXIS ---------
         #seaborn.heatmap(ptable)
         plt.pcolormesh(df_map, cmap=cmap, norm=colnorm)
 
-        plt.xticks(np.arange(0.5, len(df_map.columns), 1), kontaktdage_list)
+        plt.xticks(np.arange(0.5, len(df_map.columns), 1), kontaktdage_list, fontsize=12)
+        plt.xlabel('Kontaktdage')
+
         if len(diaglist) > 250:
             yfontsize = 2
         elif len(diaglist) > 50:
-            yfontsize = 5
+            yfontsize = 8
         else:
             yfontsize = Fsize
 
@@ -968,9 +972,9 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
             plt.yticks(np.arange(0.5, len(diaglist), 1), diaglist, fontsize=yfontsize)
             plt.ylabel('Aktionsdiagnosekoder (DIA01)')
 
-        plt.xlabel('Kontaktdage')
 
-        plt.savefig(plotdir+plotname)
+
+        plt.savefig(plotdir+plotname, dpi=800)
         plt.clf()
         plt.close('all')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
