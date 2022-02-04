@@ -734,12 +734,6 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     yerr = None
 
     plt.grid(linestyle=':', linewidth=lthick / 2.)
-    # --------- RANGES ---------
-    ymin = 0.0
-    ymax = 250.0
-    dy = ymax - ymin
-    plt.ylim([ymin, ymax])
-
     # --------- COLORMAP ---------
     cmap = plt.cm.get_cmap('viridis')
     # cmap = plt.cm.get_cmap('plasma')
@@ -759,6 +753,15 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     df_results['count_vis_lungNAE_23_movingsum'] = df_results['count_vis_lungNAE_23'].rolling(window=Ndayssum).sum()
     df_results['count_vis_lungSLA_23_movingsum'] = df_results['count_vis_lungSLA_23'].rolling(window=Ndayssum).sum()
     df_results['count_vis_other_23_movingsum'] = df_results['count_vis_other_23'].rolling(window=Ndayssum).sum()
+
+    # --------- RANGES ---------
+    ymin = 0.0
+    if Ndayssum == 90:
+        ymax = 250.0
+    else:
+        ymax = 100.0
+    dy = ymax - ymin
+    plt.ylim([ymin, ymax])
 
     # --------- POINT AND CURVES ---------
     pointcolor = cmap(colnorm(10))
@@ -793,19 +796,19 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     lineymax = ymin + dy * 0.40
     textymin = ymin + dy * 0.05
     textymax = ymin + dy * 0.10
-    plt.plot(
-        [datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), datetime.datetime.strptime("10-06-2021", "%d-%m-%Y")],
-        [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
-    plt.text(datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), textymin, '10-06-2021', fontsize=Fsize, rotation=90,
-             color='gray',
-             horizontalalignment='center', verticalalignment='bottom')
-
-    plt.plot(
-        [datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
-        [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
-    plt.text(datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), textymin, '01-03-2021', fontsize=Fsize, rotation=90,
-             color='gray',
-             horizontalalignment='center', verticalalignment='bottom')
+    # plt.plot(
+    #     [datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), datetime.datetime.strptime("10-06-2021", "%d-%m-%Y")],
+    #     [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+    # plt.text(datetime.datetime.strptime("10-06-2021", "%d-%m-%Y"), textymin, '10-06-2021', fontsize=Fsize, rotation=90,
+    #          color='gray',
+    #          horizontalalignment='center', verticalalignment='bottom')
+    #
+    # plt.plot(
+    #     [datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
+    #     [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+    # plt.text(datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), textymin, '01-03-2021', fontsize=Fsize, rotation=90,
+    #          color='gray',
+    #          horizontalalignment='center', verticalalignment='bottom')
 
     # --------- LABELS ---------
     plt.xlabel('Dato for måling')
