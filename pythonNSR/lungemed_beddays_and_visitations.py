@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.dates as mdates
 import datetime
+from matplotlib.ticker import PercentFormatter
 
 #sys.path.append('C:/Users/kaschm/GitHub/python/pythonNSR/')
 import odbc_GetDataFromLPR3 as gdf
@@ -415,7 +416,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         #cb.set_label('belægningsprocent')
 
         # --------- POINT AND CURVES ---------
-        pointcolor = cmap(colnorm(30))
+        pointcolor = cmap(colnorm(35))
         plt.errorbar(xvalues, df_results['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
@@ -427,8 +428,12 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                      markeredgecolor=pointcolor, zorder=20.,
                      label='30 dage glidende gennemsnit')
 
-        pointcolor = cmap(colnorm(40))
-        plt.errorbar(xvalues, df_results['occupancy_actual_'+str(measurehour)], xerr=xerr, yerr=yerr,
+        pointcolor = cmap(colnorm(45))
+        datemin_corr = datetime.datetime.strptime('01-03-2021', "%d-%m-%Y")
+        datemax_corr = datetime.datetime.strptime('10-06-2021', "%d-%m-%Y")
+        corrent      = np.where((df_results['dates_23'] > datemin_corr) & (df_results['dates_23'] < datemax_corr))[0]
+
+        plt.errorbar(xvalues[corrent], df_results['occupancy_actual_'+str(measurehour)][df_results.index[corrent]], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=8.,
@@ -502,6 +507,8 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         # if logy:
         #     plt.yscale('log')
 
+        plt.ylim(0, plt.gca().get_ylim()[1])
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1*100.))
         # --------- LEGEND ---------
         #plt.errorbar(-5000, -5000, xerr=None, yerr=1, marker='o', lw=0, markersize=marksize, alpha=1.0,
         #             markerfacecolor='k', ecolor='k', markeredgecolor='black', zorder=1, label='MUSE-Wide LAE')
