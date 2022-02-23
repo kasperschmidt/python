@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.dates as mdates
+from matplotlib.ticker import PercentFormatter
 import seaborn
 import datetime
 
@@ -334,75 +335,104 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
     datemin     = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
     dropval     = np.where(df_updates['Kontakt startdato Dato-tid'] < datemin)[0]
 
+    for kdeonly in [True, False]:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    plotname = 'distributions_days_'+normalization+'.pdf'
-    if verbose: print(' - Initiating '+plotname)
+        plotname = 'distributions_days_'+normalization+'.pdf'
+        if kdeonly:
+            plotname = plotname.replace('.pdf', '_kdeonly.pdf')
+        if verbose: print(' - Initiating '+plotname)
 
-    fig = plt.figure(figsize=(6, 6))
-    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.12, right=0.98, bottom=0.10, top=0.98)
-    Fsize = 10
-    lthick = 2
-    marksize = 4
-    plt.rc('text', usetex=False)
-    plt.rc('font', family='serif', size=Fsize)
-    plt.rc('xtick', labelsize=Fsize)
-    plt.rc('ytick', labelsize=Fsize)
-    plt.clf()
-    plt.ioff()
-    # plt.title(inforstr[:-2],fontsize=Fsize)
+        fig = plt.figure(figsize=(6, 6))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.14, right=0.98, bottom=0.10, top=0.98)
+        Fsize = 10
+        lthick = 2
+        marksize = 4
+        plt.rc('text', usetex=False)
+        plt.rc('font', family='serif', size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        # plt.title(inforstr[:-2],fontsize=Fsize)
 
-    # --------- RANGES ---------
-    xmin = 0
-    xmax = 40
-    dy   = xmax - xmin
-    plt.xlim([xmin,xmax])
+        # --------- RANGES ---------
+        xmin = 0
+        xmax = 40
+        dy   = xmax - xmin
+        plt.xlim([xmin,xmax])
 
-    plt.grid(linestyle=':', linewidth=lthick/2.)
+        plt.grid(linestyle=':', linewidth=lthick/2.)
 
-    # --------- COLORMAP ---------
-    cmap = plt.cm.get_cmap('viridis')
-    cmin = 0
-    cmax = 100
+        # --------- COLORMAP ---------
+        cmap = plt.cm.get_cmap('viridis')
+        cmin = 0
+        cmax = 100
 
-    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
-    cmaparr = np.linspace(cmin, cmax, num=50)
-    m = plt.cm.ScalarMappable(cmap=cmap)
-    m.set_array(cmaparr)
+        colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+        cmaparr = np.linspace(cmin, cmax, num=50)
+        m = plt.cm.ScalarMappable(cmap=cmap)
+        m.set_array(cmaparr)
 
-    # --------- POINT AND CURVES ---------
-    distcolor = cmap(colnorm(30))
-    seaborn.histplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=0.3,
-                     kde=True, binwidth=1, discrete=True, stat=normalization, common_norm=False,
-                     label='Baseline (2019-2021)'+'; '+str(len(df_baseline))+' forløb')
+        # --------- POINT AND CURVES ---------
+        binwidth     = 1
+        if kdeonly:
+            distcolor = cmap(colnorm(30))
+            seaborn.kdeplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
+                            common_norm=False,
+                            label='Baseline (2019-2021)' + '; ' + str(len(df_baseline)) + ' forløb')
 
-    distcolor = cmap(colnorm(70))
-    seaborn.histplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
-                     kde=True, binwidth=1, discrete=True, stat=normalization, common_norm=False,
-                     label='Forløb siden 01-12-2021'+'; '+str(len(df_updates))+' forløb')
+            distcolor = cmap(colnorm(70))
+            seaborn.kdeplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
+                            common_norm=False,
+                            label='Forløb siden 01-12-2021' + '; ' + str(len(df_updates)) + ' forløb')
 
-    distcolor = 'black'
-    seaborn.histplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
-                     kde=True, binwidth=1, discrete=True, stat=normalization, common_norm=False,
-                     label='Forløb siden '+datemin_mostrecent+'; '+str(len(df_updates.drop(df_baseline.index[dropval])))+' forløb')
+            distcolor = 'black'
+            seaborn.kdeplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
+                            common_norm=False,
+                            label='Forløb siden ' + datemin_mostrecent + '; ' + str(
+                                 len(df_updates.drop(df_baseline.index[dropval]))) + ' forløb')
 
-    # --------- LABELS ---------
-    plt.xlabel('Kontaktdage')
-    ylabelstr = 'Antal forløb '
-    if normalization == 'probability':
-        ylabelstr = ylabelstr+'(brøkdel af samlede antal forløb)'
-    plt.ylabel(ylabelstr)
+            plt.ylim(0, plt.gca().get_ylim()[1] / binwidth)  # similir limits on the y-axis to align the plots
+            plt.gca().yaxis.set_major_formatter(PercentFormatter(1 / binwidth))  # show axis such that 1/binwidth corresponds to 100%
+        else:
+            distcolor = cmap(colnorm(30))
+            seaborn.histplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=0.3,
+                             kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
+                             label='Baseline (2019-2021)'+'; '+str(len(df_baseline))+' forløb')
 
-    # --------- LEGEND ---------
-    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=1, numpoints=1,
-                     bbox_to_anchor=(0.55, 0.95))  # add the legend
-    leg.get_frame().set_alpha(0.7)
-    # --------------------------
+            distcolor = cmap(colnorm(70))
+            seaborn.histplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
+                             kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
+                             label='Forløb siden 01-12-2021'+'; '+str(len(df_updates))+' forløb')
 
-    plt.savefig(plotdir+plotname)
-    plt.clf()
-    plt.close('all')
-    if verbose: print(' - saved plot to '+plotdir)
+            distcolor = 'black'
+            seaborn.histplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
+                             kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
+                             label='Forløb siden '+datemin_mostrecent+'; '+str(len(df_updates.drop(df_baseline.index[dropval])))+' forløb')
+
+        # --------- LABELS ---------
+        plt.xlabel('Kontaktdage')
+        if kdeonly:
+            ylabelstr = 'Procentvis fordeling af forløb'
+        else:
+            ylabelstr = 'Antal forløb '
+            if normalization == 'probability':
+                ylabelstr = ylabelstr+'(brøkdel af samlede antal forløb)'
+
+        plt.ylabel(ylabelstr)
+
+        # --------- LEGEND ---------
+        leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=1, numpoints=1,
+                         bbox_to_anchor=(0.55, 0.95))  # add the legend
+        leg.get_frame().set_alpha(0.7)
+        # --------------------------
+
+        plt.savefig(plotdir+plotname)
+        plt.clf()
+        plt.close('all')
+        if verbose: print(' - saved plot to '+plotdir)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 # -----------------------------------------------------------------------------------------------------------------------
 def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="probability",verbose=True):
@@ -602,9 +632,13 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     plt.xticks(entarray, diaglist, fontsize=1.4)
     #plt.xticks([])
     plt.xlabel('Aktionsdiagnosekoder (DIA01)')
-    ylabelstr = 'Antal forløb med diagnose '
     if normalization == 'probability':
-        ylabelstr = ylabelstr+'(brøkdel af samlede antal forløb)'
+        ylabelstr = 'Andelen af forløb med given diagnose'
+        plt.ylim(0, plt.gca().get_ylim()[1])
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    else:
+        ylabelstr = 'Antal forløb med given diagnose '
+
     plt.ylabel(ylabelstr)
 
     # --------- LEGEND ---------
