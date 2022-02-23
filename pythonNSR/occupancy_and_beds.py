@@ -176,8 +176,12 @@ def plot_beds(dataframe,datemin='01-01-2018',datemax='01-02-2022', plotname='dis
 def plot_beds_insets(verbose=True):
     """
     Function to wrap around plotting to generate
+
+    import occupancy_and_beds as oab
+    oab.plot_beds_insets()
+
     """
-    dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220125.xlsx', verbose=verbose)
+    dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
     oab.plot_beds(dataframe, SORsections='all', plotname = 'disponiblesenge_alle.pdf')
     # - - - - - - - - - - - - - -Order from Excel sheet - - - - - - - - - - - - - - - - - -
     oab.plot_beds(dataframe, SORsections=['SJ SLAAKI1, AKUT AFD.STUEN, SENGEAFS., SLA'],         plotname = 'disponiblesenge_SLAAKI1.pdf')
@@ -187,7 +191,7 @@ def plot_beds_insets(verbose=True):
     oab.plot_beds(dataframe, SORsections=['SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],             plotname = 'disponiblesenge_SLAKAI.pdf')
     oab.plot_beds(dataframe, SORsections=['SJ SLAENIMS, HORMON-MULTISGD. SENGEAFS., SLA'],       plotname = 'disponiblesenge_SLAENIMS.pdf')
     oab.plot_beds(dataframe, SORsections=['SJ SLAMSID, MULTISYGDOM DAGAFSNIT, SLA'],             plotname = 'disponiblesenge_SLAMSID.pdf')
-    oab.plot_beds(dataframe, SORsections=['SJ SLAENI, ENDOKRINOL. SENGEAFS., SLA'],              plotname = 'disponiblesenge_SLANEI.pdf')
+    oab.plot_beds(dataframe, SORsections=['SJ SLANEI, NEUROLOGISK SENGEAFS., SLA'],              plotname = 'disponiblesenge_SLANEI.pdf')
     oab.plot_beds(dataframe, SORsections=['SJ SLAGEIG1, GERIATRISK SENGEAFS. G1, SLA'],          plotname = 'disponiblesenge_SLAGEIG1.pdf')
     oab.plot_beds(dataframe, SORsections=['SJ SLAGEIG2, GERIATRISK SENGEAFS. G2, SLA'],          plotname = 'disponiblesenge_SLAGEIG2.pdf')
     oab.plot_beds(dataframe, SORsections=['SJ SLAPÆI, PÆD. SENGEAFS., SLA'],                     plotname = 'disponiblesenge_SLAPÆI.pdf')
@@ -209,10 +213,13 @@ def plot_beds_insets(verbose=True):
     oab.plot_beds(dataframe, SORsections=['SJ NAENEICN, CENTER NEUROREHAB.SENGEAFS.NAE', 'SJ NAENEICNN, CENTER NEUROREHAB. SENGEAFS., NAE'],
                   plotname='disponiblesenge_NAENEICNogNAENEICNN.pdf')
 
+    oab.plot_beds(dataframe, SORsections=['SJ SLAMGIS, MED. GASTRO. SENGEAFS., SLA', 'SJ SLAMGI, MED. GASTRO. SENGEAFS., SLA'],            plotname = 'disponiblesenge_SLAMGISogSLAMGI.pdf')
+
     oab.plot_beds(dataframe, SORsections=['SJ SLAKAIHA, KARDIOLOGISK SENGEAFS., HA, SLA'],             plotname = 'disponiblesenge_SLAKAIHA.pdf')
     oab.plot_beds(dataframe, SORsections=['SJ SLAKAIHA, KARDIOLOGISK SENGEAFS., HA, SLA', 'SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],
                   plotname='disponiblesenge_SLAKAIogSLAKAIHA.pdf')
     #empty: oab.plot_beds(dataframe, SORsections=['SJ SLAKAIHA2, KARDIOLOGISK SENGEAFS., HA2, SLA'],             plotname = 'disponiblesenge_SLAKAIHA2.pdf')
 
+    oab.plot_beds(dataframe, SORsections=['SJ SLAENI, ENDOKRINOL. SENGEAFS., SLA'], plotname='disponiblesenge_SLAENI.pdf')
 #=======================================================================================================================
 
