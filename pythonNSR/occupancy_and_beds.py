@@ -221,5 +221,155 @@ def plot_beds_insets(verbose=True):
     #empty: oab.plot_beds(dataframe, SORsections=['SJ SLAKAIHA2, KARDIOLOGISK SENGEAFS., HA2, SLA'],             plotname = 'disponiblesenge_SLAKAIHA2.pdf')
 
     oab.plot_beds(dataframe, SORsections=['SJ SLAENI, ENDOKRINOL. SENGEAFS., SLA'], plotname='disponiblesenge_SLAENI.pdf')
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname='belægning.pdf',SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'] ,verbose=True):
+    """
+
+    Parameters
+    ----------
+    datemin
+    datemax
+    verbose
+
+    Example of use
+    -------
+    import occupancy_and_beds as oab
+    dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
+    oab.plot_occupancy(dataframe,SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'])
+
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    datemin = datetime.datetime.strptime(datemin, "%d-%m-%Y")
+    datemax = datetime.datetime.strptime(datemax, "%d-%m-%Y")
+
+    df_time = dataframe.set_index('Belægning tidspunkt')
+    occdic  = {}
+
+    daterange = pd.date_range(start=datemin, end=datemax)
+    Ndates    = len(daterange)
+
+    if SORsections == 'all':
+        SORsectionlist = np.unique(dataframe['Ophold afsnit navn'].values.tolist())
+    else:
+        SORsectionlist = SORsections
+
+    if verbose: print(' - Defined date range and starting to fill array with values')
+    for ss, SORsection in enumerate(SORsectionlist):
+        if verbose: print('\n   Looking at data for '+SORsection+'  ('+str(ss+1)+'/'+str(len(SORsectionlist))+')')
+        occarr   = np.zeros((24, Ndates))*np.nan
+        badent   = np.where(dataframe['Ophold afsnit navn'] != SORsection)[0]
+        df_time  = dataframe.drop(badent).set_index('Belægning tidspunkt')
+
+        for hh, hour2use in enumerate(np.arange(0, 24, 1)):
+            for dd, entdate in enumerate(daterange):
+                #if verbose: print('   datetime '+str(entdate)+' and hour '+str(hour2use))
+                goodent = np.where((df_time.index.hour == hour2use) &
+                                   (df_time.index.date == entdate))[0]
+                Ngood = len(goodent)
+                if Ngood == 1:
+                    occarr[hh,dd] = df_time['Belægning i %'][goodent]
+                else:
+                    if verbose: print('  Found '+str(Ngood)+' for '+SORsection+' '+str(entdate)+' hour '+str(hour2use))
+
+        occdic[SORsection] = occarr
+
+    if verbose: print(' - Done generating data array; moving on to plotting')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Initiating '+plotname)
+
+    fig = plt.figure(figsize=(15, 6))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.05, right=0.97, bottom=0.18, top=0.80)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+
+    plt.clf()
+    plt.ioff()
+
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    plt.xticks(rotation=45)
+
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    xerr = None
+    yerr = None
+
+    plt.grid(linestyle=':', linewidth=lthick/2.)
+    # --------- RANGES ---------
+    ymin = 0
+    ymax = 150.0
+    dy   = ymax - ymin
+    #plt.ylim([ymin,ymax])
+
+    #plt.xscale('log')
+    #plt.yscale('log')
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+    #cb = plt.colorbar(m)
+    #cb.set_label('belægningsprocent')
+
+    # --------- POINT AND CURVES ---------
+    for ss, SORsection in enumerate(SORsectionlist):
+        if verbose: print('   Painting curves for '+SORsection+'  ('+str(ss+1)+'/'+str(len(SORsectionlist))+')')
+        if len(SORsectionlist) == 1:
+             pointcolor = cmap(colnorm(45))
+        elif len(SORsectionlist) == 2:
+             pointcolor = [cmap(colnorm(30)), cmap(colnorm(80))][ss]
+        else:
+            pointcolor = cmap(colnorm((cmax-cmin)/len(SORsectionlist)*(ss+1)))
+
+        occarr_hoursort = np.sort(occdic[SORsection], axis=0)
+        medval          = np.nanmedian(occarr_hoursort, axis=0)
+        CI68low         = occarr_hoursort[3, :]
+        CI68high        = occarr_hoursort[19, :]
+        CI95low         = occarr_hoursort[1, :]
+        CI95high        = occarr_hoursort[22, :]
+
+        plt.step(daterange, medval, where='mid',color=pointcolor, alpha=1.0, zorder=20, label=SORsection,
+                 linestyle='-', lw=lthick)
+
+        plt.fill_between(daterange, CI68high, CI68low, color=pointcolor, alpha=0.3, step='mid', zorder=15)
+        plt.fill_between(daterange, CI95high, CI95low, color=pointcolor, alpha=0.3, step='mid', zorder=10)
+
+        if SORsections != 'all':
+            legscale   = 1.0
+            ncol       = 3
+        else:
+            plt.step(daterange, occdic[SORsection][23, :], where='mid', color='red', alpha=0.8, zorder=25,
+                     label='Belægning kl. 23', linestyle='-', lw=lthick)
+            legscale = 1.5
+            ncol     = 4
+
+    # --------- LABELS ---------
+    plt.xlabel('Dato')
+    plt.ylabel('Belægningsprocent')
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / legscale}, ncol=ncol, numpoints=1,
+                     bbox_to_anchor=(0.5, 1.32), )  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+    plotdir   = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Belægningsprocenter/'
+    outputfig = plotdir+plotname
+    plt.savefig(outputfig)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - Saved figure to \n  '+outputfig)
+
 #=======================================================================================================================
 
