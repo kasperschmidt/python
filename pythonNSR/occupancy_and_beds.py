@@ -342,15 +342,20 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
         CI95low         = occarr_hoursort[1, :]
         CI95high        = occarr_hoursort[22, :]
 
-        plt.step(daterange, medval, where='mid',color='black', alpha=1.0, zorder=20,
-                 label=SORsection+'\nMedian af belægning over døgnets 24 timer', linestyle='-', lw=lthick)
-
         duration = (np.max(daterange)-np.min(daterange)).days
         if duration <= 66:
             plt.fill_between(daterange, CI68high, CI68low, color=pointcolor, alpha=1.0, step='mid', zorder=15,
                              label='68% konfidensinterval')
             plt.fill_between(daterange, CI95high, CI95low, color=pointcolor, alpha=0.6, step='mid', zorder=10,
                              label='95% konfidensinterval')
+            mediancol = 'black'
+        else:
+            mediancol = pointcolor
+
+        plt.step(daterange, medval, where='mid',color=mediancol, alpha=1.0, zorder=20,
+                 label=SORsection+'\nMedian af belægning over døgnets 24 timer', linestyle='-', lw=lthick)
+
+
 
         if SORsections != 'all':
             diffval_high = occdic[SORsection][23, :] - CI95high
