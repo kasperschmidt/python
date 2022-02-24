@@ -246,9 +246,6 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
     df_time = dataframe.set_index('Belægning tidspunkt')
     occdic  = {}
 
-    daterange = pd.date_range(start=datemin, end=datemax)
-    Ndates    = len(daterange)
-
     if SORsections == 'all':
         SORsectionlist = np.unique(dataframe['Ophold afsnit navn'].values.tolist())
     else:
@@ -257,9 +254,14 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
     if verbose: print(' - Defined date range and starting to fill array with values')
     for ss, SORsection in enumerate(SORsectionlist):
         if verbose: print('\n   Looking at data for '+SORsection+'  ('+str(ss+1)+'/'+str(len(SORsectionlist))+')')
-        occarr   = np.zeros((24, Ndates))*np.nan
         badent   = np.where(dataframe['Ophold afsnit navn'] != SORsection)[0]
         df_time  = dataframe.drop(badent).set_index('Belægning tidspunkt')
+
+        datemin_data = np.min(df_time.index)
+        datemax_data = np.max(df_time.index)
+        daterange = pd.date_range(start=np.max(np.asarray([datemin_data,datemin])), end=np.min(np.asarray([datemax_data,datemax])))
+        Ndates = len(daterange)
+        occarr   = np.zeros((24, Ndates))*np.nan
 
         for hh, hour2use in enumerate(np.arange(0, 24, 1)):
             for dd, entdate in enumerate(daterange):
@@ -340,18 +342,30 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
         CI95low         = occarr_hoursort[1, :]
         CI95high        = occarr_hoursort[22, :]
 
-        plt.step(daterange, medval, where='mid',color=pointcolor, alpha=1.0, zorder=20, label=SORsection,
-                 linestyle='-', lw=lthick)
+        plt.step(daterange, medval, where='mid',color='black', alpha=1.0, zorder=20,
+                 label=SORsection+'\nMedian af belægning over døgnets 24 timer', linestyle='-', lw=lthick)
 
-        plt.fill_between(daterange, CI68high, CI68low, color=pointcolor, alpha=0.3, step='mid', zorder=15)
-        plt.fill_between(daterange, CI95high, CI95low, color=pointcolor, alpha=0.3, step='mid', zorder=10)
+        duration = (np.max(daterange)-np.min(daterange)).days
+        if duration <= 66:
+            plt.fill_between(daterange, CI68high, CI68low, color=pointcolor, alpha=1.0, step='mid', zorder=15,
+                             label='68% konfidensinterval')
+            plt.fill_between(daterange, CI95high, CI95low, color=pointcolor, alpha=0.6, step='mid', zorder=10,
+                             label='95% konfidensinterval')
 
         if SORsections != 'all':
-            legscale   = 1.0
-            ncol       = 3
-        else:
+            diffval_high = occdic[SORsection][23, :] - CI95high
+            Nabove = len(np.where(diffval_high[~np.isnan(diffval_high)] > 0)[0])
+            fracabove = Nabove / len(CI68high) * 100.
+
+            diffval_low = CI95low - occdic[SORsection][23, :]
+            Nbelow = len(np.where(diffval_low[~np.isnan(diffval_low)] > 0)[0])
+            fracbelow = Nbelow/len(CI68low) * 100.
+
             plt.step(daterange, occdic[SORsection][23, :], where='mid', color='red', alpha=0.8, zorder=25,
-                     label='Belægning kl. 23', linestyle='-', lw=lthick)
+                     label='Belægning kl. 23'+' ('+str('%.1f' % fracbelow)+'% < 95%KI; '+str('%.1f' % fracabove)+'% > 95%KI)', linestyle='-', lw=lthick)
+            legscale   = 1.0
+            ncol       = 4
+        else:
             legscale = 1.5
             ncol     = 4
 
@@ -370,6 +384,42 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
     plt.clf()
     plt.close('all')
     if verbose: print(' - Saved figure to \n  '+outputfig)
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_occupancy_insets(verbose=True):
+    """
+    Function to wrap around plotting to generate figures of bed occupancy percentages
+
+    import occupancy_and_beds as oab
+    oab.plot_occupancy_insets()
+
+    """
+    dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
+    # - - - - - - - - - - - - - -Order from Excel sheet - - - - - - - - - - - - - - - - - -
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAAKI1, AKUT AFD.STUEN, SENGEAFS., SLA'],         plotname = 'disponiblesenge_SLAAKI1.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAAKI2, AKUT AFD. 1.SAL, SENGEAFS., SLA'],        plotname = 'disponiblesenge_SLAAKI2.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLALUI, MED. LUNGE SENGEAFS., SLA'],               plotname = 'disponiblesenge_SLALUI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAMGIS, MED. GASTRO. SENGEAFS., SLA'],            plotname = 'disponiblesenge_SLAMGIS.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],             plotname = 'disponiblesenge_SLAKAI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAENIMS, HORMON-MULTISGD. SENGEAFS., SLA'],       plotname = 'disponiblesenge_SLAENIMS.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAMSID, MULTISYGDOM DAGAFSNIT, SLA'],             plotname = 'disponiblesenge_SLAMSID.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLANEI, NEUROLOGISK SENGEAFS., SLA'],              plotname = 'disponiblesenge_SLANEI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAGEIG1, GERIATRISK SENGEAFS. G1, SLA'],          plotname = 'disponiblesenge_SLAGEIG1.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAGEIG2, GERIATRISK SENGEAFS. G2, SLA'],          plotname = 'disponiblesenge_SLAGEIG2.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAPÆI, PÆD. SENGEAFS., SLA'],                     plotname = 'disponiblesenge_SLAPÆI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAPÆIN, PÆD. NEO SENGEAFS., SLA'],                plotname = 'disponiblesenge_SLAPÆIN.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA'],         plotname = 'disponiblesenge_SLAOKIOT.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAGYI, GYN. SENGEAFSNIT, SLA'],                   plotname = 'disponiblesenge_SLAGYI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOBI, OBST. MOR-BARN SENGEAFS., SLA'],           plotname = 'disponiblesenge_SLAOBI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOBISV, OBST. GRAVIDITETSAFSNIT, SLA'],          plotname = 'disponiblesenge_SLAOBISV.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOBIFØMO, OBST. FØDEMODT. SENGEAFS., SLA'],      plotname = 'disponiblesenge_SLAOBIFØMO.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAKGI, KIRURGISK SENGEAFSNIT, SLA'],              plotname = 'disponiblesenge_SLAKGI.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'],           plotname = 'disponiblesenge_SLAANITM.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ SLAANINT, INTENSIV SENGEAFS., SLA'],               plotname = 'disponiblesenge_SLAANINT.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'],               plotname = 'disponiblesenge_NAELUIN.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ NAENEICNN, CENTER NEUROREHAB. SENGEAFS., NAE'],    plotname = 'disponiblesenge_NAENEICNN.pdf')
+    oab.plot_occupancy(dataframe, SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE'],         plotname = 'disponiblesenge_NAEOKI8.pdf')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 #=======================================================================================================================
 
