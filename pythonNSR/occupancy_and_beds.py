@@ -238,6 +238,8 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
     dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
     oab.plot_occupancy(dataframe,SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'])
 
+    oab.plot_occupancy(dataframe, datemin='01-12-2021', datemax='01-01-2022', SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'])
+
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     datemin = datetime.datetime.strptime(datemin, "%d-%m-%Y")
@@ -256,7 +258,7 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
         if verbose: print('\n   Looking at data for '+SORsection+'  ('+str(ss+1)+'/'+str(len(SORsectionlist))+')')
         badent   = np.where(dataframe['Ophold afsnit navn'] != SORsection)[0]
         df_time  = dataframe.drop(badent).set_index('Belægning tidspunkt')
-
+        'Belægning i %'
         datemin_data = np.min(df_time.index)
         datemax_data = np.max(df_time.index)
         daterange = pd.date_range(start=np.max(np.asarray([datemin_data,datemin])), end=np.min(np.asarray([datemax_data,datemax])))
@@ -352,9 +354,8 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
         else:
             mediancol = pointcolor
 
-        plt.step(daterange, medval, where='mid',color=mediancol, alpha=1.0, zorder=20,
+        plt.step(daterange, medval, where='mid', color=mediancol, alpha=1.0, zorder=20,
                  label=SORsection+'\nMedian af belægning over døgnets 24 timer', linestyle='-', lw=lthick)
-
 
 
         if SORsections != 'all':
@@ -366,7 +367,7 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
             Nbelow = len(np.where(diffval_low[~np.isnan(diffval_low)] > 0)[0])
             fracbelow = Nbelow/len(CI68low) * 100.
 
-            plt.step(daterange, occdic[SORsection][23, :], where='mid', color='red', alpha=0.8, zorder=25,
+            plt.step(daterange, occdic[SORsection][23, :], where='mid', color='red', alpha=0.6, zorder=25,
                      label='Belægning kl. 23'+' ('+str('%.1f' % fracbelow)+'% < 95%KI; '+str('%.1f' % fracabove)+'% > 95%KI)', linestyle='-', lw=lthick)
             legscale   = 1.0
             ncol       = 4
@@ -391,12 +392,256 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
     if verbose: print(' - Saved figure to \n  '+outputfig)
 
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_occupancy_insets(verbose=True):
+def get_scipyCI(dataframe, col_group, col_measure, group_dt='year', location='mean', CI=95.0 ,verbose=True):
+    """
+    import occupancy_and_beds as oab
+
+    #### Occupancy at 23hours
+    badentcomb    = np.where((dataframe['Ophold afsnit navn'] != 'SJ SLALUI, MED. LUNGE SENGEAFS., SLA') | (dataframe.set_index('Belægning tidspunkt').index.hour != 23))[0]
+    df_time       = dataframe.drop(badentcomb)
+    loc, lower, upper = oab.get_scipyCI(df_time, 'Belægning tidspunkt', 'Belægning i %', location='mean', CI=95.0, verbose=True)
+
+    #### CI for a specific ward
+    badentcomb    = np.where((dataframe['Ophold afsnit navn'] != 'SJ SLALUI, MED. LUNGE SENGEAFS., SLA'))[0]
+    df_time       = dataframe.drop(badentcomb)
+    loc, lower, upper = oab.get_scipyCI(df_time, 'Belægning tidspunkt', 'Belægning i %', location='mean', CI=95.0, verbose=True)
+
+    """
+    import pandas as pd
+    import numpy as np
+    import scipy.stats as st
+
+    # options for grouping: dayofweek, date, month, year, quarter, week, day_og_week, etc:
+    #
+    if group_dt == 'year':
+        # counts contains a pd.Series with sample size for each category
+        counts = dataframe.groupby(dataframe[col_group].dt.year, as_index=False)[col_measure].count()
+
+        # defining locations of central points for grouping
+        loc = dataframe.groupby(dataframe[col_group].dt.year)[col_measure].agg(location.lower())
+        # standard deviation and standard error
+        std = dataframe.groupby(dataframe[col_group].dt.year)[col_measure].agg(np.std)
+
+
+    elif group_dt == 'date':
+        # counts contains a pd.Series with sample size for each category
+        counts = dataframe.groupby(dataframe[col_group].dt.date, as_index=False)[col_measure].count()
+        # defining locations of central points for grouping
+        loc = dataframe.groupby(dataframe[col_group].dt.date)[col_measure].agg(location.lower())
+        # standard deviation
+        std = dataframe.groupby(dataframe[col_group].dt.date)[col_measure].agg(np.std)
+    else:
+        # counts contains a pd.Series with sample size for each category
+        counts = dataframe.groupby(dataframe[col_group].dt.year, as_index=False)[col_measure].count()
+
+        # cat has names of the categories, like 'category 1', 'category 2'
+        #cat = list(dataframe.groupby(col_group, as_index=False)[col_measure].count()[col_group])
+        #dataframe.groupby(dataframe[col_group].dt.year, as_index=False)[col_measure].count()
+        #[np.unique(dataframe[col_group].dt.year)]
+
+        # the average value of col2 across the categories
+        #loc = dataframe.groupby(col_group)[col_measure].agg(location.lower())
+        loc = dataframe.groupby(dataframe[col_group].dt.year)[col_measure].agg(location.lower())
+        # standard deviation and standard error
+        std = dataframe.groupby(dataframe[col_group].dt.year)[col_measure].agg(np.std)
+
+
+    # standard error for grouping values
+    #se  = std / np.sqrt(counts)
+    se = std.values / np.sqrt(np.transpose(counts.values))
+
+    lower, upper = st.t.interval(alpha=CI/100., df=np.transpose(counts.values) - 1, loc=loc, scale=se)
+
+    return loc, lower, upper
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_occupancy_CIs(dataframe, datemin='02-01-2018', datemax='01-01-2022', plotname='belægningCI.pdf',
+                       SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'], verbose=True):
+    """
+
+    Parameters
+    ----------
+    datemin
+    datemax
+    verbose
+
+    Example of use
+    -------
+    import occupancy_and_beds as oab
+    dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
+    oab.plot_occupancy_CIs(dataframe, datemin='01-12-2021', datemax='01-01-2022', SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'])
+    """
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    datemin = datetime.datetime.strptime(datemin, "%d-%m-%Y")
+    datemax = datetime.datetime.strptime(datemax, "%d-%m-%Y")
+
+    occdic = {}
+
+    if SORsections == 'all':
+        SORsectionlist = np.unique(dataframe['Ophold afsnit navn'].values.tolist())
+    else:
+        SORsectionlist = SORsections
+
+    if verbose: print(' - Defined date range and starting to fill array with values')
+    for ss, SORsection in enumerate(SORsectionlist):
+        if verbose: print(
+            '\n   Looking at data for ' + SORsection + '  (' + str(ss + 1) + '/' + str(len(SORsectionlist)) + ')')
+        #badent  = np.where(dataframe['Ophold afsnit navn'] != SORsection)[0]
+        #df_time = dataframe.drop(badent).set_index('Belægning tidspunkt')
+
+
+        #### Occupancy at 23 o'clock
+        badentcomb    = np.where((dataframe['Ophold afsnit navn'] != 'SJ SLALUI, MED. LUNGE SENGEAFS., SLA') | (dataframe.set_index('Belægning tidspunkt').index.hour != 23))[0]
+        df_drop       = dataframe.drop(badentcomb)
+        datemin_data  = np.min(df_drop['Belægning tidspunkt'])
+        datemax_data  = np.max(df_drop['Belægning tidspunkt'])
+        df_range      = df_drop[(df_drop.set_index('Belægning tidspunkt').index >= np.max(np.asarray([datemin_data, datemin]))) &
+                                (df_drop.set_index('Belægning tidspunkt').index <= np.min(np.asarray([datemax_data, datemax])))]
+
+        loc23, lower23, upper23 = oab.get_scipyCI(df_range, 'Belægning tidspunkt', 'Belægning i %', group_dt='date',
+                                                  location='mean', CI=95.0, verbose=True)
+
+        #### CI for a specific ward
+        badentcomb    = np.where((dataframe['Ophold afsnit navn'] != 'SJ SLALUI, MED. LUNGE SENGEAFS., SLA'))[0]
+        df_drop       = dataframe.drop(badentcomb)
+        datemin_data  = np.min(df_drop['Belægning tidspunkt'])
+        datemax_data  = np.max(df_drop['Belægning tidspunkt'])
+
+        df_range      = df_drop[(df_drop.set_index('Belægning tidspunkt').index >= np.max(np.asarray([datemin_data, datemin]))) &
+                                (df_drop.set_index('Belægning tidspunkt').index <= np.min(np.asarray([datemax_data, datemax])))]
+
+        loc95, lower95, upper95 = oab.get_scipyCI(df_range, 'Belægning tidspunkt', 'Belægning i %', group_dt='date',
+                                                  location='mean', CI=95.0, verbose=True)
+        loc68, lower68, upper68 = oab.get_scipyCI(df_range, 'Belægning tidspunkt', 'Belægning i %', group_dt='date',
+                                                  location='mean', CI=68.0, verbose=True)
+
+        occdic[SORsection] = [loc23, lower23, upper23, loc68, lower68, upper68, loc95, lower95, upper95]
+
+
+
+        ### HERE 220307    df_range apparantly not defined... make sure plotting and looping for defining arrays works
+
+
+
+    if verbose: print(' - Done generating data array; moving on to plotting')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - Initiating ' + plotname)
+
+    fig = plt.figure(figsize=(15, 6))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.05, right=0.97, bottom=0.18, top=0.80)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+
+    plt.clf()
+    plt.ioff()
+
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    plt.xticks(rotation=45)
+
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    xerr = None
+    yerr = None
+
+    plt.grid(linestyle=':', linewidth=lthick / 2.)
+    # --------- RANGES ---------
+    ymin = 0
+    ymax = 150.0
+    dy = ymax - ymin
+    # plt.ylim([ymin,ymax])
+
+    # plt.xscale('log')
+    # plt.yscale('log')
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+    # cb = plt.colorbar(m)
+    # cb.set_label('belægningsprocent')
+
+    # --------- POINT AND CURVES ---------
+    for ss, SORsection in enumerate(SORsectionlist):
+        if verbose: print(
+            '   Painting curves for ' + SORsection + '  (' + str(ss + 1) + '/' + str(len(SORsectionlist)) + ')')
+        if len(SORsectionlist) == 1:
+            pointcolor = cmap(colnorm(45))
+        elif len(SORsectionlist) == 2:
+            pointcolor = [cmap(colnorm(30)), cmap(colnorm(80))][ss]
+        else:
+            pointcolor = cmap(colnorm((cmax - cmin) / len(SORsectionlist) * (ss + 1)))
+
+        #occarr_hoursort = np.sort(occdic[SORsection], axis=0)
+        #medval = np.nanmedian(occarr_hoursort, axis=0)
+
+        [loc23, lower23, upper23, loc68, CI68low, CI68high, loc95, CI95low, CI95high] = occdic[SORsection]
+
+        duration = (np.max(loc23.index) - np.min(loc23.index)).days
+        if duration <= 66:
+            plt.fill_between(loc68.index, CI68high[0], CI68low[0], color=pointcolor, alpha=1.0, step='mid', zorder=15,
+                             label='68% konfidensinterval')
+            plt.fill_between(loc95.index, CI95high[0], CI95low[0], color=pointcolor, alpha=0.6, step='mid', zorder=10,
+                             label='95% konfidensinterval')
+            centercol = 'black'
+        else:
+            centercol = pointcolor
+
+        plt.step(loc68.index, loc68.values, where='mid', color=centercol, alpha=1.0, zorder=20,
+                 label=SORsection + '\nGennemsnit af belægning over døgnets 24 timer', linestyle='-', lw=lthick)
+
+        if SORsections != 'all':
+            diffval_high = loc95.values - CI95high[0]
+            Nabove = len(np.where(diffval_high[~np.isnan(diffval_high)] > 0)[0])
+            fracabove = Nabove / len(CI68high) * 100.
+
+            diffval_low = CI95low[0] - loc95.values
+            Nbelow = len(np.where(diffval_low[~np.isnan(diffval_low)] > 0)[0])
+            fracbelow = Nbelow / len(CI68low) * 100.
+
+            plt.step(loc23.index, loc23.values, where='mid', color='red', alpha=0.6, zorder=25,
+                     label='Belægning kl. 23' + ' (' + str('%.1f' % fracbelow) + '% < 95%KI; ' + str(
+                         '%.1f' % fracabove) + '% > 95%KI)', linestyle='-', lw=lthick)
+            legscale = 1.0
+            ncol = 4
+        else:
+            legscale = 1.5
+            ncol = 4
+
+    # --------- LABELS ---------
+    plt.xlabel('Dato')
+    plt.ylabel('Belægningsprocent')
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / legscale}, ncol=ncol, numpoints=1,
+                     bbox_to_anchor=(0.5, 1.32), )  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+    plotdir = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Belægningsprocenter/'
+    outputfig = plotdir + plotname
+    plt.savefig(outputfig)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - Saved figure to \n  ' + outputfig)
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_occupancy_wrapper(verbose=True):
     """
     Function to wrap around plotting to generate figures of bed occupancy percentages
 
     import occupancy_and_beds as oab
-    oab.plot_occupancy_insets()
+    oab.plot_occupancy_wrapper()
 
     """
     dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
