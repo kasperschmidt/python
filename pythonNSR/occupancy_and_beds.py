@@ -3,6 +3,7 @@ import pdb
 import sys
 import os
 
+import scipy.stats as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -72,7 +73,8 @@ def plot_beds(dataframe,datemin='01-01-2018',datemax='01-02-2022', plotname='dis
     plt.ioff()
 
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+    #plt.gca().xaxis.set_major_locator(mdates.DateLocator(interval=1))
     #plt.gca().xaxis.set_major_locator(mdates.YearLocator())
     #plt.gcf().autofmt_xdate()  # set font and rotation for date tick labels
     plt.xticks(rotation=45)
@@ -242,6 +244,7 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
 
     """
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    sys.exit('After building plot_occupancy_CIs it turns out that the manual grouping in this code is faulty; status 220309')
     datemin = datetime.datetime.strptime(datemin, "%d-%m-%Y")
     datemax = datetime.datetime.strptime(datemax, "%d-%m-%Y")
 
@@ -394,6 +397,11 @@ def plot_occupancy(dataframe,datemin='02-01-2018',datemax='01-01-2022', plotname
 # -----------------------------------------------------------------------------------------------------------------------
 def get_scipyCI(dataframe, col_group, col_measure, group_dt='year', location='mean', CI=95.0 ,verbose=True):
     """
+    Confidence interval based on Student's T distribution
+    For low-number normally distributed data.
+    For high-number normally distributed data one can use stats.norm.interval(0.68, loc=mu, scale=sigma)
+
+
     import occupancy_and_beds as oab
 
     #### Occupancy at 23hours
@@ -407,22 +415,15 @@ def get_scipyCI(dataframe, col_group, col_measure, group_dt='year', location='me
     loc, lower, upper = oab.get_scipyCI(df_time, 'Belægning tidspunkt', 'Belægning i %', location='mean', CI=95.0, verbose=True)
 
     """
-    import pandas as pd
-    import numpy as np
-    import scipy.stats as st
-
     # options for grouping: dayofweek, date, month, year, quarter, week, day_og_week, etc:
     #
     if group_dt == 'year':
         # counts contains a pd.Series with sample size for each category
         counts = dataframe.groupby(dataframe[col_group].dt.year, as_index=False)[col_measure].count()
-
         # defining locations of central points for grouping
         loc = dataframe.groupby(dataframe[col_group].dt.year)[col_measure].agg(location.lower())
         # standard deviation and standard error
         std = dataframe.groupby(dataframe[col_group].dt.year)[col_measure].agg(np.std)
-
-
     elif group_dt == 'date':
         # counts contains a pd.Series with sample size for each category
         counts = dataframe.groupby(dataframe[col_group].dt.date, as_index=False)[col_measure].count()
@@ -485,46 +486,76 @@ def plot_occupancy_CIs(dataframe, datemin='02-01-2018', datemax='01-01-2022', pl
     if verbose: print(' - Defined date range and starting to fill array with values')
     for ss, SORsection in enumerate(SORsectionlist):
         if verbose: print(
-            '\n   Looking at data for ' + SORsection + '  (' + str(ss + 1) + '/' + str(len(SORsectionlist)) + ')')
+            '   Looking at data for ' + SORsection + '  (' + str(ss + 1) + '/' + str(len(SORsectionlist)) + ')')
         #badent  = np.where(dataframe['Ophold afsnit navn'] != SORsection)[0]
         #df_time = dataframe.drop(badent).set_index('Belægning tidspunkt')
 
-
         #### Occupancy at 23 o'clock
-        badentcomb    = np.where((dataframe['Ophold afsnit navn'] != 'SJ SLALUI, MED. LUNGE SENGEAFS., SLA') | (dataframe.set_index('Belægning tidspunkt').index.hour != 23))[0]
+        badentcomb23    = np.where((dataframe['Ophold afsnit navn'] != SORsection) | (dataframe.set_index('Belægning tidspunkt').index.hour != 23))[0]
+        df_drop23       = dataframe.drop(badentcomb23)
+        datemin_data23  = np.min(df_drop23['Belægning tidspunkt'])
+        datemax_data23  = np.max(df_drop23['Belægning tidspunkt'])
+        df_range23      = df_drop23[(df_drop23.set_index('Belægning tidspunkt').index >= np.max(np.asarray([datemin_data23, datemin]))) &
+                                (df_drop23.set_index('Belægning tidspunkt').index <= np.min(np.asarray([datemax_data23, datemax])))]
+
+        #### CI for a specific ward on daily basis
+        badentcomb    = np.where((dataframe['Ophold afsnit navn'] != SORsection))[0]
         df_drop       = dataframe.drop(badentcomb)
         datemin_data  = np.min(df_drop['Belægning tidspunkt'])
         datemax_data  = np.max(df_drop['Belægning tidspunkt'])
-        df_range      = df_drop[(df_drop.set_index('Belægning tidspunkt').index >= np.max(np.asarray([datemin_data, datemin]))) &
-                                (df_drop.set_index('Belægning tidspunkt').index <= np.min(np.asarray([datemax_data, datemax])))]
-
-        loc23, lower23, upper23 = oab.get_scipyCI(df_range, 'Belægning tidspunkt', 'Belægning i %', group_dt='date',
-                                                  location='mean', CI=95.0, verbose=True)
-
-        #### CI for a specific ward
-        badentcomb    = np.where((dataframe['Ophold afsnit navn'] != 'SJ SLALUI, MED. LUNGE SENGEAFS., SLA'))[0]
-        df_drop       = dataframe.drop(badentcomb)
-        datemin_data  = np.min(df_drop['Belægning tidspunkt'])
-        datemax_data  = np.max(df_drop['Belægning tidspunkt'])
 
         df_range      = df_drop[(df_drop.set_index('Belægning tidspunkt').index >= np.max(np.asarray([datemin_data, datemin]))) &
                                 (df_drop.set_index('Belægning tidspunkt').index <= np.min(np.asarray([datemax_data, datemax])))]
 
-        loc95, lower95, upper95 = oab.get_scipyCI(df_range, 'Belægning tidspunkt', 'Belægning i %', group_dt='date',
-                                                  location='mean', CI=95.0, verbose=True)
-        loc68, lower68, upper68 = oab.get_scipyCI(df_range, 'Belægning tidspunkt', 'Belægning i %', group_dt='date',
-                                                  location='mean', CI=68.0, verbose=True)
+        dfgroups   = df_range.groupby(df_range['Belægning tidspunkt'].dt.date, sort=True)['Belægning i %']
 
-        occdic[SORsection] = [loc23, lower23, upper23, loc68, lower68, upper68, loc95, lower95, upper95]
+        dfgroups_sort = df_range.sort_values(['Belægning i %'], ascending=True).groupby(df_range['Belægning tidspunkt'].dt.date)['Belægning i %']
+        #dfgroups_sort.get_group(datetime.date(2021, 12, 25))
 
+        #counts        = df_range.groupby(df_range['Belægning tidspunkt'].dt.date, as_index=False)['Belægning i %'].count()
+        #dfgroups_core = df_range.groupby(df_range['Belægning tidspunkt'].dt.date, sort=True)['Belægning i %'].nth([0, -1])
 
+        CI95index = [1, -2]
+        CI68index = [3, -5]
+        CI95low  = dfgroups_sort.nth([CI95index[0]])
+        CI95high = dfgroups_sort.nth([CI95index[1]])
+        CI68low  = dfgroups_sort.nth([CI68index[0]])
+        CI68high = dfgroups_sort.nth([CI68index[1]])
 
-        ### HERE 220307    df_range apparantly not defined... make sure plotting and looping for defining arrays works
+        group_median = df_range.groupby(df_range['Belægning tidspunkt'].dt.date)['Belægning i %'].agg('median')
+        groupnames   = [grkey for grkey in dict(list(dfgroups)).keys()]
 
+        occdic[SORsection] = [df_range23, group_median, CI68low, CI68high, CI95low, CI95high]
 
+    checkcalculations = False
+    if checkcalculations:
+        datevalues = df_range['Belægning i %'].values[np.where(df_range['Belægning tidspunkt'].dt.date.values == datetime.date(2021, 12, 25))]
+        dv_mean    = np.mean(datevalues)
+        dv_median  = np.median(datevalues)
+        dv_std     = np.std(datevalues)
+        print(dv_mean, dv_median, dv_std)
 
-    if verbose: print(' - Done generating data array; moving on to plotting')
+        counts     = df_range.groupby(df_range['Belægning tidspunkt'].dt.date, as_index=False)['Belægning i %'].count()
+        loc_mean   = df_range.groupby(df_range['Belægning tidspunkt'].dt.date)['Belægning i %'].agg('mean')
+        loc_median = df_range.groupby(df_range['Belægning tidspunkt'].dt.date)['Belægning i %'].agg('median')
+        std        = df_range.groupby(df_range['Belægning tidspunkt'].dt.date)['Belægning i %'].agg(np.std)
+        se = std.values / np.sqrt(np.transpose(counts.values))
+        #st.sem() # standard error of men
+        print(loc_mean, loc_median, std)
 
+        lower, upper = st.t.interval(alpha=95 / 100., df=np.transpose(counts.values) - 1, loc=loc_mean, scale=se)
+
+        print(datevalues)
+        print(lower[0][0],upper[0][0])
+
+        dateent  = np.where((dataframe['Belægning tidspunkt'].dt.date.values == datetime.date(2021, 12, 3)) & (dataframe['Ophold afsnit navn'] == SORsection))
+        datedata = np.asarray(list(dataframe['Belægning i %'].values[dateent]))
+        times    = np.asarray(list(dataframe['Belægning tidspunkt'].values[dateent]))
+        #np.mean(datedata[~np.isnan(datedata)])
+        val23 = datedata[-1]
+        np.median(datedata[~np.isnan(datedata)])
+
+    if verbose: print(' - Done generating data dictionary; moving on to plotting\n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Initiating ' + plotname)
 
@@ -538,7 +569,6 @@ def plot_occupancy_CIs(dataframe, datemin='02-01-2018', datemax='01-01-2022', pl
     plt.ioff()
 
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
     plt.xticks(rotation=45)
 
     plt.rc('text', usetex=False)
@@ -583,34 +613,34 @@ def plot_occupancy_CIs(dataframe, datemin='02-01-2018', datemax='01-01-2022', pl
         else:
             pointcolor = cmap(colnorm((cmax - cmin) / len(SORsectionlist) * (ss + 1)))
 
-        #occarr_hoursort = np.sort(occdic[SORsection], axis=0)
-        #medval = np.nanmedian(occarr_hoursort, axis=0)
+        df_range23, group_median, CI68low, CI68high, CI95low, CI95high = occdic[SORsection]
 
-        [loc23, lower23, upper23, loc68, CI68low, CI68high, loc95, CI95low, CI95high] = occdic[SORsection]
-
-        duration = (np.max(loc23.index) - np.min(loc23.index)).days
-        if duration <= 66:
-            plt.fill_between(loc68.index, CI68high[0], CI68low[0], color=pointcolor, alpha=1.0, step='mid', zorder=15,
+        duration = (np.max(group_median.index) - np.min(group_median.index)).days
+        if duration <= 100:
+            plt.gcf().autofmt_xdate()  # set font and rotation for date tick labels
+            plt.fill_between(list(CI68high.index), list(CI68high.values), list(CI68low.values), color=pointcolor, alpha=1.0, step='mid', zorder=15,
                              label='68% konfidensinterval')
-            plt.fill_between(loc95.index, CI95high[0], CI95low[0], color=pointcolor, alpha=0.6, step='mid', zorder=10,
+            plt.fill_between(list(CI95high.index), list(CI95high.values), list(CI95low.values), color=pointcolor, alpha=0.6, step='mid', zorder=10,
                              label='95% konfidensinterval')
+
             centercol = 'black'
         else:
+            plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
             centercol = pointcolor
 
-        plt.step(loc68.index, loc68.values, where='mid', color=centercol, alpha=1.0, zorder=20,
-                 label=SORsection + '\nGennemsnit af belægning over døgnets 24 timer', linestyle='-', lw=lthick)
+        plt.step(group_median.index, group_median.values, where='mid', color=centercol, alpha=1.0, zorder=20,
+                 label=SORsection + '\nMedian af belægningen over døgnets 24 timer', linestyle='-', lw=lthick)
 
         if SORsections != 'all':
-            diffval_high = loc95.values - CI95high[0]
+            diffval_high = np.asarray(list(df_range23['Belægning i %'].values - CI95high.values))
             Nabove = len(np.where(diffval_high[~np.isnan(diffval_high)] > 0)[0])
             fracabove = Nabove / len(CI68high) * 100.
 
-            diffval_low = CI95low[0] - loc95.values
+            diffval_low = np.asarray(list(CI95low.values - df_range23['Belægning i %'].values))
             Nbelow = len(np.where(diffval_low[~np.isnan(diffval_low)] > 0)[0])
             fracbelow = Nbelow / len(CI68low) * 100.
 
-            plt.step(loc23.index, loc23.values, where='mid', color='red', alpha=0.6, zorder=25,
+            plt.step(df_range23['Belægning kalenderdato'].values, df_range23['Belægning i %'].values, where='mid', color='red', alpha=0.6, zorder=25,
                      label='Belægning kl. 23' + ' (' + str('%.1f' % fracbelow) + '% < 95%KI; ' + str(
                          '%.1f' % fracabove) + '% > 95%KI)', linestyle='-', lw=lthick)
             legscale = 1.0
@@ -646,30 +676,56 @@ def plot_occupancy_wrapper(verbose=True):
     """
     dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
     # - - - - - - - - - - - - - -Order from Excel sheet - - - - - - - - - - - - - - - - - -
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAAKI1, AKUT AFD.STUEN, SENGEAFS., SLA'],         plotname = 'disponiblesenge_SLAAKI1.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAAKI2, AKUT AFD. 1.SAL, SENGEAFS., SLA'],        plotname = 'disponiblesenge_SLAAKI2.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLALUI, MED. LUNGE SENGEAFS., SLA'],               plotname = 'disponiblesenge_SLALUI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAMGIS, MED. GASTRO. SENGEAFS., SLA'],            plotname = 'disponiblesenge_SLAMGIS.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],             plotname = 'disponiblesenge_SLAKAI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAENIMS, HORMON-MULTISGD. SENGEAFS., SLA'],       plotname = 'disponiblesenge_SLAENIMS.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAMSID, MULTISYGDOM DAGAFSNIT, SLA'],             plotname = 'disponiblesenge_SLAMSID.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLANEI, NEUROLOGISK SENGEAFS., SLA'],              plotname = 'disponiblesenge_SLANEI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAGEIG1, GERIATRISK SENGEAFS. G1, SLA'],          plotname = 'disponiblesenge_SLAGEIG1.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAGEIG2, GERIATRISK SENGEAFS. G2, SLA'],          plotname = 'disponiblesenge_SLAGEIG2.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAPÆI, PÆD. SENGEAFS., SLA'],                     plotname = 'disponiblesenge_SLAPÆI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAPÆIN, PÆD. NEO SENGEAFS., SLA'],                plotname = 'disponiblesenge_SLAPÆIN.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA'],         plotname = 'disponiblesenge_SLAOKIOT.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAGYI, GYN. SENGEAFSNIT, SLA'],                   plotname = 'disponiblesenge_SLAGYI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOBI, OBST. MOR-BARN SENGEAFS., SLA'],           plotname = 'disponiblesenge_SLAOBI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOBISV, OBST. GRAVIDITETSAFSNIT, SLA'],          plotname = 'disponiblesenge_SLAOBISV.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAOBIFØMO, OBST. FØDEMODT. SENGEAFS., SLA'],      plotname = 'disponiblesenge_SLAOBIFØMO.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAKGI, KIRURGISK SENGEAFSNIT, SLA'],              plotname = 'disponiblesenge_SLAKGI.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'],           plotname = 'disponiblesenge_SLAANITM.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ SLAANINT, INTENSIV SENGEAFS., SLA'],               plotname = 'disponiblesenge_SLAANINT.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'],               plotname = 'disponiblesenge_NAELUIN.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ NAENEICNN, CENTER NEUROREHAB. SENGEAFS., NAE'],    plotname = 'disponiblesenge_NAENEICNN.pdf')
-    oab.plot_occupancy(dataframe, SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE'],         plotname = 'disponiblesenge_NAEOKI8.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAAKI1, AKUT AFD.STUEN, SENGEAFS., SLA'],         plotname = 'belægningCIs_SLAAKI1.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAAKI2, AKUT AFD. 1.SAL, SENGEAFS., SLA'],        plotname = 'belægningCIs_SLAAKI2.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLALUI, MED. LUNGE SENGEAFS., SLA'],               plotname = 'belægningCIs_SLALUI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAMGIS, MED. GASTRO. SENGEAFS., SLA'],            plotname = 'belægningCIs_SLAMGIS.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],             plotname = 'belægningCIs_SLAKAI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAENIMS, HORMON-MULTISGD. SENGEAFS., SLA'],       plotname = 'belægningCIs_SLAENIMS.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAMSID, MULTISYGDOM DAGAFSNIT, SLA'],             plotname = 'belægningCIs_SLAMSID.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLANEI, NEUROLOGISK SENGEAFS., SLA'],              plotname = 'belægningCIs_SLANEI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAGEIG1, GERIATRISK SENGEAFS. G1, SLA'],          plotname = 'belægningCIs_SLAGEIG1.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAGEIG2, GERIATRISK SENGEAFS. G2, SLA'],          plotname = 'belægningCIs_SLAGEIG2.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAPÆI, PÆD. SENGEAFS., SLA'],                     plotname = 'belægningCIs_SLAPÆI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAPÆIN, PÆD. NEO SENGEAFS., SLA'],                plotname = 'belægningCIs_SLAPÆIN.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA'],         plotname = 'belægningCIs_SLAOKIOT.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAGYI, GYN. SENGEAFSNIT, SLA'],                   plotname = 'belægningCIs_SLAGYI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOBI, OBST. MOR-BARN SENGEAFS., SLA'],           plotname = 'belægningCIs_SLAOBI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOBISV, OBST. GRAVIDITETSAFSNIT, SLA'],          plotname = 'belægningCIs_SLAOBISV.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOBIFØMO, OBST. FØDEMODT. SENGEAFS., SLA'],      plotname = 'belægningCIs_SLAOBIFØMO.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAKGI, KIRURGISK SENGEAFSNIT, SLA'],              plotname = 'belægningCIs_SLAKGI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'],           plotname = 'belægningCIs_SLAANITM.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAANINT, INTENSIV SENGEAFS., SLA'],               plotname = 'belægningCIs_SLAANINT.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'],               plotname = 'belægningCIs_NAELUIN.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ NAENEICNN, CENTER NEUROREHAB. SENGEAFS., NAE'],    plotname = 'belægningCIs_NAENEICNN.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE'],         plotname = 'belægningCIs_NAEOKI8.pdf')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    datemin='01-11-2021'
+    datemax='01-02-2022'
+
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAAKI1, AKUT AFD.STUEN, SENGEAFS., SLA'],      datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAAKI1.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAAKI2, AKUT AFD. 1.SAL, SENGEAFS., SLA'],     datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAAKI2.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLALUI, MED. LUNGE SENGEAFS., SLA'],            datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLALUI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAMGIS, MED. GASTRO. SENGEAFS., SLA'],         datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAMGIS.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAKAI, KARDIOLOGISK SENGEAFS., SLA'],          datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAKAI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAENIMS, HORMON-MULTISGD. SENGEAFS., SLA'],    datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAENIMS.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAMSID, MULTISYGDOM DAGAFSNIT, SLA'],          datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAMSID.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLANEI, NEUROLOGISK SENGEAFS., SLA'],           datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLANEI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAGEIG1, GERIATRISK SENGEAFS. G1, SLA'],       datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAGEIG1.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAGEIG2, GERIATRISK SENGEAFS. G2, SLA'],       datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAGEIG2.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAPÆI, PÆD. SENGEAFS., SLA'],                  datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAPÆI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAPÆIN, PÆD. NEO SENGEAFS., SLA'],             datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAPÆIN.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOKIOT, O-KIR. SENGEAFS., TRAUME, SLA'],      datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAOKIOT.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAGYI, GYN. SENGEAFSNIT, SLA'],                datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAGYI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOBI, OBST. MOR-BARN SENGEAFS., SLA'],        datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAOBI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOBISV, OBST. GRAVIDITETSAFSNIT, SLA'],       datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAOBISV.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAOBIFØMO, OBST. FØDEMODT. SENGEAFS., SLA'],   datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAOBIFØMO.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAKGI, KIRURGISK SENGEAFSNIT, SLA'],           datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAKGI.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAANITM, INTERMEDIÆRT SENGEAFS., SLA'],        datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAANITM.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ SLAANINT, INTENSIV SENGEAFS., SLA'],            datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_SLAANINT.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ NAELUIN, LUNGEMED. SENGEAFS., NAE'],            datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_NAELUIN.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ NAENEICNN, CENTER NEUROREHAB. SENGEAFS., NAE'], datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_NAENEICNN.pdf')
+    oab.plot_occupancy_CIs(dataframe, SORsections=['SJ NAEOKI8, ORTOPÆDKIR. SENGEAFSNIT 8, NAE'],      datemin=datemin, datemax=datemax,   plotname = 'belægningCIs_Nov21Jan22_NAEOKI8.pdf')
 #=======================================================================================================================
 
