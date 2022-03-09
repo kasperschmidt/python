@@ -175,12 +175,12 @@ def plot_beds(dataframe,datemin='01-01-2018',datemax='01-02-2022', plotname='dis
     if verbose: print(' - Saved figure to \n  '+outputfig)
 
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_beds_insets(verbose=True):
+def plot_beds_wrapper(verbose=True):
     """
     Function to wrap around plotting to generate
 
     import occupancy_and_beds as oab
-    oab.plot_beds_insets()
+    oab.plot_beds_wrapper()
 
     """
     dataframe = oab.generate_datastructure(filename='Belægningshistorik_alle_afdelinger_220208.xlsx', verbose=verbose)
