@@ -22,20 +22,22 @@ def get_group_indices(mdcgroups, verbose=True):
     Splitting group list up into dictionary and returning some stats and group indices.
 
     import loadMDCgroups
-    mdcgroups    = loadMDCgroups.load_into_dataframe()
-    groupindices = loadMDCgroups.get_group_indices(mdcgroups)
+    mdcgroups                = loadMDCgroups.load_into_dataframe()
+    groupnames, groupindices = loadMDCgroups.get_group_indices(mdcgroups)
 
     """
     groupindices = {}
-
+    groupnames   = []
     print('Found the following MDC groups in dataframe')
     for groupno in np.arange(1, 27, 1):
         groupindex = np.where(mdcgroups['MDCgruppe'] == groupno)[0]
+        groupname = mdcgroups['MDCbeskrivelse'][groupindex].values[0]
+        groupnames.append(groupname)
         groupindices['group'+str(groupno)] = groupindex
         if verbose:
             print('   Gruppe '+str("%3.f" % groupno)+': '+
                   str("%50s" % mdcgroups['MDCbeskrivelse'][groupindex].values[0])+
                   '    inkluderer '+str("%5.f" % len(groupindex))+' diagnoser')
 
-    return groupindices
+    return groupnames, groupindices
 #-----------------------------------------------------------------------------------------------------------------------
