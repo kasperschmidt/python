@@ -12,6 +12,8 @@ import matplotlib.dates as mdates
 from matplotlib.ticker import PercentFormatter
 import seaborn
 import datetime
+import loadMDCgroups
+import scipy
 
 #sys.path.append('C:/Users/kaschm/GitHub/python/pythonNSR/')
 import occupancy_and_beds as oab
@@ -24,15 +26,24 @@ def runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True):
     simple wrapper to re-generate plots after adding data updates to
     O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/månedligetræk fra SP/
 
-    lcu.runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True)
+    The datemin_mostrecent keyword indicates the first date of the chunk of data to treat as "last month".
+    When defining these data, everything prior to that data is ignored.
+    Format is "%d-%m-%Y"
+
+    import lungemed_contactdays_updates as lcu
+    lcu.runall_for_updating(datemin_mostrecent='01-02-2022', verbose=True)
 
     """
+
+    if verbose: print('\n-------------------- Initiating full run with datemine_mostrecent = '+datemin_mostrecent+' --------------------\n')
+
     lbv.plot_perday_occupancy(measurehours=[23], include_updates=True, loaddatafile='lungemedLPR3dataframe.xlsx', datemin_mostrecent=datemin_mostrecent)
     lcu.evaluate_beddays_boxplot(datemin_mostrecent=datemin_mostrecent, verbose=verbose)
     lcu.beddays_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
     lcu.diagnoses_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
     lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True, datemin_mostrecent=datemin_mostrecent, fileformat='png', verbose=verbose)
 
+    if verbose: print('\n-------------------- Full run with datemine_mostrecent = '+datemin_mostrecent+' completed --------------------')
 # -----------------------------------------------------------------------------------------------------------------------
 def load_dataframes_from_excel(verbose=True):
     """
@@ -207,7 +218,7 @@ def evaluate_beddays(datemin_mostrecent='01-01-2022',verbose=True):
     #Locate the indices for the subsamples?? loc[pd.date_range(ts.index.min(), ts.index.max(), freq='M')]
 
 # -----------------------------------------------------------------------------------------------------------------------
-def evaluate_beddays_boxplot(datemin_mostrecent='01-01-2022',verbose=True):
+def evaluate_beddays_boxplot(verbose=True):
     """
 
     lcu.evaluate_beddays()
@@ -321,11 +332,24 @@ def evaluate_beddays_boxplot(datemin_mostrecent='01-01-2022',verbose=True):
     plt.close('all')
     if verbose: print(' - saved plot to '+plotdir)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# -----------------------------------------------------------------------------------------------------------------------
+def get_kde_measures(kdedata,linenumber):
+    """
 
+    """
+    xx, yy = kdedata.get_lines()[linenumber].get_data()
+    cdf = scipy.integrate.cumtrapz(yy, xx, initial=0)
+    nearest_50pct = np.abs(cdf - 0.5).argmin()
+    x_median = xx[nearest_50pct]
+    y_median = yy[nearest_50pct]
+    y_max    = np.max(yy)
+    x_max    = xx[np.where(yy == y_max)[0]]
+    #print('        ->'+str(x_median)+'  '+str(x_max[0]))
+    return x_median, x_max[0], y_max
 # -----------------------------------------------------------------------------------------------------------------------
 def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="probability", verbose=True):
     """
-    lcu.beddays_distributions(normalization="probability")
+    lcu.beddays_distributions(normalization="probability",datemin_mostrecent = '01-02-2022')
     lcu.beddays_distributions(normalization="count")
     """
     plotdir = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/'
@@ -377,22 +401,24 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
         binwidth     = 1
         if kdeonly:
             distcolor = cmap(colnorm(30))
-            seaborn.kdeplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
-                            common_norm=False,
-                            label='Baseline (2019-2021)' + '; ' + str(len(df_baseline)) + ' forløb')
+            kdedata_b = seaborn.kdeplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
+                                        common_norm=False,
+                                        label='Baseline (2019-2021)' + '; ' + str(len(df_baseline)) + ' forløb')
+            kde_median_baseline, kde_max_baseline, kde_ymax_baseline = lcu.get_kde_measures(kdedata_b,0)
 
             distcolor = cmap(colnorm(70))
-            seaborn.kdeplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
-                            common_norm=False,
-                            label='Forløb siden 01-12-2021' + '; ' + str(len(df_updates)) + ' forløb')
+            kdedata_u = seaborn.kdeplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
+                                        common_norm=False,
+                                        label='Forløb siden 01-12-2021' + '; ' + str(len(df_updates)) + ' forløb')
+            kde_median_updates, kde_max_updates, kde_ymax_updates = lcu.get_kde_measures(kdedata_u,1)
 
             distcolor = 'black'
-            seaborn.kdeplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
-                            common_norm=False,
-                            label='Forløb siden ' + datemin_mostrecent + '; ' + str(
-                                 len(df_updates.drop(df_baseline.index[dropval]))) + ' forløb')
+            kdedata_l = seaborn.kdeplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
+                                        common_norm=False,
+                                        label='Forløb siden ' + datemin_mostrecent + '; ' + str(len(df_updates.drop(df_baseline.index[dropval]))) + ' forløb')
+            kde_median_lastmonth, kde_max_lastmonth, kde_ymax_lastmonth = lcu.get_kde_measures(kdedata_l,2)
 
-            plt.ylim(0, plt.gca().get_ylim()[1] / binwidth)  # similir limits on the y-axis to align the plots
+            plt.ylim(0, plt.gca().get_ylim()[1] / binwidth)  # similar limits on the y-axis to align the plots
             plt.gca().yaxis.set_major_formatter(PercentFormatter(1 / binwidth))  # show axis such that 1/binwidth corresponds to 100%
         else:
             distcolor = cmap(colnorm(30))
@@ -410,6 +436,38 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
                              kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
                              label='Forløb siden '+datemin_mostrecent+'; '+str(len(df_updates.drop(df_baseline.index[dropval])))+' forløb')
 
+        # --------- ADD TEXT WITH VALUES ---------
+        topleft_x = 0.4
+        topleft_y = 0.75
+        collist = [cmap(colnorm(30)), cmap(colnorm(70)), 'black']
+        daystr  = ['KONTAKTDAGE', 'Forskel på kontakt start og slut (antal dage)', 'Forskel på kontakt start og slut (antal dage)',]
+        plt.text(topleft_x, topleft_y, 'data: median,  genms. +/- stdafv.', fontsize=Fsize, rotation=0,
+                 color='black', horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
+
+        for dd, datavals in enumerate([df_baseline, df_updates, df_updates.drop(df_baseline.index[dropval])]):
+            datavals = datavals.assign(contactdays=datavals[daystr[dd]].values) # add column with name contactdays
+
+            val_mean   = datavals.contactdays.mean()
+            val_median = datavals.contactdays.median()
+            val_std    = datavals.contactdays.std()
+
+            outstr = str('%12.2f' % val_median)+' dage,  '+str('%4.1f' % val_mean)+' +/- '+str('%4.1f' % val_std)+' dage'
+            plt.text(topleft_x, topleft_y-(dd+1)*0.05, outstr, fontsize=Fsize, rotation=0,
+                     color=collist[dd], horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
+
+        if kdeonly:
+            plt.text(topleft_x, topleft_y-4*0.05, 'kurve: median,  maks.', fontsize=Fsize, rotation=0,
+                     color='black', horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
+
+            kde_max    = [kde_max_baseline, kde_max_updates, kde_max_lastmonth]
+            kde_ymax   = [kde_ymax_baseline, kde_ymax_updates, kde_ymax_lastmonth]
+            kde_median = [kde_median_baseline, kde_median_updates, kde_median_lastmonth]
+            for dd, val_max in enumerate(kde_max):
+                val_median = kde_median[dd]
+                outstr = str('%12.1f' % val_median)+' dage,  ('+str('%4.1f' % val_max)+' dage, '+str('%4.1f' % (kde_ymax[dd]*100.))+'% )'
+                plt.text(topleft_x, topleft_y-(dd+5)*0.05, outstr, fontsize=Fsize, rotation=0,
+                         color=collist[dd], horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
+
         # --------- LABELS ---------
         plt.xlabel('Kontaktdage')
         if kdeonly:
@@ -423,7 +481,7 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
 
         # --------- LEGEND ---------
         leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=1, numpoints=1,
-                         bbox_to_anchor=(0.55, 0.95))  # add the legend
+                         bbox_to_anchor=(0.63, 0.95))  # add the legend
         leg.get_frame().set_alpha(0.7)
         # --------------------------
 
@@ -432,8 +490,6 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
         plt.close('all')
         if verbose: print(' - saved plot to '+plotdir)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
 # -----------------------------------------------------------------------------------------------------------------------
 def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="probability",verbose=True):
     """
@@ -448,9 +504,32 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     datemin     = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
     dropval     = np.where(df_updates['Kontakt startdato Dato-tid'] < datemin)[0]
 
+    # -----------------------------------------------------------------------------------------
+    if verbose: print('\n - Load MDC groups and assign them to baseline and updates data')
+    mdcgroups                = loadMDCgroups.load_into_dataframe(verbose=True)
+    groupnames, groupindices = loadMDCgroups.get_group_indices(mdcgroups, verbose=True)
+
+    diacol = ['DIA01', 'Aktionsdiagnosekode']
+    collist = []
+    for ff, dframe in enumerate([df_baseline, df_updates]):
+        mdcgroupcol  = np.zeros(len(dframe[diacol[ff]]))
+
+        for groupno in np.arange(1, 27, 1):
+            groupdia = np.asarray([dd.replace('\xa0', '') for dd in mdcgroups['diagnosekode'][groupindices['group' + str(groupno)]]])
+            for dia, datadia in enumerate(dframe[diacol[ff]].values):
+                if datadia in groupdia:
+                    mdcgroupcol[dia] = groupno
+                    #break # jump out of inner loop to advance to next diagnose
+
+        collist.append(mdcgroupcol)
+
+    df_baseline = df_baseline.assign(mdcgroup=collist[0]) # add column with MDC groups to dataframe
+    df_updates  = df_updates.assign(mdcgroup=collist[1])  # add column with MDC groups to dataframe
+    #-----------------------------------------------------------------------------------------
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = 'distributions_diagnoses_'+normalization+'.pdf'
-    if verbose: print(' - Initiating '+plotname)
+    if verbose: print('\n - Initiating '+plotname)
 
     fig = plt.figure(figsize=(11, 5))
     fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.12, right=0.98, bottom=0.15, top=0.98)
@@ -871,6 +950,403 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     plt.xticks([])
     plt.xlabel('Aktionsdiagnosekoder (DIA01)')
     ylabelstr = 'Forskel i andelen af forløb med givne diagnoser '
+    plt.ylabel(ylabelstr)
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
+                     bbox_to_anchor=(0.48, 1.1))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+
+    plt.savefig(plotdir+plotname)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - saved plot to '+plotdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    #                                                   MDC grouping
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print('\n - Build numpy array with diagnose MDC grouping stats')
+    df_lastmonth    = df_updates.drop(df_updates.index[dropval])
+    diaglist        = np.sort(np.unique(np.asarray(df_baseline['DIA01'].values.tolist()+ df_updates['Aktionsdiagnosekode'].values.tolist())))
+    Ndiag           = len(diaglist)
+
+    if verbose: print(' - Found '+str(Ndiag)+' diagnoses to group data by')
+    Ngroups = 26
+
+    diag_baseline_count   = np.zeros(Ngroups)
+    diag_update_count     = np.zeros(Ngroups)
+    diag_lastmonth_count  = np.zeros(Ngroups)
+    diag_baseline_frac    = np.zeros(Ngroups)
+    diag_update_frac      = np.zeros(Ngroups)
+    diag_lastmonth_frac   = np.zeros(Ngroups)
+
+    for dd, groupno in enumerate(np.arange(Ngroups)):
+        diag_baseline_count[dd]  = len(np.where(np.asarray(df_baseline['mdcgroup'].values) == groupno+1.0)[0])
+        diag_update_count[dd]    = len(np.where(np.asarray(df_updates['mdcgroup'].values) == groupno+1.0)[0])
+        diag_lastmonth_count[dd] = len(np.where(np.asarray(df_lastmonth['mdcgroup'].values) == groupno+1.0)[0])
+        diag_baseline_frac[dd]   = len(np.where(np.asarray(df_baseline['mdcgroup'].values) == groupno+1.0)[0]) / Nbaseline
+        diag_update_frac[dd]     = len(np.where(np.asarray(df_updates['mdcgroup'].values) == groupno+1.0)[0]) / Nupdates
+        diag_lastmonth_frac[dd]  = len(np.where(np.asarray(df_lastmonth['mdcgroup'].values) == groupno+1.0)[0]) / Nlastmonth
+
+    entarray = np.arange(1,27,1)
+
+    if normalization == 'probability':
+        diag_baseline_val = diag_baseline_frac
+        diag_update_val = diag_update_frac
+        diag_lastmonth_val = diag_lastmonth_frac
+    elif normalization == 'count':
+        diag_baseline_val = diag_baseline_count
+        diag_update_val = diag_update_count
+        diag_lastmonth_val = diag_lastmonth_count
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = 'diagnoses_comparison_'+normalization+'_mdcgrouping.pdf'
+
+    if verbose: print(' - Initiating '+plotname)
+
+    fig = plt.figure(figsize=(11, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.12, right=0.98, bottom=0.1, top=0.98)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    # --------- RANGES ---------
+    xmin = 0
+    xmax = 40
+    dy   = xmax - xmin
+    #plt.xlim([xmin,xmax])
+
+    #plt.grid(linestyle=':', linewidth=lthick/2.)
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+
+    # --------- POINT AND CURVES ---------
+    distcolor = cmap(colnorm(30))
+    # plt.step(entarray, diag_baseline_val, where='mid', lw=lthick/2, markersize=0, alpha=0.5, color=distcolor,
+    #          zorder=20., label='Baseline (2019-2021)')
+    plt.fill_between(entarray, diag_baseline_val, step="pre", alpha=0.4, color=distcolor, linewidth=0,
+                     zorder=20., label='Baseline (2019-2021)'+'; '+str(Nbaseline)+' forløb')
+
+    distcolor = cmap(colnorm(70))
+    # plt.step(entarray, diag_update_val, where='mid', lw=lthick/2, markersize=0, alpha=0.5, color=distcolor,
+    #          zorder=20., label='Forløb siden 01-12-2021')
+    plt.fill_between(entarray, diag_update_val, step="pre", alpha=0.4, color=distcolor, linewidth=0,
+                     zorder=20., label='Forløb siden 01-12-2021'+'; '+str(Nupdates)+' forløb')
+
+    distcolor = 'black'
+    # plt.step(entarray, diag_lastmonth_val, where='mid', lw=lthick/2, markersize=0, alpha=0.5, color=distcolor,
+    #          zorder=25., label='Forløb siden '+datemin_mostrecent)
+    plt.fill_between(entarray, diag_lastmonth_val, step="pre", alpha=0.4, color=distcolor, linewidth=0,
+                     zorder=25., label='Forløb siden '+datemin_mostrecent+'; '+str(Nlastmonth)+' forløb')
+
+    spikecut = 100
+    if normalization == 'probability':
+        spikecut = 0.05
+    diag_set  = [diag_baseline_frac, diag_update_frac, diag_lastmonth_frac]
+    maxarray  = np.asarray([max(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(maxarray > spikecut)[0]
+
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, maxarray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='bottom')
+
+    # --------- LABELS ---------
+    #plt.xticks(rotation=90, fontsize=Fsize)
+    plt.xticks(entarray-0.5, entarray.astype(str), fontsize=Fsize)
+    #plt.xticks([])
+    plt.xlabel('Aktionsdiagnosekoder (DIA01) fordelt på MDC grupper')
+    if normalization == 'probability':
+        ylabelstr = 'Andelen af forløb med given MDC gruppe'
+        plt.ylim(0, plt.gca().get_ylim()[1])
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    else:
+        ylabelstr = 'Antal forløb med given diagnose '
+
+    plt.ylabel(ylabelstr)
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=1, numpoints=1,
+                     bbox_to_anchor=(0.7, 0.95))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+
+    plt.savefig(plotdir+plotname)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - saved plot to '+plotdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = 'diagnoses_comparison_diff_probability_mdcgrouping.pdf'
+
+    if verbose: print(' - Initiating '+plotname)
+
+    fig = plt.figure(figsize=(11, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.12, right=0.98, bottom=0.1, top=0.90)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    # --------- RANGES ---------
+    xmin = 0
+    xmax = 40
+    dy   = xmax - xmin
+    #plt.xlim([xmin,xmax])
+
+    #plt.grid(linestyle=':', linewidth=lthick/2.)
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+
+    # --------- POINT AND CURVES ---------
+    distcolor = 'red'
+    plt.fill_between(entarray, diag_baseline_frac-diag_update_frac, step="pre", alpha=0.5, color=distcolor, linewidth=0,
+                     zorder=20., label='Forskel: Baseline (2019-2021) og Forløb siden 01-12-2021')
+
+    distcolor = 'black'
+    plt.fill_between(entarray, diag_baseline_frac-diag_lastmonth_frac, step="pre", alpha=0.5, color=distcolor, linewidth=0,
+                     zorder=20., label='Forskel: Baseline (2019-2021) og Forløb siden '+datemin_mostrecent)
+
+    fraccut   = 0.02
+    diag_set   = [diag_baseline_frac-diag_lastmonth_frac, diag_baseline_frac-diag_update_frac]
+
+    spikearray = np.asarray([max(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(spikearray > fraccut)[0]
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, spikearray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='bottom')
+
+    spikearray = np.asarray([min(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(spikearray < -1*fraccut)[0]
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, spikearray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='top')
+
+    # --------- Indicating regions ---------
+    xrange = plt.gca().get_xlim()
+    plt.xlim(xrange)
+    plt.plot(xrange , [0, 0], '--', color='black', zorder=30, linewidth=lthick/2.)
+    plt.text(0.97, 0.96, 'Baseline > Forløb', fontsize=Fsize-2, rotation=0,
+                 color='black', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+
+    plt.text(0.97, 0.04, 'Baseline < Forløb', fontsize=Fsize-2, rotation=0,
+                 color='black', horizontalalignment='right', verticalalignment='bottom', transform=plt.gca().transAxes)
+
+    # --------- LABELS ---------
+    #plt.xticks(rotation=90, fontsize=Fsize)
+    plt.xticks(entarray-0.5, entarray.astype(str), fontsize=Fsize)
+    #plt.xticks([])
+    plt.xlabel('Aktionsdiagnosekoder (DIA01) fordelt på MDC grupper')
+    ylabelstr = 'Forskel i andelen af forløb med givne MDC grupper '
+    plt.ylabel(ylabelstr)
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
+                     bbox_to_anchor=(0.48, 1.1))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+
+    plt.savefig(plotdir+plotname)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - saved plot to '+plotdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = 'diagnoses_comparison_diff_probability_updates_mdcgrouping.pdf'
+
+    if verbose: print(' - Initiating '+plotname)
+
+    fig = plt.figure(figsize=(11, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.12, right=0.98, bottom=0.1, top=0.90)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    # --------- RANGES ---------
+    xmin = 0
+    xmax = 40
+    dy   = xmax - xmin
+    #plt.xlim([xmin,xmax])
+
+    #plt.grid(linestyle=':', linewidth=lthick/2.)
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+
+    # --------- POINT AND CURVES ---------
+    distcolor = 'black'
+    plt.fill_between(entarray, diag_baseline_frac-diag_update_frac, step="pre", alpha=0.5, color=distcolor, linewidth=0,
+                     zorder=20., label='Forskel: Baseline (2019-2021) og Forløb siden 01-12-2021')
+
+    fraccut   = 0.02
+    diag_set   = [diag_baseline_frac-diag_update_frac]
+
+    spikearray = np.asarray([max(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(spikearray > fraccut)[0]
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, spikearray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='bottom')
+
+    spikearray = np.asarray([min(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(spikearray < -1*fraccut)[0]
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, spikearray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='top')
+
+
+    # --------- Indicating regions ---------
+    xrange = plt.gca().get_xlim()
+    plt.xlim(xrange)
+    plt.plot(xrange , [0, 0], '--', color='black', zorder=30, linewidth=lthick/2.)
+    plt.text(0.97, 0.96, 'Baseline > Forløb', fontsize=Fsize-2, rotation=0,
+                 color='black', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+
+    plt.text(0.97, 0.04, 'Baseline < Forløb', fontsize=Fsize-2, rotation=0,
+                 color='black', horizontalalignment='right', verticalalignment='bottom', transform=plt.gca().transAxes)
+
+    # --------- LABELS ---------
+    #plt.xticks(rotation=90, fontsize=Fsize)
+    plt.xticks(entarray-0.5, entarray.astype(str), fontsize=Fsize)
+    #plt.xticks([])
+    plt.xlabel('Aktionsdiagnosekoder (DIA01) fordelt på MDC grupper')
+    ylabelstr = 'Forskel i andelen af forløb med givne MDC grupper '
+    plt.ylabel(ylabelstr)
+
+    # --------- LEGEND ---------
+    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
+                     bbox_to_anchor=(0.48, 1.1))  # add the legend
+    leg.get_frame().set_alpha(0.7)
+    # --------------------------
+
+    plt.savefig(plotdir+plotname)
+    plt.clf()
+    plt.close('all')
+    if verbose: print(' - saved plot to '+plotdir)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    plotname = 'diagnoses_comparison_diff_probability_lastmonth_mdcgrouping.pdf'
+
+    if verbose: print(' - Initiating '+plotname)
+
+    fig = plt.figure(figsize=(11, 5))
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.12, right=0.98, bottom=0.1, top=0.90)
+    Fsize = 10
+    lthick = 2
+    marksize = 4
+    plt.rc('text', usetex=False)
+    plt.rc('font', family='serif', size=Fsize)
+    plt.rc('xtick', labelsize=Fsize)
+    plt.rc('ytick', labelsize=Fsize)
+    plt.clf()
+    plt.ioff()
+    # plt.title(inforstr[:-2],fontsize=Fsize)
+
+    # --------- RANGES ---------
+    xmin = 0
+    xmax = 40
+    dy   = xmax - xmin
+    #plt.xlim([xmin,xmax])
+
+    #plt.grid(linestyle=':', linewidth=lthick/2.)
+
+    # --------- COLORMAP ---------
+    cmap = plt.cm.get_cmap('viridis')
+    cmin = 0
+    cmax = 100
+
+    colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+    cmaparr = np.linspace(cmin, cmax, num=50)
+    m = plt.cm.ScalarMappable(cmap=cmap)
+    m.set_array(cmaparr)
+
+    # --------- POINT AND CURVES ---------
+    distcolor = 'black'
+    plt.fill_between(entarray, diag_baseline_frac-diag_lastmonth_frac, step="pre", alpha=0.5, color=distcolor, linewidth=0,
+                     zorder=20., label='Forskel: Baseline (2019-2021) og Forløb siden '+datemin_mostrecent)
+
+    fraccut   = 0.02
+    diag_set   = [diag_baseline_frac-diag_lastmonth_frac]
+
+    spikearray = np.asarray([max(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(spikearray > fraccut)[0]
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, spikearray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='bottom')
+
+    spikearray = np.asarray([min(idx) for idx in zip(*diag_set)])
+    spike_ents = np.where(spikearray < -1*fraccut)[0]
+    for spike_ent in spike_ents:
+        plt.text(spike_ent+0.5, spikearray[spike_ent], groupnames[spike_ent], fontsize=Fsize-2, rotation=0,
+                 color='gray', horizontalalignment='center', verticalalignment='top')
+
+    # --------- Indicating regions ---------
+    xrange = plt.gca().get_xlim()
+    plt.xlim(xrange)
+    plt.plot(xrange , [0, 0], '--', color='black', zorder=30, linewidth=lthick/2.)
+    plt.text(0.97, 0.96, 'Baseline > Forløb', fontsize=Fsize-2, rotation=0,
+                 color='black', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+
+    plt.text(0.97, 0.04, 'Baseline < Forløb', fontsize=Fsize-2, rotation=0,
+                 color='black', horizontalalignment='right', verticalalignment='bottom', transform=plt.gca().transAxes)
+
+
+    # --------- LABELS ---------
+    #plt.xticks(rotation=90, fontsize=Fsize)
+    plt.xticks(entarray-0.5, entarray.astype(str), fontsize=Fsize)
+    #plt.xticks([])
+    plt.xlabel('Aktionsdiagnosekoder (DIA01) fordelt på MDC grupper')
+    ylabelstr = 'Forskel i andelen af forløb med givne MDC grupper '
     plt.ylabel(ylabelstr)
 
     # --------- LEGEND ---------
