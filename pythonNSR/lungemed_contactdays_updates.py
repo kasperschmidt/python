@@ -38,10 +38,12 @@ def runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True):
     if verbose: print('\n-------------------- Initiating full run with datemine_mostrecent = '+datemin_mostrecent+' --------------------\n')
 
     lbv.plot_perday_occupancy(measurehours=[23], include_updates=True, loaddatafile='lungemedLPR3dataframe.xlsx', datemin_mostrecent=datemin_mostrecent)
-    lcu.evaluate_beddays_boxplot(datemin_mostrecent=datemin_mostrecent, verbose=verbose)
+    lcu.evaluate_beddays_boxplot(verbose=verbose)
     lcu.beddays_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
     lcu.diagnoses_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
-    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True, datemin_mostrecent=datemin_mostrecent, fileformat='png', verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses='mdc', datemin_mostrecent=datemin_mostrecent, fileformat='pdf', verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=3, datemin_mostrecent=datemin_mostrecent, fileformat='pdf',verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=None, datemin_mostrecent=datemin_mostrecent, fileformat='pdf',verbose=verbose)
 
     if verbose: print('\n-------------------- Full run with datemine_mostrecent = '+datemin_mostrecent+' completed --------------------')
 # -----------------------------------------------------------------------------------------------------------------------
@@ -1362,12 +1364,53 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # -----------------------------------------------------------------------------------------------------------------------
-def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-2022',fileformat='pdf',verbose=True):
+def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022', fileformat='pdf', verbose=True):
     """
-    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=True)
+
+    Parameters
+    ----------
+    groupdiagnoses        Possible choices are None, integer or 'mdc'. Integers mark the grouping based on diagnose level
+                          whereas 'mdc' introduces a grouping according to MDC groups.
+    datemin_mostrecent    minimum date of chunk of data to treat as "last month"
+    fileformat            format of output figure - provide extesion fx. pdf or png
+    verbose               toggle verbosity
+
+    Returns
+    -------
+    Heatmap figures
+
+    Example of use
+    --------------
+
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=2)
+
+
     """
     plotdir = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/'
     df_baseline, df_updates = lcu.load_dataframes_from_excel(verbose=verbose)
+
+    # -----------------------------------------------------------------------------------------
+    if verbose: print('\n - Load MDC groups and assign them to baseline and updates data')
+    mdcgroups                = loadMDCgroups.load_into_dataframe(verbose=True)
+    groupnames, groupindices = loadMDCgroups.get_group_indices(mdcgroups, verbose=True)
+
+    diacol = ['DIA01', 'Aktionsdiagnosekode']
+    collist = []
+    for ff, dframe in enumerate([df_baseline, df_updates]):
+        mdcgroupcol  = np.zeros(len(dframe[diacol[ff]]))
+
+        for groupno in np.arange(1, 27, 1):
+            groupdia = np.asarray([dd.replace('\xa0', '') for dd in mdcgroups['diagnosekode'][groupindices['group' + str(groupno)]]])
+            for dia, datadia in enumerate(dframe[diacol[ff]].values):
+                if datadia in groupdia:
+                    mdcgroupcol[dia] = groupno
+                    #break # jump out of inner loop to advance to next diagnose
+
+        collist.append(mdcgroupcol)
+
+    df_baseline = df_baseline.assign(mdcgroup=collist[0]) # add column with MDC groups to dataframe
+    df_updates  = df_updates.assign(mdcgroup=collist[1])  # add column with MDC groups to dataframe
+    #-----------------------------------------------------------------------------------------
 
     datemin     = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
     dropval     = np.where(df_updates['Kontakt startdato Dato-tid'] < datemin)[0]
@@ -1376,16 +1419,25 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
 
     diaglist        = np.sort(np.unique(np.asarray(df_baseline['DIA01'].values.tolist() + df_updates['Aktionsdiagnosekode'].values.tolist())))
 
-    if groupdiagnoses:
-        Ncharacters = 4
-        diaggroup   = np.sort(np.unique(np.asarray([diag[:Ncharacters] for diag in diaglist])))
-        diaglist    = diaggroup
+    if groupdiagnoses is not None:
+        if groupdiagnoses == 'mdc':
+            Ncharacters = 2
+            diaglist    = np.arange(1, 27, 1)
+        else:
+            Ncharacters = groupdiagnoses
+            diaggroup   = np.sort(np.unique(np.asarray([diag[:Ncharacters] for diag in diaglist])))
+            diaglist    = diaggroup
     else:
         Ncharacters = 10
 
-    diag_datavalues_list = [df_baseline['DIA01'].values,
-                            df_updates['Aktionsdiagnosekode'].values,
-                            df_lastmonth['Aktionsdiagnosekode'].values]
+    if groupdiagnoses == 'mdc':
+        diag_datavalues_list = [df_baseline['mdcgroup'].values,
+                                df_updates['mdcgroup'].values,
+                                df_lastmonth['mdcgroup'].values]
+    else:
+        diag_datavalues_list = [df_baseline['DIA01'].values,
+                                df_updates['Aktionsdiagnosekode'].values,
+                                df_lastmonth['Aktionsdiagnosekode'].values]
     days_datavalues_list = [df_baseline['KONTAKTDAGE'].values,
                             df_updates['Forskel på kontakt start og slut (antal dage)'].values,
                             df_lastmonth['Forskel på kontakt start og slut (antal dage)'].values]
@@ -1408,7 +1460,10 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         map2d = np.zeros([Ndiag, Nkontaktdage])
         for kk in np.arange(Nkontaktdage):
             for dd, diag in enumerate(diaglist):
+                if groupdiagnoses == 'mdc':
+                    df_diaglist = df_diaglist.astype(float).astype(int)
                 Ninstances = len( np.where((np.asarray(days_datavalues_list[dent]) == kk) & (df_diaglist == diag))[0])
+
                 map2d[dd, kk] = Ninstances / Ncontacts
 
         max_instances = np.max(map2d)
@@ -1418,10 +1473,20 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         df_map = pd.DataFrame(map2d, index=diaglist, columns=(np.arange(Nkontaktdage)))
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        plotname = 'heatmap_diagnosisVSbeddays_'+plotname_text[dent]+'.'+fileformat
+        plotname = 'heatmap_diagnosisVSbeddays_' + plotname_text[dent] + '.' + fileformat
+        if groupdiagnoses is not None:
+            if groupdiagnoses == 'mdc':
+                plotname = plotname.replace('.' + fileformat, '_mdcgrouping.' + fileformat)
+            elif groupdiagnoses > 0:
+                plotname = plotname.replace('.' + fileformat, '_diagrouplevel'+str(groupdiagnoses)+'.' + fileformat)
+
         if verbose: print(' - Initiating '+plotname)
 
-        fig = plt.figure(figsize=(7, 30))
+        if groupdiagnoses == 'mdc':
+            ydim = 20
+        else:
+            ydim = 30
+        fig = plt.figure(figsize=(7, ydim))
         fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.13, right=0.95, bottom=0.03, top=1.13)
         Fsize = 18
         lthick = 2
@@ -1434,12 +1499,14 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         plt.ioff()
         plt.title(title_text[dent]+'; '+str(Ncontacts)+' forløb', fontsize=Fsize)
 
-
         # --------- COLOR MAP ---------
         #cmap = plt.cm.get_cmap('viridis')
         cmap = plt.cm.get_cmap(colormap_list[dent])
         cmin = 0.005
-        cmax = 0.025
+        if groupdiagnoses == 'mdc':
+            cmax = 0.05
+        else:
+            cmax = 0.025
 
         colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
         cmaparr = np.linspace(cmin, cmax, num=50)
@@ -1475,9 +1542,13 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         else:
             yfontsize = Fsize
 
-        if groupdiagnoses:
-            plt.yticks(np.arange(0.5, len(diaglist), 1), [dstr+'*' for dstr in diaglist], fontsize=yfontsize)
-            plt.ylabel('Aktionsdiagnosekodegrupper (DIA01)')
+        if groupdiagnoses is not None:
+            if groupdiagnoses == 'mdc':
+                plt.yticks(np.arange(0.5, len(diaglist), 1), [str(int(dstr)) for dstr in diaglist], fontsize=yfontsize)
+                plt.ylabel('Aktionsdiagnosekoder (DIA01) fordelt på MDC grupper')
+            elif groupdiagnoses > 0:
+                plt.yticks(np.arange(0.5, len(diaglist), 1), [dstr+'*' for dstr in diaglist], fontsize=yfontsize)
+                plt.ylabel('Aktionsdiagnosekodegrupper (DIA01)')
         else:
             plt.yticks(np.arange(0.5, len(diaglist), 1), diaglist, fontsize=yfontsize)
             plt.ylabel('Aktionsdiagnosekoder (DIA01)')
@@ -1487,6 +1558,7 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=True,datemin_mostrecent='01-01-202
         plt.savefig(plotdir+plotname, dpi=800)
         plt.clf()
         plt.close('all')
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - saved plots to '+plotdir)
 
