@@ -1443,7 +1443,7 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022'
                             df_lastmonth['Forskel på kontakt start og slut (antal dage)'].values]
     colormap_list        = ['Blues', 'Greens', 'Greys']
     plotname_text        = ['baseline', 'updates', 'lastmonth']
-    title_text           = ['Baseline (2019-2021)', 'Forløb siden 01-12-2021', 'Forøb siden '+datemin_mostrecent]
+    title_text           = ['Baseline (2019-2021)', 'Forløb siden 01-12-2021', 'Forløb siden '+datemin_mostrecent]
 
     for dent, diag_datavalues in enumerate(diag_datavalues_list):
         # diag_datavalues[diag_datavalues == np.nan] = 'tom'
@@ -1483,11 +1483,11 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022'
         if verbose: print(' - Initiating '+plotname)
 
         if groupdiagnoses == 'mdc':
-            ydim = 20
+            ydim = 15
         else:
             ydim = 30
         fig = plt.figure(figsize=(7, ydim))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.13, right=0.95, bottom=0.03, top=1.13)
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.13, right=0.95, bottom=0.05, top=1.11)
         Fsize = 18
         lthick = 2
         marksize = 4
