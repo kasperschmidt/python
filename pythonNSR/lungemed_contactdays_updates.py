@@ -432,6 +432,9 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     df_baseline, df_updates = lcu.load_dataframes_from_excel()
 
+    df_SLAupdates = pd.read_excel(plotdir + 'lungemedLPR3_SQLbeddays_SLAupdates.xlsx').sort_values('INDTIDSPUNKT_DRGKONTAKT')
+    df_SUHupdates = pd.read_excel(plotdir + 'lungemedLPR3_SQLbeddays_SUHupdates.xlsx').sort_values('INDTIDSPUNKT_DRGKONTAKT')
+
     datemin     = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
     dropval     = np.where(df_updates['Kontakt startdato Dato-tid'] < datemin)[0]
 
@@ -479,20 +482,32 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
             distcolor = cmap(colnorm(30))
             kdedata_b = seaborn.kdeplot(data=df_baseline, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
                                         common_norm=False,
-                                        label='Baseline (2019-2021)' + '; ' + str(len(df_baseline)) + ' forløb')
+                                        label='NAE Baseline (2019-2021)' + '; ' + str(len(df_baseline)) + ' forløb')
             kde_median_baseline, kde_max_baseline, kde_ymax_baseline = lcu.get_kde_measures(kdedata_b,0)
 
-            distcolor = cmap(colnorm(70))
+            distcolor = 'black' #cmap(colnorm(70))
             kdedata_u = seaborn.kdeplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
                                         common_norm=False,
-                                        label='Forløb siden 01-12-2021' + '; ' + str(len(df_updates)) + ' forløb')
+                                        label='NAE 01-12-2021 til 10-03-2022' + '; ' + str(len(df_updates)) + ' forløb')
             kde_median_updates, kde_max_updates, kde_ymax_updates = lcu.get_kde_measures(kdedata_u,1)
 
-            distcolor = 'black'
-            kdedata_l = seaborn.kdeplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
-                                        common_norm=False,
-                                        label='Forløb siden ' + datemin_mostrecent + '; ' + str(len(df_updates.drop(df_baseline.index[dropval]))) + ' forløb')
-            kde_median_lastmonth, kde_max_lastmonth, kde_ymax_lastmonth = lcu.get_kde_measures(kdedata_l,2)
+            # distcolor = 'black'
+            # kdedata_l = seaborn.kdeplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=1.0,
+            #                             common_norm=False)
+            #                             #,label='Forløb siden ' + datemin_mostrecent + '; ' + str(len(df_updates.drop(df_baseline.index[dropval]))) + ' forløb')
+            # kde_median_lastmonth, kde_max_lastmonth, kde_ymax_lastmonth = lcu.get_kde_measures(kdedata_l,2)
+
+            distcolor   = cmap(colnorm(65))
+            kdedata_sla = seaborn.kdeplot(data=df_SLAupdates, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
+                                          common_norm=False,
+                                          label='SLA LPR3 (siden 10-03-2022)' + '; ' + str(len(df_SLAupdates)) + ' forløb')
+            kde_median_SLA, kde_max_SLA, kde_ymax_SLA = lcu.get_kde_measures(kdedata_sla, 0)
+
+            distcolor   = cmap(colnorm(85))
+            kdedata_suh = seaborn.kdeplot(data=df_SUHupdates, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
+                                          common_norm=False,
+                                          label='SUH LPR3 (siden 10-03-2022)' + '; ' + str(len(df_SUHupdates)) + ' forløb')
+            kde_median_SUH, kde_max_SUH, kde_ymax_SUH = lcu.get_kde_measures(kdedata_suh, 0)
 
             plt.ylim(0, plt.gca().get_ylim()[1] / binwidth)  # similar limits on the y-axis to align the plots
             plt.gca().yaxis.set_major_formatter(PercentFormatter(1 / binwidth))  # show axis such that 1/binwidth corresponds to 100%
@@ -502,25 +517,35 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
                              kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
                              label='Baseline (2019-2021)'+'; '+str(len(df_baseline))+' forløb')
 
-            distcolor = cmap(colnorm(70))
+            distcolor = 'black' # cmap(colnorm(70))
             seaborn.histplot(data=df_updates, x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
                              kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
-                             label='Forløb siden 01-12-2021'+'; '+str(len(df_updates))+' forløb')
+                             label='NAE 01-12-2021 til 10-03-2022'+'; '+str(len(df_updates))+' forløb')
 
-            distcolor = 'black'
-            seaborn.histplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
+            # distcolor = 'black'
+            # seaborn.histplot(data=df_updates.drop(df_baseline.index[dropval]), x='Forskel på kontakt start og slut (antal dage)', color=distcolor, alpha=0.3,
+            #                  kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False)
+            #                  #,label='Forløb siden '+datemin_mostrecent+'; '+str(len(df_updates.drop(df_baseline.index[dropval])))+' forløb')
+
+            distcolor = cmap(colnorm(65))
+            seaborn.histplot(data=df_SLAupdates, x='KONTAKTDAGE', color=distcolor, alpha=0.3,
                              kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
-                             label='Forløb siden '+datemin_mostrecent+'; '+str(len(df_updates.drop(df_baseline.index[dropval])))+' forløb')
+                             label='SLA LPR3 (siden 10-03-2022)'+'; '+str(len(df_SLAupdates))+' forløb')
+
+            distcolor = cmap(colnorm(85))
+            seaborn.histplot(data=df_SUHupdates, x='KONTAKTDAGE', color=distcolor, alpha=0.3,
+                             kde=True, binwidth=binwidth, discrete=True, stat=normalization, common_norm=False,
+                             label='SUH LPR3 (siden 10-03-2022)'+'; '+str(len(df_SUHupdates))+' forløb')
 
         # --------- ADD TEXT WITH VALUES ---------
         topleft_x = 0.4
         topleft_y = 0.75
-        collist = [cmap(colnorm(30)), cmap(colnorm(70)), 'black']
-        daystr  = ['KONTAKTDAGE', 'Forskel på kontakt start og slut (antal dage)', 'Forskel på kontakt start og slut (antal dage)',]
+        collist = [cmap(colnorm(30)), 'black', cmap(colnorm(65)), cmap(colnorm(85))]
+        daystr  = ['KONTAKTDAGE', 'Forskel på kontakt start og slut (antal dage)', 'KONTAKTDAGE' ,'KONTAKTDAGE']
         plt.text(topleft_x, topleft_y, 'data: median,  genms. +/- stdafv.', fontsize=Fsize, rotation=0,
                  color='black', horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
 
-        for dd, datavals in enumerate([df_baseline, df_updates, df_updates.drop(df_baseline.index[dropval])]):
+        for dd, datavals in enumerate([df_baseline, df_updates, df_SLAupdates, df_SUHupdates]):
             datavals = datavals.assign(contactdays=datavals[daystr[dd]].values) # add column with name contactdays
 
             val_mean   = datavals.contactdays.mean()
@@ -532,16 +557,16 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
                      color=collist[dd], horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
 
         if kdeonly:
-            plt.text(topleft_x, topleft_y-4*0.05, 'kurve: median,  maks.', fontsize=Fsize, rotation=0,
+            plt.text(topleft_x, topleft_y-5*0.05, 'kurve: median,  maks.', fontsize=Fsize, rotation=0,
                      color='black', horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
 
-            kde_max    = [kde_max_baseline, kde_max_updates, kde_max_lastmonth]
-            kde_ymax   = [kde_ymax_baseline, kde_ymax_updates, kde_ymax_lastmonth]
-            kde_median = [kde_median_baseline, kde_median_updates, kde_median_lastmonth]
+            kde_max    = [kde_max_baseline, kde_max_updates, kde_max_SLA, kde_max_SUH]
+            kde_ymax   = [kde_ymax_baseline, kde_ymax_updates, kde_ymax_SLA, kde_ymax_SUH]
+            kde_median = [kde_median_baseline, kde_median_updates, kde_median_SLA, kde_median_SUH]
             for dd, val_max in enumerate(kde_max):
                 val_median = kde_median[dd]
                 outstr = str('%12.1f' % val_median)+' dage,  ('+str('%4.1f' % val_max)+' dage, '+str('%4.1f' % (kde_ymax[dd]*100.))+'% )'
-                plt.text(topleft_x, topleft_y-(dd+5)*0.05, outstr, fontsize=Fsize, rotation=0,
+                plt.text(topleft_x, topleft_y-(dd+6)*0.05, outstr, fontsize=Fsize, rotation=0,
                          color=collist[dd], horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes)
 
         # --------- LABELS ---------
