@@ -42,8 +42,8 @@ def runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True):
     lcu.beddays_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
     lcu.diagnoses_distributions(datemin_mostrecent=datemin_mostrecent, normalization="probability", verbose=verbose)
     lcu.heatmap_diagnosisVSbeddays(groupdiagnoses='mdc', datemin_mostrecent=datemin_mostrecent, fileformat='pdf', verbose=verbose)
-    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=3, datemin_mostrecent=datemin_mostrecent, fileformat='pdf',verbose=verbose)
-    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=None, datemin_mostrecent=datemin_mostrecent, fileformat='pdf',verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=3, datemin_mostrecent=datemin_mostrecent, fileformat='pdf', verbose=verbose)
+    lcu.heatmap_diagnosisVSbeddays(groupdiagnoses=None, datemin_mostrecent=datemin_mostrecent, fileformat='pdf', verbose=verbose)
 
     if verbose: print('\n-------------------- Full run with datemine_mostrecent = '+datemin_mostrecent+' completed --------------------')
 # -----------------------------------------------------------------------------------------------------------------------
@@ -1743,14 +1743,17 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022'
     plotdir = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/'
     df_baseline, df_updates = lcu.load_dataframes_from_excel(verbose=verbose)
 
+    df_SLAupdates = pd.read_excel(plotdir + 'lungemedLPR3_SQLbeddays_SLAupdates.xlsx').sort_values('INDTIDSPUNKT_DRGKONTAKT')
+    df_SUHupdates = pd.read_excel(plotdir + 'lungemedLPR3_SQLbeddays_SUHupdates.xlsx').sort_values('INDTIDSPUNKT_DRGKONTAKT')
+
     # -----------------------------------------------------------------------------------------
     if verbose: print('\n - Load MDC groups and assign them to baseline and updates data')
     mdcgroups                = loadMDCgroups.load_into_dataframe(verbose=True)
     groupnames, groupindices = loadMDCgroups.get_group_indices(mdcgroups, verbose=True)
 
-    diacol = ['DIA01', 'Aktionsdiagnosekode']
+    diacol = ['DIA01', 'Aktionsdiagnosekode', 'DIA01', 'DIA01']
     collist = []
-    for ff, dframe in enumerate([df_baseline, df_updates]):
+    for ff, dframe in enumerate([df_baseline, df_updates, df_SLAupdates, df_SUHupdates]):
         mdcgroupcol  = np.zeros(len(dframe[diacol[ff]]))
 
         for groupno in np.arange(1, 27, 1):
@@ -1762,8 +1765,10 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022'
 
         collist.append(mdcgroupcol)
 
-    df_baseline = df_baseline.assign(mdcgroup=collist[0]) # add column with MDC groups to dataframe
-    df_updates  = df_updates.assign(mdcgroup=collist[1])  # add column with MDC groups to dataframe
+    df_baseline   = df_baseline.assign(mdcgroup=collist[0]) # add column with MDC groups to dataframe
+    df_updates    = df_updates.assign(mdcgroup=collist[1])  # add column with MDC groups to dataframe
+    df_SLAupdates = df_SLAupdates.assign(mdcgroup=collist[2])  # add column with MDC groups to dataframe
+    df_SUHupdates = df_SUHupdates.assign(mdcgroup=collist[3])  # add column with MDC groups to dataframe
     #-----------------------------------------------------------------------------------------
 
     datemin     = datetime.datetime.strptime(datemin_mostrecent, "%d-%m-%Y")
@@ -1771,7 +1776,10 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022'
 
     df_lastmonth    = df_updates.drop(df_updates.index[dropval])
 
-    diaglist        = np.sort(np.unique(np.asarray(df_baseline['DIA01'].values.tolist() + df_updates['Aktionsdiagnosekode'].values.tolist())))
+    diaglist        = np.sort(np.unique(np.asarray(df_baseline['DIA01'].values.tolist() +
+                                                   df_updates['Aktionsdiagnosekode'].values.tolist() +
+                                                   df_SLAupdates['DIA01'].values.tolist() +
+                                                   df_SUHupdates['DIA01'].values.tolist() )))
 
     if groupdiagnoses is not None:
         if groupdiagnoses == 'mdc':
@@ -1787,17 +1795,23 @@ def heatmap_diagnosisVSbeddays(groupdiagnoses=4, datemin_mostrecent='01-01-2022'
     if groupdiagnoses == 'mdc':
         diag_datavalues_list = [df_baseline['mdcgroup'].values,
                                 df_updates['mdcgroup'].values,
-                                df_lastmonth['mdcgroup'].values]
+                                #df_lastmonth['mdcgroup'].values,
+                                df_SLAupdates['mdcgroup'].values,
+                                df_SUHupdates['mdcgroup'].values]
     else:
         diag_datavalues_list = [df_baseline['DIA01'].values,
                                 df_updates['Aktionsdiagnosekode'].values,
-                                df_lastmonth['Aktionsdiagnosekode'].values]
+                                #df_lastmonth['Aktionsdiagnosekode'].values,
+                                df_SLAupdates['DIA01'].values,
+                                df_SUHupdates['DIA01'].values]
     days_datavalues_list = [df_baseline['KONTAKTDAGE'].values,
                             df_updates['Forskel på kontakt start og slut (antal dage)'].values,
-                            df_lastmonth['Forskel på kontakt start og slut (antal dage)'].values]
-    colormap_list        = ['Blues', 'Greens', 'Greys']
-    plotname_text        = ['baseline', 'updates', 'lastmonth']
-    title_text           = ['Baseline (2019-2021)', 'Forløb siden 01-12-2021', 'Forløb siden '+datemin_mostrecent]
+                            #df_lastmonth['Forskel på kontakt start og slut (antal dage)'].values,
+                            df_SLAupdates['KONTAKTDAGE'].values,
+                            df_SUHupdates['KONTAKTDAGE'].values]
+    colormap_list        = ['Blues', 'Greys', 'Greens', 'Greens']
+    plotname_text        = ['baseline', 'updates', 'sla', 'suh']
+    title_text           = ['NAE baseline (2019-2021)', 'NAE 01-12-2021 til 10-03-2022', 'SLA LPR3 (siden 10-03-2022)', 'SUH LPR3 (siden 10-03-2022)']
 
     for dent, diag_datavalues in enumerate(diag_datavalues_list):
         # diag_datavalues[diag_datavalues == np.nan] = 'tom'
