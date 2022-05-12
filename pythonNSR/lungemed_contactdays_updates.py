@@ -502,13 +502,13 @@ def beddays_distributions(datemin_mostrecent = '01-01-2022', normalization="prob
             kdedata_sla = seaborn.kdeplot(data=df_SLAupdates, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
                                           common_norm=False,
                                           label='SLA LPR3 (siden 10-03-2022)' + '; ' + str(len(df_SLAupdates)) + ' forløb')
-            kde_median_SLA, kde_max_SLA, kde_ymax_SLA = lcu.get_kde_measures(kdedata_sla, 0)
+            kde_median_SLA, kde_max_SLA, kde_ymax_SLA = lcu.get_kde_measures(kdedata_sla, 2)
 
             distcolor   = cmap(colnorm(85))
             kdedata_suh = seaborn.kdeplot(data=df_SUHupdates, x='KONTAKTDAGE', color=distcolor, alpha=1.0,
                                           common_norm=False,
                                           label='SUH LPR3 (siden 10-03-2022)' + '; ' + str(len(df_SUHupdates)) + ' forløb')
-            kde_median_SUH, kde_max_SUH, kde_ymax_SUH = lcu.get_kde_measures(kdedata_suh, 0)
+            kde_median_SUH, kde_max_SUH, kde_ymax_SUH = lcu.get_kde_measures(kdedata_suh, 3)
 
             plt.ylim(0, plt.gca().get_ylim()[1] / binwidth)  # similar limits on the y-axis to align the plots
             plt.gca().yaxis.set_major_formatter(PercentFormatter(1 / binwidth))  # show axis such that 1/binwidth corresponds to 100%
