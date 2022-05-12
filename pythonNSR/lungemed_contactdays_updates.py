@@ -368,12 +368,13 @@ def evaluate_beddays_boxplot(verbose=True):
     medianprops = dict(linewidth=lthick / 2)
     capprops = dict(linewidth=lthick / 2)
 
-    catval = pd.CategoricalDtype(['03-2022', '04-2022', '05-2022'])
-    order = [cat for cat in catval.categories if xvals_SLA.str.contains(cat).any()]
+    # Set restricytions on what months to show
+    #catval = pd.CategoricalDtype(['03-2022', '04-2022', '05-2022'])
+    #order = [cat for cat in catval.categories if xvals_SLA.str.contains(cat).any()]
 
     seaborn.boxplot(x=xvals_SLAandSUH, y=yvals_SLAandSUH, hue=huevals_SLAandSUH, linewidth=lthick, showfliers=True,
                     flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
-                    medianprops=medianprops, capprops=capprops, order = order,
+                    medianprops=medianprops, capprops=capprops, #order = order,
                     color=pointcolor, width=0.8, ax=axes[1], palette=huecol_SLAandSUH)
     axes[1].grid(linestyle=':', linewidth=lthick / 2., zorder=100, alpha=1.0, color='gray')
 
