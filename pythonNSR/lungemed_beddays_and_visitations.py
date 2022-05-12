@@ -32,7 +32,7 @@ def loadSQL_visitations(filepath='O:\Administration\\02 - Økonomi og PDK\Medarb
     content = open(filepath, 'r').read()
     return content
 # -----------------------------------------------------------------------------------------------------------------------
-def getdata(verbose=True):
+def getdata(verbose=True, filenameext=None):
     """
     Function returning the data structures for the beddays and visitations SQL queries loaded in the load functions.
 
@@ -41,23 +41,37 @@ def getdata(verbose=True):
     import lungemed_beddays_and_visitations as lbv
     dataframe_days, dataframe_vis = lbv.getdata()
 
+    import lungemed_beddays_and_visitations as lbv
+    dataframe_days, dataframe_vis = lbv.getdata(filenameext='_SUHupdates')
+    dataframe_days, dataframe_vis = lbv.getdata(filenameext='_SLAupdates')
+
+
     """
-    savepath = 'O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'
+    savepath = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/'
 
     if verbose: print(' - Getting LPR3 data from parsing SQL query for "bed days" ')
     savefilename_days  = savepath+'lungemedLPR3_SQLbeddays.xlsx'
+    filepath           = savepath+'/../Lungemed.sql'
+    if filenameext is not None:
+        savefilename_days = savefilename_days.replace('.xlsx', filenameext+'.xlsx')
+        filepath          = filepath.replace('.sql', filenameext+'.sql')
     overwrite_days     = True
-    dataframe_days     = gdf.returndatapull(lbv.loadSQL_beddays(), verbose=verbose, savefilename=savefilename_days, overwrite=overwrite_days)
+    dataframe_days     = gdf.returndatapull(lbv.loadSQL_beddays(filepath=filepath), verbose=verbose, savefilename=savefilename_days, overwrite=overwrite_days)
 
     if verbose: print(' - Getting LPR3 data from parsing SQL query for "visitations" ')
     savefilename_vis   = savepath+'lungemedLPR3_SQLvisitations.xlsx'
+    filepath = savepath + '/../Lungemed_visitationsoprindelse_nogroup.sql'
+    if filenameext is not None:
+        savefilename_vis = savefilename_vis.replace('.xlsx', filenameext+'.xlsx')
+        filepath = filepath.replace('.sql', filenameext + '.sql')
     overwrite_vis      = True
-    dataframe_vis      = gdf.returndatapull(lbv.loadSQL_visitations(), verbose=verbose, savefilename=savefilename_vis, overwrite=overwrite_vis)
+    dataframe_vis      = gdf.returndatapull(lbv.loadSQL_visitations(filepath=filepath), verbose=verbose, savefilename=savefilename_vis, overwrite=overwrite_vis)
 
     return dataframe_days, dataframe_vis
 
 # -----------------------------------------------------------------------------------------------------------------------
-def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, savetype='excel', overwrite=False, verbose=True):
+def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, savetype='excel', overwrite=False, verbose=True,
+                              filename='lungemedLPR3dataframe', datafileext=None):
     """
     Function to count occurrences per day for various parameters used for bed occupancy and patient statistics
 
@@ -66,21 +80,29 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
     import lungemed_beddays_and_visitations as lbv
     df_results = lbv.count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedatafile=True, overwrite=False)
 
+    import lungemed_beddays_and_visitations as lbv
+    df_2022results = lbv.count_occurrences_per_day(measurehours=[8,15,23], untiltoday=True, savedatafile=True, filename='lungemedLPR3dataframe_2022data', overwrite=False, datafileext='_updates')
+
     """
     savepath = 'O:\Administration\\02 - Økonomi og PDK\Medarbejdermapper\Kasper\Focus1 - Ad hoc opgaver\Lungemed sengedage og visitationer\plots\\'
-    filename = 'lungemedLPR3dataframe'
     if os.path.isfile(savepath+filename) and savedatafile and not overwrite:
         sys.exit(' Was asked to store data but overwrite=False and file already exists... hence exiting')
 
     if verbose: print(' - Getting the data to look at ')
-    dataframe_days, dataframe_vis = lbv.getdata(verbose=verbose)
+    dataframe_days, dataframe_vis = lbv.getdata(verbose=verbose, filenameext=datafileext)
     outdic = {}
 
     for measurehour in measurehours:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        start_day   = datetime.datetime.strptime("02-02-2019 "+str(measurehour)+":00:00", "%d-%m-%Y %H:%M:%S")
+        if ('SLA' in datafileext) or ('SUH' in datafileext):
+            start_day = datetime.datetime.strptime("09-03-2022 " + str(measurehour) + ":00:00", "%d-%m-%Y %H:%M:%S")
+        else:
+            start_day   = datetime.datetime.strptime("02-02-2019 "+str(measurehour)+":00:00", "%d-%m-%Y %H:%M:%S")
+
         if untiltoday:
             end_day = datetime.datetime.strptime(str(datetime.datetime.today()).split(' ')[0]+' '+str(measurehour)+":00:00", "%Y-%m-%d %H:%M:%S")
+        elif ('SLA' in datafileext) or ('SUH' in datafileext):
+            end_day = datetime.datetime.strptime(np.str(dataframe_days['INDTIDSPUNKT_DRGKONTAKT'].max()+datetime.timedelta(days=2)).split(' ')[0]+' '+str(measurehour)+":00:00", "%Y-%m-%d %H:%M:%S")
         else:
             end_day = datetime.datetime.strptime("02-05-2019 " + str(measurehour) + ":00:00", "%d-%m-%Y %H:%M:%S")
         date_list   = [start_day + datetime.timedelta(days=x) for x in range(0, (end_day - start_day).days)]
@@ -109,15 +131,20 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
 
         if verbose: print('\n - Estimating the occupancy in the available and actual beds ')
         for dd, datecheck in enumerate(np.asarray(date_list)):
-            if datecheck < datetime.datetime.strptime("10-06-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
+            if 'SUH' in datafileext:
+                occupancy_available[dd] = count_cpr[dd] / 16. * 100
+            elif 'SLA' in datafileext:
                 occupancy_available[dd] = count_cpr[dd] / 24. * 100
             else:
-                occupancy_available[dd] = count_cpr[dd] / 16. * 100
+                if datecheck < datetime.datetime.strptime("10-06-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
+                    occupancy_available[dd] = count_cpr[dd] / 24. * 100
+                else:
+                    occupancy_available[dd] = count_cpr[dd] / 16. * 100
 
-            if datecheck < datetime.datetime.strptime("01-03-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
-                occupancy_actual[dd] = count_cpr[dd] / 24. * 100
-            else:
-                occupancy_actual[dd] = count_cpr[dd] / 16. * 100
+                if datecheck < datetime.datetime.strptime("01-03-2021 00:00:00", "%d-%m-%Y %H:%M:%S"):
+                    occupancy_actual[dd] = count_cpr[dd] / 24. * 100
+                else:
+                    occupancy_actual[dd] = count_cpr[dd] / 16. * 100
 
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -294,19 +321,17 @@ def load_occupancy_updates(verbose=True):
     updatenames = 'belægning_lungemed_NAE_*.xlsx'
     filelist_updates  = glob.glob(path_updates + updatenames)
     updates_framelist = []
-    if verbose: print(' - loading and concatenating '+str(len(updates_framelist))+' dataframes with updates from ' + updatenames)
+    if verbose: print(' - Loading dataframes with updates from ' + updatenames)
     for file_update in filelist_updates:
         if verbose: print('    - including '+file_update.split('/')[-1])
         df_update = pd.read_excel(file_update, sheet_name='Belægningsprocenter')
         updates_framelist = updates_framelist + [df_update]
-
     df_updates = pd.concat(updates_framelist, ignore_index=True)
-
-    if verbose: print(' - returning dataframes for updates')
+    if verbose: print(' - returning concatenation of '+ str(len(updates_framelist)) +' dataframes for updates')
     return df_updates
 
 # -----------------------------------------------------------------------------------------------------------------------
-def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.xlsx', verbose=True, untiltoday=True, include_updates=True,
+def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe.xlsx', concatenateLPR=False, verbose=True, untiltoday=True, include_updates=True,
                           plotdir='O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Lungemed sengedage og visitationer/plots/',
                           datemin_mostrecent = '01-01-2022'):
     """
@@ -336,11 +361,26 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     if loaddatafile is None:
         df_results = lbv.count_occurrences_per_day(measurehours=measurehours, untiltoday=untiltoday, verbose=verbose, savedatafile=False)
     else:
-        df_results = gdf.loadExcel(plotdir+loaddatafile)
+        if concatenateLPR:
+            dffiles = glob.glob(plotdir+loaddatafile.replace('.xlsx','*.xlsx'))
+            df_list = []
+            for dffile in dffiles:
+                if verbose: print(' - Load Excel file with dataframe:\n   '+dffile)
+                df = pd.read_excel(dffile)
+                df_list.append(df)
+            if verbose: print(' - Concatenating the '+str(len(dffiles))+' dataframes found from globbing for \n   '+plotdir+loaddatafile.replace('.xlsx','*.xlsx'))
+            df_results = pd.concat(df_list, ignore_index=True)
+            #df_results = df_results.sort_values(by='dates_23')
+        else:
+            df_results = pd.read_excel(plotdir+loaddatafile)
+
+            df_SUHupdates = pd.read_excel(plotdir+loaddatafile.replace('.xlsx','_SUHupdates.xlsx'))
+            df_SLAupdates = pd.read_excel(plotdir+loaddatafile.replace('.xlsx','_SLAupdates.xlsx'))
 
     if verbose: print(' - Removing incomplete data in baseline data frame')
     datemin    = datetime.datetime.strptime('01-11-2021', "%d-%m-%Y")
-    dropval    = np.where(df_results['dates_23'] > datemin)[0]
+    datetrans  = datetime.datetime.strptime('09-03-2022', "%d-%m-%Y") # Date for transfer to SUH
+    dropval    = np.where((df_results['dates_23'] > datemin) & (df_results['dates_23'] < datetrans))[0]
     df_results = df_results.drop(df_results.index[dropval])
 
     if include_updates:
@@ -361,7 +401,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
             hourstr = str("%.2d" % measurehour)+':00'
 
             datestrarr = np.asarray([dstr[11:16] for dstr in np.asarray(df_updates['Belægning tidspunkt'].values).astype(str)])
-            occupdates            = df_updates['Belægning i %'].values[datestrarr == hourstr]
+            occupdates = df_updates['Belægning i %'].values[datestrarr == hourstr]
             occupancy_updates['occupancy_updates_' + str(measurehour)] = occupdates[~np.isnan(occupdates)]
 
             occupancy_updates_movingavg['updates_movingavg_'+str(measurehour)] = pd.DataFrame(occupancy_updates['occupancy_updates_'+str(measurehour)]).rolling(window=Ndaysavg).mean()
@@ -416,13 +456,16 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         #cb.set_label('belægningsprocent')
 
         # --------- POINT AND CURVES ---------
+
+        ##### Baseline data #####
         pointcolor = cmap(colnorm(35))
-        plt.errorbar(xvalues, df_results['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
+        lprbaseline = np.where((df_results['dates_23'] < datetrans))[0]
+        plt.errorbar(xvalues[df_results.index[lprbaseline]], df_results['occupancy_available_'+str(measurehour)][df_results.index[lprbaseline]], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=10,
-                     label='Baseline (2019-2021)')
-        plt.errorbar(xvalues, df_results['occupancy_available_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                     label='NAE Baseline (2019-2021)')
+        plt.errorbar(xvalues[df_results.index[lprbaseline]], df_results['occupancy_available_movingavg_'+str(measurehour)][df_results.index[lprbaseline]], xerr=xerr, yerr=yerr,
                      marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=20.,
@@ -433,24 +476,57 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         datemax_corr = datetime.datetime.strptime('10-06-2021', "%d-%m-%Y")
         corrent      = np.where((df_results['dates_23'] > datemin_corr) & (df_results['dates_23'] < datemax_corr))[0]
 
-        plt.errorbar(xvalues[corrent], df_results['occupancy_actual_'+str(measurehour)][df_results.index[corrent]], xerr=xerr, yerr=yerr,
+        plt.errorbar(xvalues[df_results.index[corrent]], df_results['occupancy_actual_'+str(measurehour)][df_results.index[corrent]], xerr=xerr, yerr=yerr,
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=8.,
-                     label='"Reelle" sengekapacitet')
-        plt.errorbar(xvalues, df_results['occupancy_actual_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                     label='NAE "Reelle" sengekapacitet')
+        plt.errorbar(xvalues[df_results.index[lprbaseline]], df_results['occupancy_actual_movingavg_'+str(measurehour)][df_results.index[lprbaseline]], xerr=xerr, yerr=yerr,
                      marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
-                     markeredgecolor=pointcolor, zorder=18.,
-                     label='30 dage glidende gennemsnit')
+                     markeredgecolor=pointcolor, zorder=18.) #label='30 dage glidende gennemsnit'
 
+        ##### LPR3 updates #####
+        if concatenateLPR:
+            pointcolor = cmap(colnorm(55))
+            lprupdates      = np.where((df_results['dates_23'] > datetrans))[0]
+            plt.errorbar(xvalues[df_results.index[lprupdates]], df_results['occupancy_actual_'+str(measurehour)][df_results.index[lprupdates]], xerr=xerr, yerr=yerr,
+                         marker='o', lw=0, markersize=marksize, alpha=0.5,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=8.,
+                         label='"LPR3 updates" sengekapacitet')
+
+        else:
+            pointcolor = cmap(colnorm(65))
+            plt.errorbar(df_SLAupdates['dates_'+str(measurehour)], df_SLAupdates['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='o', lw=0, markersize=marksize, alpha=0.5,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=8.,
+                         label='SLA LPR3 (siden 10-03-2022)')
+            plt.errorbar(df_SLAupdates['dates_'+str(measurehour)], df_SLAupdates['occupancy_available_movingavg_' + str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=20.) #label='30 dage glidende gennemsnit'
+
+            pointcolor = cmap(colnorm(85))
+            plt.errorbar(df_SUHupdates['dates_'+str(measurehour)], df_SUHupdates['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='o', lw=0, markersize=marksize, alpha=0.5,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=8.,
+                         label='SUH LPR3 (siden 10-03-2022)')
+            plt.errorbar(df_SUHupdates['dates_'+str(measurehour)], df_SUHupdates['occupancy_available_movingavg_' + str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=20.) #label='30 dage glidende gennemsnit'
+
+        ##### SP data #####
         if include_updates:
-            pointcolor = cmap(colnorm(70))
+            pointcolor = 'black'
             plt.errorbar(days_updates, occupancy_updates['occupancy_updates_' + str(measurehour)],
                          xerr=xerr, yerr=yerr, marker='o', lw=0, markersize=marksize, alpha=0.5,
                          markerfacecolor=pointcolor, ecolor=pointcolor,
                          markeredgecolor=pointcolor, zorder=8.,
-                         label='Belægning siden 01-12-2021')
+                         label='NAE 01-12-2021 til 10-03-2022')
             plt.errorbar(days_updates, occupancy_updates_movingavg['updates_movingavg_'+str(measurehour)], xerr=xerr, yerr=yerr,
                          marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                          markerfacecolor=pointcolor, ecolor=pointcolor,
@@ -461,8 +537,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
             plt.errorbar(days_lastmonth, occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)], xerr=xerr, yerr=yerr,
                          marker='o', lw=0, markersize=marksize, alpha=0.5,
                          markerfacecolor=pointcolor, ecolor=pointcolor,
-                         markeredgecolor=pointcolor, zorder=30.,
-                         label='Seneste måned (siden '+datemin_mostrecent+')')
+                         markeredgecolor=pointcolor, zorder=30.) # label='Seneste måned (siden '+datemin_mostrecent+')'
 
         plt.plot(xvalues, np.zeros(len(xvalues)) + 100, '--', color='black', lw=lthick, zorder=5)
         plt.plot(xvalues, np.zeros(len(xvalues)) + 85, ':', color='black', lw=lthick, zorder=5)
@@ -487,7 +562,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
-        plt.ylabel('Belægningsprocent Lungemedicin Næstved')
+        plt.ylabel('Belægningsprocent Lungemedicin')
 
         # --------- RANGES ---------
         #xmin = np.min(xvalues[np.isfinite(xvalues)])
@@ -721,7 +796,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     if verbose: print(' - Initiating ' + plotname)
 
     fig = plt.figure(figsize=(9, 6))
-    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.10, top=0.90)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.10, top=0.85)
     Fsize = 10
     lthick = 2
     marksize = 4
@@ -761,6 +836,17 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     df_results['count_vis_lungSLA_23_movingsum'] = df_results['count_vis_lungSLA_23'].rolling(window=Ndayssum).sum()
     df_results['count_vis_other_23_movingsum'] = df_results['count_vis_other_23'].rolling(window=Ndayssum).sum()
 
+    if not concatenateLPR:
+        df_SLAupdates['count_vis_aka_23_movingsum']     = df_SLAupdates['count_vis_aka_23'].rolling(window=Ndayssum).sum()
+        df_SLAupdates['count_vis_lungNAE_23_movingsum'] = df_SLAupdates['count_vis_lungNAE_23'].rolling(window=Ndayssum).sum()
+        df_SLAupdates['count_vis_lungSLA_23_movingsum'] = df_SLAupdates['count_vis_lungSLA_23'].rolling(window=Ndayssum).sum()
+        df_SLAupdates['count_vis_other_23_movingsum']   = df_SLAupdates['count_vis_other_23'].rolling(window=Ndayssum).sum()
+
+        df_SUHupdates['count_vis_aka_23_movingsum']     = df_SUHupdates['count_vis_aka_23'].rolling(window=Ndayssum).sum()
+        df_SUHupdates['count_vis_lungNAE_23_movingsum'] = df_SUHupdates['count_vis_lungNAE_23'].rolling(window=Ndayssum).sum()
+        df_SUHupdates['count_vis_lungSLA_23_movingsum'] = df_SUHupdates['count_vis_lungSLA_23'].rolling(window=Ndayssum).sum()
+        df_SUHupdates['count_vis_other_23_movingsum']   = df_SUHupdates['count_vis_other_23'].rolling(window=Ndayssum).sum()
+
     # --------- RANGES ---------
     ymin = 0.0
     if Ndayssum == 90:
@@ -771,6 +857,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     plt.ylim([ymin, ymax])
 
     # --------- POINT AND CURVES ---------
+    # -------------- BASELINE --------------
     pointcolor = cmap(colnorm(10))
     plt.errorbar(xvalues, df_results['count_vis_aka_23_movingsum'], xerr=xerr, yerr=yerr,
                  marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
@@ -799,6 +886,58 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                  markeredgecolor=pointcolor, zorder=20.,
                  label='Andre afdelinger (glidende sum over '+str(Ndayssum)+' dage)')
 
+    #-------------- SLA --------------
+    pointcolor = cmap(colnorm(10))
+    plt.errorbar(df_SLAupdates['dates_' + str(measurehour)], df_SLAupdates['count_vis_aka_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle=':',
+                 label='SLA LPR (siden 10-03-2022)')
+
+    pointcolor = cmap(colnorm(35))
+    plt.errorbar(df_SLAupdates['dates_' + str(measurehour)], df_SLAupdates['count_vis_lungNAE_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle=':')
+
+    pointcolor = cmap(colnorm(60))
+    plt.errorbar(df_SLAupdates['dates_' + str(measurehour)], df_SLAupdates['count_vis_lungSLA_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle=':')
+
+    pointcolor = cmap(colnorm(85))
+    plt.errorbar(df_SLAupdates['dates_' + str(measurehour)], df_SLAupdates['count_vis_other_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle=':')
+
+    # -------------- SUH --------------
+    pointcolor = cmap(colnorm(10))
+    plt.errorbar(df_SUHupdates['dates_' + str(measurehour)], df_SUHupdates['count_vis_aka_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle='--',
+                 label='SUH LPR (siden 10-03-2022)')
+
+    pointcolor = cmap(colnorm(35))
+    plt.errorbar(df_SUHupdates['dates_' + str(measurehour)], df_SUHupdates['count_vis_lungNAE_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle='--')
+
+    pointcolor = cmap(colnorm(60))
+    plt.errorbar(df_SUHupdates['dates_' + str(measurehour)], df_SUHupdates['count_vis_lungSLA_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle='--')
+
+    pointcolor = cmap(colnorm(85))
+    plt.errorbar(df_SUHupdates['dates_' + str(measurehour)], df_SUHupdates['count_vis_other_23_movingsum'], xerr=xerr, yerr=yerr,
+                 marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                 markerfacecolor=pointcolor, ecolor=pointcolor,
+                 markeredgecolor=pointcolor, zorder=20., linestyle='--')
+
     lineymin = ymin + dy * 0.24
     lineymax = ymin + dy * 0.40
     textymin = ymin + dy * 0.05
@@ -819,11 +958,11 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
     # --------- LABELS ---------
     plt.xlabel('Dato for måling')
-    plt.ylabel('Henvisninger til Lungemedicin Næstved')
+    plt.ylabel('Henvisninger til Lungemedicin')
 
     # --------- LEGEND ---------
     leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
-                     bbox_to_anchor=(0.5, 1.12), )  # add the legend
+                     bbox_to_anchor=(0.48, 1.2), )  # add the legend
     leg.get_frame().set_alpha(0.7)
     # --------------------------
 
