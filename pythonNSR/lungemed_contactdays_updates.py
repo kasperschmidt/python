@@ -232,6 +232,9 @@ def evaluate_beddays_boxplot(verbose=True):
     df_baseline = df_baseline.sort_values('INDTIDSPUNKT_DRGKONTAKT')
     df_updates  = df_updates.sort_values('Kontakt startdato Dato-tid')
 
+    df_SLAupdates = pd.read_excel(plotdir + 'lungemedLPR3_SQLbeddays_SLAupdates.xlsx').sort_values('INDTIDSPUNKT_DRGKONTAKT')
+    df_SUHupdates = pd.read_excel(plotdir + 'lungemedLPR3_SQLbeddays_SUHupdates.xlsx').sort_values('INDTIDSPUNKT_DRGKONTAKT')
+
     datemax = datetime.datetime.strptime('01-12-2021', "%d-%m-%Y")
     dropval = np.where(df_baseline['INDTIDSPUNKT_DRGKONTAKT'] >= datemax)[0]
 
@@ -241,15 +244,28 @@ def evaluate_beddays_boxplot(verbose=True):
 
     xvals = dates_combined.dt.to_period('M').map(lambda s: s.strftime('%m-%Y'))
     yvals = days_combined
-    # xvals = df_baseline['INDTIDSPUNKT_DRGKONTAKT'].dt.to_period('M').map(lambda s: s.strftime('%m-%Y'))
-    # yvals = df_baseline['KONTAKTDAGE']
+
+    xvals_SLA = df_SLAupdates['INDTIDSPUNKT_DRGKONTAKT'].dt.to_period('M').map(lambda s: s.strftime('%m-%Y'))
+    yvals_SLA = df_SLAupdates['KONTAKTDAGE']
+
+    xvals_SUH = df_SUHupdates['INDTIDSPUNKT_DRGKONTAKT'].dt.to_period('M').map(lambda s: s.strftime('%m-%Y'))
+    yvals_SUH = df_SUHupdates['KONTAKTDAGE']
+
+    df_SLAupdates['Sygehus'] = df_SLAupdates['KONTAKTTYPE_Tekst']*0 + 'SLA'
+    df_SUHupdates['Sygehus'] = df_SUHupdates['KONTAKTTYPE_Tekst'] * 0 + 'SUH'
+
+    df_SLAandSUH      = df_SLAupdates.append(df_SUHupdates).sort_values('INDTIDSPUNKT_DRGKONTAKT')
+    xvals_SLAandSUH   = df_SLAandSUH['INDTIDSPUNKT_DRGKONTAKT'].dt.to_period('M').map(lambda s: s.strftime('%m-%Y'))
+    yvals_SLAandSUH   = df_SLAandSUH['KONTAKTDAGE']
+    huevals_SLAandSUH = df_SLAandSUH['Sygehus']
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plotname = 'beddays_stat_updates_boxplot.pdf'
     if verbose: print(' - Initiating '+plotname)
 
-    fig = plt.figure(figsize=(9, 6))
-    fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.20, top=0.98)
+    #                     rows, cols
+    fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True, gridspec_kw={'width_ratios': [7, 1]})
+    fig.subplots_adjust(wspace=0.03, hspace=0.1, left=0.07, right=0.95, bottom=0.20, top=0.98)
     Fsize = 10
     lthick = 2
     marksize = 4
@@ -257,22 +273,13 @@ def evaluate_beddays_boxplot(verbose=True):
     plt.rc('font', family='serif', size=Fsize)
     plt.rc('xtick', labelsize=Fsize)
     plt.rc('ytick', labelsize=Fsize)
-    plt.clf()
-    plt.ioff()
-    # plt.title(inforstr[:-2],fontsize=Fsize)
 
-    xerr = None
-    yerr = None
-
-    plt.grid(linestyle=':', linewidth=lthick/2., zorder=100, alpha=1.0, color='gray')
     # --------- RANGES ---------
     ymin = -2
     ymax = 30
-    dy   = ymax - ymin
-    plt.ylim([ymin,ymax])
-
-    #plt.xscale('log')
-    #plt.yscale('log')
+    dy = ymax - ymin
+    # plt.ylim([ymin,ymax])
+    axes[0].set_ylim([ymin, ymax])
 
     # --------- COLORMAP ---------
     cmap = plt.cm.get_cmap('viridis')
@@ -283,52 +290,119 @@ def evaluate_beddays_boxplot(verbose=True):
     cmaparr = np.linspace(cmin, cmax, num=50)
     m = plt.cm.ScalarMappable(cmap=cmap)
     m.set_array(cmaparr)
-    #cb = plt.colorbar(m)
-    #cb.set_label('belægningsprocent')
+    # cb = plt.colorbar(m)
+    # cb.set_label('belægningsprocent')
 
-    # --------- POINT AND CURVES ---------
+    # --------- BOXES: BASELINE ---------
     pointcolor = cmap(colnorm(30))
 
     zorder_boxplot = 10
-    flierprops   = dict(marker='o', markerfacecolor=pointcolor, markersize=marksize, markeredgecolor=pointcolor, alpha=0.3)
-    boxprops     = dict(linewidth=lthick/2, color=pointcolor, facecolor=pointcolor, zorder=zorder_boxplot)
-    whiskerprops = dict(linewidth=lthick/2, color=pointcolor, zorder=zorder_boxplot)
-    medianprops  = dict(linewidth=lthick/2, color=pointcolor, zorder=zorder_boxplot)
-    capprops     = dict(linewidth=lthick/2, color=pointcolor, zorder=zorder_boxplot)
-    ax = seaborn.boxplot(x=xvals, y=yvals, linewidth=lthick, showfliers=True,
-                         flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
-                         medianprops=medianprops, capprops=capprops,
-                         color=pointcolor)
-    for patch in ax.artists:
+    flierprops = dict(marker='o', markerfacecolor=pointcolor, markersize=marksize, markeredgecolor=pointcolor,
+                      alpha=0.3)
+    boxprops = dict(linewidth=lthick / 2, color=pointcolor, facecolor=pointcolor, zorder=zorder_boxplot)
+    whiskerprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+    medianprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+    capprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+
+    seaborn.boxplot(x=xvals, y=yvals, linewidth=lthick, showfliers=True,
+                    flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
+                    medianprops=medianprops, capprops=capprops,
+                    color=pointcolor, width=0.8, ax=axes[0])
+    axes[0].grid(linestyle=':', linewidth=lthick / 2., zorder=100, alpha=1.0, color='gray')
+
+    axes[0].plot([34.5, 34.5], [ymin, ymax], '--', color='gray', lw=lthick, zorder=5)
+
+    for patch in axes[0].artists:
         r, g, b, a = patch.get_facecolor()
         patch.set_facecolor((r, g, b, 0.5))
 
-    showrawdata = False
-    if showrawdata:
-        pointcolor = 'red'
-        plt.errorbar(xvals, yvals, xerr=xerr, yerr=yerr,
-                     marker='.', lw=0, markersize=marksize, alpha=0.4, color=pointcolor,
-                     markerfacecolor=pointcolor, ecolor=pointcolor,
-                     markeredgecolor=pointcolor, zorder=25.,
-                     label=' rå data')
+    showindividual = False
+    if showindividual:
+        # --------- BOXES: SLA ---------
+        pointcolor = cmap(colnorm(65))
+        zorder_boxplot = 8
+        flierprops = dict(marker='o', markerfacecolor=pointcolor, markersize=marksize, markeredgecolor=pointcolor,
+                          alpha=0.3)
+        boxprops = dict(linewidth=lthick / 2, color=pointcolor, facecolor=pointcolor, zorder=zorder_boxplot)
+        whiskerprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+        medianprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+        capprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+        catval = pd.CategoricalDtype(['03-2022', '04-2022', '05-2022', '06-2022', '07-2022', '08-2022', '09-2022',
+                                      '10-2022', '11-2022', '12-2022', '01-2023'])
+        order = [cat for cat in catval.categories if xvals_SLA.str.contains(cat).any()]
+        seaborn.boxplot(x=xvals_SLA, y=yvals_SLA, linewidth=lthick, showfliers=True,
+                        flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
+                        medianprops=medianprops, capprops=capprops,
+                        color=pointcolor, width=0.4, ax=axes[1], order=order)
+        axes[1].grid(linestyle=':', linewidth=lthick / 2., zorder=100, alpha=1.0, color='gray')
 
-    # plt.plot([datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), datetime.datetime.strptime("01-03-2021", "%d-%m-%Y")],
-    #          [ymin, ymax], '--', color='green', lw=lthick, zorder=5)
-    plt.plot([34.5, 34.5], [ymin, ymax], '--', color='gray', lw=lthick, zorder=5)
+        for patch in axes[1].artists:
+            r, g, b, a = patch.get_facecolor()
+            patch.set_facecolor((r, g, b, 0.5))
 
+        # --------- BOXES: SUH ---------
+        pointcolor = cmap(colnorm(85))
+        zorder_boxplot = 8
+        flierprops = dict(marker='o', markerfacecolor=pointcolor, markersize=marksize, markeredgecolor=pointcolor,
+                          alpha=0.3)
+        boxprops = dict(linewidth=lthick / 2, color=pointcolor, facecolor=pointcolor, zorder=zorder_boxplot)
+        whiskerprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+        medianprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+        capprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+        seaborn.boxplot(x=xvals_SUH, y=yvals_SUH, linewidth=lthick, showfliers=True,
+                        flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
+                        medianprops=medianprops, capprops=capprops,
+                        color=pointcolor, width=0.4, ax=axes[1])
+        axes[1].grid(linestyle=':', linewidth=lthick / 2., zorder=100, alpha=1.0, color='gray')
 
-    # --------- LABELS ---------
-    #fig.autofmt_xdate()
-    plt.xticks(rotation=90)
-    plt.xlabel('Måned og år for måling')
-    plt.ylabel('Kontaktdage Lungemd. NAE')
+        for patch in axes[1].artists:
+            r, g, b, a = patch.get_facecolor()
+            patch.set_facecolor((r, g, b, 0.5))
 
-    # --------- LEGEND ---------
-    leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=3, numpoints=1,
-                     bbox_to_anchor=(0.5, 1.12), )  # add the legend
-    leg.get_frame().set_alpha(0.7)
-    # --------------------------
+    # --------- BOXES: SLA and SUH ---------
+    huecol_SLAandSUH = {'SLA': cmap(colnorm(65)), 'SUH': cmap(colnorm(85))}
+    zorder_boxplot = 8
+    flierprops = dict(marker='o', markersize=marksize, alpha=0.3)
+    boxprops = dict(linewidth=lthick / 2, zorder=zorder_boxplot)
+    whiskerprops = dict(linewidth=lthick / 2)
+    medianprops = dict(linewidth=lthick / 2)
+    capprops = dict(linewidth=lthick / 2)
 
+    catval = pd.CategoricalDtype(['03-2022', '04-2022', '05-2022'])
+    order = [cat for cat in catval.categories if xvals_SLA.str.contains(cat).any()]
+
+    seaborn.boxplot(x=xvals_SLAandSUH, y=yvals_SLAandSUH, hue=huevals_SLAandSUH, linewidth=lthick, showfliers=True,
+                    flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
+                    medianprops=medianprops, capprops=capprops, order = order,
+                    color=pointcolor, width=0.8, ax=axes[1], palette=huecol_SLAandSUH)
+    axes[1].grid(linestyle=':', linewidth=lthick / 2., zorder=100, alpha=1.0, color='gray')
+
+    for i, artist in enumerate(axes[1].artists):
+        r, g, b, a = artist.get_facecolor()
+        artist.set_facecolor((r, g, b, 0.5))
+
+        # Each box has 6 associated Line2D objects (to make the whiskers, fliers, etc.)
+        # Loop over them here, and use the same colour as above
+        for j in range(i * 6, i * 6 + 6):
+            line = axes[1].lines[j]
+            line.set_color((r, g, b, 1.0))
+            line.set_mfc((r, g, b, 1.0))
+            line.set_mec((r, g, b, 1.0))
+
+    # --------- AXES ---------
+    #axes[0].set_xticks(rotation=90)
+    axes[0].tick_params(axis='x', labelrotation=90)
+    axes[1].tick_params(axis='x', labelrotation=90)
+    #axes[1].set_xticklabels(axes[0].get_xticklabels(),rotation=90)
+    axes[0].set_xlabel('Måned og år for måling')
+    axes[1].set_xlabel(' ')
+
+    axes[0].set_ylabel('Kontaktdage Lungemed. NAE')
+
+    axes[1].yaxis.set_label_position("right")
+    axes[1].set_ylabel('Kontaktdage Lungemed. SUH og SLA')
+
+    # --------- SAVE FIGURE ---------
     plt.savefig(plotdir+plotname)
     plt.clf()
     plt.close('all')
