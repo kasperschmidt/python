@@ -464,7 +464,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                      marker='o', lw=0, markersize=marksize, alpha=0.5,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=10,
-                     label='NAE Baseline (2019-2021)')
+                     label='NAE baseline (2019-2021)')
         plt.errorbar(xvalues[df_results.index[lprbaseline]], df_results['occupancy_available_movingavg_'+str(measurehour)][df_results.index[lprbaseline]], xerr=xerr, yerr=yerr,
                      marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
