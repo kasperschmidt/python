@@ -1209,13 +1209,13 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     # plt.step(entarray, diag_baseline_val, where='mid', lw=lthick/2, markersize=0, alpha=0.5, color=distcolor,
     #          zorder=20., label='Baseline (2019-2021)')
     plt.fill_between([0]+list(entarray), [0]+list(diag_baseline_val), step="pre", alpha=0.4, color=distcolor, linewidth=0,
-                     zorder=20., label='NAE baseline (2019-2021)'+'; '+str(Nbaseline)+' forløb')
+                     zorder=16., label='NAE baseline (2019-2021)'+'; '+str(Nbaseline)+' forløb', hatch='...')#,facecolor="none")
 
     distcolor = 'black' # cmap(colnorm(70))
     # plt.step(entarray, diag_update_val, where='mid', lw=lthick/2, markersize=0, alpha=0.5, color=distcolor,
     #          zorder=20., label='Forløb siden 01-12-2021')
     plt.fill_between([0]+list(entarray), [0]+list(diag_update_val), step="pre", alpha=0.4, color=distcolor, linewidth=0,
-                     zorder=20., label='NAE 01-12-2021 til 10-03-2022'+'; '+str(Nupdates)+' forløb')
+                     zorder=15., label='NAE 01-12-2021 til 10-03-2022'+'; '+str(Nupdates)+' forløb', hatch='++')#,facecolor="none")
 
     # distcolor = 'black'
     # # plt.step(entarray, diag_lastmonth_val, where='mid', lw=lthick/2, markersize=0, alpha=0.5, color=distcolor,
@@ -1225,11 +1225,11 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
 
     distcolor = cmap(colnorm(65))
     plt.fill_between([0]+list(entarray), [0]+list(diag_SLA_val), step="pre", alpha=0.4, color=distcolor, linewidth=0,
-                     zorder=20., label='SLA LPR3 (siden 10-03-2022)'+'; '+str(NSLA)+' forløb')
+                     zorder=17., label='SLA LPR3 (siden 10-03-2022)'+'; '+str(NSLA)+' forløb', hatch='//')#,facecolor="none")
 
     distcolor = cmap(colnorm(85))
     plt.fill_between([0]+list(entarray), [0]+list(diag_SUH_val), step="pre", alpha=0.4, color=distcolor, linewidth=0,
-                     zorder=20., label='SUH LPR3 (siden 10-03-2022)'+'; '+str(NSUH)+' forløb')
+                     zorder=18., label='SUH LPR3 (siden 10-03-2022)'+'; '+str(NSUH)+' forløb', hatch='\\\\')#,facecolor="none")
 
     spikecut = 100
     if normalization == 'probability':
