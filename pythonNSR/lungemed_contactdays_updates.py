@@ -1430,7 +1430,7 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     plt.text(0.97, 0.96, 'NAE baseline > NAE 01-12-2021 til 10-03-2022', fontsize=Fsize-2, rotation=0,
                  color='black', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
 
-    plt.text(0.97, 0.04, 'NAE baseline > NAE 01-12-2021 til 10-03-2022', fontsize=Fsize-2, rotation=0,
+    plt.text(0.97, 0.04, 'NAE baseline < NAE 01-12-2021 til 10-03-2022', fontsize=Fsize-2, rotation=0,
                  color='black', horizontalalignment='right', verticalalignment='bottom', transform=plt.gca().transAxes)
 
     # --------- LABELS ---------
@@ -1517,7 +1517,7 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     plt.text(0.97, 0.96, 'NAE baseline > SLA LPR3', fontsize=Fsize-2, rotation=0,
                  color='black', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
 
-    plt.text(0.97, 0.04, 'NAE baseline > SLA LPR3', fontsize=Fsize-2, rotation=0,
+    plt.text(0.97, 0.04, 'NAE baseline < SLA LPR3', fontsize=Fsize-2, rotation=0,
                  color='black', horizontalalignment='right', verticalalignment='bottom', transform=plt.gca().transAxes)
 
     # --------- LABELS ---------
@@ -1604,7 +1604,7 @@ def diagnoses_distributions(datemin_mostrecent = '01-01-2022', normalization="pr
     plt.text(0.97, 0.96, 'NAE baseline > SUH LPR3', fontsize=Fsize-2, rotation=0,
                  color='black', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
 
-    plt.text(0.97, 0.04, 'NAE baseline > SUH LPR3', fontsize=Fsize-2, rotation=0,
+    plt.text(0.97, 0.04, 'NAE baseline < SUH LPR3', fontsize=Fsize-2, rotation=0,
                  color='black', horizontalalignment='right', verticalalignment='bottom', transform=plt.gca().transAxes)
 
     # --------- LABELS ---------
