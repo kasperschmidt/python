@@ -132,7 +132,16 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
         if verbose: print('\n - Estimating the occupancy in the available and actual beds ')
         for dd, datecheck in enumerate(np.asarray(date_list)):
             if 'SUH' in datafileext:
-                occupancy_available[dd] = count_cpr[dd] / 16. * 100
+                if (datecheck > datetime.datetime.strptime("10-03-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) & \
+                        (datecheck < datetime.datetime.strptime("27-06-2022 00:00:00", "%d-%m-%Y %H:%M:%S")):
+                    NbedsSUH = 18
+                elif (datecheck > datetime.datetime.strptime("27-06-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) &\
+                        (datecheck < datetime.datetime.strptime("08-08-2022 00:00:00", "%d-%m-%Y %H:%M:%S")):
+                    NbedsSUH = 14
+                else:
+                    NbedsSUH = 18
+
+                occupancy_available[dd] = count_cpr[dd] / NbedsSUH * 100
             elif 'SLA' in datafileext:
                 occupancy_available[dd] = count_cpr[dd] / 24. * 100
             else:
@@ -559,6 +568,18 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         plt.text(datetime.datetime.strptime("01-03-2021", "%d-%m-%Y"), textymin, '01-03-2021', fontsize=Fsize,
                  rotation=90, color='gray',
                  horizontalalignment='center', verticalalignment='bottom')
+
+        plt.plot([datetime.datetime.strptime("27-06-2022", "%d-%m-%Y"),
+                  datetime.datetime.strptime("27-06-2022", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.plot([datetime.datetime.strptime("08-08-2022", "%d-%m-%Y"),
+                  datetime.datetime.strptime("08-08-2022", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+
+        plt.text(datetime.datetime.strptime("15-07-2022", "%d-%m-%Y"), textymin, 'SUH 14 senge', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
+
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
