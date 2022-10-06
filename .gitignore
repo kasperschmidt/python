@@ -27,3 +27,6 @@ pythonNSR/.idea/.name
 .idea/misc.xml
 .idea/python.iml
 .idea/python.iml
+.idea/misc.xml
+*.iml
+*.xml
