@@ -202,12 +202,20 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
     df_results = pd.DataFrame(outdic)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - calculating moving average ')
+    if verbose: print(' - calculating moving average (30 days window)')
     Ndaysavg = 30
     for measurehour in measurehours:
         df_results['occupancy_available_movingavg_' + str(measurehour)] = \
             df_results['occupancy_available_' + str(measurehour)].rolling(window=Ndaysavg).mean()
         df_results['occupancy_actual_movingavg_' + str(measurehour)] = \
+            df_results['occupancy_actual_' + str(measurehour)].rolling(window=Ndaysavg).mean()
+
+    if verbose: print(' - calculating moving average (5 days window)')
+    Ndaysavg = 5
+    for measurehour in measurehours:
+        df_results['occupancy_available_movingavg5days_' + str(measurehour)] = \
+            df_results['occupancy_available_' + str(measurehour)].rolling(window=Ndaysavg).mean()
+        df_results['occupancy_actual_movingavg5days_' + str(measurehour)] = \
             df_results['occupancy_actual_' + str(measurehour)].rolling(window=Ndaysavg).mean()
 
     if savedatafile:
@@ -421,6 +429,12 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
             occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)][
                 ~np.isnan(occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)])]
 
+        occupancy_updates_movingavg5days = {}
+        for measurehour in measurehours:
+            Ndaysavg = 5
+            occupancy_updates_movingavg['updates_movingavg5days_'+str(measurehour)] = pd.DataFrame(occupancy_updates['occupancy_updates_'+str(measurehour)]).rolling(window=Ndaysavg).mean()
+
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     for measurehour in measurehours:
         plotname = 'occupancy_kl'+str(measurehour)+'.pdf'
@@ -614,6 +628,156 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         #             markerfacecolor='None', ecolor='None', markeredgecolor='black', zorder=1, label='AGN candidate')
 
         leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=3, numpoints=1,
+                         bbox_to_anchor=(0.47, 1.12), )  # add the legend
+        leg.get_frame().set_alpha(0.7)
+        # --------------------------
+
+        plt.savefig(plotdir+plotname)
+        plt.clf()
+        plt.close('all')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    for measurehour in measurehours:
+        plotname = 'occupancy_zoom_kl'+str(measurehour)+'.pdf'
+        if verbose: print(' - Initiating '+plotname)
+
+        fig = plt.figure(figsize=(9, 6))
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.10, top=0.90)
+        Fsize = 10
+        lthick = 2
+        marksize = 4
+        plt.rc('text', usetex=False)
+        plt.rc('font', family='serif', size=Fsize)
+        plt.rc('xtick', labelsize=Fsize)
+        plt.rc('ytick', labelsize=Fsize)
+        plt.clf()
+        plt.ioff()
+        # plt.title(inforstr[:-2],fontsize=Fsize)
+
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
+        plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+
+        xerr = None
+        yerr = None
+        # --------- RANGES ---------
+        ymin = 10.0
+        ymax = 150.0
+        dy = ymax - ymin
+        plt.ylim([ymin, ymax])
+
+        # --------- COLORMAP ---------
+        cmap = plt.cm.get_cmap('viridis')
+        #cmap = plt.cm.get_cmap('plasma')
+        cmin = 0
+        cmax = 100
+
+        colnorm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+        cmaparr = np.linspace(cmin, cmax, num=50)
+        m = plt.cm.ScalarMappable(cmap=cmap)
+        m.set_array(cmaparr)
+        #cb = plt.colorbar(m)
+        #cb.set_label('belægningsprocent')
+
+        # --------- POINT AND CURVES ---------
+        ##### SP data #####
+        showupdates = False
+        if showupdates:
+            pointcolor = 'black'
+            # plt.errorbar(days_updates, occupancy_updates['occupancy_updates_' + str(measurehour)],
+            #              xerr=xerr, yerr=yerr, marker='o', lw=0, markersize=marksize, alpha=0.5,
+            #              markerfacecolor=pointcolor, ecolor=pointcolor,
+            #              markeredgecolor=pointcolor, zorder=8.,
+            #              label='NAE 01-12-2021 til 10-03-2022')
+            plt.errorbar(days_updates, occupancy_updates_movingavg['updates_movingavg5days_'+str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=18.)#,
+                         #label='30 dage glidende gennemsnit')
+
+            pointcolor = 'black'
+            plt.errorbar(days_lastmonth, occupancy_lastmonth['occupancy_lastmonth_' + str(measurehour)], xerr=xerr, yerr=yerr,
+                         marker='o', lw=0, markersize=marksize, alpha=0.5,
+                         markerfacecolor=pointcolor, ecolor=pointcolor,
+                         markeredgecolor=pointcolor, zorder=30.) # label='Seneste måned (siden '+datemin_mostrecent+')'
+
+        ##### LPR3 updates #####
+        pointcolor = cmap(colnorm(65))
+        # plt.errorbar(df_SLAupdates['dates_'+str(measurehour)], df_SLAupdates['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
+        #              marker='o', lw=0, markersize=marksize, alpha=0.5,
+        #              markerfacecolor=pointcolor, ecolor=pointcolor,
+        #              markeredgecolor=pointcolor, zorder=8.,
+        #              label='SLA LPR3 (siden 10-03-2022)')
+        plt.errorbar(df_SLAupdates['dates_'+str(measurehour)], df_SLAupdates['occupancy_available_movingavg5days_' + str(measurehour)], xerr=xerr, yerr=yerr,
+                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=20.,
+                     label='SLA LPR3 (siden 10-03-2022)') #label='30 dage glidende gennemsnit'
+
+        pointcolor = cmap(colnorm(85))
+        # plt.errorbar(df_SUHupdates['dates_'+str(measurehour)], df_SUHupdates['occupancy_available_'+str(measurehour)], xerr=xerr, yerr=yerr,
+        #              marker='o', lw=0, markersize=marksize, alpha=0.5,
+        #              markerfacecolor=pointcolor, ecolor=pointcolor,
+        #              markeredgecolor=pointcolor, zorder=8.,
+        #              label='SUH LPR3 (siden 10-03-2022)')
+        plt.errorbar(df_SUHupdates['dates_'+str(measurehour)], df_SUHupdates['occupancy_available_movingavg5days_' + str(measurehour)], xerr=xerr, yerr=yerr,
+                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=20.,
+                     label='SUH LPR3 (siden 10-03-2022)') #label='30 dage glidende gennemsnit'
+
+        ##### SUH 14 to 18 bed adjustment #####
+        pointcolor = 'red'
+        ent_adjust18 = np.where((df_SUHupdates['dates_' + str(measurehour)] > datetime.datetime.strptime("27-06-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) & \
+                               (df_SUHupdates['dates_' + str(measurehour)] < datetime.datetime.strptime("08-08-2022 00:00:00", "%d-%m-%Y %H:%M:%S")))[0]
+
+        # plt.errorbar(df_SUHupdates['dates_' + str(measurehour)][ent_adjust18] ,
+        #              df_SUHupdates['occupancy_available_' + str(measurehour)][ent_adjust18]*14./18. , xerr=xerr, yerr=yerr,
+        #              marker='o', lw=0, markersize=marksize, alpha=0.5,
+        #              markerfacecolor=pointcolor, ecolor=pointcolor,
+        #              markeredgecolor=pointcolor, zorder=8.,
+        #              label='SUH justeret fra 14 til 18 senge ')
+        plt.errorbar(df_SUHupdates['dates_' + str(measurehour)][ent_adjust18] ,
+                     df_SUHupdates['occupancy_available_movingavg5days_' + str(measurehour)][ent_adjust18]*14./18., xerr=xerr, yerr=yerr,
+                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=20.,
+                     label='SUH justeret fra 14 til 18 senge ')
+
+        xrangevals = [df_SUHupdates['dates_' + str(measurehour)].values[0], df_SUHupdates['dates_' + str(measurehour)].values[-1]]
+        #xrangevals = [days_updates[0], df_SUHupdates['dates_' + str(measurehour)].values[-1]]
+        plt.plot(xrangevals,np.zeros(len(xrangevals)) + 100, '--', color='black', lw=lthick, zorder=5)
+        plt.plot(xrangevals, np.zeros(len(xrangevals)) + 85, ':', color='black', lw=lthick, zorder=5)
+
+        lineymin = ymin + dy * 0.24
+        lineymax = ymin + dy * 0.40
+        textymin = ymin + dy * 0.05
+        textymax = ymin + dy * 0.10
+
+        plt.plot([datetime.datetime.strptime("27-06-2022", "%d-%m-%Y"),
+                  datetime.datetime.strptime("27-06-2022", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.plot([datetime.datetime.strptime("08-08-2022", "%d-%m-%Y"),
+                  datetime.datetime.strptime("08-08-2022", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+
+        plt.text(datetime.datetime.strptime("10-07-2022", "%d-%m-%Y"), textymin, 'SUH 14 senge', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
+
+        plt.text(datetime.datetime.strptime("23-07-2022", "%d-%m-%Y"), textymin, 'SUH 18 senge', fontsize=Fsize,
+                 rotation=90, color='red',
+                 horizontalalignment='center', verticalalignment='bottom')
+
+        # --------- LABELS ---------
+        plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
+        plt.ylabel('Belægningsprocent Lungemedicin')
+
+        # --------- RANGES ---------
+        plt.ylim(0, plt.gca().get_ylim()[1])
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1*100.))
+        # --------- LEGEND ---------
+        leg = plt.legend(fancybox=True, loc='upper center', prop={'size': Fsize / 1.0}, ncol=2, numpoints=1,
                          bbox_to_anchor=(0.47, 1.12), )  # add the legend
         leg.get_frame().set_alpha(0.7)
         # --------------------------
