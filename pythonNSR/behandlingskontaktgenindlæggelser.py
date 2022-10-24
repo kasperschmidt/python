@@ -154,7 +154,7 @@ shortnames_overafd = {}
 for oo, overafd in enumerate(unique_overafd):
     shortnames_overafd[overafd] = overafd.split(' - ')[0].split(', ')[-1]
     if ('SLA ' in overafd) or ('NAE ' in overafd):
-        outputdata['Genindlæggelse fra '+shortnames_overafd[overafd]] = NaNlist
+        outputdata['Genindlæggelse fra overafd. '+shortnames_overafd[overafd]] = NaNlist
         outputdata['PI for GI fra ' + shortnames_overafd[overafd]] = NaNlist
         unique_overafd_NSR.append(overafd)
 
@@ -165,7 +165,7 @@ for aa, afsn in enumerate(unique_afsn):
     shortnames_afsn[afsn] = afsn.split(', ')[0]
     if ('SJ SLA' in afsn) or ('SJ NAE' in afsn):
     #if ('SJ SLAGELSE MOD' in afsn):
-        outputdata['Genindlæggelse fra '+shortnames_afsn[afsn]] = NaNlist
+        outputdata['Genindlæggelse fra afsn. '+shortnames_afsn[afsn]] = NaNlist
         outputdata['PI for GI fra ' + shortnames_afsn[afsn]] = NaNlist
         unique_afsn_NSR.append(afsn)
 
@@ -225,8 +225,8 @@ for cc, cpr in enumerate(uniqueCPR):
                                            df_kontakter['Aktionsdiagnosekode'][ent_ptk_alle],
                                            df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle])
 
-                        df_output['Genindlæggelse fra ' + shortnames_afsn[PIafs]][ent_ktk] = isGI
-                        df_output['Genindlæggelse fra ' + shortnames_overafd[PIoverafd]][ent_ktk] = isGI
+                        df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[PIafs]][ent_ktk] = isGI
+                        df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[PIoverafd]][ent_ktk] = isGI
                         if isGI == 1:
                             df_output['PI for GI fra ' + shortnames_afsn[PIafs]][ent_ktk] = PIafs
                             df_output['PI for GI fra ' + shortnames_overafd[PIoverafd]][ent_ktk] = PIoverafd
@@ -234,7 +234,6 @@ for cc, cpr in enumerate(uniqueCPR):
 print('\n - Færdig med evaluering af all '+str(len(uniqueCPR))+' patienter')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 print('\n - Sikrer at der for hvert behandlingskontakt ID kun er 1 genindlæggelsesflag per overafdeling og afsnit')
-#print('\n\n\n\nIKKE KODET\n\n\n\n\n\n')
 for bb, BHKID in enumerate(uniqueBHKID):
     infostr = '   Korrigerer genindlæggelsesflag for ID ' + str(bb + 1) + ' / ' + str(len(uniqueBHKID))
     sys.stdout.write("%s\r" % infostr)
@@ -242,42 +241,66 @@ for bb, BHKID in enumerate(uniqueBHKID):
     ent_BHKID_alle = np.where(df_kontakter['Behandlingskontakt record ID'] == BHKID)[0]
 
     for oo, overafd in enumerate(unique_overafd_NSR):
-        if any(df_output['Genindlæggelse fra ' + shortnames_overafd[overafd]][ent_BHKID_alle] == 1):
+        if any(df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]][ent_BHKID_alle] == 1):
             BHKI_overafd = np.unique(df_output['Hændelsesansvarlig overafdeling'][ent_BHKID_alle])
             for bo, bhk_overafd in enumerate(BHKI_overafd):
                 ent_BHK_overafd = np.where((df_output['Hændelsesansvarlig overafdeling'] == bhk_overafd) &
                                            (df_kontakter['Behandlingskontakt record ID'] == BHKID))[0]
-                selection = (df_output['Genindlæggelse fra ' + shortnames_overafd[overafd]][ent_BHK_overafd] != 1)
+                selection = (df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]][ent_BHK_overafd] != 1)
 
                 # Erstat værdier der ikke matcher 'selection' ovenfor; så find GI flag og erstat dem.
-                df_output['Genindlæggelse fra ' + shortnames_overafd[overafd]][ent_BHK_overafd] = \
-                    df_output['Genindlæggelse fra ' + shortnames_overafd[overafd]][ent_BHK_overafd].where( selection , 99)  # replace values not matching selection
+                df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]][ent_BHK_overafd] = \
+                    df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]][ent_BHK_overafd].where( selection , 0)  # replace values not matching selection
                 df_output['PI for GI fra ' + shortnames_overafd[overafd]][ent_BHK_overafd] = \
                     df_output['PI for GI fra ' + shortnames_overafd[overafd]][ent_BHK_overafd].where( selection, 'Udeladt') # replace values not matching selection
 
                 # Erstat første GI flag så det kun er registreret en gang per BHKID
-                df_output['Genindlæggelse fra ' + shortnames_overafd[overafd]][ent_BHK_overafd[0]] = 1
+                df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]][ent_BHK_overafd[0]] = 1
                 df_output['PI for GI fra ' + shortnames_overafd[overafd]][ent_BHK_overafd[0]] = overafd
 
     for aa, afsn in enumerate(unique_afsn_NSR):
-        if any(df_output['Genindlæggelse fra ' + shortnames_afsn[afsn]][ent_BHKID_alle] == 1):
+        if any(df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]][ent_BHKID_alle] == 1):
             BHKI_afsn = np.unique(df_output['Hændelsesansvarligt afsnit'][ent_BHKID_alle])
             for bo, bhk_afsn in enumerate(BHKI_afsn):
                 ent_BHK_afsn = np.where((df_output['Hændelsesansvarligt afsnit'] == bhk_afsn) &
                                            (df_kontakter['Behandlingskontakt record ID'] == BHKID))[0]
-                selection = (df_output['Genindlæggelse fra ' + shortnames_afsn[afsn]][ent_BHK_afsn] != 1)
+                selection = (df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]][ent_BHK_afsn] != 1)
 
                 # Erstat værdier der ikke matcher 'selection' ovenfor; så find GI flag og erstat dem.
-                df_output['Genindlæggelse fra ' + shortnames_afsn[afsn]][ent_BHK_afsn] = \
-                    df_output['Genindlæggelse fra ' + shortnames_afsn[afsn]][ent_BHK_afsn].where( selection , 99)  # replace values not matching selection
+                df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]][ent_BHK_afsn] = \
+                    df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]][ent_BHK_afsn].where( selection , 0)  # replace values not matching selection
                 df_output['PI for GI fra ' + shortnames_afsn[afsn]][ent_BHK_afsn] = \
                     df_output['PI for GI fra ' + shortnames_afsn[afsn]][ent_BHK_afsn].where( selection, 'Udeladt') # replace values not matching selection
 
                 # Erstat første GI flag så det kun er registreret en gang per BHKID
-                df_output['Genindlæggelse fra ' + shortnames_afsn[afsn]][ent_BHK_afsn[0]] = 1
+                df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]][ent_BHK_afsn[0]] = 1
                 df_output['PI for GI fra ' + shortnames_afsn[afsn]][ent_BHK_afsn[0]] = afsn
 
 print('\n - Færdig med korrigering af flag')
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+print('\n - Tilføjer kolonner med samlet sum af genindlæggelser')
+df_output['Genindlæggelse afsnit total (sum)'] = df_output.loc[:, [cc for cc in df_output.columns if cc.startswith('Genindlæggelse fra afsn.')]].sum(axis=1)
+ent_lt0 = (df_output['Genindlæggelse afsnit total (sum)'] < 1)
+df_output['Genindlæggelse afsnit optælling'] = df_output['Genindlæggelse afsnit total (sum)'].where( ent_lt0 , 1)  # replace values not matching ent_lt0 with 1
+
+df_output['Genindlæggelse overafdeling total (sum)'] = df_output.loc[:, [cc for cc in df_output.columns if cc.startswith('Genindlæggelse fra overafd.')]].sum(axis=1)
+ent_lt0 = (df_output['Genindlæggelse overafdeling total (sum)'] < 1)
+df_output['Genindlæggelse overafdeling optælling'] = df_output['Genindlæggelse overafdeling total (sum)'].where( ent_lt0 , 1)  # replace values not matching ent_lt0 with 1
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+print('\n - Opretter kolonne der markerer behandlingskontrakt IDer med genindlæggelse')
+df_output['Behandlingskontakter med mindst en genindindlæggelse'] = zerolist
+for bb, BHKID in enumerate(uniqueBHKID):
+    infostr = '   Checker ID ' + str(bb + 1) + ' / ' + str(len(uniqueBHKID))
+    sys.stdout.write("%s\r" % infostr)
+    sys.stdout.flush()
+
+    ent_BHKID_alle = np.where(df_kontakter['Behandlingskontakt record ID'] == BHKID)[0]
+
+    ent_BHKID_udskrivning = np.where((df_kontakter['Behandlingskontakt record ID'] == BHKID) & (df_kontakter['Hændelsestype navn'] == 'UDSKRIVNING'))[0]
+
+    if any(df_output['Genindlæggelse overafdeling optælling'][ent_BHKID_alle] == 1):
+        df_output['Behandlingskontakter med mindst en genindindlæggelse'][ent_BHKID_udskrivning[-1]] = 1
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 print('\n - Gemmer output dataframe til Excelfil')
@@ -291,6 +314,30 @@ else:
 
 path = "O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/genindlæggelser og genbesøg/Behandlingskontaktgenindlæggelser/"
 df_output.to_excel(path+outputfilename, sheet_name="data output")
-print('   Output skrevet til '+path+outputfilename)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+print('\n - Output gemt i mappen '+path)
+print('   med filnavnet '+outputfilename+'\n')
+inputfile = excelfile.split('/')[-1]
+print(' - Indholdet i det beregnede output er baseret på filen '+inputfile)
+print('   som ligger i mappen '+excelfile.split(inputfile)[0]+'\n')
+print(' - Den gemte output ful indeholder indeholdere: ')
+print('    o Antal primærindlæggelser (total)                                 = '+str("%.2f" % df_output['Primærindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
+print('    o Antal behandlingskontakter med mindst en genindlæggelse (total)  = '+str("%.2f" % df_output['Behandlingskontakter med mindst en genindindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
+print('    o Behandlingskontagenindlæggelser på afsnitsniveau (total)         = '+str("%.2f" % df_output['Genindlæggelse afsnit optælling'].sum()))
+print('    o Behandlingskontagenindlæggelser på overafdelingsniveu (total)    = '+str("%.2f" % df_output['Genindlæggelse overafdeling optælling'].sum())+'\n')
+
+for oo, overafd in enumerate(unique_overafd_NSR):
+    print('    o Behandlingskontagenindlæggelser '+'Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]+'   = ' +
+          str("%.2f" % df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]].sum()))
+
+for aa, afsn in enumerate(unique_afsn_NSR):
+    print('    o Behandlingskontagenindlæggelser '+'Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]+'   = ' +
+          str("%.2f" % df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]].sum()))
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
+todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
+print("\n\n - Program til indentificering af behandlingskontaktgenindlæggelser sluttede "+nowstring)
 #=======================================================================================================================
 
