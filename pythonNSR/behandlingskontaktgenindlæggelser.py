@@ -10,8 +10,8 @@ import numpy as np
 pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warnings
 #=======================================================================================================================
 #Switches til kontrol af kode
-GUIinput = False # Aktiver GUI som beder om at indlæse Excel fil?
-inkluderpersonoplysninger = True # Tilføj CPR og ID info i output?
+GUIinput = True # Aktiver GUI som beder om at indlæse Excel fil?
+inkluderpersonoplysninger = False # Tilføj CPR og ID info i output?
 #=======================================================================================================================
 def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle):
     """
