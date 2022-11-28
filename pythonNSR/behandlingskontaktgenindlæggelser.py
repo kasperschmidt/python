@@ -11,21 +11,7 @@ import numpy as np
 pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warnings
 #=======================================================================================================================
 #Switches til kontrol af kode
-GUIinput   = False # Aktiver GUI som beder om at indlæse Excel fil?
-GItimeMin  = 0    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
-GItimeMaks = 720  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-if GUIinput:
-    title   = "Personhenførbare data?"
-    message = "Skal personhenførbare data inkluderes i outputtet?"
-    choices = ["Ja tak", "Nej tak"]
-    output  = easygui.ynbox(message, title, choices)
-    if output: # Hvis der trykkes Ja
-        inkluderpersonoplysninger = True # Tilføj CPR og ID info i output?
-    else: # Hvis der trykkes Nej
-        inkluderpersonoplysninger = False
-else:
-    inkluderpersonoplysninger = True
+GUIinput   = True # Aktiver GUI som beder om at indlæse Excel fil?
 #=======================================================================================================================
 def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle):
     """
@@ -106,6 +92,31 @@ def tjek_for_GI(ptktktype_start,dia_alle,afsnit_alle):
 nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
 todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
 print("\n\n - Program til indentificering af behandlingskontaktgenindlæggelser startet "+nowstring)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if GUIinput:
+    wintitle   = "Genindlæggelsestidsinterval efter primær indlæggelse"
+    wintext    = "Angiv tidsintervallet efter primær indlæggelse, hvori der skal tælles genindlæggelser. Værdier skal angives i timer. \nNationale kriterier: tmin = 0 og tmaks = 720 (30 dage)."
+    input_list = ["tmin [timer]", "tmax [timer]"]
+
+    # creating a integer box
+    output     = easygui.multenterbox(wintext, wintitle, input_list, values=['0','720'])
+    GItimeMin  = float(output[0])    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+    GItimeMaks = float(output[1])  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+else:
+    GItimeMin  = 0.0    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+    GItimeMaks = 720.0  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if GUIinput:
+    title   = "Personhenførbare data?"
+    message = "Skal personhenførbare data inkluderes i outputtet?"
+    choices = ["Ja tak", "Nej tak"]
+    output  = easygui.ynbox(message, title, choices)
+    if output: # Hvis der trykkes Ja
+        inkluderpersonoplysninger = True # Tilføj CPR og ID info i output?
+    else: # Hvis der trykkes Nej
+        inkluderpersonoplysninger = False
+else:
+    inkluderpersonoplysninger = True
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if GUIinput:
     title="Behandlingskontaktgenindlæggelsesberegner"
