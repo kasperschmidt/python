@@ -3,15 +3,29 @@
 import easygui
 import pandas as pd
 import datetime
+from time import sleep
 import pdb
-# import os
+import os
 import sys
 import numpy as np
 pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warnings
 #=======================================================================================================================
 #Switches til kontrol af kode
-GUIinput = True # Aktiver GUI som beder om at indlæse Excel fil?
-inkluderpersonoplysninger = False # Tilføj CPR og ID info i output?
+GUIinput   = False # Aktiver GUI som beder om at indlæse Excel fil?
+GItimeMin  = 0    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+GItimeMaks = 720  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if GUIinput:
+    title   = "Personhenførbare data?"
+    message = "Skal personhenførbare data inkluderes i outputtet?"
+    choices = ["Ja tak", "Nej tak"]
+    output  = easygui.ynbox(message, title, choices)
+    if output: # Hvis der trykkes Ja
+        inkluderpersonoplysninger = True # Tilføj CPR og ID info i output?
+    else: # Hvis der trykkes Nej
+        inkluderpersonoplysninger = False
+else:
+    inkluderpersonoplysninger = True
 #=======================================================================================================================
 def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle):
     """
@@ -104,8 +118,9 @@ if GUIinput:
         print(' - fejl i angivelse af Excel fil')
 else:
     excelfile = "O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/genindlæggelser og genbesøg/" \
-                "Behandlingskontaktgenindlæggelser/Behandlingskontaktgenindlæggelser_datatræk_220401-220601_ingenBiDiag_kortversion.xlsx"
+                "Behandlingskontaktgenindlæggelser/Behandlingskontaktgenindlæggelser_datatræk_220101-220601_minimalt_kortversion.xlsx"
 
+outpath = os.path.dirname(excelfile)
 print(" - Excel datafil angivet: \n   "+ excelfile)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # indlæs Excel data i pandas dataframe
@@ -146,8 +161,21 @@ outputdata['Behandlingskontakt udskrivning'] = list(udskrivningBHK)
 outputdata['Hændelsestype'] = list(df_kontakter['Hændelsestype navn'])
 outputdata['Hændelsesansvarlig overafdeling'] = list(df_kontakter['Hændelsesansvarlig Overafdeling navn'])
 outputdata['Hændelsesansvarligt afsnit'] = list(df_kontakter['Hændelsesansvarlig Afsnit navn'])
+
+# lav ny kolonne der erstatter "SJ SLAGELSE MODTAGELSE" med SLAAKI1 og SLAAKI2 navne fra kontakt afsnit
+outputdata['Ansvarligt afsnit'] = [np.nan] * len(df_kontakter['Hændelsesansvarlig Afsnit navn'])
+
+for hh, hafsn in enumerate(df_kontakter['Hændelsesansvarlig Afsnit navn']):
+    if ('SJ SLAGELSE MOD' in hafsn):
+        outputdata['Ansvarligt afsnit'][hh] = df_kontakter['Kontaktansvar Afsnit navn'][hh]
+    else:
+        outputdata['Ansvarligt afsnit'][hh] = hafsn
+
+outputdata['Ansvarligt afsnit'] = np.asarray(outputdata['Ansvarligt afsnit'])
+
 outputdata['Primærindlæggelse'] = zerolist
 
+# Defniner kort-navne og lave de tomme kolonner der skal fyldes i outputtabellen
 unique_overafd     = np.unique(df_kontakter['Hændelsesansvarlig Overafdeling navn'])
 unique_overafd_NSR = []
 shortnames_overafd = {}
@@ -158,18 +186,20 @@ for oo, overafd in enumerate(unique_overafd):
         outputdata['PI for GI fra ' + shortnames_overafd[overafd]] = NaNlist
         unique_overafd_NSR.append(overafd)
 
-unique_afsn     = np.unique(df_kontakter['Hændelsesansvarlig Afsnit navn'])
+unique_afsn     = np.unique(outputdata['Ansvarligt afsnit'])
+
 unique_afsn_NSR = []
 shortnames_afsn = {}
 for aa, afsn in enumerate(unique_afsn):
     shortnames_afsn[afsn] = afsn.split(', ')[0]
     if ('SJ SLA' in afsn) or ('SJ NAE' in afsn):
-    #if ('SJ SLAGELSE MOD' in afsn):
         outputdata['Genindlæggelse fra afsn. '+shortnames_afsn[afsn]] = NaNlist
         outputdata['PI for GI fra ' + shortnames_afsn[afsn]] = NaNlist
+        outputdata['PIDIA for GI fra ' + shortnames_afsn[afsn]] = NaNlist
         unique_afsn_NSR.append(afsn)
 
 df_output = pd.DataFrame(outputdata)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Løkke over behandlingskontakter for at bestæmme primærindlæggelser
 print('\n - Identificerer primærindlæggelser')
@@ -187,7 +217,7 @@ for bb, bid in enumerate(uniqueBHKID):
         ent_ptk_udsk = ent_ptk_udsk[ent_seneste]
 
     # Kun tjek for primærindlæggelser for udskrivende overafdelinger på NSR
-    if df_kontakter['Hændelsesansvarlig Afsnit navn'][ent_ptk_udsk].values in unique_afsn_NSR:
+    if df_output['Ansvarligt afsnit'][ent_ptk_udsk].values in unique_afsn_NSR:
         isPI = tjek_for_PI(df_kontakter['Aktionsdiagnosekode'][ent_ptk_udsk],
                            df_kontakter['Aktionsdiagnosekode'][ent_ptk_alle],
                            df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle])
@@ -203,21 +233,33 @@ for cc, cpr in enumerate(uniqueCPR):
     sys.stdout.flush()
 
     ent_cpr = np.where(df_kontakter['Patient CPR-nr.'] == cpr)[0]
-    ent_PI  = np.where((df_kontakter['Patient CPR-nr.'] == cpr) & (df_output['Primærindlæggelse'] == 1))[0]
     u_BHKID = np.unique(df_kontakter['Behandlingskontakt record ID'][ent_cpr])
-    u_PIafsnit, ent_PIafsnit = np.unique(df_kontakter['Hændelsesansvarlig Afsnit navn'][ent_PI], return_index=True)
 
     if len(u_BHKID) > 1:  # kun tjek genindlæggelser for patienter med mere end een behandlingskontakt
-        for aa, PIafs in enumerate(u_PIafsnit):
-            PIoverafd = df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_PI].values[ent_PIafsnit][0]
-            for ee, ent_ktk in enumerate(ent_cpr):
-                ent_forPIogAfsnit = np.where((df_kontakter['Patient CPR-nr.'] == cpr) & (df_output['Primærindlæggelse'] == 1) & (df_kontakter['Hændelsesansvarlig Afsnit navn'] == PIafs))[0]
-                if len(ent_forPIogAfsnit) > 0: # Kun check for genindlæggelser hvis CPR har primærindlæggelse på afsnittet PIafs
-                    BHKforPIogAfsnit    = df_kontakter['Behandlingskontakt record ID'][ent_forPIogAfsnit]
-                    diffPItider = (indlaeggelseBHK[ent_ktk] - udskrivningBHK[ent_forPIogAfsnit]) / np.timedelta64(1,'h')
+        ent_PI = np.where((df_kontakter['Patient CPR-nr.'] == cpr) & (df_output['Primærindlæggelse'] == 1))[0]
+        #u_PIafsnit, ent_PIafsnit = np.unique(df_output['Ansvarligt afsnit'][ent_PI], return_index=True)
+        u_PIafsnit = np.unique(df_output['Ansvarligt afsnit'][ent_PI])
 
-                    if any((0 < diffPItider) & (diffPItider < 720 ) & (df_kontakter['Behandlingskontakt record ID'][ent_ktk] != BHKforPIogAfsnit)):
-                        ent_BHKID_alle = df_kontakter['Behandlingskontakt record ID'][ent_cpr]
+        for aa, PIafs in enumerate(u_PIafsnit):
+            #PIoverafd = df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_PI].values[ent_PIafsnit][0]
+
+            for ee, ent_ktk in enumerate(ent_cpr): # løkke over alle patientkontakter for givent CPR nummer
+                # Find afsnit for alle kontakter markeret som primærindlæggelser for givent CPR nummer
+                ent_forPIogAfsnit = np.where((df_kontakter['Patient CPR-nr.'] == cpr) & (df_output['Primærindlæggelse'] == 1) & (df_output['Ansvarligt afsnit'] == PIafs))[0]
+
+                if len(ent_forPIogAfsnit) > 0: # Kun check for genindlæggelser hvis CPR har primærindlæggelse på afsnittet PIafs
+                    PIoverafd         = np.unique(df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_forPIogAfsnit])  # Overafdeling for PI kontakter
+                    PIdia             = np.asarray(df_kontakter['Aktionsdiagnosekode'][ent_forPIogAfsnit])  # Aktionsdiagnoser for PI kontakter
+
+                    if len(PIoverafd) > 1: # Der burde kun være en unik overafdeling på dette tidspunkt, så advar hvis det ikke er tilfældet
+                        print(' - ADVARSEL: For patientkontakt '+str(ent_ktk)+' var der '+str(len(PIoverafd))+' forskellige overafdelinger; bruger den første')
+                    PIoverafd = PIoverafd[0]
+
+                    BHKforPIogAfsnit  = df_kontakter['Behandlingskontakt record ID'][ent_forPIogAfsnit]
+                    diffPItider       = (indlaeggelseBHK[ent_ktk] - udskrivningBHK[ent_forPIogAfsnit]) / np.timedelta64(1,'h')
+
+                    if any((GItimeMin < diffPItider) & (diffPItider < GItimeMaks ) & (df_kontakter['Behandlingskontakt record ID'][ent_ktk] != BHKforPIogAfsnit)):
+                        #ent_BHKID_alle = df_kontakter['Behandlingskontakt record ID'][ent_cpr]
                         ent_ptk_alle   = np.where(df_kontakter['Behandlingskontakt record ID'] == df_kontakter['Behandlingskontakt record ID'][ent_ktk])[0]
 
                         # df_kontakter['Aktionsdiagnosekode'][ent_ktk]
@@ -230,6 +272,9 @@ for cc, cpr in enumerate(uniqueCPR):
                         if isGI == 1:
                             df_output['PI for GI fra ' + shortnames_afsn[PIafs]][ent_ktk] = PIafs
                             df_output['PI for GI fra ' + shortnames_overafd[PIoverafd]][ent_ktk] = PIoverafd
+
+                            ent_senestePIdia = np.where((diffPItider[diffPItider > 0]) == np.min(diffPItider[diffPItider > 0])) # index for seneste PIs diagnose før geninglæggelsen
+                            df_output['PIDIA for GI fra ' + shortnames_afsn[PIafs]][ent_ktk] = PIdia[ent_senestePIdia][0]
 
 print('\n - Færdig med evaluering af all '+str(len(uniqueCPR))+' patienter')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -312,32 +357,47 @@ else:
     print('   Sikrer at sorteringen er BHK udskrivning > Kontakt start')
     df_output = df_output.sort_values(by=['Behandlingskontakt udskrivning','Kontakt start'], ascending=[True, True])
 
-path = "O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/genindlæggelser og genbesøg/Behandlingskontaktgenindlæggelser/"
-df_output.to_excel(path+outputfilename, sheet_name="data output")
+df_output.to_excel(outpath+'/'+outputfilename, sheet_name="data output")
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-print('\n - Output gemt i mappen '+path)
+print('\n - Output gemt i mappen '+outpath+'/')
 print('   med filnavnet '+outputfilename+'\n')
-inputfile = excelfile.split('/')[-1]
-print(' - Indholdet i det beregnede output er baseret på filen '+inputfile)
-print('   som ligger i mappen '+excelfile.split(inputfile)[0]+'\n')
-print(' - Den gemte output ful indeholder indeholdere: ')
-print('    o Antal primærindlæggelser (total)                                 = '+str("%.2f" % df_output['Primærindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
-print('    o Antal behandlingskontakter med mindst en genindlæggelse (total)  = '+str("%.2f" % df_output['Behandlingskontakter med mindst en genindindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
-print('    o Behandlingskontagenindlæggelser på afsnitsniveau (total)         = '+str("%.2f" % df_output['Genindlæggelse afsnit optælling'].sum()))
-print('    o Behandlingskontagenindlæggelser på overafdelingsniveu (total)    = '+str("%.2f" % df_output['Genindlæggelse overafdeling optælling'].sum())+'\n')
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+loggingfile = outpath+'/'+outputfilename.replace('.xlsx','_log.txt')
+print(" - Skriver stats til filen "+loggingfile)
+fout = open(loggingfile, 'w')
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+fout.write("\n - Program til indentificering af behandlingskontaktgenindlæggelser startet "+nowstring)
+fout.write('\n\n - Output gemt i mappen '+outpath+'/')
+fout.write('\n   med filnavnet '+outputfilename+'\n')
+
+inputfile = os.path.basename(excelfile)
+fout.write('\n - Indholdet i det beregnede output er baseret på filen '+inputfile)
+fout.write('\n   som ligger i mappen '+outpath+'/\n')
+fout.write('\n - Den gemte output ful indeholder indeholdere: ')
+fout.write('\n    o Antal primærindlæggelser (total)                                 = '+str("%12.2f" % df_output['Primærindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
+fout.write('\n    o Antal behandlingskontakter med mindst en genindlæggelse (total)  = '+str("%12.2f" % df_output['Behandlingskontakter med mindst en genindindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
+fout.write('\n    o Behandlingskontagenindlæggelser på afsnitsniveau (total)         = '+str("%12.2f" % df_output['Genindlæggelse afsnit optælling'].sum()))
+fout.write('\n    o Behandlingskontagenindlæggelser på overafdelingsniveu (total)    = '+str("%12.2f" % df_output['Genindlæggelse overafdeling optælling'].sum())+'\n')
 
 for oo, overafd in enumerate(unique_overafd_NSR):
-    print('    o Behandlingskontagenindlæggelser '+'Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]+'   = ' +
-          str("%.2f" % df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]].sum()))
+    fout.write(('\n    o Behandlingskontagenindlæggelser fra overafd. ' + shortnames_overafd[overafd]).ljust(100)+' = ' +
+          str("%12.2f" % df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[overafd]].sum()))
 
 for aa, afsn in enumerate(unique_afsn_NSR):
-    print('    o Behandlingskontagenindlæggelser '+'Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]+'   = ' +
-          str("%.2f" % df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]].sum()))
+    fout.write(('\n    o Behandlingskontagenindlæggelser fra afsn. ' + shortnames_afsn[afsn]).ljust(100)+' = ' +
+          str("%12.2f" % df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[afsn]].sum()))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
 todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
 print("\n\n - Program til indentificering af behandlingskontaktgenindlæggelser sluttede "+nowstring)
+fout.write("\n\n - Program til indentificering af behandlingskontaktgenindlæggelser sluttede "+nowstring)
+#=======================================================================================================================
+fout.close() # closing log file
+print("\n - Log er gemt. Afslutter om ", end='')
+for ii in range(0,10):
+    sleep(0.25)
+    print(str(10-ii)+' ', end='')
+print(' --->')
 #=======================================================================================================================
 
