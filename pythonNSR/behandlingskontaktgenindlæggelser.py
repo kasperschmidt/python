@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warn
 #Switches til kontrol af kode
 GUIinput   = True # Aktiver GUI som beder om at indlæse Excel fil?
 #=======================================================================================================================
-def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle):
+def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle,maade_udsk):
     """
     Tjek indhold af patientkotakt for at bestæmme om der er tale om en primærindlæggelse (PI)
     """
@@ -21,6 +21,7 @@ def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle):
             all(['hospice' not in str(afsn).lower() for afsn in afsnit_alle.values]) & \
             all([str(dia)[:5] != 'DZ763' for dia in dia_alle.values]) & \
             (str(dia_udsk.values)[0][:3] != 'DO4') & \
+            (str(maade_udsk.values[0]) != 'DØD') & \
             all([str(dia)[:2] != 'DC' for dia in dia_alle.values]) & \
             all([str(dia)[:4] != 'DD00' for dia in dia_alle.values]) & \
             all([str(dia)[:4] != 'DD01' for dia in dia_alle.values]) & \
@@ -92,19 +93,6 @@ def tjek_for_GI(ptktktype_start,dia_alle,afsnit_alle):
 nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
 todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
 print("\n\n - Program til indentificering af behandlingskontaktgenindlæggelser startet "+nowstring)
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-if GUIinput:
-    wintitle   = "Genindlæggelsestidsinterval efter primær indlæggelse"
-    wintext    = "Angiv tidsintervallet efter primær indlæggelse, hvori der skal tælles genindlæggelser. Værdier skal angives i timer. \nNationale kriterier: tmin = 0 og tmaks = 720 (30 dage)."
-    input_list = ["tmin [timer]", "tmax [timer]"]
-
-    # creating a integer box
-    output     = easygui.multenterbox(wintext, wintitle, input_list, values=['0','720'])
-    GItimeMin  = float(output[0])    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
-    GItimeMaks = float(output[1])  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
-else:
-    GItimeMin  = 0.0    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
-    GItimeMaks = 720.0  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if GUIinput:
     title   = "Personhenførbare data?"
@@ -129,10 +117,23 @@ if GUIinput:
         print(' - fejl i angivelse af Excel fil')
 else:
     excelfile = "O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/genindlæggelser og genbesøg/" \
-                "Behandlingskontaktgenindlæggelser/Behandlingskontaktgenindlæggelser_datatræk_220101-220601_minimalt_kortversion.xlsx"
+                "Behandlingskontaktgenindlæggelser/Behandlingskontaktgenindlæggelser_datatræk_220401-220601_minimalt_kortversion.xlsx"
 
 outpath = os.path.dirname(excelfile)
 print(" - Excel datafil angivet: \n   "+ excelfile)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if GUIinput:
+    wintitle   = "Genindlæggelsestidsinterval efter primær indlæggelse"
+    wintext    = "Angiv tidsintervallet efter primær indlæggelse, hvori der skal tælles genindlæggelser. Værdier skal angives i timer. \nNationale kriterier: tmin = 0 og tmaks = 720 (30 dage)."
+    input_list = ["tmin [timer]", "tmax [timer]"]
+
+    # creating a integer box
+    output     = easygui.multenterbox(wintext, wintitle, input_list, values=['0','720'])
+    GItimeMin  = float(output[0])    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+    GItimeMaks = float(output[1])  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+else:
+    GItimeMin  = 0.0    # mindste tid i timer efter primær indlæggelse en genindlæggelse kan registreres
+    GItimeMaks = 720.0  # maksimale tid i timer efter primær indlæggelse en genindlæggelse kan registreres
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # indlæs Excel data i pandas dataframe
 print('\n - Indlæser Excel datafil...')
@@ -141,6 +142,16 @@ print('   Sikrer at sorteringen er CPR > BHK udskrivning > Kontakt start > PTK I
 df_kontakter = df_kontakter_in.sort_values(by=["Patient CPR-nr.", "Behandlingskontakt udskrivningsdato Dato-tid", "Kontakt startdato Dato-tid", "Patientkontakt record ID"], ascending=[True, True, True, True]).copy()
 df_kontakter = df_kontakter.reset_index(drop=True) # Sikrer at indeks følger sortering
 print('   Indlæste dataframe med ' + str(len(df_kontakter)) + ' rækker')
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if GUIinput:
+    wintitle   = "Kolonner der skal tilføjes output"
+    wintext    = "Angiv kolonner fra input datafil der skal tilføjes outputtet"
+    col_list   = df_kontakter.columns
+
+    # creating a multi choice box
+    include_col = easygui.multchoicebox(wintext, wintitle, col_list, preselect=None)
+else:
+    include_col = None
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # definer en række vektorer med indhold til senere brug
 uniqueCPR = np.unique(df_kontakter['Patient CPR-nr.'])
@@ -163,6 +174,9 @@ if inkluderpersonoplysninger:
     outputdata['PTK ID'] = list(df_kontakter['Patientkontakt record ID'])
     outputdata['BHK ID'] = list(df_kontakter['Behandlingskontakt record ID'])
     outputdata['Indlæggelsesmåde'] = list(df_kontakter['Indlæggelsesmåde navn'])
+if include_col is not None:
+    for cc, colname in enumerate(include_col):
+        outputdata[colname] = list(df_kontakter[colname])
 outputdata['Aktionsdiagnose'] = list(df_kontakter['Aktionsdiagnosekode'])
 outputdata['Aktionsdiagnose tekst'] = list(df_kontakter['Aktionsdiagnose kodetekst'])
 outputdata['Kontakt start'] = list(kontaktStart)
@@ -231,7 +245,8 @@ for bb, bid in enumerate(uniqueBHKID):
     if df_output['Ansvarligt afsnit'][ent_ptk_udsk].values in unique_afsn_NSR:
         isPI = tjek_for_PI(df_kontakter['Aktionsdiagnosekode'][ent_ptk_udsk],
                            df_kontakter['Aktionsdiagnosekode'][ent_ptk_alle],
-                           df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle])
+                           df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle],
+                           df_kontakter['Afslutningsmåde navn'][ent_ptk_udsk])
         df_output['Primærindlæggelse'][ent_ptk_udsk] = isPI
 
 print('\n - Færdig med evaluering af alle '+str(len(uniqueBHKID))+' behandlingskontakter')
