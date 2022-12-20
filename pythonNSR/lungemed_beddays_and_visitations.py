@@ -136,8 +136,14 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
                         (datecheck < datetime.datetime.strptime("27-06-2022 00:00:00", "%d-%m-%Y %H:%M:%S")):
                     NbedsSUH = 18
                 elif (datecheck > datetime.datetime.strptime("27-06-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) &\
-                        (datecheck < datetime.datetime.strptime("08-08-2022 00:00:00", "%d-%m-%Y %H:%M:%S")):
+                        (datecheck < datetime.datetime.strptime("08-08-2022 00:00:00", "%d-%m-%Y %H:%M:%S")): # sommer lavaktivitet
                     NbedsSUH = 14
+                elif (datecheck > datetime.datetime.strptime("24-12-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) &\
+                        (datecheck < datetime.datetime.strptime("02-01-2023 00:00:00", "%d-%m-%Y %H:%M:%S")): # jul lavaktivitet
+                    NbedsSUH = 14
+                elif (datecheck > datetime.datetime.strptime("02-01-2023 00:00:00", "%d-%m-%Y %H:%M:%S")) &\
+                        (datecheck < datetime.datetime.strptime("01-01-2024 00:00:00", "%d-%m-%Y %H:%M:%S")):
+                    NbedsSUH = 20
                 else:
                     NbedsSUH = 18
 
@@ -583,17 +589,27 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                  rotation=90, color='gray',
                  horizontalalignment='center', verticalalignment='bottom')
 
+        # sommer lavaktivitet
         plt.plot([datetime.datetime.strptime("27-06-2022", "%d-%m-%Y"),
                   datetime.datetime.strptime("27-06-2022", "%d-%m-%Y")],
                  [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
         plt.plot([datetime.datetime.strptime("08-08-2022", "%d-%m-%Y"),
                   datetime.datetime.strptime("08-08-2022", "%d-%m-%Y")],
                  [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
-
         plt.text(datetime.datetime.strptime("15-07-2022", "%d-%m-%Y"), textymin, 'SUH 14 senge', fontsize=Fsize,
                  rotation=90, color='gray',
                  horizontalalignment='center', verticalalignment='bottom')
 
+        # jul lavaktivitet
+        plt.plot([datetime.datetime.strptime("24-12-2022", "%d-%m-%Y"),
+                  datetime.datetime.strptime("24-12-2022", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.plot([datetime.datetime.strptime("02-01-2023", "%d-%m-%Y"),
+                  datetime.datetime.strptime("02-01-2023", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.text(datetime.datetime.strptime("29-12-2022", "%d-%m-%Y"), textymin, 'SUH 14 senge', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
@@ -730,19 +746,22 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         pointcolor = 'red'
         ent_adjust18 = np.where((df_SUHupdates['dates_' + str(measurehour)] > datetime.datetime.strptime("27-06-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) & \
                                (df_SUHupdates['dates_' + str(measurehour)] < datetime.datetime.strptime("08-08-2022 00:00:00", "%d-%m-%Y %H:%M:%S")))[0]
-
-        # plt.errorbar(df_SUHupdates['dates_' + str(measurehour)][ent_adjust18] ,
-        #              df_SUHupdates['occupancy_available_' + str(measurehour)][ent_adjust18]*14./18. , xerr=xerr, yerr=yerr,
-        #              marker='o', lw=0, markersize=marksize, alpha=0.5,
-        #              markerfacecolor=pointcolor, ecolor=pointcolor,
-        #              markeredgecolor=pointcolor, zorder=8.,
-        #              label='SUH justeret fra 14 til 18 senge ')
         plt.errorbar(df_SUHupdates['dates_' + str(measurehour)][ent_adjust18] ,
                      df_SUHupdates['occupancy_available_movingavg5days_' + str(measurehour)][ent_adjust18]*14./18., xerr=xerr, yerr=yerr,
                      marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
                      markerfacecolor=pointcolor, ecolor=pointcolor,
                      markeredgecolor=pointcolor, zorder=20.,
                      label='SUH justeret fra 14 til 18 senge ')
+
+        pointcolor = 'red'
+        ent_adjust18 = np.where((df_SUHupdates['dates_' + str(measurehour)] > datetime.datetime.strptime("24-12-2022 00:00:00", "%d-%m-%Y %H:%M:%S")) & \
+                               (df_SUHupdates['dates_' + str(measurehour)] < datetime.datetime.strptime("02-01-2023 00:00:00", "%d-%m-%Y %H:%M:%S")))[0]
+        plt.errorbar(df_SUHupdates['dates_' + str(measurehour)][ent_adjust18] ,
+                     df_SUHupdates['occupancy_available_movingavg5days_' + str(measurehour)][ent_adjust18]*14./18., xerr=xerr, yerr=yerr,
+                     marker='.', lw=lthick, markersize=0, alpha=1.0, color=pointcolor,
+                     markerfacecolor=pointcolor, ecolor=pointcolor,
+                     markeredgecolor=pointcolor, zorder=20.)
+        #########################################
 
         xrangevals = [df_SUHupdates['dates_' + str(measurehour)].values[0], df_SUHupdates['dates_' + str(measurehour)].values[-1]]
         #xrangevals = [days_updates[0], df_SUHupdates['dates_' + str(measurehour)].values[-1]]
@@ -754,6 +773,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         textymin = ymin + dy * 0.05
         textymax = ymin + dy * 0.10
 
+        # sommer lavaktivitet
         plt.plot([datetime.datetime.strptime("27-06-2022", "%d-%m-%Y"),
                   datetime.datetime.strptime("27-06-2022", "%d-%m-%Y")],
                  [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
@@ -768,6 +788,24 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         plt.text(datetime.datetime.strptime("23-07-2022", "%d-%m-%Y"), textymin, 'SUH 18 senge', fontsize=Fsize,
                  rotation=90, color='red',
                  horizontalalignment='center', verticalalignment='bottom')
+
+
+        # jul lavaktivitet
+        plt.plot([datetime.datetime.strptime("24-12-2022", "%d-%m-%Y"),
+                  datetime.datetime.strptime("24-12-2022", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+        plt.plot([datetime.datetime.strptime("02-01-2023", "%d-%m-%Y"),
+                  datetime.datetime.strptime("02-01-2023", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+
+        plt.text(datetime.datetime.strptime("27-12-2022", "%d-%m-%Y"), textymin, 'SUH 14 senge', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
+
+        plt.text(datetime.datetime.strptime("30-12-2022", "%d-%m-%Y"), textymin, 'SUH 18 senge', fontsize=Fsize,
+                 rotation=90, color='red',
+                 horizontalalignment='center', verticalalignment='bottom')
+
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
