@@ -223,8 +223,8 @@ for aa, afsn in enumerate(unique_afsn):
         outputdata['PIDIA for GI fra ' + shortnames_afsn[afsn]] = NaNlist
         unique_afsn_NSR.append(afsn)
 
-df_output = pd.DataFrame(outputdata)
-
+df_output   = pd.DataFrame(outputdata)
+outputdata  = [0] # reset output data array to save on memory use.
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Løkke over behandlingskontakter for at bestæmme primærindlæggelser
 print('\n - Identificerer primærindlæggelser')
@@ -250,6 +250,13 @@ for bb, bid in enumerate(uniqueBHKID):
         df_output['Primærindlæggelse'][ent_ptk_udsk] = isPI
 
 print('\n - Færdig med evaluering af alle '+str(len(uniqueBHKID))+' behandlingskontakter')
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+print('\n ´ Nuller variable')
+ent_ptk_alle = [0]
+ent_ptk_udsk = [0]
+ent_seneste  = [0]
+ent_ptk_udsk = [0]
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Løkke over patienter for at evaluere dem med henblik på genindlæggelser
 print('\n - Identificerer behandlingskontaktgenindlæggelser')
@@ -304,6 +311,17 @@ for cc, cpr in enumerate(uniqueCPR):
 
 print('\n - Færdig med evaluering af all '+str(len(uniqueCPR))+' patienter')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+print('\n   Nuller variable')
+ent_PI              = [0]
+u_PIafsnit          = [0]
+PIoverafd           = [0]
+PIdia               = [0]
+ent_forPIogAfsnit   = [0]
+BHKforPIogAfsnit    = [0]
+diffPItider         = [0]
+ent_ptk_alle        = [0]
+ent_senestePIdia    = [0]
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 print('\n - Sikrer at der for hvert behandlingskontakt ID kun er 1 genindlæggelsesflag per overafdeling og afsnit')
 for bb, BHKID in enumerate(uniqueBHKID):
     infostr = '   Korrigerer genindlæggelsesflag for ID ' + str(bb + 1) + ' / ' + str(len(uniqueBHKID))
@@ -348,6 +366,14 @@ for bb, BHKID in enumerate(uniqueBHKID):
                 df_output['PI for GI fra ' + shortnames_afsn[afsn]][ent_BHK_afsn[0]] = afsn
 
 print('\n - Færdig med korrigering af flag')
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+print('\n   Nuller variable')
+ent_BHKID_alle      = [0]
+BHKI_overafd        = [0]
+ent_BHK_overafd     = [0]
+selection           = [0]
+BHKI_afsn           = [0]
+ent_BHK_afsn        = [0]
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 print('\n - Tilføjer kolonner med samlet sum af genindlæggelser')
 df_output['Genindlæggelse afsnit total (sum)'] = df_output.loc[:, [cc for cc in df_output.columns if cc.startswith('Genindlæggelse fra afsn.')]].sum(axis=1)
