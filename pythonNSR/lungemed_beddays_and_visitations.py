@@ -671,7 +671,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         plt.ioff()
         # plt.title(inforstr[:-2],fontsize=Fsize)
 
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
         plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
 
         xerr = None
