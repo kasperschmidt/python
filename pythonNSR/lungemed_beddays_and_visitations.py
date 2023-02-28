@@ -462,6 +462,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         xvalues = df_results['dates_'+str(measurehour)]
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d-%Y'))
         plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+        plt.grid(color='gray', linestyle=':', linewidth=1, alpha=0.5)
 
         xerr = None
         yerr = None
@@ -673,6 +674,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
         plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+        plt.grid(color='gray', linestyle=':', linewidth=1, alpha=0.5)
 
         xerr = None
         yerr = None
@@ -845,6 +847,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     xvalues = df_results['dates_'+str(measurehour)]
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d-%Y'))
     plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+    plt.grid(color='gray', linestyle=':', linewidth=1, alpha=0.5)
 
     xerr = None
     yerr = None
@@ -1034,6 +1037,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
     xvalues = df_results['dates_' + str(measurehour)]
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d-%Y'))
     plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+    plt.grid(color='gray', linestyle=':', linewidth=2)
 
     xerr = None
     yerr = None
