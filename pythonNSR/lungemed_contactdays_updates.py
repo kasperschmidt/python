@@ -31,7 +31,7 @@ def runall_for_updating(datemin_mostrecent='01-01-2022', verbose=True):
     Format is "%d-%m-%Y"
 
     import lungemed_contactdays_updates as lcu
-    lcu.runall_for_updating(datemin_mostrecent='01-02-2022', verbose=True)
+    lcu.runall_for_updating(datemin_mostrecent='01-03-2022', verbose=True)
 
     """
 
