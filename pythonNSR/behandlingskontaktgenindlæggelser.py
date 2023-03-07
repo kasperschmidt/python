@@ -4,12 +4,13 @@ import easygui
 import pandas as pd
 import datetime
 from time import sleep
-import pdb
-import os
-import sys
+from os import path as ospath
+from sys import stdout as sysstdout
 import numpy as np
+from collections import OrderedDict
 pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warnings
-import gc
+import pdb
+from gc import collect as gccollect
 #=======================================================================================================================
 from memory_profiler import profile as memprofile # use @memprofile placed before "def" to memory profile of a function
 #=======================================================================================================================
@@ -122,7 +123,7 @@ def beregn_bgi():
         excelfile = "O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/genindlæggelser og genbesøg/" \
                     "Behandlingskontaktgenindlæggelser/Behandlingskontaktgenindlæggelser_datatræk_220401-220601_minimalt_kortversion.xlsx"
 
-    outpath = os.path.dirname(excelfile)
+    outpath = ospath.dirname(excelfile)
     print(" - Excel datafil angivet: \n   "+ excelfile)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if GUIinput:
@@ -227,22 +228,22 @@ def beregn_bgi():
             unique_afsn_NSR.append(afsn)
 
     df_output   = pd.DataFrame(outputdata)
-    print('--->'+str(sys.getsizeof(df_output)))
+    #print('--->'+str(sys.getsizeof(df_output)))
     print(' - Justerer dtypes i pandas dataframe ')
     for kk, key in enumerate(df_output.keys()):
         if 'Genindlæg' in key:
             df_output[key] = df_output[key].astype('float16')
-    print('--->' + str(sys.getsizeof(df_output)))
+    #print('--->' + str(sys.getsizeof(df_output)))
 
     del outputdata # reset output data array to save on memory use.
-    gc.collect()
+    gccollect()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Løkke over behandlingskontakter for at bestæmme primærindlæggelser
     print('\n - Identificerer primærindlæggelser')
     for bb, bid in enumerate(uniqueBHKID):
         infostr = '   Evaluerer udskrivende afsnit af behandlingskontakt ' + str(bb + 1) + ' / ' + str(len(uniqueBHKID))
-        sys.stdout.write("%s\r" % infostr)
-        sys.stdout.flush()
+        sysstdout.write("%s\r" % infostr)
+        sysstdout.flush()
 
         # Vælger sidste (udskrivende) patientkontakt i behandlingskontakt
         ent_ptk_alle = np.where((df_kontakter['Behandlingskontakt record ID'] == bid))[0]
@@ -266,14 +267,14 @@ def beregn_bgi():
     del ent_ptk_alle
     del ent_ptk_udsk
     del ent_seneste
-    gc.collect()
+    gccollect()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Løkke over patienter for at evaluere dem med henblik på genindlæggelser
     print('\n - Identificerer behandlingskontaktgenindlæggelser')
     for cc, cpr in enumerate(uniqueCPR):
         infostr = '   Evaluerer forløbene for patient ' + str(cc + 1) + ' / ' + str(len(uniqueCPR))
-        sys.stdout.write("%s\r" % infostr)
-        sys.stdout.flush()
+        sysstdout.write("%s\r" % infostr)
+        sysstdout.flush()
 
         ent_cpr = np.where(df_kontakter['Patient CPR-nr.'] == cpr)[0]
         u_BHKID = np.unique(df_kontakter['Behandlingskontakt record ID'][ent_cpr])
@@ -331,13 +332,13 @@ def beregn_bgi():
     del diffPItider
     del ent_ptk_alle
     del ent_senestePIdia
-    gc.collect()
+    gccollect()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print('\n - Sikrer at der for hvert behandlingskontakt ID kun er 1 genindlæggelsesflag per overafdeling og afsnit')
     for bb, BHKID in enumerate(uniqueBHKID):
         infostr = '   Korrigerer genindlæggelsesflag for ID ' + str(bb + 1) + ' / ' + str(len(uniqueBHKID))
-        sys.stdout.write("%s\r" % infostr)
-        sys.stdout.flush()
+        sysstdout.write("%s\r" % infostr)
+        sysstdout.flush()
         ent_BHKID_alle = np.where(df_kontakter['Behandlingskontakt record ID'] == BHKID)[0]
 
         for oo, overafd in enumerate(unique_overafd_NSR):
@@ -385,7 +386,7 @@ def beregn_bgi():
     del selection
     del BHKI_afsn
     del ent_BHK_afsn
-    gc.collect()
+    gccollect()
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print('\n - Tilføjer kolonner med samlet sum af genindlæggelser')
     df_output['Genindlæggelse afsnit total (sum)'] = df_output.loc[:, [cc for cc in df_output.columns if cc.startswith('Genindlæggelse fra afsn.')]].sum(axis=1)
@@ -401,8 +402,8 @@ def beregn_bgi():
     df_output['Behandlingskontakter med mindst en genindindlæggelse'] = zerolist
     for bb, BHKID in enumerate(uniqueBHKID):
         infostr = '   Checker ID ' + str(bb + 1) + ' / ' + str(len(uniqueBHKID))
-        sys.stdout.write("%s\r" % infostr)
-        sys.stdout.flush()
+        sysstdout.write("%s\r" % infostr)
+        sysstdout.flush()
 
         ent_BHKID_alle = np.where(df_kontakter['Behandlingskontakt record ID'] == BHKID)[0]
 
@@ -433,7 +434,7 @@ def beregn_bgi():
     fout.write('\n\n - Output gemt i mappen '+outpath+'/')
     fout.write('\n   med filnavnet '+outputfilename+'\n')
 
-    inputfile = os.path.basename(excelfile)
+    inputfile = ospath.basename(excelfile)
     fout.write('\n - Indholdet i det beregnede output er baseret på filen '+inputfile)
     fout.write('\n   som ligger i mappen '+outpath+'/\n')
     fout.write('\n - Den gemte output ful indeholder indeholdere: ')
@@ -464,6 +465,121 @@ def beregn_bgi():
     print(' --->')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
+#=======================================================================================================================
+def append_new_bgi_calc(dateminadd = '31-12-2022', GUIinput=True):
+    """
+    Function appending a new set of BGI calculations (matching column names) to an existing BGI output.
+    Data input is used to specify the earliest data (included) in the addition, that should be included.
+
+    --- INPUT ---
+    dateminadd          The minimum date to include in appended data (usually it would be the max date of mainBGIfile)
+                        Use the format dd-mm-yyyy for the input string.
+    GUIinput            To provide files interactively via GUIs set this to True; otherwise hardocede test files will
+                        be used
+
+    --- EXAMPLE OF USE ---
+    import behandlingskontaktgenindlæggelser as bgi
+    bgi.append_new_bgi_calc(dateminadd = '01-02-2023', GUIinput=True)
+
+    bgi.append_new_bgi_calc(dateminadd = '15-01-2022', GUIinput=False) # for testing
+
+    """
+    nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
+    todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
+    print("\n - Tilføjer BGI beregninger til eksisterende BGI output; startede "+nowstring)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if GUIinput:
+        title="BGImain Excel fil"
+        msg = "Vælg Excel BGI datafil der skal tilføjes nye rækker til."
+        choices = ["Vælg Excel datafil"]
+        reply = easygui.buttonbox(msg, title , choices=choices)
+        if reply == choices[0]:
+            excelfile_main = easygui.fileopenbox()
+        else:
+            print(' - fejl i angivelse af Excel fil')
+        excelfile_main = excelfile_main.replace('\\', '/')
+    else:
+        excelfile_main = "C:/Users/kaschm/Desktop/NSRLISmar2023/BGI230301/NSR LIS Behandlingskontaktgenindlæggelser med personoplysninger 230206 - kort.xlsx"
+
+    print(" - BGI datafil angivet: \n   "+ excelfile_main)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if GUIinput:
+        title="BGIadd Excel fil"
+        msg = "Vælg Excel BGI datafil der skal tilføjes data fra."
+        choices = ["Vælg Excel datafil"]
+        reply = easygui.buttonbox(msg, title , choices=choices)
+        if reply == choices[0]:
+            excelfile_add = easygui.fileopenbox()
+        else:
+            print(' - fejl i angivelse af Excel fil')
+        excelfile_add = excelfile_add.replace('\\','/')
+    else:
+        excelfile_add = "C:/Users/kaschm/Desktop/NSRLISmar2023/BGI230301/BGIberegninger230301kort.xlsx"
+
+    print(" - BGI datafil der skal tilføjes data fra: \n   "+ excelfile_add)
+
+    outpath    = ospath.dirname(excelfile_add)
+    outputfile = outpath+'/'+excelfile_main.split('/')[-1].replace('.xls','_dataadd'+todaystring+'.xls')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    datemin     = datetime.datetime.strptime(dateminadd, "%d-%m-%Y")
+    print("   Tilføjer data fra denne fil der ligger efter "+ str(datetime.datetime.strftime(datemin,"%d-%m-%Y %H:%M:%S")))
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # indlæs Excel data i pandas dataframe
+    print('\n - Indlæser Excel datafiler...')
+    print(' - BGImain: fil der skal tilføjes data til')
+    df_BGImain = pd.read_excel(excelfile_main)
+    df_BGImain = df_BGImain.drop('Unnamed: 0', axis='columns')
+    print('   Indlæste dataframe med ' + str(len(df_BGImain)) + ' rækker')
+
+    print(' - BGIadd:  fil der skal tilføjes data fra')
+    df_BGIadd  = pd.read_excel(excelfile_add)
+    df_BGIadd  = df_BGIadd.drop('Unnamed: 0', axis='columns')
+    print('   Indlæste dataframe med ' + str(len(df_BGIadd)) + ' rækker')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    datecol_main = df_BGImain["Behandlingskontakt udskrivning"]
+    datecol_add  = df_BGIadd["Behandlingskontakt udskrivning"]
+
+    dropval      = np.where(datecol_add < datemin)[0]
+    if len(dropval) == 0:
+        print('\n - ADVARSEL: 0 rækker fra BGI fil, der ikke skal tilføjes baseret på dato input')
+    else:
+        print('\n - Fjerner '+str(len(dropval))+' rækker fra BGI fil, der ikke skal tilføjes baseret op dato input')
+        df_BGIadd = df_BGIadd.drop(df_BGIadd.index[dropval], axis='index') # removing the rows dropindex
+    print('   Dette resulterer i dataframe med ' + str(len(df_BGIadd)) + ' rækker')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    print('\n   Gennemgår kolonner i BGImain og bygger dataframe der skal tilføjes ud fra BGIadd ')
+    colnames_main = df_BGImain.columns
+    colnames_add  = df_BGIadd.columns
+
+    outputdata = OrderedDict()
+    NaNlist = [np.nan] * len(df_BGIadd['CPR'])
+
+    for cc, colname in enumerate(colnames_main):
+        print('   Tilføjer data til kolonne '+str(cc+1)+'/'+str(len(colnames_main))+': '+colname)
+        if colname in colnames_add:
+
+            outputdata[colname] = list(df_BGIadd[colname])
+        else:
+            print('   ADVARSEL: kolonne ikke til stede i BGIadd; tilføjer NaNs')
+            outputdata[colname] = NaNlist
+
+    df_append   = pd.DataFrame(outputdata)
+
+    print('\n   Tilføjer data ti BGImain ')
+    df_BGImain  = df_BGImain.append(df_append)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    print('\n - Gemmer output dataframe til Excelfil')
+    print(' - Outputtet vil indeholde ' + str(len(df_BGImain)) + ' rækker')
+    print('   Sikrer at sorteringen er CPR > BHK udskrivning > Kontakt start')
+    df_BGImain = df_BGImain.sort_values(by=['CPR','Behandlingskontakt udskrivning', 'Kontakt start'], ascending=[True, True, True])
+    df_BGImain.to_excel(outputfile, sheet_name="data output")
+    print(' - Output gemt i filen '+outputfile)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
+    print("\n - Tilføjelse af BGI beregninger til eksisterende BGI output sluttede " + nowstring)
 #=======================================================================================================================
 if __name__ == '__main__':
     beregn_bgi()
