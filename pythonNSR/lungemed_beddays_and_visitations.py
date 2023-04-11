@@ -660,7 +660,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
         if verbose: print(' - Initiating '+plotname)
 
         fig = plt.figure(figsize=(9, 6))
-        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.10, top=0.90)
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, left=0.1, right=0.97, bottom=0.15, top=0.90)
         Fsize = 10
         lthick = 2
         marksize = 4
@@ -811,6 +811,7 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
+        plt.xticks(rotation=30, ha='right')
         plt.ylabel('Belægningsprocent Lungemedicin')
 
         # --------- RANGES ---------
