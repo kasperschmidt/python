@@ -11,7 +11,7 @@ import numpy as np
 pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warnings
 #=======================================================================================================================
 #Switches til kontrol af kode
-GUIinput   = False # Aktiver GUI som beder om at indlæse Excel fil?
+GUIinput   = True # Aktiver GUI som beder om at indlæse Excel fil?
 #=======================================================================================================================
 def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle,maade_udsk):
     """
@@ -38,7 +38,7 @@ def tjek_for_PI(dia_udsk,dia_alle,afsnit_alle,maade_udsk):
         result = 0
     return result
 #=======================================================================================================================
-def tjek_for_GI(ptktktype_start,dia_alle,afsnit_alle):
+def tjek_for_GI_udenDIA(ptktktype_start,dia_alle,afsnit_alle):
     """
     Tjek indhold af patientkontakt for at bestæmme om der er tale om en genindlæggelse (GI)
     """
@@ -89,6 +89,57 @@ def tjek_for_GI(ptktktype_start,dia_alle,afsnit_alle):
         result = 0
     return result
 #=======================================================================================================================
+def tjek_for_GI(ptktktype_start,dia_alle,afsnit_alle):
+    """
+    Tjek indhold af patientkontakt for at bestæmme om der er tale om en genindlæggelse (GI)
+    """
+    if (ptktktype_start.lower() == 'akut') & \
+            all(['hospice' not in str(afsn).lower() for afsn in afsnit_alle.values]) & \
+            all([str(dia)[:2] != 'DF' for dia in [dia_alle.values[0], dia_alle.values[-1]]]) & \
+            all([str(dia)[:2] != 'DC' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD00' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD01' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD02' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD03' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD04' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD05' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD06' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD07' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD08' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DD09' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DO80' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DO81' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DO82' for dia in dia_alle.values]) & \
+            all([str(dia)[:4] != 'DO84' for dia in dia_alle.values]) & \
+            (str(dia_alle.values[0])[:2] != 'DS'  ) & \
+            (str(dia_alle.values[0])[:3] != 'DT1' ) & \
+            (str(dia_alle.values[0])[:3] != 'DT2' ) & \
+            (str(dia_alle.values[0])[:4] != 'DT30') & \
+            (str(dia_alle.values[0])[:4] != 'DT31') & \
+            (str(dia_alle.values[0])[:4] != 'DT32') & \
+            (str(dia_alle.values[0])[:4] != 'DT33') & \
+            (str(dia_alle.values[0])[:4] != 'DT34') & \
+            (str(dia_alle.values[0])[:4] != 'DT35') & \
+            (str(dia_alle.values[0])[:4] != 'DT51') & \
+            (str(dia_alle.values[0])[:4] != 'DT52') & \
+            (str(dia_alle.values[0])[:4] != 'DT53') & \
+            (str(dia_alle.values[0])[:4] != 'DT54') & \
+            (str(dia_alle.values[0])[:4] != 'DT55') & \
+            (str(dia_alle.values[0])[:4] != 'DT56') & \
+            (str(dia_alle.values[0])[:4] != 'DT57') & \
+            (str(dia_alle.values[0])[:4] != 'DT58') & \
+            (str(dia_alle.values[0])[:4] != 'DT59') & \
+            (str(dia_alle.values[0])[:3] != 'DT6' ) & \
+            (str(dia_alle.values[0])[:3] != 'DT7' ) & \
+            (str(dia_alle.values[0])[:3] != 'DT9' ) & \
+            (str(dia_alle.values[0])[:2] != 'DX'  ) & \
+            (str(dia_alle.values[0])[:2] != 'DY'  ) & \
+            all([str(dia)[:5] != 'DZ763' for dia in dia_alle.values]):  # rask ledsager/nyfødt
+        result = 1
+    else:
+        result = 0
+    return result
+#=======================================================================================================================
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 nowstring   = datetime.datetime.strftime(datetime.datetime.now(),"%d-%m-%Y %H:%M:%S")
 todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
@@ -105,6 +156,18 @@ if GUIinput:
         inkluderpersonoplysninger = False
 else:
     inkluderpersonoplysninger = True
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if GUIinput:
+    title = "Diagnosekriterier på genindlæggelser?"
+    message = "Skal de nationale diagnosekriterier fjernes for genindlæggelserne?"
+    choices = ["Ja tak", "Nej tak"]
+    output = easygui.ynbox(message, title, choices)
+    if output:  # Hvis der trykkes Ja
+        udenDIA = True  # Tilføj CPR og ID info i output?
+    else:  # Hvis der trykkes Nej
+        udenDIA = False
+else:
+    udenDIA = False
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if GUIinput:
     title="Behandlingskontaktgenindlæggelsesberegner"
@@ -165,7 +228,10 @@ kontaktStart = df_kontakter['Kontakt startdato Dato-tid']
 #len(np.where(df_kontakter['Behandlingskontakt udskrivningsdato Dato-tid'] > datetime.datetime.strptime("25-05-2022 00:00:00", "%d-%m-%Y %H:%M:%S"))[0])
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # definer output dataframe
-outputfilename = 'BGIberegninger'+todaystring+'.xlsx'
+if udenDIA:
+    outputfilename = 'BGIberegninger' + todaystring + 'udenDIAkrit.xlsx'
+else:
+    outputfilename = 'BGIberegninger' + todaystring + 'nationalekrit.xlsx'
 #outputfilename = excelfile.replace('.xls','_BGIberegninger'+todaystring+'.xls')
 outputdata = {}
 NaNlist  = [np.nan] * len(df_kontakter['Hændelsesansvarlig Afsnit navn'])
@@ -295,9 +361,14 @@ for cc, cpr in enumerate(uniqueCPR):
                         ent_ptk_alle   = np.where(df_kontakter['Behandlingskontakt record ID'] == df_kontakter['Behandlingskontakt record ID'][ent_ktk])[0]
 
                         # df_kontakter['Aktionsdiagnosekode'][ent_ktk]
-                        isGI = tjek_for_GI(df_kontakter['Indlæggelsesmåde navn'][ent_ptk_alle].values[0],
-                                           df_kontakter['Aktionsdiagnosekode'][ent_ptk_alle],
-                                           df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle])
+                        if udenDIA:
+                            isGI = tjek_for_GI_udenDIA(df_kontakter['Indlæggelsesmåde navn'][ent_ptk_alle].values[0],
+                                                       df_kontakter['Aktionsdiagnosekode'][ent_ptk_alle],
+                                                       df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle])
+                        else:
+                            isGI = tjek_for_GI(df_kontakter['Indlæggelsesmåde navn'][ent_ptk_alle].values[0],
+                                               df_kontakter['Aktionsdiagnosekode'][ent_ptk_alle],
+                                               df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_ptk_alle])
 
                         df_output['Genindlæggelse fra afsn. ' + shortnames_afsn[PIafs]][ent_ktk] = isGI
                         df_output['Genindlæggelse fra overafd. ' + shortnames_overafd[PIoverafd]][ent_ktk] = isGI
@@ -406,6 +477,7 @@ fout.write('\n   med filnavnet '+outputfilename+'\n')
 inputfile = os.path.basename(excelfile)
 fout.write('\n - Indholdet i det beregnede output er baseret på filen '+inputfile)
 fout.write('\n   som ligger i mappen '+outpath+'/\n')
+fout.write('\n - Der søges efter genindlæggelser i tidsrummet ['+str(GItimeMin)+';'+str(GItimeMaks)+'] efter primærindlæggelsen\n')
 fout.write('\n - Den gemte output ful indeholder indeholdere: ')
 fout.write('\n    o Antal primærindlæggelser (total)                                 = '+str("%12.2f" % df_output['Primærindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
 fout.write('\n    o Antal behandlingskontakter med mindst en genindlæggelse (total)  = '+str("%12.2f" % df_output['Behandlingskontakter med mindst en genindindlæggelse'].sum())+ ' (ud af '+str(len(uniqueBHKID))+' BHKIDer)')
