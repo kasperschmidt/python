@@ -12,7 +12,7 @@ pd.options.mode.chained_assignment = None # surpress 'SettingWithCopyError' warn
 import pdb
 from gc import collect as gccollect
 #=======================================================================================================================
-from memory_profiler import profile as memprofile # use @memprofile placed before "def" to memory profile of a function
+#from memory_profiler import profile as memprofile # use @memprofile placed before "def" to memory profile of a function
 #=======================================================================================================================
 #Switches til kontrol af kode
 GUIinput   = True # Aktiver GUI som beder om at indlæse Excel fil?
@@ -210,7 +210,7 @@ def beregn_bgi():
     shortnames_overafd = {}
     for oo, overafd in enumerate(unique_overafd):
         shortnames_overafd[overafd] = overafd.split(' - ')[0].split(', ')[-1]
-        if ('SLA ' in overafd) or ('NAE ' in overafd):
+        if (('SLA ' in overafd) or ('NAE ' in overafd)) and ('PSYK' not in overafd):
             outputdata['Genindlæggelse fra overafd. '+shortnames_overafd[overafd]] = NaNlist
             outputdata['PI for GI fra ' + shortnames_overafd[overafd]] = NaNlist
             unique_overafd_NSR.append(overafd)
@@ -221,7 +221,7 @@ def beregn_bgi():
     shortnames_afsn = {}
     for aa, afsn in enumerate(unique_afsn):
         shortnames_afsn[afsn] = afsn.split(', ')[0]
-        if ('SJ SLA' in afsn) or ('SJ NAE' in afsn):
+        if (('SJ SLA' in afsn) or ('SJ NAE' in afsn)) and ('PSYK' not in afsn):
             outputdata['Genindlæggelse fra afsn. '+shortnames_afsn[afsn]] = NaNlist
             outputdata['PI for GI fra ' + shortnames_afsn[afsn]] = NaNlist
             outputdata['PIDIA for GI fra ' + shortnames_afsn[afsn]] = NaNlist
@@ -298,6 +298,7 @@ def beregn_bgi():
                         if len(PIoverafd) > 1: # Der burde kun være en unik overafdeling på dette tidspunkt, så advar hvis det ikke er tilfældet
                             print(' - ADVARSEL: For patientkontakt '+str(ent_ktk)+' var der '+str(len(PIoverafd))+' forskellige overafdelinger; bruger den første')
                         PIoverafd = PIoverafd[0]
+                        if "PSYK" in PIoverafd: pdb.set_trace() #KBS 230701
 
                         BHKforPIogAfsnit  = df_kontakter['Behandlingskontakt record ID'][ent_forPIogAfsnit]
                         diffPItider       = (indlaeggelseBHK[ent_ktk] - udskrivningBHK[ent_forPIogAfsnit]) / np.timedelta64(1,'h')
@@ -574,7 +575,7 @@ def append_new_bgi_calc(dateminadd = '31-12-2022', GUIinput=True):
     print('\n - Gemmer output dataframe til Excelfil')
     print(' - Outputtet vil indeholde ' + str(len(df_BGImain)) + ' rækker')
     print('   Sikrer at sorteringen er CPR > BHK udskrivning > Kontakt start')
-    df_BGImain = df_BGImain.sort_values(by=['CPR','Behandlingskontakt udskrivning', 'Kontakt start'], ascending=[True, True, True])
+    #KBS230704df_BGImain = df_BGImain.sort_values(by=['CPR','Behandlingskontakt udskrivning', 'Kontakt start'], ascending=[True, True, True])
     df_BGImain.to_excel(outputfile, sheet_name="data output")
     print(' - Output gemt i filen '+outputfile)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
