@@ -274,7 +274,7 @@ unique_overafd_NSR = []
 shortnames_overafd = {}
 for oo, overafd in enumerate(unique_overafd):
     shortnames_overafd[overafd] = overafd.split(' - ')[0].split(', ')[-1]
-    if ('SLA ' in overafd) or ('NAE ' in overafd):
+    if (('SLA ' in overafd) or ('NAE ' in overafd)) and ('PSYK' not in overafd):
         outputdata['Genindlæggelse fra overafd. '+shortnames_overafd[overafd]] = NaNlist
         outputdata['PI for GI fra ' + shortnames_overafd[overafd]] = NaNlist
         unique_overafd_NSR.append(overafd)
@@ -285,7 +285,7 @@ unique_afsn_NSR = []
 shortnames_afsn = {}
 for aa, afsn in enumerate(unique_afsn):
     shortnames_afsn[afsn] = afsn.split(', ')[0]
-    if ('SJ SLA' in afsn) or ('SJ NAE' in afsn):
+    if (('SJ SLA' in afsn) or ('SJ NAE' in afsn)) and ('PSYK' not in afsn):
         outputdata['Genindlæggelse fra afsn. '+shortnames_afsn[afsn]] = NaNlist
         outputdata['PI for GI fra ' + shortnames_afsn[afsn]] = NaNlist
         outputdata['PIDIA for GI fra ' + shortnames_afsn[afsn]] = NaNlist
