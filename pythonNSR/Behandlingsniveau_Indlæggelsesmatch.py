@@ -40,7 +40,7 @@ def generate_output(verbose=True):
 
     df_bo, df_ad = bim.load_data(pathKMT,verbose=verbose)
 
-    outputfilename = 'NSR KMT Stillingtagen til behandlingsniveau.xlsx'
+    outputfilename = 'NSR KMT Stillingtagen til behandlingsniveau med personoplysninger.xlsx'
     #----------------------------------------------------------------------------
     if verbose: print(' - Forbereder output struktur og array')
     outputdata = {}
@@ -50,11 +50,29 @@ def generate_output(verbose=True):
     outputdata['CPR'] = list(df_ad['Patient CPR-nr.'])
     outputdata['CPR BestOrd'] = Strlist
     outputdata['Afsnit indlæggende'] = list(df_ad['Patientkontakt på hændelsestidspunkt Kontaktansvarlig afsnit'])
+    for aa, hafs in enumerate(df_ad['Hændelsesansvarlig Afsnit navn']):
+        if hafs.startswith('TRANSIT'):
+            outputdata['Afsnit indlæggende'][aa] = hafs
+
     outputdata['Afsnit BestOrd'] = Strlist
     outputdata['Dato-tid indlæggelse'] = list(df_ad['Hændelsestidspunkt Dato-tid'])
     outputdata['Dato-tid BestOrd'] = Strlist
     outputdata['Tidsforskel [timer]'] = NaNlist
     outputdata['Patientalder'] = list(df_ad['Patient alder ved Behandlingskontaktens start'])
+    outputdata['Patientalder gruppering'] = Strlist
+    for pa, alder in enumerate(df_ad['Patient alder ved Behandlingskontaktens start']):
+        if (alder < 18):
+            outputdata['Patientalder gruppering'][pa] = '0-17'
+        elif (alder > 17) & (alder < 30):
+            outputdata['Patientalder gruppering'][pa] = '18-29'
+        elif (alder > 29) & (alder < 50):
+            outputdata['Patientalder gruppering'][pa] = '30-49'
+        elif (alder > 49) & (alder < 70):
+            outputdata['Patientalder gruppering'][pa] = '40-69'
+        elif (alder > 69) & (alder < 90):
+            outputdata['Patientalder gruppering'][pa] = '70-89'
+        else:
+            outputdata['Patientalder gruppering'][pa] = '90+'
 
     df_output = pd.DataFrame(outputdata)
     # ----------------------------------------------------------------------------
