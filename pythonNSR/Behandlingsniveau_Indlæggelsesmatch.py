@@ -59,7 +59,7 @@ def generate_output(verbose=True):
     outputdata['Dato-tid BestOrd'] = Strlist
     outputdata['Tidsforskel [timer]'] = NaNlist
     outputdata['Patientalder'] = list(df_ad['Patient alder ved Behandlingskontaktens start'])
-    outputdata['Patientalder gruppering'] = Strlist
+    outputdata['Patientalder gruppering'] = Strlist.copy()
     for pa, alder in enumerate(df_ad['Patient alder ved Behandlingskontaktens start']):
         if (alder < 18):
             outputdata['Patientalder gruppering'][pa] = '0-17'
@@ -133,7 +133,7 @@ def generate_output(verbose=True):
     df_output.to_excel(pathKMT+outputfilename, sheet_name="behandlingsniveau")
 
     print('\n - Output gemt i mappen '+pathKMT+'/')
-    print('   med filnavnet '+outputfilename+'\n')
+    print('   med filnavnet "'+outputfilename+'"\n')
 
 #=======================================================================================================================
 
