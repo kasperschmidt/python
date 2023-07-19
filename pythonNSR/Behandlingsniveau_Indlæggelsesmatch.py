@@ -1,7 +1,6 @@
 #=======================================================================================================================
 #from importlib import reload
 import pandas as pd
-import datetime
 import pdb
 from sys import stdout as sysstdout
 import numpy as np
@@ -16,8 +15,8 @@ def load_data(pathKMT,verbose=True):
     pathKMT = "O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Kvalitetsmonitoreringstavel KMT/"
     df_bo, df_ad = bim.load_data(pathKMT)
     """
-    fileBestOrd    = pathKMT+"Behandlingsniveau_BestOrd_stillingtagen.xlsx"
-    fileAdmissions = pathKMT+"Antal_indlæggelser_via_hændelse.xlsx"
+    fileBestOrd    = pathKMT+"NSR KMT behandlingsniveau BestOrd stillingtagen.xlsx"
+    fileAdmissions = pathKMT+"NSR KMT antal indlæggelser via hændelse.xlsx"
 
     print('\n - Indlæser BestOrd Excel datafil \n   ('+fileBestOrd+')')
     df_bo = pd.read_excel(fileBestOrd)
@@ -41,7 +40,7 @@ def generate_output(verbose=True):
 
     df_bo, df_ad = bim.load_data(pathKMT,verbose=verbose)
 
-    outputfilename = 'StillingtagenTilBehandlingsniveau.xlsx'
+    outputfilename = 'NSR KMT Stillingtagen til behandlingsniveau.xlsx'
     #----------------------------------------------------------------------------
     if verbose: print(' - Forbereder output struktur og array')
     outputdata = {}
@@ -49,41 +48,67 @@ def generate_output(verbose=True):
     Strlist = [''] * len(df_ad['Hændelsesansvarlig Afsnit navn'])
     zerolist = [0] * len(df_ad['Hændelsesansvarlig Afsnit navn'])
     outputdata['CPR'] = list(df_ad['Patient CPR-nr.'])
-    outputdata['Afsnit BestOrd'] = Strlist
+    outputdata['CPR BestOrd'] = Strlist
     outputdata['Afsnit indlæggende'] = list(df_ad['Patientkontakt på hændelsestidspunkt Kontaktansvarlig afsnit'])
-    outputdata['Dato-tid BestOrd'] = Strlist
+    outputdata['Afsnit BestOrd'] = Strlist
     outputdata['Dato-tid indlæggelse'] = list(df_ad['Hændelsestidspunkt Dato-tid'])
+    outputdata['Dato-tid BestOrd'] = Strlist
     outputdata['Tidsforskel [timer]'] = NaNlist
     outputdata['Patientalder'] = list(df_ad['Patient alder ved Behandlingskontaktens start'])
 
     df_output = pd.DataFrame(outputdata)
     # ----------------------------------------------------------------------------
     if verbose: print(' - Gennemgår BestOrd og matcher til indlæggelsesliste')
-    for bb, efs_bestord in enumerate(df_bo['Afsnit']):
+    Nnomatch = 0
+    Nmissingadmission = 0
+    for bb, afs_bestord in enumerate(df_bo['Afsnit']):
         infostr = '   Matcher BestOrd ' + str(bb + 1) + ' / ' + str(len(df_bo['Afsnit']))
         sysstdout.write("%s\r" % infostr)
         sysstdout.flush()
 
-        ment = np.where(df_output['CPR'] == df_bo['CPR'][bb])[0]
+        ment = np.where(df_output['CPR'] == df_bo['CPR'][bb].strip())[0]
         if len(ment) == 1:
-            dt = df_output['Dato-tid indlæggelse'][ment]-df_bo['BestOrd datotid'][bb]
-            if dt < 0:
-                print(" WARNING: somethings fishy - admission for BestOrd missing as dt<0; "+str(df_output['Dato-tid indlæggelse'][ment])+';'+str(df_bo['BestOrd datotid'][bb]))
+            dtime = df_bo['BestOrd datotid'][bb] - df_output['Dato-tid indlæggelse'][ment]
+            dtime_hours = dtime.dt.total_seconds().values[0] / 3600.0
+
+            if dtime_hours < 0:
+                print("   ADVARSEL: Indlæggelse af " + str(
+                    df_bo["CPR"][bb]) + " mangler for BestOrd da dt<0:\n             Indlæggelse: " + str(
+                    df_output['Dato-tid indlæggelse'][ment].values) + ' og BestOrd: ' + str(
+                    df_bo['BestOrd datotid'][bb]))
+                Nmissingadmission = Nmissingadmission + 1
             else:
-                outputdata['Tidsforskel'][ment] = dt.hours
-                outputdata['Afsnit BestOrd'][ment] = df_bo['Afsnit'][bb]
+                df_output['Tidsforskel [timer]'][ment[0]]    = dtime_hours
+                df_output['Afsnit BestOrd'][ment[0]] = afs_bestord
+                df_output['Dato-tid BestOrd'][ment[0]] = df_bo['BestOrd datotid'][bb]
+                df_output['CPR BestOrd'][ment[0]] = df_bo['CPR'][bb].strip()
 
         elif len(ment) > 1:
-            dts = df_output['Dato-tid indlæggelse'][ment] - df_bo['BestOrd datotid'][bb]
-            dt = np.min(dts[dts>0])
-            tent = np.where(dts == dt)[0]
+            dtimes = df_bo['BestOrd datotid'][bb] - df_output['Dato-tid indlæggelse'][ment]
+            dtimes_hours = dtimes.dt.total_seconds().values / 3600.0
+            if (dtimes_hours > 0).any():
+                dtime_hours = np.min(dtimes_hours[dtimes_hours>0])
+                tent = np.where(dtimes_hours == dtime_hours)[0]
 
-            outputdata['Tidsforskel'][ment[tent]] = dt.hours
-            outputdata['Afsnit BestOrd'][ment[tent]] = df_bo['Afsnit'][bb]
+                df_output['Tidsforskel [timer]'][ment[tent[0]]] = dtime_hours
+                df_output['Afsnit BestOrd'][ment[tent[0]]] = afs_bestord
+                df_output['Dato-tid BestOrd'][ment[tent[0]]] = df_bo['BestOrd datotid'][bb]
+                df_output['CPR BestOrd'][ment[tent[0]]] = df_bo['CPR'][bb].strip()
+            else:
+                print("   ADVARSEL: Indlæggelse af " + str(
+                    df_bo["CPR"][bb]) + " mangler for BestOrd da alle dt<0:\n             Indlæggelser: " + str(
+                    df_output['Dato-tid indlæggelse'][ment].values) + ' og BestOrd: ' + str(
+                    df_bo['BestOrd datotid'][bb]))
+                Nmissingadmission = Nmissingadmission + 1
+        else:
+            print("   ADVARSEL: BestOrd fra " + str(df_bo['BestOrd datotid'][bb]) + " for " + str(
+                df_bo["CPR"][bb]) + " på " + afs_bestord + " havde intet match i indlæggelsesfil")
+            Nnomatch = Nnomatch + 1
 
-    if verbose: print('\n   ... done matching')
+    if verbose: print('\n   ... Færdig med match')
 
-
+    if verbose: print('\n - Fandt ' + str(Nnomatch) + ' BestOrd uden CPR match i indlæggelsesfil')
+    if verbose: print('\n - Fandt ' + str(Nmissingadmission) + ' BestOrd der lå før indlæggelser i indlæggelsesfil')
 
     # ----------------------------------------------------------------------------
     if verbose: print(' - Genererer output')
@@ -91,5 +116,6 @@ def generate_output(verbose=True):
 
     print('\n - Output gemt i mappen '+pathKMT+'/')
     print('   med filnavnet '+outputfilename+'\n')
+
 #=======================================================================================================================
 
