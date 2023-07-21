@@ -11,7 +11,8 @@ def load_into_dataframe(year='2022', verbose=True):
     import loadMDCgroups
     mdcgroups = loadMDCgroups.load_into_dataframe()
     """
-    pathname = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/datateam/'
+
+    pathname = 'O:/Administration/02 - Økonomi og Planlægning/03 Planlægning/Datateam/'
     filename = 'MDCgrupperinger'+year+'.xlsx'
     if verbose: print(' - loading dataframe from '+filename)
     df_mdc   = pd.read_excel(pathname + filename, sheet_name='MDCgrupper')
