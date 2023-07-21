@@ -264,7 +264,7 @@ def evaluate_beddays_boxplot(verbose=True):
     if verbose: print(' - Initiating '+plotname)
 
     #                     rows, cols
-    fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True, gridspec_kw={'width_ratios': [3, 1]})
+    fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True, gridspec_kw={'width_ratios': [3, 2]})
     fig.subplots_adjust(wspace=0.03, hspace=0.1, left=0.07, right=0.95, bottom=0.20, top=0.98)
     Fsize = 10
     lthick = 2
@@ -299,10 +299,10 @@ def evaluate_beddays_boxplot(verbose=True):
     zorder_boxplot = 10
     flierprops = dict(marker='o', markerfacecolor=pointcolor, markersize=marksize, markeredgecolor=pointcolor,
                       alpha=0.3)
-    boxprops = dict(linewidth=lthick / 2, color=pointcolor, facecolor=pointcolor, zorder=zorder_boxplot)
-    whiskerprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
-    medianprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
-    capprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot)
+    boxprops = dict(linewidth=lthick / 2, color=pointcolor, facecolor=pointcolor, zorder=zorder_boxplot, alpha=0.6)
+    whiskerprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot+1)
+    medianprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot+1)
+    capprops = dict(linewidth=lthick / 2, color=pointcolor, zorder=zorder_boxplot+1)
 
     seaborn.boxplot(x=xvals, y=yvals, linewidth=lthick, showfliers=True,
                     flierprops=flierprops, boxprops=boxprops, whiskerprops=whiskerprops,
@@ -363,10 +363,10 @@ def evaluate_beddays_boxplot(verbose=True):
     huecol_SLAandSUH = {'SLA': cmap(colnorm(65)), 'SUH': cmap(colnorm(85))}
     zorder_boxplot = 8
     flierprops = dict(marker='o', markersize=marksize, alpha=0.3)
-    boxprops = dict(linewidth=lthick / 2, zorder=zorder_boxplot)
-    whiskerprops = dict(linewidth=lthick / 2)
-    medianprops = dict(linewidth=lthick / 2)
-    capprops = dict(linewidth=lthick / 2)
+    boxprops = dict(linewidth=lthick / 2, zorder=zorder_boxplot, alpha=0.8)
+    whiskerprops = dict(linewidth=lthick / 2, zorder=zorder_boxplot+1)
+    medianprops = dict(linewidth=lthick / 2, zorder=zorder_boxplot+1)
+    capprops = dict(linewidth=lthick / 2, zorder=zorder_boxplot+1)
 
     # Set restricytions on what months to show
     #catval = pd.CategoricalDtype(['03-2022', '04-2022', '05-2022'])
