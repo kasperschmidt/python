@@ -3,6 +3,10 @@ import os
 import pyodbc
 import pandas as pd
 import odbc_GetDataFromLPR3 as gdf
+
+from sqlalchemy import create_engine
+import urllib
+
 from importlib import reload
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -30,7 +34,7 @@ def returndatapull(SQLquery, server='sv1391', database='Databank_COMPLIANCE', sa
     # sys.path.append('C:/Users/kaschm/GitHub/python/pythonNSR/')
     import odbc_GetDataFromLPR3 as gdf
     SQLquery = "select top 100 * from DRG_LPR3.drgKontakter_alt where SYGEHUS_REGION_Tekst = 'Region Sjælland' "
-    dataframe = gdf.runSQL(SQLquery)
+    dataframe = gdf.returndatapull(SQLquery)
 
     import odbc_basicSQLextract as obe
     dataframe = obe.returndatapull(printdata=True)
@@ -39,11 +43,26 @@ def returndatapull(SQLquery, server='sv1391', database='Databank_COMPLIANCE', sa
     if verbose: print(' - Defining server and database names')
 
     if verbose: print(' - Connecting to server')
+    # --------------------------------------------------------------------------------
+    # KBS230721 - Pandas no longer seems to recognize cnxn from pyodbc and wants to use sqlalchemy instead
+    #             Well... turns out it wasn't the pyodbc pull, but a sql error from databanken
+    # params = 'DRIVER={ODBC Driver 17 for SQL Server};' \
+    #          'SERVER='+server+';' \
+    #          'PORT=1433;' \
+    #          'DATABASE='+database+';' \
+    #          'trusted_connections=yes;'
+    # params = urllib.parse.quote_plus(params)
+    # database_engine = create_engine('mssql+pyodbc:///?odbc_connect=%s' % params)
+    #
+    # if verbose: print(' - Executing SQL query')
+    # SQLresult = pd.read_sql_query(SQLquery, database_engine)
+    # dataframe = pd.DataFrame(SQLresult)
+    # --------------------------------------------------------------------------------
     cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};'
                           'SERVER='+server+';'
                           'DATABASE='+database+';'
                           'Trusted_Connection=yes;')
-    #--------------------------------------------------------------------------------
+
     if verbose: print(' - Executing SQL query')
     SQLresult = pd.read_sql_query(SQLquery, cnxn)
     dataframe = pd.DataFrame(SQLresult)
