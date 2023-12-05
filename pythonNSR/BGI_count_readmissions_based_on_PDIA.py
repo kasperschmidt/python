@@ -1,5 +1,5 @@
 #=======================================================================================================================
-# Funktion der udvælge genindlæggelser der er resultat af primærindlæggelser med en given aktionsdiagnose og hvor
+# Funktion der udvælger genindlæggelser der er resultat af primærindlæggelser med en given aktionsdiagnose og hvor
 # udskrivning på genindlæggelsen er på enten R0 (Akutten) eller R8 (Lungemed)
 #=======================================================================================================================
 #from importlib import reload
@@ -46,7 +46,7 @@ def count_bgi(excelfile=None):
 
         # first check if the row satisfies the following conditions to be counted
         if (df_bgi_in['Behandlingskontakt udskrivning'][ii] > datetime.datetime.strptime("01-01-2020 00:00:00", "%d-%m-%Y %H:%M:%S")) and \
-            (df_bgi_in['Behandlingskontakt udskrivning'][ii] < datetime.datetime.strptime("01-01-2023 00:00:00", "%d-%m-%Y %H:%M:%S")) and \
+            (df_bgi_in['Behandlingskontakt udskrivning'][ii] < datetime.datetime.strptime("01-01-2025 00:00:00", "%d-%m-%Y %H:%M:%S")) and \
             (df_bgi_in['Hændelsestype'][ii] == 'UDSKRIVNING') and \
             ( (df_bgi_in['Hændelsesansvarlig overafdeling'][ii] == 'SLA R8, SLA AKUTAFDELING- OVERAFDELING') or \
               (df_bgi_in['Hændelsesansvarlig overafdeling'][ii] == 'SLA R0, SLA LUNGEMEDICIN - OVERAFDELING') ):
