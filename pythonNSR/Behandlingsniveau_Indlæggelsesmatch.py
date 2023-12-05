@@ -17,7 +17,6 @@ def load_data(pathKMT,verbose=True):
     """
     fileBestOrd    = pathKMT+"NSR KMT behandlingsniveau BestOrd stillingtagen.xlsx"
     fileAdmissions = pathKMT+"NSR KMT antal indlæggelser via hændelse.xlsx"
-
     print('\n - Indlæser BestOrd Excel datafil \n   ('+fileBestOrd+')')
     df_bo = pd.read_excel(fileBestOrd)
 
@@ -36,7 +35,7 @@ def generate_output(verbose=True):
     bim.generate_output(verbose=True)
 
     """
-    pathKMT = "O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Kvalitetsmonitoreringstavel KMT/"
+    pathKMT = "O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Kvalitetsmonitoreringstavle KMT/"
 
     df_bo, df_ad = bim.load_data(pathKMT,verbose=verbose)
 
@@ -57,7 +56,10 @@ def generate_output(verbose=True):
     outputdata['Afsnit BestOrd'] = Strlist
     outputdata['Dato-tid indlæggelse'] = list(df_ad['Hændelsestidspunkt Dato-tid'])
     outputdata['Dato-tid BestOrd'] = Strlist
+    outputdata['Dato-tid udskrivning'] = list(df_ad['Behandlingskontakt udskrivningsdato Dato-tid'])
     outputdata['Tidsforskel [timer]'] = NaNlist
+    outputdata['Hændelsestype'] = list(df_ad['Hændelsestype navn'])
+    outputdata['Patientkontakttype'] = list(df_ad['Patientkontakttype navn'])
     outputdata['Patientalder'] = list(df_ad['Patient alder ved Behandlingskontaktens start'])
     outputdata['Patientalder gruppering'] = Strlist.copy()
     for pa, alder in enumerate(df_ad['Patient alder ved Behandlingskontaktens start']):
@@ -76,7 +78,8 @@ def generate_output(verbose=True):
 
     df_output = pd.DataFrame(outputdata)
     # ----------------------------------------------------------------------------
-    if verbose: print(' - Gennemgår BestOrd og matcher til indlæggelsesliste')
+    if verbose: print(' - Gennemgår BestOrd og matcher til indlæggelsesliste '
+                      '(match på CPR og best.ord. tid mellem indlæggelse og udskrivning)')
     Nnomatch = 0
     Nmissingadmission = 0
     for bb, afs_bestord in enumerate(df_bo['Afsnit']):
@@ -84,13 +87,17 @@ def generate_output(verbose=True):
         sysstdout.write("%s\r" % infostr)
         sysstdout.flush()
 
-        ment = np.where(df_output['CPR'] == df_bo['CPR'][bb].strip())[0]
+        # søg efter best.ord der er udført for samme CPR mellem indlæggelse og udskrivning
+
+        ment = np.where((df_bo['CPR'][bb].strip() == df_output['CPR']) &
+                        (df_bo['BestOrd datotid'][bb] > df_output['Dato-tid indlæggelse']) &
+                        (df_bo['BestOrd datotid'][bb] < df_output['Dato-tid udskrivning']) )[0]
         if len(ment) == 1:
             dtime = df_bo['BestOrd datotid'][bb] - df_output['Dato-tid indlæggelse'][ment]
             dtime_hours = dtime.dt.total_seconds().values[0] / 3600.0
 
             if dtime_hours < 0:
-                print("   ADVARSEL: Indlæggelse af " + str(
+                print("   INFO: Indlæggelse af " + str(
                     df_bo["CPR"][bb]) + " mangler for BestOrd da dt<0:\n             Indlæggelse: " + str(
                     df_output['Dato-tid indlæggelse'][ment].values) + ' og BestOrd: ' + str(
                     df_bo['BestOrd datotid'][bb]))
@@ -113,14 +120,14 @@ def generate_output(verbose=True):
                 df_output['Dato-tid BestOrd'][ment[tent[0]]] = df_bo['BestOrd datotid'][bb]
                 df_output['CPR BestOrd'][ment[tent[0]]] = df_bo['CPR'][bb].strip()
             else:
-                print("   ADVARSEL: Indlæggelse af " + str(
+                print("   INFO: Indlæggelse af " + str(
                     df_bo["CPR"][bb]) + " mangler for BestOrd da alle dt<0:\n             Indlæggelser: " + str(
                     df_output['Dato-tid indlæggelse'][ment].values) + ' og BestOrd: ' + str(
                     df_bo['BestOrd datotid'][bb]))
                 Nmissingadmission = Nmissingadmission + 1
         else:
-            print("   ADVARSEL: BestOrd fra " + str(df_bo['BestOrd datotid'][bb]) + " for " + str(
-                df_bo["CPR"][bb]) + " på " + afs_bestord + " havde intet match i indlæggelsesfil")
+            print("   INFO: BestOrd fra " + str(df_bo['BestOrd datotid'][bb]) + " for " + str(
+                df_bo["CPR"][bb]) + " på " + afs_bestord + " havde intet match jf. kriterier på indlæggelsesfil")
             Nnomatch = Nnomatch + 1
 
     if verbose: print('\n   ... Færdig med match')
