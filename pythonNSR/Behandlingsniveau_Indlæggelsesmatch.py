@@ -49,11 +49,13 @@ def generate_output(verbose=True):
     outputdata['CPR'] = list(df_ad['Patient CPR-nr.'])
     outputdata['CPR BestOrd'] = Strlist
     outputdata['Afsnit indlæggende'] = list(df_ad['Patientkontakt på hændelsestidspunkt Kontaktansvarlig afsnit'])
+    outputdata['Afsnit indlæggende flag'] = zerolist
     for aa, hafs in enumerate(df_ad['Hændelsesansvarlig Afsnit navn']):
         if hafs.startswith('TRANSIT'):
             outputdata['Afsnit indlæggende'][aa] = hafs
 
     outputdata['Afsnit BestOrd'] = Strlist
+    outputdata['Afsnit BestOrd flag'] = zerolist
     outputdata['Dato-tid indlæggelse'] = list(df_ad['Hændelsestidspunkt Dato-tid'])
     outputdata['Dato-tid BestOrd'] = Strlist
     outputdata['Dato-tid udskrivning'] = list(df_ad['Behandlingskontakt udskrivningsdato Dato-tid'])
@@ -135,6 +137,14 @@ def generate_output(verbose=True):
     if verbose: print('\n - Fandt ' + str(Nnomatch) + ' BestOrd uden CPR match i indlæggelsesfil')
     if verbose: print('\n - Fandt ' + str(Nmissingadmission) + ' BestOrd der lå før indlæggelser i indlæggelsesfil')
 
+    # ----------------------------------------------------------------------------
+    if verbose: print('\n - Sætter flag for afsnit og match')
+    for aa, hafs in enumerate(df_ad['Hændelsesansvarlig Afsnit navn']):
+        if len(df_output['Afsnit indlæggende'][aa]) > 1:
+            df_output['Afsnit indlæggende flag'][aa] = 1
+
+        if len(df_output['Afsnit BestOrd'][aa]) > 1:
+            df_output['Afsnit BestOrd flag'][aa] = 1
     # ----------------------------------------------------------------------------
     if verbose: print(' - Genererer output')
     df_output.to_excel(pathKMT+outputfilename, sheet_name="behandlingsniveau")
