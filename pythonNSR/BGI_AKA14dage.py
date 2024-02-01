@@ -238,7 +238,7 @@ for bb, bid in enumerate(uniqueBHKID):
     ent_ptk_udsk = np.where((df_kontakter['Behandlingskontakt record ID'] == bid) & (df_kontakter['Hændelsestype navn'] == 'UDSKRIVNING'))[0]
 
     if len(ent_ptk_udsk) > 1: # Hvis der er mere end en udskrivning per behandlingskontakt bruges den seneste
-        ent_seneste = np.where(df_kontakter['Kontakt slutdato Dato-tid'][ent_ptk_udsk] == np.max(df_kontakter['Kontakt slutdato Dato-tid'][ent_ptk_udsk]))[0]
+        ent_seneste = np.where((df_kontakter['Kontakt slutdato Dato-tid'][ent_ptk_udsk] == np.max(df_kontakter['Kontakt slutdato Dato-tid'][ent_ptk_udsk])) & (df_kontakter['Kontakt slutdato Dato-tid'][ent_ptk_udsk] !=df_kontakter['Kontakt startdato Dato-tid'][ent_ptk_udsk]))[0]
         ent_ptk_udsk = ent_ptk_udsk[ent_seneste]
 
     # Kun tjek for primærindlæggelser for udskrivende overafdelinger på NSR
