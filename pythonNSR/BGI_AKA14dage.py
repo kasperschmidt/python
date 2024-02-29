@@ -221,6 +221,8 @@ for aa, afsn in enumerate(unique_afsn):
         outputdata['Genindlæggelse fra afsn. '+shortnames_afsn[afsn]] = NaNlist
         outputdata['PI for GI fra ' + shortnames_afsn[afsn]] = NaNlist
         outputdata['PIDIA for GI fra ' + shortnames_afsn[afsn]] = NaNlist
+        if 'Henvisningsdiagnose SKS-kode' in df_kontakter.columns:
+            outputdata['PIHDIA for GI fra ' + shortnames_afsn[afsn]] = NaNlist
         unique_afsn_NSR.append(afsn)
 
 df_output = pd.DataFrame(outputdata)
@@ -276,6 +278,8 @@ for cc, cpr in enumerate(uniqueCPR):
                 if len(ent_forPIogAfsnit) > 0: # Kun check for genindlæggelser hvis CPR har primærindlæggelse på afsnittet PIafs
                     PIoverafd         = np.unique(df_kontakter['Hændelsesansvarlig Overafdeling navn'][ent_forPIogAfsnit])  # Overafdeling for PI kontakter
                     PIdia             = np.asarray(df_kontakter['Aktionsdiagnosekode'][ent_forPIogAfsnit])  # Aktionsdiagnoser for PI kontakter
+                    if 'Henvisningsdiagnose SKS-kode' in df_kontakter.columns:
+                        PIhdia        = np.asarray(df_kontakter['Henvisningsdiagnose SKS-kode'][ent_forPIogAfsnit])  # Henvisningsdiagnoser for PI kontakter
 
                     if len(PIoverafd) > 1: # Der burde kun være en unik overafdeling på dette tidspunkt, så advar hvis det ikke er tilfældet
                         print(' - ADVARSEL: For patientkontakt '+str(ent_ktk)+' var der '+str(len(PIoverafd))+' forskellige overafdelinger; bruger den første')
@@ -301,6 +305,10 @@ for cc, cpr in enumerate(uniqueCPR):
 
                             ent_senestePIdia = np.where((diffPItider[diffPItider > 0]) == np.min(diffPItider[diffPItider > 0])) # index for seneste PIs diagnose før geninglæggelsen
                             df_output['PIDIA for GI fra ' + shortnames_afsn[PIafs]][ent_ktk] = PIdia[ent_senestePIdia][0]
+
+                            if 'Henvisningsdiagnose SKS-kode' in df_kontakter.columns:
+                                ent_senestePIdia = np.where((diffPItider[diffPItider > 0]) == np.min(diffPItider[diffPItider > 0]))  # index for seneste PIs diagnose før geninglæggelsen
+                                df_output['PIHDIA for GI fra ' + shortnames_afsn[PIafs]][ent_ktk] = PIhdia[ent_senestePIdia][0]
 
 print('\n - Færdig med evaluering af all '+str(len(uniqueCPR))+' patienter')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
