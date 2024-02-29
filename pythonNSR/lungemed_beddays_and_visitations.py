@@ -142,8 +142,11 @@ def count_occurrences_per_day(measurehours=[8,15,23], untiltoday=False, savedata
                         (datecheck < datetime.datetime.strptime("02-01-2023 00:00:00", "%d-%m-%Y %H:%M:%S")): # jul lavaktivitet
                     NbedsSUH = 14
                 elif (datecheck > datetime.datetime.strptime("02-01-2023 00:00:00", "%d-%m-%Y %H:%M:%S")) &\
-                        (datecheck < datetime.datetime.strptime("01-01-2024 00:00:00", "%d-%m-%Y %H:%M:%S")):
+                        (datecheck < datetime.datetime.strptime("01-12-2023 00:00:00", "%d-%m-%Y %H:%M:%S")):
                     NbedsSUH = 20
+                elif (datecheck > datetime.datetime.strptime("01-12-2023 00:00:00", "%d-%m-%Y %H:%M:%S")) &\
+                        (datecheck < datetime.datetime.strptime("01-12-2024 00:00:00", "%d-%m-%Y %H:%M:%S")):
+                    NbedsSUH = 22
                 else:
                     NbedsSUH = 18
 
@@ -808,6 +811,15 @@ def plot_perday_occupancy(measurehours=[23], loaddatafile='lungemedLPR3dataframe
                  rotation=90, color='red',
                  horizontalalignment='center', verticalalignment='bottom')
 
+
+        # SUH opnormerer til 22 senge
+        plt.plot([datetime.datetime.strptime("01-12-2023", "%d-%m-%Y"),
+                  datetime.datetime.strptime("01-12-2023", "%d-%m-%Y")],
+                 [lineymin, lineymax], '-', color='gray', lw=lthick, zorder=5)
+
+        plt.text(datetime.datetime.strptime("15-12-2023", "%d-%m-%Y"), textymin, 'SUH 22 senge', fontsize=Fsize,
+                 rotation=90, color='gray',
+                 horizontalalignment='center', verticalalignment='bottom')
 
         # --------- LABELS ---------
         plt.xlabel('Dato for måling (kl '+str(measurehour)+')')
