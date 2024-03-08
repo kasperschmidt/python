@@ -1,5 +1,7 @@
 #=======================================================================================================================
 #from importlib import reload
+import os.path
+
 import pandas
 import pandas as pd
 import glob
@@ -120,6 +122,15 @@ def farveintervaller(verbose=True):
     return farve_dic
 
 #=======================================================================================================================
+def tjektal(calcparam,verbose=True):
+    """
+    Tjek om parameter er tekstren og så konverter til tal
+    """
+    if isinstance(calcparam, str):
+        calcparam = float(calcparam.replace(',', '.'))
+
+    return calcparam
+#=======================================================================================================================
 def maalopfyldelse(low_is_good, minpoint, goal_redyellow, goal_yellowgreen, maxpoint, current_val,verbose=True):
     """
     Beregning af målopfyldelse for givent input
@@ -134,6 +145,16 @@ def maalopfyldelse(low_is_good, minpoint, goal_redyellow, goal_yellowgreen, maxp
 
     """
     if verbose: print(' - maalopfyldelse: Beregner maalopfyldelse for input variable')
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if verbose: print(' - maalopfyldelse: Sikrer at input parametre er floats')
+    low_is_good = ndld.tjektal(low_is_good)
+    minpoint = ndld.tjektal(minpoint)
+    goal_redyellow = ndld.tjektal(goal_redyellow)
+    goal_yellowgreen = ndld.tjektal(goal_yellowgreen)
+    maxpoint = ndld.tjektal(maxpoint)
+    current_val = ndld.tjektal(current_val)
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     colintervals = ndld.farveintervaller(verbose=verbose)
 
@@ -156,4 +177,91 @@ def maalopfyldelse(low_is_good, minpoint, goal_redyellow, goal_yellowgreen, maxp
     if verbose: print([low_is_good, minpoint, goal_redyellow, goal_yellowgreen, maxpoint, current_val])
 
     return mo_val
+
+
+#=======================================================================================================================
+def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
+    """
+    Loader budegettal og forbereder outdata.csv fil
+
+    -- EXAMPLE OF USE --
+    import NSR_datainformeret_ledelse_datahandling as ndld
+
+    sheetname='ArkMedOversigt'
+    filename = 'NSRbudgetoversigt.xlsx'
+    filepath = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Datainformeret ledelse/Data til DIL/'
+    filepathname=filepath+filename
+    outpath = filepath
+    csvfilename = ndld.forbered_budgettal(sheetname,filepathname,dataversion='2024-03',outpath,verbose=True)
+
+    """
+    csvfilename = filepathname.split('/')[-1].replace('.xlsx','_outdata.csv')
+
+    if verbose: print(' - Budget: Indlæser budget data i fanen '+sheetname+' fra filen: \n            '+filepathname)
+    dic_in = pd.read_excel(filepathname,sheet_name=[sheetname])
+    df_in  = dic_in[sheetname].columns
+
+    procentKRoverholdt = ['ikke_udfyldt']*len(df_in['Prognosticeret resultat'])
+    for ii, res in enumerate(df_in['Prognosticeret resultat']):
+        if res > 500000:
+            procentKRoverholdt[ii] = 'kr'
+        elif res < 0:
+            procentKRoverholdt[ii] = 'overholdt'
+        else:
+            procentKRoverholdt[ii] = 'procent'
+
+
+
+    pdb.set_trace()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    print(' - Forbereder output')
+    outputdata = {}
+
+    outputdata['Enhed'] = [999]*len(df_in['Prognosticeret resultat'])
+    outputdata['Indikatornummer'] = [1]*len(df_in['Prognosticeret resultat'])
+    outputdata['Indikatornavn'] = ['Budget']*len(df_in['Prognosticeret resultat'])
+    outputdata['Lavt_er_godt'] = [1]*len(df_in['Prognosticeret resultat'])
+    outputdata['Minpunkt'] = [100]*len(df_in['Prognosticeret resultat'])
+    outputdata['Mål rød gul'] = [0.5]*len(df_in['Prognosticeret resultat'])
+    outputdata['Mål gul grøn'] = [0.001]*len(df_in['Prognosticeret resultat'])
+    outputdata['Maxpunkt'] = [0.0]*len(df_in['Prognosticeret resultat'])
+    outputdata['Aktuel værdi'] = [999]*len(df_in['Prognosticeret resultat'])
+    outputdata['Kommentar'] = ['']*len(df_in['Prognosticeret resultat'])
+    outputdata['Version'] = [dataversion]*len(df_in['Prognosticeret resultat'])
+
+    for rr, res in enumerate(df_in['Prognosticeret resultat']):
+        if (res > 500000) and (df_in('Navn afdeling').values[rr] in ndld.afdelingsliste()): # use MegaKr for evaluation
+            procentKRoverholdt[ii] = 'kr'
+            current_val = res / 1e6
+        elif (res < 0) and (df_in('Navn afdeling').values[rr] in ndld.afdelingsliste()): # use 0.0 for evaluation as budget is kept
+            procentKRoverholdt[ii] = 'overholdt'
+            current_val = 0.0
+        elif df_in('Navn afdeling').values[rr] in ndld.afdelingsliste(): # use percentage for evaluation
+            current_val = df_in['Forhold budget'].values[rr]
+        else:
+            if verbose: print(' - Budget WARNING: Afdeling '+df_in('Navn afdeling').values[rr]+' optræder ikke i afdelingsliste')
+            current_val = "afdeling træder ikke i liste"
+
+        outputdata['Aktuel værdi'][rr] = current_val
+
+    df_output = pd.DataFrame(outputdata).sort_values(by=['Enhed','Indikatornummer'])
+
+    # check if csv file exists
+    if os.path.isfile(outpath+csvfilename):
+        if verbose: print(' - Budget: CSV file already exists; appending output to:\n           '+outpath+csvfilename+'')
+
+    outfilename = filepath+BIfile.replace(datestamp_infile,datestr)
+    df_output.to_excel(outfilename, sheet_name="Indikatoroversigt",index=False)
+    print(' - combine: Opdaterer indikatoroversigt til BI oversigt gemt i filen "'+outfilename+'"')
+
+    return csvfilename
+#=======================================================================================================================
+def afdelingsliste():
+    """
+
+    """
+    afdlist = ['Administrationen', 'AKA', 'Anæstesi', 'BogU', 'Driftsafdelingen', 'Garantiklinikken',
+               'GynObs', 'KBA', 'Kirurgi', 'M1', 'M2', 'M3', 'Multisygdom', 'NSR', 'Ort.Kir.']
+    return afdlist
 #=======================================================================================================================
