@@ -19,7 +19,7 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
     datestamp_infile        Dato-stempel på formen 'yymmdd' for input inidkatorkataloget
     outdatafil_version      Versionsstempel for indiaktorer i '*outdata.csv' filer der skal bruges til opdatering
 
-
+    --- EXAMPLE OF USE ---
     import NSR_datainformeret_ledelse_datahandling as ndld
     filepath='O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Datainformeret ledelse/Data til DIL/'
     outBIfile = ndld.combine_output_to_TARGITupload(filepath,'240201','2024-03')
@@ -177,7 +177,14 @@ def maalopfyldelse(low_is_good, minpoint, goal_redyellow, goal_yellowgreen, maxp
     if verbose: print([low_is_good, minpoint, goal_redyellow, goal_yellowgreen, maxpoint, current_val])
 
     return mo_val
+#=======================================================================================================================
+def afdelingsliste():
+    """
 
+    """
+    afdlist = ['Administrationen', 'AKA', 'Anæstesi', 'BogU', 'Driftsafdelingen', 'Garantiklinikken',
+               'GynObs', 'KBA', 'Kirurgi', 'M1', 'M2', 'M3', 'Multisygdom', 'NSR', 'Ort.Kir.']
+    return afdlist
 
 #=======================================================================================================================
 def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
@@ -192,16 +199,18 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     filepath = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Datainformeret ledelse/Data til DIL/'
     filepathname=filepath+filename
     outpath = filepath
-    csvfilename = ndld.forbered_budgettal(sheetname,filepathname,dataversion='2024-03',outpath,verbose=True)
+    dataversion = '2024-03'
+    csvfilename = ndld.forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True)
 
     """
     csvfilename = filepathname.split('/')[-1].replace('.xlsx','_outdata.csv')
 
     if verbose: print(' - Budget: Indlæser budget data i fanen '+sheetname+' fra filen: \n            '+filepathname)
     dic_in = pd.read_excel(filepathname,sheet_name=[sheetname])
-    df_in  = dic_in[sheetname].columns
+    df_in  = dic_in[sheetname]
 
-    procentKRoverholdt = ['ikke_udfyldt']*len(df_in['Prognosticeret resultat'])
+    Nrows_in = len(df_in['Prognosticeret resultat'])
+    procentKRoverholdt = ['ikke_udfyldt']*Nrows_in
     for ii, res in enumerate(df_in['Prognosticeret resultat']):
         if res > 500000:
             procentKRoverholdt[ii] = 'kr'
@@ -210,58 +219,65 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
         else:
             procentKRoverholdt[ii] = 'procent'
 
-
-
-    pdb.set_trace()
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    print(' - Forbereder output')
+    if verbose: print(' - Budget: Forbereder output')
     outputdata = {}
 
-    outputdata['Enhed'] = [999]*len(df_in['Prognosticeret resultat'])
-    outputdata['Indikatornummer'] = [1]*len(df_in['Prognosticeret resultat'])
-    outputdata['Indikatornavn'] = ['Budget']*len(df_in['Prognosticeret resultat'])
-    outputdata['Lavt_er_godt'] = [1]*len(df_in['Prognosticeret resultat'])
-    outputdata['Minpunkt'] = [100]*len(df_in['Prognosticeret resultat'])
-    outputdata['Mål rød gul'] = [0.5]*len(df_in['Prognosticeret resultat'])
-    outputdata['Mål gul grøn'] = [0.001]*len(df_in['Prognosticeret resultat'])
-    outputdata['Maxpunkt'] = [0.0]*len(df_in['Prognosticeret resultat'])
-    outputdata['Aktuel værdi'] = [999]*len(df_in['Prognosticeret resultat'])
-    outputdata['Kommentar'] = ['']*len(df_in['Prognosticeret resultat'])
-    outputdata['Version'] = [dataversion]*len(df_in['Prognosticeret resultat'])
+    outputdata['Enhed'] = [999]*Nrows_in
+    outputdata['Indikatornummer'] = [1]*Nrows_in
+    outputdata['Indikatornavn'] = ['Budget']*Nrows_in
+    outputdata['Lavt_er_godt'] = [1]*Nrows_in
+    outputdata['Minpunkt'] = [100]*Nrows_in
+    outputdata['Mål rød gul'] = [0.5]*Nrows_in
+    outputdata['Mål gul grøn'] = [0.001]*Nrows_in
+    outputdata['Maxpunkt'] = [0.0]*Nrows_in
+    outputdata['Aktuel værdi'] = [999]*Nrows_in
+    outputdata['Kommentar'] = ['']*Nrows_in
+    outputdata['Version'] = [dataversion]*Nrows_in
 
+    if verbose: print(' - Budget: Løkke over budget resultater ')
     for rr, res in enumerate(df_in['Prognosticeret resultat']):
-        if (res > 500000) and (df_in('Navn afdeling').values[rr] in ndld.afdelingsliste()): # use MegaKr for evaluation
-            procentKRoverholdt[ii] = 'kr'
+        outputdata['Enhed'][rr] = df_in['Navn afdeling'].values[rr]
+        if (res > 500000) and (df_in['Navn afdeling'].values[rr] in ndld.afdelingsliste()): # use MegaKr for evaluation
+            procentKRoverholdt[rr] = 'kr'
             current_val = res / 1e6
-        elif (res < 0) and (df_in('Navn afdeling').values[rr] in ndld.afdelingsliste()): # use 0.0 for evaluation as budget is kept
-            procentKRoverholdt[ii] = 'overholdt'
+        elif (res < 0) and (df_in['Navn afdeling'].values[rr] in ndld.afdelingsliste()): # use 0.0 for evaluation as budget is kept
+            procentKRoverholdt[rr] = 'overholdt'
             current_val = 0.0
-        elif df_in('Navn afdeling').values[rr] in ndld.afdelingsliste(): # use percentage for evaluation
+        elif df_in['Navn afdeling'].values[rr] in ndld.afdelingsliste(): # use percentage for evaluation
             current_val = df_in['Forhold budget'].values[rr]
         else:
-            if verbose: print(' - Budget WARNING: Afdeling '+df_in('Navn afdeling').values[rr]+' optræder ikke i afdelingsliste')
-            current_val = "afdeling træder ikke i liste"
+            if verbose: print(' - Budget WARNING: Afdeling '+str(df_in['Navn afdeling'].values[rr])+' optræder ikke i afdelingsliste og bliver derfor ikke gemt i output')
+            current_val = "ukendt_afdeling"
 
         outputdata['Aktuel værdi'][rr] = current_val
 
-    df_output = pd.DataFrame(outputdata).sort_values(by=['Enhed','Indikatornummer'])
+    outputfilename = outpath+csvfilename
+    if verbose: print(' - Budget: output bliver skrevet til CSV filen '+outputfilename)
+    df_output = pd.DataFrame(outputdata).sort_values(by=['Enhed', 'Indikatornummer'])
+    df_output = df_output[df_output['Aktuel værdi'] != 'ukendt_afdeling']
 
-    # check if csv file exists
-    if os.path.isfile(outpath+csvfilename):
-        if verbose: print(' - Budget: CSV file already exists; appending output to:\n           '+outpath+csvfilename+'')
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # check if csv file exists and correct output according to what already exists in output
+    if os.path.isfile(outputfilename):
+        if verbose: print('\n - Budget: CSV fil eksisterer allerede; tilføjer output til eksisterende fil')
+        df_outdata = pd.read_csv(outputfilename, sep=';', encoding='Windows-1252')
 
-    outfilename = filepath+BIfile.replace(datestamp_infile,datestr)
-    df_output.to_excel(outfilename, sheet_name="Indikatoroversigt",index=False)
-    print(' - combine: Opdaterer indikatoroversigt til BI oversigt gemt i filen "'+outfilename+'"')
+        ukeys_exists = df_outdata['Enhed']+df_outdata['Indikatornummer'].values.astype(int).astype(str)+df_outdata['Indikatornavn'].values+df_outdata['Version']
+        ukeys_thisrun = df_output['Enhed'] + df_output['Indikatornummer'].values.astype(int).astype(str) + df_output['Indikatornavn'].values + df_output['Version']
+        key_remove_list = []
+        for kk, ukey in enumerate(ukeys_thisrun):
+            if ukey in ukeys_exists.values:
+                if verbose: print(' - Budget WARNING: Kombinationen "'+ukey+'" findes allerede i CSV fil og vil derfor ikke blive overskrevet. Brug alternativ "Version" eller ret i eksisterende CSV fil.')
+                key_remove_list.append(df_output.index[kk])
+        df_output = df_output.drop(key_remove_list)
+
+        df_output  = pandas.concat([df_outdata,df_output])
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    df_output.to_csv(outputfilename, sep=';',encoding='Windows-1252', index=False)
+    print(' - Budget: Opdaterer indikatoroversigt til BI oversigt gemt i filen "'+outputfilename+'"')
 
     return csvfilename
-#=======================================================================================================================
-def afdelingsliste():
-    """
 
-    """
-    afdlist = ['Administrationen', 'AKA', 'Anæstesi', 'BogU', 'Driftsafdelingen', 'Garantiklinikken',
-               'GynObs', 'KBA', 'Kirurgi', 'M1', 'M2', 'M3', 'Multisygdom', 'NSR', 'Ort.Kir.']
-    return afdlist
 #=======================================================================================================================
