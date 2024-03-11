@@ -281,3 +281,90 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     return csvfilename
 
 #=======================================================================================================================
+def generer_tekstbidder(indikatorkatalog,outpath,verbose=True):
+    """
+    Funktion til at generere teksbidder til dokumentaion og sider i datainformeret ldelse baseret på indikatorkatalog
+
+    --- EXAMPLE OF USE ---
+    import NSR_datainformeret_ledelse_datahandling as ndld
+
+    sheetname='ArkMedOversigt'
+    filename = 'NSR datainformeret ledelse - indikatoroversigt 240310.xlsx'
+    filepath = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Datainformeret ledelse/Data til DIL/'
+    tekstfil = ndld.generer_tekstbidder(filepath+filename,filepath,verbose=True)
+
+    """
+    if verbose: print(' - gentekst: Indlæser indikatorkatalog')
+    df_indi = pandas.read_excel(indikatorkatalog, sheet_name="Indikatoroversigt")
+
+    if verbose: print(' - gentekst: Forbereder output ')
+    outfile = outpath+'tekst_til_doc.txt'
+    fout = open(outfile,'w')
+
+    if verbose: print(' - gentekst: Indlæser indikatorkatalog')
+    for ee, afdeling in enumerate(ndld.afdelingsliste()):
+        fout.write('\n\n===================== '+afdeling+' ===================== \n\n')
+        afd_ent = np.where(df_indi['Enhed'] == afdeling)
+        afd_inidi = df_indi['Indikatornavn'][afd_ent[0]]
+        goal_redyellow = df_indi['Mål rød gul'][afd_ent[0]].values
+        goal_yellowgreen = df_indi['Mål gul grøn'][afd_ent[0]].values
+        lavtgodt = df_indi['Lavt er godt'][afd_ent[0]].values
+        for ii, indikator in enumerate(afd_inidi):
+            if indikator.lower() == 'budget':
+                fout.write("""
+- Budget:
+    Grøn: Budget overholdt
+    Gul: Budget overskredet med op til 0,5% eller 500.000kr.
+    Rød: Budget overskredet med mere end 0,5% eller mere end 500.000kr.
+""")
+            elif indikator.lower() == 'sygefravær':
+                fout.write("""
+- Sygefravær:
+    Grøn: Reduktion > 1,0%-point ifht. sidste år
+    Gul: Reduktion mellem 1,0 og 0,0%-point ifht. sidste år.
+    Rød: Forøgelse af fravær ifht. sidste år
+""")
+            elif indikator.lower() == 'vikar, fea, oa, ma':
+                fout.write("""
+- Vikar, FEA, OA, MA:
+    Grøn: Reduktion >46%-point ifht. 2022 niveau
+    Gul: Reduction X%-point ifht. 2022
+    Rød: Ingen reduktion ifht. 2022
+""")
+            else:
+                if lavtgodt[ii] == 1:
+                    fout.write("""
+- {}:
+    Grøn: Under {}
+    Gul: Mellem {} og {}
+    Rød: Over {}
+""".format(indikator,goal_yellowgreen[ii],goal_yellowgreen[ii],goal_redyellow[ii],goal_redyellow[ii]))
+                else:
+                    fout.write("""
+- {}:
+    Grøn: Over {}
+    Gul: Mellem {} og {}
+    Rød: Under {}
+                    """.format(indikator,goal_yellowgreen[ii],goal_redyellow[ii],goal_yellowgreen[ii],goal_redyellow[ii]))
+
+    fout.write("""Nedenfor opsummeres kriterier for målopfyldelse for de enkelte indikatorer.
+
+- LUP tilstrækkelig information fra personalet
+    Grøn: Gennemsnitligt score over 4,15
+    Gul: Gennemsnitligt score mellem 2,5 og 4,15
+    Rød: Gennemsnitligt score mellem 1,0 og 2,5
+
+- LUP inddragelse af patient:
+    Grøn: Gennemsnitligt score over 3,42
+    Gul: Gennemsnitligt score mellem 2,5 og 3,42
+    Rød: Gennemsnitligt score mellem 1,0 og 2,5
+
+- Klager- og erstatningssager:
+    Grøn: Færre end i 2023
+    Gul:
+    Rød:
+""")
+
+    fout.close()
+    if verbose: print(' - gentekst: Output skrevet til '+outfile)
+#=======================================================================================================================
