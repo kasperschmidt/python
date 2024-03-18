@@ -37,6 +37,9 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
     filenamelist, dataframelist = ndld.load_data(filepath,outdatafil_version,verbose=verbose)
 
     df_outdataload = pandas.concat(dataframelist)
+    if verbose: print(' - combine: De '+str(len(df_outdataload.columns))+
+                      ' kolonner i det samlede dataset er:'+str(df_outdataload.columns))
+    if verbose: print(' - combine: Som et tjek bør der være 11 kolonner (240313)')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     print(' - Forbereder output')
     outputdata = {}
@@ -69,7 +72,7 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
         ind_entBI = np.where(indicatorkeys_BI == indicatorkey[:-7])[0]
         if len(ind_entBI) == 1:
             outputdata["Målopfyldelse seneste måned"][cc] = df_BI["Målopfyldelse"].values[ind_entBI][0]
-            outputdata["Udvikling ifht. Seneste måned"][cc] = outputdata["Målopfyldelse"][cc] - df_BI["Målopfyldelse"].values[ind_entBI][0]
+            outputdata["Udvikling ifht. Seneste måned"][cc] = np.round(outputdata["Målopfyldelse"][cc] - df_BI["Målopfyldelse"].values[ind_entBI][0], 2)
             outputdata["Seneste måned"][cc] = df_BI["Aktuel værdi"].values[ind_entBI][0]
         elif len(ind_entBI) > 1:
             if verbose: print(' - combine WARNING: indikatornøgle "' + indicatorkey + '" optræder '+str(len(ind_entBI))+
@@ -101,7 +104,25 @@ def load_data(filepath,outdatafil_version,verbose=True):
     if verbose: print(' - load_data: Løkke over de '+str(Nfiles)+' fundne filer')
     if verbose: print(' - load_data: Begrænser indlæst data til version ' + outdatafil_version)
     for ff, filepathname in enumerate(filelist):
+        if verbose: print(' -            Indlæser '+filepathname.split('/')[-1])
         df_ad = pd.read_csv(filepathname,sep=';',encoding='Windows-1252')
+
+        for colname in df_ad.columns:
+            if 'Mål_rød' in colname:
+                df_ad.rename(columns={colname: 'Mål rød gul'}, inplace=True)
+            if 'rød-gul' in colname:
+                df_ad.rename(columns={colname: 'Mål rød gul'}, inplace=True)
+            if 'gul-grøn' in colname:
+                df_ad.rename(columns={colname: 'Mål gul grøn'}, inplace=True)
+            if 'Mål_gul' in colname:
+                df_ad.rename(columns={colname: 'Mål gul grøn'}, inplace=True)
+            if 'godt ' in colname:
+                df_ad.rename(columns={colname: 'Lavt er godt'}, inplace=True)
+            if 'Lavt_er' in colname:
+                df_ad.rename(columns={colname: 'Lavt er godt'}, inplace=True)
+            if 'Aktuel_værdi' in colname:
+                df_ad.rename(columns={colname: 'Aktuel værdi'}, inplace=True)
+
         filenamelist.append(filepathname.split('/')[-1])
         dataframelist.append(df_ad[df_ad['Version'].values == outdatafil_version])
 
@@ -226,7 +247,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     outputdata['Enhed'] = [999]*Nrows_in
     outputdata['Indikatornummer'] = [1]*Nrows_in
     outputdata['Indikatornavn'] = ['Budget']*Nrows_in
-    outputdata['Lavt_er_godt'] = [1]*Nrows_in
+    outputdata['Lavt er godt'] = [1]*Nrows_in
     outputdata['Minpunkt'] = [100]*Nrows_in
     outputdata['Mål rød gul'] = [0.5]*Nrows_in
     outputdata['Mål gul grøn'] = [0.001]*Nrows_in
@@ -245,12 +266,15 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
             procentKRoverholdt[rr] = 'overholdt'
             current_val = 0.0
         elif df_in['Navn afdeling'].values[rr] in ndld.afdelingsliste(): # use percentage for evaluation
-            current_val = df_in['Forhold budget'].values[rr]
+            current_val = df_in['Forhold budget'].values[rr]*100
         else:
             if verbose: print(' - Budget WARNING: Afdeling '+str(df_in['Navn afdeling'].values[rr])+' optræder ikke i afdelingsliste og bliver derfor ikke gemt i output')
             current_val = "ukendt_afdeling"
 
-        outputdata['Aktuel værdi'][rr] = current_val
+        if current_val == "ukendt_afdeling":
+            outputdata['Aktuel værdi'][rr] = current_val
+        else:
+            outputdata['Aktuel værdi'][rr] = float("{:.4f}".format(current_val))
 
     outputfilename = outpath+csvfilename
     if verbose: print(' - Budget: output bliver skrevet til CSV filen '+outputfilename)
@@ -287,9 +311,7 @@ def generer_tekstbidder(indikatorkatalog,outpath,verbose=True):
 
     --- EXAMPLE OF USE ---
     import NSR_datainformeret_ledelse_datahandling as ndld
-
-    sheetname='ArkMedOversigt'
-    filename = 'NSR datainformeret ledelse - indikatoroversigt 240310.xlsx'
+    filename = 'NSR datainformeret ledelse - indikatoroversigt 240313.xlsx'
     filepath = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Datainformeret ledelse/Data til DIL/'
     tekstfil = ndld.generer_tekstbidder(filepath+filename,filepath,verbose=True)
 
@@ -328,8 +350,8 @@ def generer_tekstbidder(indikatorkatalog,outpath,verbose=True):
                 fout.write("""
 - Vikar, FEA, OA, MA:
     Grøn: Reduktion >46%-point ifht. 2022 niveau
-    Gul: Reduction X%-point ifht. 2022
-    Rød: Ingen reduktion ifht. 2022
+    Gul: Reduktion over 2023 niveau men under 46% af 2022 niveau
+    Rød: Reduktion mellem 2022 og 2023 niveau
 """)
             else:
                 if lavtgodt[ii] == 1:
@@ -345,26 +367,9 @@ def generer_tekstbidder(indikatorkatalog,outpath,verbose=True):
     Grøn: Over {}
     Gul: Mellem {} og {}
     Rød: Under {}
-                    """.format(indikator,goal_yellowgreen[ii],goal_redyellow[ii],goal_yellowgreen[ii],goal_redyellow[ii]))
+""".format(indikator,goal_yellowgreen[ii],goal_redyellow[ii],goal_yellowgreen[ii],goal_redyellow[ii]))
 
-    fout.write("""Nedenfor opsummeres kriterier for målopfyldelse for de enkelte indikatorer.
 
-- LUP tilstrækkelig information fra personalet
-    Grøn: Gennemsnitligt score over 4,15
-    Gul: Gennemsnitligt score mellem 2,5 og 4,15
-    Rød: Gennemsnitligt score mellem 1,0 og 2,5
-
-- LUP inddragelse af patient:
-    Grøn: Gennemsnitligt score over 3,42
-    Gul: Gennemsnitligt score mellem 2,5 og 3,42
-    Rød: Gennemsnitligt score mellem 1,0 og 2,5
-
-- Klager- og erstatningssager:
-    Grøn: Færre end i 2023
-    Gul:
-    Rød:
-""")
-
-    fout.close()
     if verbose: print(' - gentekst: Output skrevet til '+outfile)
+    fout.close()
 #=======================================================================================================================
