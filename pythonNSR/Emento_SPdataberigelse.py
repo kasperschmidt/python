@@ -210,10 +210,9 @@ def add_emento_columns(data_SP,data_emento,Emento_column_key='_2403',verbose=Tru
                 data_out_EcontextTitle[ent_SP[ent_FirstAfterEmento]] = data_emento['contextTitle'][ent_E]
                 data_out_Eorganization[ent_SP[ent_FirstAfterEmento]] = data_emento['organization'][ent_E]
 
-                inputlist = [1,1]
-                val_ownscore = esd.cal_Ementoscore(inputlist, scoredef=1,verbose=verbose)
+                inputlist = [data_emento['numActivitiesSeen'][ent_E],data_emento['numActivities'][ent_E]]
+                val_ownscore = esd.cal_Ementoscore(inputlist, scoredef=1,verbose=False)
                 data_out_Eownscore[ent_SP[sel_time_SP > sel_time_E]] = val_ownscore
-
             ''
             #if CPR_SP == '190660-2845':
             #if CPR_SP == '100101-7450':
@@ -230,7 +229,6 @@ def add_emento_columns(data_SP,data_emento,Emento_column_key='_2403',verbose=Tru
     data_SP['Em_title' + Emento_column_key] = data_out_Etitle
     data_SP['Em_contextTitle' + Emento_column_key] =data_out_EcontextTitle
     data_SP['Em_organization' + Emento_column_key] =data_out_Eorganization
-
     data_SP['Em_ownscore' + Emento_column_key] = data_out_Eownscore
 
     return data_SP,multiEmentoCPRlist
@@ -243,11 +241,13 @@ def cal_Ementoscore(inputlist,scoredef=1,verbose=True):
     """
 
     if scoredef == 1:
-        val_score = 999
+        if verbose: print(' - Calculating Emento score assmunig inputlist = [numActivisiesSeen,numActivitets] as :')
+        if verbose: print(' - score = numActivisiesSeen / numActivitets')
+        val_score = inputlist[0]/inputlist[1]
     elif scoredef == 2:
         val_score = inputlist[0]*inputlist[1]
     else:
-        -99
+        val_score = -99
 
     return val_score
 #=======================================================================================================================
