@@ -19,7 +19,7 @@ from sys import stdout as sysstdout
 import Emento_datakombination as ed
 
 # -----------------------------------------------------------------------------------------------------------------------
-def generate_Excel_output(ExcelOutputName,verbose=True):
+def generate_Excel_output(ExcelOutputName,testing=False,verbose=True):
     """
     Main function loading datafiles, addeing and sorting data, combining files and writing Excel output.
 
@@ -28,17 +28,19 @@ def generate_Excel_output(ExcelOutputName,verbose=True):
     import datetime
     todaystring = datetime.datetime.strftime(datetime.date.today(),"%y%m%d")
     ExcelOutputName = 'Emento_datagrundlag_'+todaystring+'.xlsx'
-    outputfile = ed.generate_Excel_output(ExcelOutputName,verbose=True)
+    outputfile = ed.generate_Excel_output(ExcelOutputName,testing=True,verbose=True)
 
     """
     todaystring  = datetime.datetime.strftime(datetime.date.today(), "%y%m%d")
-    outpath      = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Emento/python input and output/'
+    outpath      = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2022 - Emento forløbsapp/python input and output/'
 
     if verbose: print('-->Loading data files to combine (names hardcoded in Emento_datakombination.load_datafiles')
-    data_base, data_contacts, data_emento, data_ementoKey = ed.load_datafiles(verbose=verbose)
+    data_base, data_contacts, data_emento, data_ementoKey = ed.load_datafiles(testing=testing,verbose=verbose)
 
-    if verbose: print('-->Combining SP data arrays')
-    data_SP = ed.combine_SP_dataarrays(data_base, data_contacts, verbose=verbose)
+
+    #if verbose: print('-->Combining SP data arrays')
+    #data_SP = ed.combine_SP_dataarrays(data_base, data_contacts, verbose=verbose)
+    data_SP = data_contacts  # 240314 Use all contacts matched to selected CPRs as SP reference data
 
     if verbose: print('-->Adding unique identifier to Emento data')
     data_Emento_wCPR = ed.addCPR2Emento(data_emento, data_ementoKey, verbose=verbose)
@@ -57,7 +59,7 @@ def generate_Excel_output(ExcelOutputName,verbose=True):
 
     return outputfilename
 # -----------------------------------------------------------------------------------------------------------------------
-def load_datafiles(verbose=True):
+def load_datafiles(testing=False,verbose=True):
     """
     Wrapper to load data from SP and Emento into arrays
 
@@ -66,10 +68,13 @@ def load_datafiles(verbose=True):
     data_base, data_contacts, data_emento, data_ementoKey = ed.load_datafiles()
 
     """
-    file_path = 'O:/Administration/02 - Økonomi og PDK/Medarbejdermapper/Kasper/Focus1 - Ad hoc opgaver/Emento/python input and output/'
+    file_path = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2022 - Emento forløbsapp/python input and output/'
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading SP data base on diagnoses and procedures (data_base)')
-    file_base = file_path+'kontakter baseret på dia og pro 230608.csv' #<------------------------- Edit filename for updates
+    if testing:
+        file_base = file_path + 'kontakter baseret på dia og pro 230608_testing.csv'
+    else:
+        file_base = file_path+'kontakter baseret på dia og pro 230608.csv' #<------------------------- Edit filename for updates
     data_base = pd.read_csv(file_base, delimiter=";", dtype=None, decimal=',')
     datearr = np.asarray([datetime.datetime.strptime(dstr, '%d-%m-%Y %H:%M') for dstr in data_base['Kontakt startdato Dato-tid']])
     date_min = np.min(datearr)
@@ -78,7 +83,10 @@ def load_datafiles(verbose=True):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading SP data matched to the base data (data_contacts)')
-    file_contacts = file_path+'kontakter cpr match 230608.csv' #<--------------------------------- Edit filename for updates
+    if testing:
+        file_contacts = file_path + 'kontakter cpr match 230608_testing.csv'
+    else:
+        file_contacts = file_path+'kontakter cpr match 230608.csv' #<--------------------------------- Edit filename for updates
     data_contacts = pd.read_csv(file_contacts, delimiter=";", dtype=None, decimal=',')
     datearr = np.asarray([datetime.datetime.strptime(dstr, '%d-%m-%Y %H:%M') for dstr in data_contacts['Kontakt startdato Dato-tid']])
     date_min = np.min(datearr)
@@ -96,7 +104,7 @@ def load_datafiles(verbose=True):
     data_ementoKey = pd.read_csv(file_ementoKey, delimiter=",", dtype='O', decimal='.')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print(' - Creating log with info on loaded data ')
+    if verbose: print(' - Creating log with info on loaded data')
     todaystring = datetime.datetime.strftime(datetime.date.today(), "%y%m%d")
     fout = open(file_path+'/'+'Emento_datakombination_load_datafiles_log'+todaystring+'.txt','w')
     fout.write('Log over datafiler der blev brugt i Emento_datakombination.load_datafiles() da kombineret fil '+todaystring+' blev genereret.\n')
@@ -113,12 +121,13 @@ def load_datafiles(verbose=True):
 def add_emento_columns(data_SP,data_emento,verbose=True):
     """
     Function to add the columns from the Emento data to entries with dates
-    after the first apperance of a given CPR in the Emento data.
+    after the first appearance of a given CPR in the Emento data.
     """
     SP_CPR = data_SP['Patient CPR-nr.']
 
     #SP_time = np.asarray([datetime.datetime.strptime(dstr, '%d-%m-%Y %H:%M') for dstr in data_SP['Behandlingskontakt starttidspunkt Dato-tid']])
-    SP_time = pd.to_datetime(data_SP['Behandlingskontakt starttidspunkt Dato-tid'])
+    #SP_time = pd.to_datetime(data_SP['Behandlingskontakt starttidspunkt Dato-tid'])
+    SP_time = pd.to_datetime(data_SP['Kontakt startdato Dato-tid'])
     #Em_time = np.asarray([datetime.datetime.strptime(dstr[:-5], '%Y-%m-%dT%H:%M:%S') for dstr in data_emento['createdAt']])
     Em_time_cph = pd.to_datetime(data_emento['createdAt'],utc=True).map(lambda x: x.tz_convert('Europe/Copenhagen'))
     Em_time = pd.to_datetime(Em_time_cph.map(lambda x: x.tz_localize(None)))
@@ -136,7 +145,6 @@ def add_emento_columns(data_SP,data_emento,verbose=True):
             stringcolumn = False
 
         for ss, CPR_SP in enumerate(SP_CPR):
-
             if verbose:
                 infostr = '   checking SP CPR number ' + str(ss + 1) + ' / ' + str(NlinesSP)+' for column '+str(cc+1)+'/'+str(len(data_emento.columns))
                 sysstdout.write("%s\r" % infostr)
@@ -157,7 +165,7 @@ def add_emento_columns(data_SP,data_emento,verbose=True):
                     multiEmentoCPRlist.append(CPR_SP)
                 idlist = str([data_emento[col_Emento][matchent] for matchent in ent_cpr_match])
                 min_Em_time = np.min(Em_time[ent_cpr_match])
-                if SP_time[ss] > min_Em_time: # comparing SP date with oldest emento date
+                if SP_time[ss] > min_Em_time: # comparing SP date with oldest Emento date
                     if stringcolumn:
                         col_arr[ss] = str(data_emento[col_Emento][ent_cpr_match[0]]).strip() # assigning data from first appearance of Emento match
                     else:
@@ -178,13 +186,14 @@ def addCPR2Emento(data_emento, data_ementoKey, verbose=True):
 
     """
     if verbose: print(' - Matching CPR from data_ementoKey file to info from data_emento')
-    data_emento_wCPR        = data_emento
-    data_emento_wCPR['uniqueIdentifier'] = np.asarray(['']*len(data_emento_wCPR))
+    data_emento_wCPR        = data_emento.copy()
+    CPRcol = np.asarray(['']*len(data_emento_wCPR))
 
     Nnomatch = 0 # counter to keep track of the numer of Emento IDs without matches.
     for dd, Eid in enumerate(data_emento_wCPR['id']):
-        ent_match = np.where(data_ementoKey['courseId'] == Eid)[0]
+        ent_match = np.where(data_ementoKey['courseId'].values == Eid)[0]
         Nmatches = len(ent_match)
+
         if Nmatches == 0:
             #if verbose: print('   The following Emento ID did not have a match in data_ementoKey: '+str(Eid))
             Nnomatch = Nnomatch + 1
@@ -192,11 +201,12 @@ def addCPR2Emento(data_emento, data_ementoKey, verbose=True):
             cprstr_last4  = str(data_ementoKey['uniqueIdentifier'][ent_match[0]])[-4:]
             cprstr_first6 = str("%06.d" % int(str(data_ementoKey['uniqueIdentifier'][ent_match[0]])[:-4]))
             cprstr = cprstr_first6+'-'+cprstr_last4
-            data_emento_wCPR['uniqueIdentifier'][dd] = cprstr
+            CPRcol[dd] = cprstr
 
         else:
             if verbose: print('   The following Emento ID had --'+str(Nmatches)+'-- mastches in data_ementoKey: ' + str(Eid))
 
+    data_emento_wCPR['uniqueIdentifier'] = CPRcol
     if verbose: print(' - There were '+str(Nnomatch)+' Emento IDs which did not have a match in the ID2CPR list')
 
     return data_emento_wCPR
@@ -211,12 +221,12 @@ def combine_SP_dataarrays(data_base,data_contacts,verbose=True):
 
     """
     ktk_suffix = ' alle ktk'
-    # mannually adding column with Pt. record IDs to prevent it disappearing in merge
+    # manually adding column with Pt. record IDs to prevent it disappearing in merge
     data_contacts['Patientkontakt record ID'+' alle ktk'] = data_contacts['Patientkontakt record ID']
 
     if verbose: print(' Starting pandas merger of the two tables')
-    data_SP = data_base.merge(data_contacts, left_on='Patientkontakt record ID', right_on='Patientkontakt record ID',
-                              suffixes=('', ktk_suffix), how='outer', copy=False)
+    #data_SP = data_base.merge(data_contacts, left_on='Patientkontakt record ID', right_on='Patientkontakt record ID',suffixes=('', ktk_suffix), how='left', copy=False)
+    data_SP = pd.merge(data_base, data_contacts, on='Patientkontakt record ID', how='left')
     if verbose: print(' Done merging and returning the combined table')
 
     return data_SP
