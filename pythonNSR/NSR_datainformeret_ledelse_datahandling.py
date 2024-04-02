@@ -54,6 +54,29 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
     #outputdata["outdataCSVversion"] = [outdatafil_version]*len(outputdata['Enhed'])
     outputdata["senestemånedDatostreng"] = [datestamp_infile] * len(outputdata['Enhed'])
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    print(' - combine: Sætter inidkatornumre manuelt (overskriver fra input)')
+    afdlist = ndld.afdelingsliste()
+    for aa, afdeling in enumerate(afdlist): # looping through departments
+        ent_afd = np.where(outputdata['Enhed'] == afdeling)[0]
+        list_nummer = outputdata['Indikatornummer'].values[ent_afd]
+        list_navn = outputdata['Indikatornavn'].values[ent_afd]
+        runningnumber = 4
+        for ll, lnavn in enumerate(list_navn):
+            # if statement manually setting mandatory indicators
+            if lnavn == 'Budget':
+                list_nummer[ll] = 1
+            elif lnavn == 'Sygefravær':
+                list_nummer[ll] = 2
+            elif lnavn == 'Vikar, FEA, OA, MA':
+                list_nummer[ll] = 3
+            else:
+                list_nummer[ll] = runningnumber
+                runningnumber = runningnumber + 1 # increment running number for non-mandatory indicators
+
+        outputdata['Indikatornummer'].values[ent_afd] = list_nummer # overskriv Indikatornummer med ny nummerliste
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     print(' - combine: Beregninger målopfyldelse for alle indikatorer')
     for cc, lavtgodt in enumerate(outputdata['Lavt er godt']):
         #beregn målopfyldelse
