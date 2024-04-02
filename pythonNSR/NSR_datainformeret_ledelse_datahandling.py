@@ -74,7 +74,7 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
                 list_nummer[ll] = runningnumber
                 runningnumber = runningnumber + 1 # increment running number for non-mandatory indicators
 
-        outputdata['Indikatornummer'].values[ent_afd] = list_nummer # overskriv Indikatornummer med ny nummerliste
+        #outputdata['Indikatornummer'].values[ent_afd] = list_nummer # overskriv Indikatornummer med ny nummerliste
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     print(' - combine: Beregninger målopfyldelse for alle indikatorer')
