@@ -10,20 +10,20 @@ from sys import stdout as sysstdout
 import Emento_SPdataberigelse as esd
 
 # -----------------------------------------------------------------------------------------------------------------------
-def generate_Excel_output(testing=False,verbose=True):
+def generate_Excel_output(contactstamp='230608',ementostamp='230608',testing=False,verbose=True):
     """
     Main function loading datafiles, adding and sorting data, combining files and writing Excel output.
 
     ---EXMAPLE OF USE---
     import Emento_SPdataberigelse as esd
-    outputfile = esd.generate_Excel_output(testing=True,verbose=True)
+    outputfile = esd.generate_Excel_output(contactstamp='230608',ementostamp='230608',testing=False,verbose=True)
 
     """
     todaystring  = datetime.datetime.strftime(datetime.date.today(), "%y%m%d")
     outpath      = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2022 - Emento forløbsapp/python input and output/'
 
-    if verbose: print('-->Loading data files to combine (names hardcoded in esd.load_datafiles)')
-    data_SP, data_emento, data_ementoKey = esd.load_datafiles(contactstamp='230608', ementostamp='230608',ementoonly=False, testing=testing, verbose=verbose)
+    if verbose: print('-->Loading data files to combine')
+    data_SP, data_emento, data_ementoKey = esd.load_datafiles(contactstamp=contactstamp, ementostamp=ementostamp,ementoonly=False, testing=testing, verbose=verbose)
 
     SP_cpr = np.unique(data_SP['Patient CPR-nr.'])
     E_cpr  = np.unique(data_ementoKey['uniqueIdentifier'])
@@ -50,7 +50,7 @@ def generate_Excel_output(testing=False,verbose=True):
     # and then run esd.add_emento_columns() in the loop
     #
     if verbose: print('-->Adding Emento data to SP data')
-    data_SPandEmento, multiEmentoCPRlist = esd.add_emento_columns(data_SP, data_Emento_wCPR, Emento_column_key='230608', verbose=verbose)
+    data_SPandEmento, multiEmentoCPRlist = esd.add_emento_columns(data_SP, data_Emento_wCPR, Emento_column_key='', verbose=verbose)
 
     if verbose: print('-->Saving final dataframe to Excel')
     if testing:
@@ -217,13 +217,13 @@ def add_emento_columns(data_SP,data_emento,Emento_column_key='_2403',verbose=Tru
                 data_out_Ektkmatch[ent_SP[ent_FirstAfterEmento]] =+ 1
 
                 data_out_Ecompscore[ent_SP[sel_time_SP > sel_time_E]] = data_emento['complianceScore'][ent_E]
-                data_out_Ecompscore[ent_SP[ent_FirstAfterEmento]] = data_emento['complianceScore'][ent_E]
+                data_out_Ecompscore[ent_SP[sel_time_SP > sel_time_E]] = data_emento['complianceScore'][ent_E]
 
-                data_out_Eid[ent_SP[ent_FirstAfterEmento]] = data_emento['id'][ent_E]
-                data_out_EcreatedAt[ent_SP[ent_FirstAfterEmento]] = data_emento['createdAt'][ent_E]
-                data_out_Etitle[ent_SP[ent_FirstAfterEmento]] = data_emento['title'][ent_E]
-                data_out_EcontextTitle[ent_SP[ent_FirstAfterEmento]] = data_emento['contextTitle'][ent_E]
-                data_out_Eorganization[ent_SP[ent_FirstAfterEmento]] = data_emento['organization'][ent_E]
+                data_out_Eid[ent_SP[sel_time_SP > sel_time_E]] = data_emento['id'][ent_E]
+                data_out_EcreatedAt[ent_SP[sel_time_SP > sel_time_E]] = data_emento['createdAt'][ent_E]
+                data_out_Etitle[ent_SP[sel_time_SP > sel_time_E]] = data_emento['title'][ent_E]
+                data_out_EcontextTitle[ent_SP[sel_time_SP > sel_time_E]] = data_emento['contextTitle'][ent_E]
+                data_out_Eorganization[ent_SP[sel_time_SP > sel_time_E]] = data_emento['organization'][ent_E]
 
                 inputlist = [data_emento['numActivitiesSeen'][ent_E],data_emento['numActivities'][ent_E]]
                 val_ownscore = esd.cal_Ementoscore(inputlist, scoredef=1,verbose=False)
