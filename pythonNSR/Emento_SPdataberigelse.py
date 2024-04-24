@@ -23,13 +23,15 @@ def generate_Excel_output(contactstamp='230608',ementostamp='230608',testing=Fal
     outpath      = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2022 - Emento forløbsapp/python input and output/'
 
     if verbose: print('-->Loading data files to combine')
-    data_SP, data_emento, data_ementoKey = esd.load_datafiles(contactstamp=contactstamp, ementostamp=ementostamp,ementoonly=False, testing=testing, verbose=verbose)
+    data_SPcontacts, data_SPbase, data_emento, data_ementoKey = esd.load_datafiles(contactstamp=contactstamp, ementostamp=ementostamp,ementoonly=False, testing=testing, verbose=verbose)
 
-    SP_cpr = np.unique(data_SP['Patient CPR-nr.'])
+    SPbase_cpr = np.unique(data_SPbase['Patient CPR-nr.'])
+    SPcontacts_cpr = np.unique(data_SPcontacts['Patient CPR-nr.'])
     E_cpr  = np.unique(data_ementoKey['uniqueIdentifier'])
     if verbose: print(' - Found the following numer of CPRs in data:')
-    if verbose: print('   SP data     : '+str(len(SP_cpr)))
-    if verbose: print('   Emento data : '+str(len(E_cpr)))
+    if verbose: print('   SP basedata    : ' + str(len(SPbase_cpr)))
+    if verbose: print('   SP contactdata : '+str(len(SPcontacts_cpr)))
+    if verbose: print('   Emento data    : '+str(len(E_cpr)))
 
     if verbose: print('-->Adding unique identifier to Emento data')
     data_Emento_wCPR = esd.addCPR2Emento(data_emento, data_ementoKey, verbose=verbose)
@@ -50,18 +52,19 @@ def generate_Excel_output(contactstamp='230608',ementostamp='230608',testing=Fal
     # and then run esd.add_emento_columns() in the loop
     #
     if verbose: print('-->Adding Emento data to SP data')
-    data_SPandEmento, multiEmentoCPRlist = esd.add_emento_columns(data_SP, data_Emento_wCPR, Emento_column_key='', verbose=verbose)
-
-    if verbose: print('-->Saving final dataframe to Excel')
-    if testing:
-        outputfilename = 'EmentoOgSPDatakombination_'+todaystring+'_testing.xlsx'
-    else:
-        outputfilename = 'EmentoOgSPDatakombination_' + todaystring + '.xlsx'
-    if verbose: print(' - Sort output dataframe by CPR and contact date and time')
-    data_SPandEmento['Kontakt startdato Dato-tid'] = pd.to_datetime(data_SPandEmento['Kontakt startdato Dato-tid'], format='%d-%m-%Y %H:%M') # ensure proper sorting
-    data_SPandEmento = data_SPandEmento.sort_values(by=["Patient CPR-nr.", "Kontakt startdato Dato-tid"], ascending=[True, True]).copy()
-    data_SPandEmento.to_excel(outpath+'/'+outputfilename, sheet_name="SP koblet med Emento data", index=False)
-    if verbose: print('   saved to '+outpath+'/'+outputfilename)
+    outname_extensions = ['SPallektk','SPbasis']
+    for dd, data_SP in enumerate([data_SPcontacts, data_SPbase]):
+        data_SPandEmento, multiEmentoCPRlist = esd.add_emento_columns(data_SP, data_Emento_wCPR, Emento_column_key='', verbose=verbose)
+        if verbose: print('-->Saving final dataframe ('+outname_extensions[dd]+') to Excel')
+        if testing:
+            outputfilename = 'EmentoOgSPDatakombination_'+outname_extensions[dd]+'_'+todaystring+'_testing.xlsx'
+        else:
+            outputfilename = 'EmentoOgSPDatakombination_'+outname_extensions[dd]+'_' + todaystring + '.xlsx'
+        if verbose: print(' - Sort output dataframe by CPR and contact date and time')
+        data_SPandEmento['Kontakt startdato Dato-tid'] = pd.to_datetime(data_SPandEmento['Kontakt startdato Dato-tid'], format='%d-%m-%Y %H:%M') # ensure proper sorting
+        data_SPandEmento = data_SPandEmento.sort_values(by=["Patient CPR-nr.", "Kontakt startdato Dato-tid"], ascending=[True, True]).copy()
+        data_SPandEmento.to_excel(outpath+'/'+outputfilename, sheet_name="SP koblet med Emento data", index=False)
+        if verbose: print('   saved to '+outpath+'/'+outputfilename)
 
     return outputfilename
 
@@ -83,7 +86,7 @@ def load_datafiles(contactstamp='230608',ementostamp='230608',ementoonly=False,t
         if testing:
             file_contacts = file_path + 'Kontakter for 10 ementopatiente.csv'
         else:
-            file_contacts = file_path+'kontakter cpr match '+contactstamp+'.csv' #<--------------------------------- Edit filename for updates
+            file_contacts = file_path + 'kontakter cpr match ' + contactstamp+'.csv'
         data_contacts = pd.read_csv(file_contacts, delimiter=";", dtype=None, decimal=',')
         datearr = np.asarray([datetime.datetime.strptime(dstr, '%d-%m-%Y %H:%M') for dstr in data_contacts['Kontakt startdato Dato-tid']])
         date_min = np.min(datearr)
@@ -93,14 +96,30 @@ def load_datafiles(contactstamp='230608',ementostamp='230608',ementoonly=False,t
         file_contacts = '"Not loaded as ementoonly=True"'
         data_contacts = []
 
+    if not ementoonly:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if verbose: print(' - Loading SP base contacts (data_base)')
+        if testing:
+            file_base = file_path + 'Kontakter for 10 ementopatiente.csv'
+        else:
+            file_base = file_path + 'kontakter baseret på dia og pro ' + contactstamp + '.csv'
+        data_base = pd.read_csv(file_base, delimiter=";", dtype=None, decimal=',')
+        datearr = np.asarray([datetime.datetime.strptime(dstr, '%d-%m-%Y %H:%M') for dstr in data_base['Kontakt startdato Dato-tid']])
+        date_min = np.min(datearr)
+        date_max = np.max(datearr)
+        if verbose: print('   The base contact start dates fall between '+str(date_min)+' and '+str(date_max))
+    else:
+        file_base = '"Not loaded as ementoonly=True"'
+        data_base = []
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading Emento tableau csv file (data_emento)')
-    file_emento = file_path+'tableau_data_'+ementostamp+'.csv' #<------------------------------------------- Edit filename for updates
+    file_emento = file_path+'tableau_data_'+ementostamp+'.csv'
     data_emento = pd.read_csv(file_emento, delimiter=",", dtype=None, decimal='.')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if verbose: print(' - Loading Emento ID-CPR key for matching (data_ementoKey)')
-    file_ementoKey = file_path+'uidMapCSV_'+ementostamp+'.csv' #<------------------------------------------ Edit filename for updates
+    file_ementoKey = file_path+'uidMapCSV_'+ementostamp+'.csv'
     data_ementoKey = pd.read_csv(file_ementoKey, delimiter=",", dtype='O', decimal='.')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -113,12 +132,13 @@ def load_datafiles(contactstamp='230608',ementostamp='230608',ementoonly=False,t
     fout.write('Log over datafiler der blev brugt i Emento_datakombination.load_datafiles() da kombineret fil '+todaystring+' blev genereret.\n')
     fout.write('\nFølgende filer blev loadet og kombineret:\n')
     fout.write('    SP data af alle kontakter for CPR numre i file_base                    : ' + file_contacts + ' \n')
+    fout.write('    SP data med basis ud fra dia og proc (file_base)                       : ' + file_base + ' \n')
     fout.write('    Emento Tableau datafile fra https://storage-bi.emento.dk bucket        : ' + file_emento + ' \n')
     fout.write('    Emento UniqueIdentifier-CPR nøgle fra https://sla-mtk.emento.dk/ server: ' + file_ementoKey + ' \n')
     fout.close()
 
     if verbose: print(' - Done loading SP data base on diagnoses and procedures (data_base)')
-    return data_contacts, data_emento, data_ementoKey
+    return data_contacts, data_base, data_emento, data_ementoKey
 
 # -----------------------------------------------------------------------------------------------------------------------
 def addCPR2Emento(data_emento, data_ementoKey, verbose=True):
