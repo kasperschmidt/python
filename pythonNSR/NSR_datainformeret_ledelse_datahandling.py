@@ -246,7 +246,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     import NSR_datainformeret_ledelse_datahandling as ndld
 
     sheetname='Afdelinger samlet'
-    filename = 'Økonomistatus 2024.xlsx'
+    filename = 'Økonomistatus 2024 - marts.xlsx'
     filepath = 'O:/Administration/02 - Økonomi og Planlægning/02 Økonomi/01 Budget og Regnskab/2024/Prognoser/'
     filepathname=filepath+filename
     outpath = 'O:/Administration/02 - Økonomi og Planlægning/01 Fælles/05 Arbejdsgrupper og projekter/2023 - Datainformeret ledelse/Data til DIL/'
@@ -263,7 +263,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     csvfilename = ndld.forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True)
 
     """
-    csvfilename = filepathname.split('/')[-1].replace('.xlsx','_outdata.csv')
+    csvfilename = filepathname.split('/')[-1].split(' - ')[0]+'_outdata.csv'
     if verbose: print(' - Budget: Indlæser budget data i fanen '+sheetname+' fra filen: \n            '+filepathname)
     dic_in = pd.read_excel(filepathname,sheet_name=[sheetname],usecols='C:F',header=2)
     df_in  = dic_in[sheetname][:23]
@@ -344,7 +344,6 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
         df_output  = pandas.concat([df_outdata,df_output])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    pdb.set_trace()
     df_output.to_csv(outputfilename, sep=';',encoding='Windows-1252', index=False)
     print(' - Budget: Opdaterer indikatoroversigt til BI oversigt gemt i filen "'+outputfilename+'"')
 
@@ -419,3 +418,4 @@ def generer_tekstbidder(indikatorkatalog,outpath,verbose=True):
     if verbose: print(' - gentekst: Output skrevet til '+outfile)
     fout.close()
 #=======================================================================================================================
+
