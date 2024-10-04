@@ -16,7 +16,7 @@ import NSR_datainformeret_ledelse_datahandling as ndld
 def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,verbose=True):
     """
     filepath                stinavn til bibliotek med filer til kørsel (både in- og output)
-    datestamp_infile        Dato-stempel på formen 'yymmdd' for input inidkatorkataloget
+    datestamp_infile        Dato-stempel på formen 'yymmdd' for input indikatorkataloget
     outdatafil_version      Versionsstempel for indiaktorer i '*outdata.csv' filer der skal bruges til opdatering
 
     --- EXAMPLE OF USE ---
@@ -30,7 +30,7 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
     BIfile  = 'NSR datainformeret ledelse - indikatoroversigt '+datestamp_infile+'.xlsx'
 
     if verbose: print(" - combine: Indlæser input TARGIT fil der skal opdateres: "+filepath+BIfile)
-    df_BI = pd.read_excel(filepath+BIfile)
+    df_BI = pd.read_excel(filepath+'/../indikatoroversigt/'+BIfile)
     #df_BI.to_excel(filepath+BIfile.replace('.xlsx', '_BCKUP'+datestr+'.xlsx'), sheet_name="Indikatoroversigt")
 
     if verbose: print(' - combine: Indlæser *.outdata.csv filer; begrænser til indholdet for version '+outdatafil_version)
@@ -104,7 +104,7 @@ def combine_output_to_TARGITupload(filepath,datestamp_infile,outdatafil_version,
             if verbose: print(' - combine WARNING: indikatornøgle "'+indicatorkey+'" findes ikke inputfil')
 
     df_output = pd.DataFrame(outputdata).sort_values(by=['Enhed','Indikatornummer'])
-    outfilename = filepath+BIfile.replace(datestamp_infile,datestr)
+    outfilename = filepath+'/../indikatoroversigt/'+BIfile.replace(datestamp_infile,datestr)
     df_output.to_excel(outfilename, sheet_name="Indikatoroversigt",index=False, encoding='Windows-1252')
     print(' - combine: Opdaterer indikatoroversigt til BI oversigt gemt i filen "'+outfilename+'"')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
