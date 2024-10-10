@@ -228,7 +228,7 @@ def afdelingsliste(version=None):
     """
     if version == 'budget':
         afdlist = ['Administrationen','Akutafdelingen','Anæstesiologisk afdeling','Børneafdelingen',
-                   'Driftsafdelingen','Garantiklinik','Gynækologisk/Obstetrisk afdeling',
+                   'Driftsafdelingen','Gynækologisk/Obstetrisk afdeling',
                    'Klinisk Biokemisk afdeling','Kirurgisk afdeling','Medicin 1','Medicin 2','Medicin 3 - Fysergo',
                    'CMKS', 'Total NSR', 'Ortopædkirurgisk afdeling']
     else:
@@ -265,8 +265,8 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     """
     csvfilename = filepathname.split('/')[-1].split(' - ')[0]+'_outdata.csv'
     if verbose: print(' - Budget: Indlæser budget data i fanen '+sheetname+' fra filen: \n            '+filepathname)
-    dic_in = pd.read_excel(filepathname,sheet_name=[sheetname],usecols='C:F',header=2)
-    df_in  = dic_in[sheetname][:23]
+    dic_in = pd.read_excel(filepathname,sheet_name=[sheetname],usecols='C:F',header=2,decimal=",")
+    df_in  = dic_in[sheetname][:25]
 
     Nrows_in = len(df_in['Difference'])
     procentKRoverholdt = ['ikke_udfyldt']*Nrows_in
@@ -297,6 +297,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     if verbose: print(' - Budget: Løkke over budget resultater ')
     Outname = ndld.afdelingsliste()
     Inname  = ndld.afdelingsliste(version='budget')
+
     for rr, res in enumerate(df_in['Difference']):
         unitindex = np.where(np.asarray(Inname) == df_in['Afdelinger'].values[rr])[0]
         if len(unitindex) == 1:
@@ -330,7 +331,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
     # check if csv file exists and correct output according to what already exists in output
     if os.path.isfile(outputfilename):
         if verbose: print('\n - Budget: CSV fil eksisterer allerede; tilføjer output til eksisterende fil')
-        df_outdata = pd.read_csv(outputfilename, sep=';', encoding='Windows-1252')
+        df_outdata = pd.read_csv(outputfilename, sep=';', encoding='Windows-1252',decimal=".")
 
         ukeys_exists = df_outdata['Enhed']+df_outdata['Indikatornummer'].values.astype(int).astype(str)+df_outdata['Indikatornavn'].values+df_outdata['Version']
         ukeys_thisrun = df_output['Enhed'] + df_output['Indikatornummer'].values.astype(int).astype(str) + df_output['Indikatornavn'].values + df_output['Version']
@@ -344,7 +345,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
         df_output  = pandas.concat([df_outdata,df_output])
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    df_output.to_csv(outputfilename, sep=';',encoding='Windows-1252', index=False)
+    df_output.to_csv(outputfilename, sep=';',encoding='Windows-1252', decimal=".", index=False)
     print(' - Budget: Opdaterer indikatoroversigt til BI oversigt gemt i filen "'+outputfilename+'"')
 
     return csvfilename
