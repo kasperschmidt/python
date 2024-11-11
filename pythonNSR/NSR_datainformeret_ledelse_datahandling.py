@@ -228,7 +228,7 @@ def afdelingsliste(version=None):
     """
     if version == 'budget':
         afdlist = ['Administrationen','Akutafdelingen','Anæstesiologisk afdeling','Børneafdelingen',
-                   'Driftsafdelingen','Gynækologisk/Obstetrisk afdeling',
+                   'Driftsafdelingen', 'GarantiklinikkenSKIP' ,'Gynækologisk/Obstetrisk afdeling',
                    'Klinisk Biokemisk afdeling','Kirurgisk afdeling','Medicin 1','Medicin 2','Medicin 3 - Fysergo',
                    'CMKS', 'Total NSR', 'Ortopædkirurgisk afdeling']
     else:
@@ -300,6 +300,7 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
 
     for rr, res in enumerate(df_in['Difference']):
         unitindex = np.where(np.asarray(Inname) == df_in['Afdelinger'].values[rr])[0]
+
         if len(unitindex) == 1:
             outputdata['Enhed'][rr] = Outname[unitindex[0]]
         else:
@@ -321,6 +322,8 @@ def forbered_budgettal(sheetname,filepathname,dataversion,outpath,verbose=True):
             outputdata['Aktuel værdi'][rr] = current_val
         else:
             outputdata['Aktuel værdi'][rr] = float("{:.4f}".format(current_val))
+
+        #if "pæd" in df_in['Afdelinger'].values[rr]: pdb.set_trace()
 
     outputfilename = outpath+csvfilename
     if verbose: print(' - Budget: output bliver skrevet til CSV filen '+outputfilename)
