@@ -264,7 +264,7 @@ def evaluate_beddays_boxplot(verbose=True):
     if verbose: print(' - Initiating '+plotname)
 
     #                     rows, cols
-    fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True, gridspec_kw={'width_ratios': [3, 2]})
+    fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True, gridspec_kw={'width_ratios': [3, 3]})
     fig.subplots_adjust(wspace=0.03, hspace=0.1, left=0.07, right=0.95, bottom=0.20, top=0.98)
     Fsize = 10
     lthick = 2
