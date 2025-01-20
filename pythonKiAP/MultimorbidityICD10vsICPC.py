@@ -1,26 +1,68 @@
+"""
+Loading a mapping between ICPC2 and ICD10 from an SQL database and generating af classification into
+chronical deseases and multimorbidity. The classification and grouping follows Schiøtz et al. BMC Public Health (2017) 17:422.
+This work is based on ICD10 codes, which is translated into a grouping in ICPC2 in the current code.
+"""
 import numpy as np
-
+import MultimorbidityICD10vsICPC as mmii
+import kbsKiAPutilities as kku
 
 #--------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    print(" - Defining multimorbidity classes for ICPC based on ICD10 calssification in Schiøtz et al. BMC Public Health (2017) 17:422")
-
+    mmii.main()
 
 #--------------------------------------------------------------------------------------------------------------------
-def map_ICD10toICPC(diagnosis,ICD10in=True):
+def main():
+    """
+    The main wrapper to run MultimorbidityICD10vsICPC
+    """
+        
+    print(" - Defining multimorbidity classes for ICPC based on ICD10 calssification in Schiøtz et al. BMC Public Health (2017) 17:422")
+
+    diaarr = mmii.map_ICD10toICPC('dr520',ICD10in=True)
+    print(' - The returned mapping: \n'+str(diaarr))
+    print(diaarr.dtype)
+
+    diaarr = mmii.map_ICD10toICPC('A01',ICD10in=False)
+    print(' - The returned mapping: \n'+str(diaarr))
+    print(diaarr.dtype)
+
+#--------------------------------------------------------------------------------------------------------------------
+def map_ICD10toICPC(diagnosis,ICD10in=True,verbose=True):
     """
     Function returning (by default) ICPC code for ICD10 diagnoses.
     If ICD10in=False the input should be an ICPC code, and the returned value, will then be the ICD10 code.
 
     """
+    df_ICPCICD10 = mmii.load_ICPC_ICD10_mapping()
 
+    if ICD10in:
+        in_col  = 'icd10'
+        out_col = 'icpc2'
+    else:
+        in_col  = 'icpc2'
+        out_col = 'icd10'
+    
+    goodent = np.where(df_ICPCICD10[in_col] == diagnosis)[0]
+    if len(goodent) > 0:
+        dialist = df_ICPCICD10[out_col][goodent]
+    else:
+        if verbose: print(' - WARNING: There were not matches to the input diagnosis (ICD10in='+str(ICD10in)+'):'+in_col)
+        dialist = np.asarray([])
 
+    return dialist
 #--------------------------------------------------------------------------------------------------------------------
-def load_ICPC_ICD10_mapping():
+def load_ICPC_ICD10_mapping(verbose=True):
     """
     Function loading overall ICPC vs ICD10 code mapping
     """
-
+    SQLquery = "SELECT TOP 1000 * FROM opslagsdata.dbo.icpc_icd10_mapning"
+    server='10.19.31.20' 
+    database='opslagsdata'
+    savefilename=None
+    overwrite=False
+    dataframe = kku.returnSQLdatapull(SQLquery,server=server,database=database,savefilename=savefilename,overwrite=overwrite,verbose=verbose)
+    return dataframe
 #--------------------------------------------------------------------------------------------------------------------
 def multimorbidity_diagnosis_grouping_ICD10(ICD10code):
     """
@@ -98,4 +140,4 @@ def multimorbidity_diagnosis_grouping_ICD10(ICD10code):
         diagroup = [-99,'No group']
 
     return diagroup
-#=======================================================================================================================
+#--------------------------------------------------------------------------------------------------------------------
