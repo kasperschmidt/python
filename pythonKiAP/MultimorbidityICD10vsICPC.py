@@ -9,33 +9,40 @@ import kbsKiAPutilities as kku
 
 #--------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    mmii.main()
+    verbose = True
+    mmii.main(verbose=verbose)
 
 #--------------------------------------------------------------------------------------------------------------------
-def main():
+def main(verbose=True):
     """
     The main wrapper to run MultimorbidityICD10vsICPC
     """
         
     print(" - Defining multimorbidity classes for ICPC based on ICD10 calssification in Schiøtz et al. BMC Public Health (2017) 17:422")
 
-    diaarr = mmii.map_ICD10toICPC('dr520',ICD10in=True)
+    df_ICPCICD10 = mmii.load_ICPC_ICD10_mapping(verbose=verbose)
+
+    diaarr = mmii.map_ICD10toICPC('dr520',ICD10in=True,verbose=verbose)
     print(' - The returned mapping: \n'+str(diaarr))
     print(diaarr.dtype)
 
-    diaarr = mmii.map_ICD10toICPC('A01',ICD10in=False)
+    diaarr = mmii.map_ICD10toICPC('A01',ICD10in=False,verbose=verbose)
     print(' - The returned mapping: \n'+str(diaarr))
     print(diaarr.dtype)
 
 #--------------------------------------------------------------------------------------------------------------------
-def map_ICD10toICPC(diagnosis,ICD10in=True,verbose=True):
+def map_ICD10toICPC(diagnosis,map_ICPCICD10,ICD10in=True,verbose=True):
     """
     Function returning (by default) ICPC code for ICD10 diagnoses.
     If ICD10in=False the input should be an ICPC code, and the returned value, will then be the ICD10 code.
 
-    """
-    df_ICPCICD10 = mmii.load_ICPC_ICD10_mapping()
+    --- INPUT ---
+    diagnosis           String containing diagnosis to map
+    map_ICPCICD10       Pandas dataframe with mapping between ICPC and ICD10 from load_ICPC_ICD10_mapping()
+    ICD10in             Indicating whether the content of 'diagnosis' is an ICD10 coder or an ICPC code
+    verbose             Toggle verbosity of function
 
+    """
     if ICD10in:
         in_col  = 'icd10'
         out_col = 'icpc2'
@@ -43,9 +50,9 @@ def map_ICD10toICPC(diagnosis,ICD10in=True,verbose=True):
         in_col  = 'icpc2'
         out_col = 'icd10'
     
-    goodent = np.where(df_ICPCICD10[in_col] == diagnosis)[0]
+    goodent = np.where(map_ICPCICD10[in_col] == diagnosis)[0]
     if len(goodent) > 0:
-        dialist = df_ICPCICD10[out_col][goodent]
+        dialist = map_ICPCICD10[out_col][goodent]
     else:
         if verbose: print(' - WARNING: There were not matches to the input diagnosis (ICD10in='+str(ICD10in)+'):'+in_col)
         dialist = np.asarray([])
@@ -56,13 +63,20 @@ def load_ICPC_ICD10_mapping(verbose=True):
     """
     Function loading overall ICPC vs ICD10 code mapping
     """
+    if verbose: print(' - Loading ICPC-ICD10 mapping from SQL database')
     SQLquery = "SELECT TOP 1000 * FROM opslagsdata.dbo.icpc_icd10_mapning"
     server='10.19.31.20' 
     database='opslagsdata'
     savefilename=None
     overwrite=False
-    dataframe = kku.returnSQLdatapull(SQLquery,server=server,database=database,savefilename=savefilename,overwrite=overwrite,verbose=verbose)
-    return dataframe
+    df_map = kku.returnSQLdatapull(SQLquery,server=server,database=database,savefilename=savefilename,overwrite=overwrite,verbose=verbose)
+
+    if verbose: print(' - Aadding convenience columns to dataframe (ICD10 leve 3, 4 and 5)')
+    df_map['icd10_level3'] = df_map['icd10'].str.slice(0,3)
+    df_map['icd10_level4'] = df_map['icd10'].str.slice(0,4)
+    df_map['icd10_level5'] = df_map['icd10'].str.slice(0,5)
+
+    return df_map
 #--------------------------------------------------------------------------------------------------------------------
 def multimorbidity_diagnosis_grouping_ICD10(ICD10code):
     """
