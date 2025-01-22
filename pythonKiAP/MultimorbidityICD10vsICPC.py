@@ -33,7 +33,7 @@ def main(verbose=True):
         print('   The returned mapping:     \n'+str(diagnosis_mapping))
         print('   The returned mm category: \n'+str(multimorbidity_category))
 
-    ICPC_list = ['A01','b80','T89']
+    ICPC_list = ['A01','b80','L83']
     for jj, ICPC in enumerate(ICPC_list):
         print(' - Looking op map and multimorbidity category for : '+ICPC)
         diagnosis_mapping, multimorbidity_category = mmii.map_ICD10toICPC(ICPC,map_ICPCICD10,ICD10in=False,verbose=verbose)
@@ -43,8 +43,11 @@ def main(verbose=True):
     #chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icd10_level3',verbose=True)
     #chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icd10_level4',verbose=True)
     chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',verbose=True)
-    mmii.save_d3_output(chordfig_pathname, chordfig_pathname.replace('.html','.png'), width=800, height=600)
+    mmii.save_d3_output(chordfig_pathname, chordfig_pathname.replace('.html','.pdf'), width=800, height=600)
     
+    chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',col_target='icd10_level3',
+                                                        only_diagnoses_with_multimorbidity_group=True, verbose=True)
+    mmii.save_d3_output(chordfig_pathname, chordfig_pathname.replace('.html','.pdf'), width=800, height=600)
 
 #--------------------------------------------------------------------------------------------------------------------
 def map_ICD10toICPC(diagnosis,map_ICPCICD10,ICD10in=True,verbose=True):
@@ -129,17 +132,18 @@ def add_multimorbitity_column(map_ICPCICD10,verbose=True):
     return map_ICPCICD10
 
 #--------------------------------------------------------------------------------------------------------------------
-def chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',verbose=True):
+def chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',col_target='multimobidity_category_text', only_diagnoses_with_multimorbidity_group=True, verbose=True):
     """
     Creat a chord diagram showing the diagnosis-multimorbidity grouping/relationships
     """
     map_ICPCICD10.loc[:,'sumcol'] = 1.0
-    map_ICPCICD10 = map_ICPCICD10[map_ICPCICD10['multimobidity_category_text'] != 'No group']
+    if only_diagnoses_with_multimorbidity_group:
+        map_ICPCICD10 = map_ICPCICD10[map_ICPCICD10['multimobidity_category_text'] != 'No group']
 
     Nrows_map  = len(map_ICPCICD10['sumcol'])
 
     piv_source_col = col_source
-    piv_target_col = 'multimobidity_category_text'
+    piv_target_col = col_target
     piv_values_col = 'sumcol'
 
     print(" - Pivoting input data ")
@@ -177,7 +181,7 @@ def chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',verbose=True):
     htmlpathname = 'C:/Users/kbschmidt/OneDrive - KiAP Fonden/Pictures/PythonFigures/multimorbidity_chord_'+piv_source_col+'_to_'+piv_target_col+'.html'
     d3.show(showfig=False, filepath=htmlpathname, title='Chord of multimorbidity relationships',save_button=False)
 
-    htmltext ='Diagnosekolonne: {0}<br> Multisygdomskategori: {1}<br> Antal rækker fundet i SQL ICPC-ICD10 mapping: {2}<br> Antal rækker i organiseret dataframe: {3}<br>'.format(piv_source_col,piv_target_col,str(Nrows_map),str(Nrows_long))
+    htmltext ='Viser kun diagnoser med associeret multisygdomscategory: {0}<br> Afsenderkolonne: {1}<br> Modtagerkolonne: {2}<br> Antal rækker fundet i SQL ICPC-ICD10 mapping: {3}<br> Antal rækker i organiseret dataframe: {4}<br>'.format(only_diagnoses_with_multimorbidity_group,piv_source_col,piv_target_col,str(Nrows_map),str(Nrows_long))
     mmii.add_html_textbox(htmlpathname,htmltext,verbose=True)
 
     #hcd.save_using_selenium(htmlpathname)
@@ -253,32 +257,6 @@ def save_d3_output(html_file, output_file, width=800, height=600):
 
         # Close the browser
         browser.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #--------------------------------------------------------------------------------------------------------------------
 def multimorbidity_diagnosis_grouping_ICD10(ICD10code):
