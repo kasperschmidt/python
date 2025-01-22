@@ -6,6 +6,9 @@ This work is based on ICD10 codes, which is translated into a grouping in ICPC2 
 import numpy as np
 import MultimorbidityICD10vsICPC as mmii
 import kbsKiAPutilities as kku
+from playwright.sync_api import sync_playwright
+from d3blocks import D3Blocks 
+import pandas as pd
 
 #--------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -36,6 +39,11 @@ def main(verbose=True):
         diagnosis_mapping, multimorbidity_category = mmii.map_ICD10toICPC(ICPC,map_ICPCICD10,ICD10in=False,verbose=verbose)
         print('   The returned mapping:     \n'+str(diagnosis_mapping))
         print('   The returned mm category: \n'+str(multimorbidity_category))
+
+    #chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icd10_level3',verbose=True)
+    #chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icd10_level4',verbose=True)
+    chordfig_pathname = mmii.chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',verbose=True)
+    mmii.save_d3_output(chordfig_pathname, chordfig_pathname.replace('.html','.png'), width=800, height=600)
     
 
 #--------------------------------------------------------------------------------------------------------------------
@@ -119,6 +127,159 @@ def add_multimorbitity_column(map_ICPCICD10,verbose=True):
             map_ICPCICD10.loc[goodent,'multimobidity_category_text']    = diagroup[1]
 
     return map_ICPCICD10
+
+#--------------------------------------------------------------------------------------------------------------------
+def chord_diagrams_of_mappings(map_ICPCICD10,col_source='icpc2',verbose=True):
+    """
+    Creat a chord diagram showing the diagnosis-multimorbidity grouping/relationships
+    """
+    map_ICPCICD10.loc[:,'sumcol'] = 1.0
+    map_ICPCICD10 = map_ICPCICD10[map_ICPCICD10['multimobidity_category_text'] != 'No group']
+
+    Nrows_map  = len(map_ICPCICD10['sumcol'])
+
+    piv_source_col = col_source
+    piv_target_col = 'multimobidity_category_text'
+    piv_values_col = 'sumcol'
+
+    print(" - Pivoting input data ")
+    df_piv = pd.pivot_table(map_ICPCICD10, index=piv_source_col, columns=piv_target_col, values=piv_values_col, aggfunc='sum').fillna(0)
+
+    print(" - Converting pivot table to format required by Chord diagram function")
+    # Convert pivot table to long format
+    df_long = df_piv.reset_index().melt(id_vars=piv_source_col, var_name=piv_target_col, value_name=piv_values_col)
+    # Rename columns to match D3Blocks requirements
+    df_long.rename(columns={piv_source_col: 'source', piv_target_col: 'target', piv_values_col: 'weight'}, inplace=True)
+    # Filter out zero or irrelevant values
+    df_long = df_long[df_long['weight'] > 0]
+    Nrows_long  = len(df_long['weight'])
+
+    # test of just top N rows
+    #df_long = df_long.iloc[:30]
+
+    # Normalize values
+    #df_long['weight'] = df_long['weight'] / df_long['weight'].max()
+    df_long['weight'] = df_long['weight'] / np.sum(df_long['weight']) * 100
+
+    print(" - Initialize and plot Chord diagram ")
+    d3 = D3Blocks(chart='Chord', frame=False)
+
+    d3.set_node_properties(df_long, opacity=1.0, cmap='viridis')
+    d3.set_edge_properties(df_long, color='target', opacity='target')
+
+    #d3.node_properties.get('Diabetes')['color']='#ff0000'
+    #d3.node_properties.get('Diabetes')['opacity']=1
+
+    # Make edits to highlight the edge
+    #d3.edge_properties.loc[(d3.edge_properties['source'] == 'kommune') & (d3.edge_properties['target'] == 'privat'), 'color'] = '#ff0000'
+
+    # Show the chart
+    htmlpathname = 'C:/Users/kbschmidt/OneDrive - KiAP Fonden/Pictures/PythonFigures/multimorbidity_chord_'+piv_source_col+'_to_'+piv_target_col+'.html'
+    d3.show(showfig=False, filepath=htmlpathname, title='Chord of multimorbidity relationships',save_button=False)
+
+    htmltext ='Diagnosekolonne: {0}<br> Multisygdomskategori: {1}<br> Antal rækker fundet i SQL ICPC-ICD10 mapping: {2}<br> Antal rækker i organiseret dataframe: {3}<br>'.format(piv_source_col,piv_target_col,str(Nrows_map),str(Nrows_long))
+    mmii.add_html_textbox(htmlpathname,htmltext,verbose=True)
+
+    #hcd.save_using_selenium(htmlpathname)
+
+    return htmlpathname
+#--------------------------------------------------------------------------------------------------------------------
+def add_html_textbox(htmlpathname,htmltext,verbose=True):
+    """
+    Add a textbox to an html file by replace "body"
+    And remove add-box in chord
+    """
+    if verbose: print(' - Loading HTML file to add text box with info ')
+    # Open the html file to update
+    with open(htmlpathname, "r", encoding="UTF-8") as file:
+        html_content = file.read()
+
+    # Add the info box
+    info_box = """
+    <div id="info-box" style="position: absolute; bottom: 20px; left: 20px; background: #f9f9f9; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        <p><strong>Diagram Info:</strong></p>
+        <p>{0}</p>
+    </div>
+    """.format(htmltext)
+    html_content = html_content.replace("</body>", f"{info_box}\n</body>")
+
+    if verbose: print(' - Removing add-box')
+    html_content = html_content.replace("<script async src='https://media.ethicalads.io/media/client/ethicalads.min.js'></script>","")
+    html_content = html_content.replace("<div data-ea-publisher='erdogantgithubio' data-ea-type='text' data-ea-style='stickybox'></div>","")
+
+    if verbose: print(' - Save the updated HTML file')
+    with open(htmlpathname, "w", encoding="UTF-8") as file:
+        file.write(html_content)
+
+
+#--------------------------------------------------------------------------------------------------------------------
+def save_d3_output(html_file, output_file, width=800, height=600):
+    """
+    Saves a D3.js visualization from an HTML file to an image or PDF.
+
+    --- INPUT ---
+        html_file (str):    Path to the HTML file containing the D3.js visualization.
+        output_file (str):  Path to save the output file (e.g., "output.png" or "output.pdf").
+        width (int):        Width of the browser window.
+        height (int):       Height of the browser window.
+    """
+    # Determine output format based on the file extension
+    if output_file.lower().endswith(".png"):
+        output_format = "png"
+    elif output_file.lower().endswith(".pdf"):
+        output_format = "pdf"
+    else:
+        raise ValueError("Output file must end with .png or .pdf")
+
+    with sync_playwright() as p:
+        # Launch a headless browser
+        browser = p.chromium.launch()
+        page = browser.new_page()
+
+        # Set the viewport size
+        page.set_viewport_size({"width": width, "height": height})
+
+        # Load the HTML file
+        page.goto(f"file://{html_file}")
+
+        # Wait for the D3 visualization to render (adjust if needed)
+        page.wait_for_timeout(2000)  # 2 seconds delay to ensure rendering
+
+        # Save as PNG or PDF
+        if output_format == "png":
+            page.screenshot(path=output_file, full_page=True)
+        elif output_format == "pdf":
+            page.pdf(path=output_file, format="A4", print_background=True)
+
+        # Close the browser
+        browser.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #--------------------------------------------------------------------------------------------------------------------
 def multimorbidity_diagnosis_grouping_ICD10(ICD10code):
     """
