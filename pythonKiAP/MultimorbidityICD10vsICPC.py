@@ -4,7 +4,7 @@ chronical deseases and multimorbidity. The classification and grouping follows S
 This work is based on ICD10 codes, which is translated into a grouping in ICPC2 in the current code.
 """
 import numpy as np
-import MultimorbidityICD10vsICPC as mmii
+#import MultimorbidityICD10vsICPC as mmii
 import kbsKiAPutilities as kku
 from playwright.sync_api import sync_playwright
 from d3blocks import D3Blocks 
@@ -23,8 +23,8 @@ def main(verbose=True):
         
     print(" - Defining multimorbidity classes for ICPC based on ICD10 calssification in Schiøtz et al. BMC Public Health (2017) 17:422")
 
-    map_ICPCICD10 = mmii.load_ICPC_ICD10_mapping(verbose=verbose)
-    map_ICPCICD10 = mmii.add_multimorbitity_column(map_ICPCICD10,verbose=verbose)
+    map_ICPCICD10 = load_ICPC_ICD10_mapping(verbose=verbose)
+    map_ICPCICD10 = add_multimorbitity_column(map_ICPCICD10,verbose=verbose)
 
     ICD10_list = ['DM15','de10']
     for ii, ICD10 in enumerate(ICD10_list):
