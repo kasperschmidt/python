@@ -85,16 +85,3 @@ def savedataframe2file(dataframe,out_file,format='CSV',overwrite=False,verbose=T
     elif format.lower() == 'excel':
         dataframe.to_excel(out_file, sheet_name="data output")
 #=======================================================================================================================
-def savedataframe2file(dataframe,out_file,format='CSV',overwrite=False,verbose=True):
-    """
-    Saving Pandas DataFrame as Excel or CSV file
-
-    Parameters
-    ----------
-    dataframe      Pandas DataFrame to store in file
-    out_file       Path and name to output Excel/CSV file to generate
-    format         choose CSV or Excel file
-
-    """
-
-#=======================================================================================================================
