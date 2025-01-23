@@ -14,13 +14,12 @@ import pandas as pd
 if __name__ == '__main__':
     verbose = True
     mmii.main(verbose=verbose)
-
+    
 #--------------------------------------------------------------------------------------------------------------------
 def main(verbose=True):
     """
     The main wrapper to run MultimorbidityICD10vsICPC
     """
-        
     print(" - Defining multimorbidity classes for ICPC based on ICD10 calssification in Schiøtz et al. BMC Public Health (2017) 17:422")
 
     map_ICPCICD10 = mmii.load_ICPC_ICD10_mapping(verbose=verbose)
